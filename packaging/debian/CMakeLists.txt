@@ -65,8 +65,10 @@ if(NOT lsb_result EQUAL 0)
   message(FATAL_ERROR "Can't run lsb_release")
 endif()
 
-if(NOT lsb_id STREQUAL "Debian" AND NOT lsb_id STREQUAL "Ubuntu")
-  message(FATAL_ERROR "We want Debian or Ubuntu")
+string(TOLOWER "${lsb_id}" lsb_id)
+
+if(NOT lsb_id STREQUAL "debian" AND NOT lsb_id STREQUAL "ubuntu")
+  message(FATAL_ERROR "We can only handle Debian or Ubuntu Deb packaging")
 endif()
 
 execute_process(
@@ -81,7 +83,13 @@ execute_process(
   OUTPUT_STRIP_TRAILING_WHITESPACE
 )
 
-string(TOLOWER "${lsb_id}${lsb_release}" ID_RELEASE)
+
+if(lsb_id STREQUAL "debian")
+  # For Debian we want just the major release number
+  string(REGEX REPLACE "\\..*" "" lsb_release "${lsb_release}")
+endif()
+
+set(ID_RELEASE "${lsb_id}${lsb_release}")
 
 message(STATUS "OS distribution : ${ID_RELEASE}")
 message(STATUS "OS code name    : ${CODENAME}")
