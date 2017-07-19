@@ -245,12 +245,14 @@ SQLRETURN myodbc_do_connect(DBC *dbc, DataSource *ds)
     mysql_options(mysql, MYSQL_OPT_SSL_VERIFY_SERVER_CERT,
                   (const char *)&opt_ssl_verify_server_cert);
 
+#if MYSQL_VERSION_ID >= 50660
   if (ds->rsakey)
   {
     /* Read the public key on the client side */
     mysql_options(mysql, MYSQL_SERVER_PUBLIC_KEY,
                   ds_get_utf8attr(ds->rsakey, &ds->rsakey8));
   }
+#endif
 
 #if MYSQL_VERSION_ID >= 50710
   {
