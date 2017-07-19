@@ -983,3 +983,11 @@ SQLWCHAR *wchar_t_as_sqlwchar(wchar_t *from, SQLWCHAR *to, size_t len)
     return out;
   }
 }
+
+#if MYSQL_VERSION_ID < 50700
+char *my_stpmov(char *dst, const char *src)
+{
+      while ((*dst++ = *src++)) ;
+        return dst-1;
+}
+#endif
