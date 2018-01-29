@@ -27,7 +27,7 @@
   SYNOPSIS
     my_open()
       FileName	Fully qualified file name
-      Flags	Read | write 
+      Flags	Read | write
       MyFlags	Special flags
 
   RETURN VALUE
@@ -46,7 +46,7 @@ File my_open(const char *FileName, int Flags, myf MyFlags)
 #if defined(_WIN32)
   fd= my_win_open(FileName, Flags);
 #else
-  fd = open(FileName, Flags, my_umask);	/* Normal unix */
+  fd = open(FileName, Flags, mysys_umask);	/* Normal unix */
 #endif
 
   fd= my_register_filename(fd, FileName, FILE_BY_OPEN, EE_FILENOTFOUND, MyFlags);
@@ -86,24 +86,24 @@ int my_close(File fd, myf MyFlags)
     if (MyFlags & (MY_FAE | MY_WME))
     {
       char errbuf[MYSYS_STRERROR_SIZE];
-      my_error(EE_BADCLOSE, MYF(0), my_filename(fd),
-               my_errno(), my_strerror(errbuf, sizeof(errbuf), my_errno()));
+      mysys_error(EE_BADCLOSE, MYF(0), my_filename(fd),
+               my_errno(), mysys_strerror(errbuf, sizeof(errbuf), my_errno()));
     }
   }
-  if ((uint) fd < my_file_limit && my_file_info[fd].type != UNOPEN)
+  if ((uint) fd < mysys_file_limit && mysys_file_info[fd].type != UNOPEN)
   {
-    my_free(my_file_info[fd].name);
-    my_file_info[fd].type = UNOPEN;
+    my_free(mysys_file_info[fd].name);
+    mysys_file_info[fd].type = UNOPEN;
   }
-  my_file_opened--;
+  mysys_file_opened--;
   mysql_mutex_unlock(&THR_LOCK_open);
   DBUG_RETURN(err);
 } /* my_close */
 
 
 /*
-  Register file in my_file_info[]
-   
+  Register file in mysys_file_info[]
+
   SYNOPSIS
     my_register_filename()
     fd			   File number opened, -1 if error on open
@@ -125,13 +125,13 @@ File my_register_filename(File fd, const char *FileName, enum file_type
   DBUG_ENTER("my_register_filename");
   if ((int) fd >= MY_FILE_MIN)
   {
-    if ((uint) fd >= my_file_limit)
+    if ((uint) fd >= mysys_file_limit)
     {
 #if defined(_WIN32)
       set_my_errno(EMFILE);
 #else
       mysql_mutex_lock(&THR_LOCK_open);
-      my_file_opened++;
+      mysys_file_opened++;
       mysql_mutex_unlock(&THR_LOCK_open);
       DBUG_RETURN(fd);				/* safeguard */
 #endif
@@ -142,10 +142,10 @@ File my_register_filename(File fd, const char *FileName, enum file_type
       if (dup_filename != NULL)
       {
         mysql_mutex_lock(&THR_LOCK_open);
-        my_file_info[fd].name= dup_filename;
-        my_file_opened++;
-        my_file_total_opened++;
-        my_file_info[fd].type = type_of_file;
+        mysys_file_info[fd].name= dup_filename;
+        mysys_file_opened++;
+        mysys_file_total_opened++;
+        mysys_file_info[fd].type = type_of_file;
         mysql_mutex_unlock(&THR_LOCK_open);
         DBUG_PRINT("exit",("fd: %d",fd));
         DBUG_RETURN(fd);
@@ -164,8 +164,8 @@ File my_register_filename(File fd, const char *FileName, enum file_type
     if (my_errno() == EMFILE)
       error_message_number= EE_OUT_OF_FILERESOURCES;
     DBUG_PRINT("error",("print err: %d",error_message_number));
-    my_error(error_message_number, MYF(0), FileName,
-             my_errno(), my_strerror(errbuf, sizeof(errbuf), my_errno()));
+    mysys_error(error_message_number, MYF(0), FileName,
+             my_errno(), mysys_strerror(errbuf, sizeof(errbuf), my_errno()));
   }
   DBUG_RETURN(-1);
 }
@@ -177,15 +177,15 @@ File my_register_filename(File fd, const char *FileName, enum file_type
 
 void my_print_open_files(void)
 {
-  if (my_file_opened | my_stream_opened)
+  if (mysys_file_opened | mysys_stream_opened)
   {
     uint i;
-    for (i= 0 ; i < my_file_limit ; i++)
+    for (i= 0 ; i < mysys_file_limit ; i++)
     {
-      if (my_file_info[i].type != UNOPEN)
+      if (mysys_file_info[i].type != UNOPEN)
       {
-        my_message_local(INFORMATION_LEVEL,
-                         EE(EE_FILE_NOT_CLOSED), my_file_info[i].name, i);
+        mysys_message_local(INFORMATION_LEVEL,
+                         EE(EE_FILE_NOT_CLOSED), mysys_file_info[i].name, i);
       }
     }
   }

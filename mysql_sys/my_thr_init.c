@@ -92,7 +92,7 @@ void my_thread_global_reinit()
   DBUG_ASSERT(my_thread_global_init_done);
 
 #ifdef HAVE_PSI_INTERFACE
-  my_init_mysys_psi_keys();
+  mysys_init_mysys_psi_keys();
 #endif
 
   mysql_mutex_destroy(&THR_LOCK_heap);
@@ -170,7 +170,7 @@ my_bool my_thread_global_init()
 #ifndef DBUG_OFF
   if ((pth_ret= my_create_thread_local_key(&THR_KEY_mysys, NULL)) != 0)
   { /* purecov: begin inspected */
-    my_message_local(ERROR_LEVEL, "Can't initialize threads: error %d",
+    mysys_message_local(ERROR_LEVEL, "Can't initialize threads: error %d",
                      pth_ret);
     /* purecov: end */
     return TRUE;
@@ -178,7 +178,7 @@ my_bool my_thread_global_init()
 #endif
   if ((pth_ret= my_create_thread_local_key(&THR_KEY_myerrno, NULL)) != 0)
   { /* purecov: begin inspected */
-    my_message_local(ERROR_LEVEL, "Can't initialize threads: error %d",
+    mysys_message_local(ERROR_LEVEL, "Can't initialize threads: error %d",
                      pth_ret);
     /* purecov: end */
     return TRUE;
@@ -186,7 +186,7 @@ my_bool my_thread_global_init()
 #ifdef _WIN32
   if ((pth_ret= my_create_thread_local_key(&THR_KEY_winerrno, NULL)) != 0)
   { /* purecov: begin inspected */
-    my_message_local(ERROR_LEVEL, "Can't initialize threads: error %d",
+    mysys_message_local(ERROR_LEVEL, "Can't initialize threads: error %d",
                      pth_ret);
     /* purecov: end */
     return TRUE;
@@ -233,7 +233,7 @@ void my_thread_global_end()
       */
       if (THR_thread_count)
         /* purecov: begin inspected */
-        my_message_local(ERROR_LEVEL, "Error in my_thread_global_end(): "
+        mysys_message_local(ERROR_LEVEL, "Error in my_thread_global_end(): "
                          "%d threads didn't exit", THR_thread_count);
         /* purecov: end */
 #endif
@@ -289,7 +289,7 @@ void my_thread_global_end()
   @retval TRUE   Fatal error; mysys/dbug functions can't be used
 */
 
-my_bool my_thread_init()
+my_bool mysys_thread_init()
 {
 #ifndef DBUG_OFF
   struct st_my_thread_var *tmp;
@@ -359,7 +359,7 @@ void my_thread_end()
       Decrement counter for number of running threads. We are using this
       in my_thread_global_end() to wait until all threads have called
       my_thread_end and thus freed all memory they have allocated in
-      my_thread_init() and DBUG_xxxx
+      mysys_thread_init() and DBUG_xxxx
     */
     mysql_mutex_lock(&THR_LOCK_threads);
     DBUG_ASSERT(THR_thread_count != 0);
@@ -440,7 +440,7 @@ struct _db_code_state_ **my_thread_var_dbug()
   In Visual Studio 2005 and later, default SIGABRT handler will overwrite
   any unhandled exception filter set by the application  and will try to
   call JIT debugger. This is not what we want, this we calling __debugbreak
-  to stop in debugger, if process is being debugged or to generate 
+  to stop in debugger, if process is being debugged or to generate
   EXCEPTION_BREAKPOINT and then handle_segfault will do its magic.
 */
 

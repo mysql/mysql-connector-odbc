@@ -7,16 +7,16 @@
   conditions of the GPLv2 as it is applied to this software, see the
   FLOSS License Exception
   <http://www.mysql.com/about/legal/licensing/foss-exception.html>.
-  
+
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published
   by the Free Software Foundation; version 2 of the License.
-  
+
   This program is distributed in the hope that it will be useful, but
   WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
   or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
   for more details.
-  
+
   You should have received a copy of the GNU General Public License along
   with this program; if not, write to the Free Software Foundation, Inc.,
   51 Franklin St, Fifth Floor, Boston, MA 02110-1301  USA
@@ -108,7 +108,7 @@ void myodbc_end()
     (MYSQL_VERSION_ID >= 50032 && MYSQL_VERSION_ID < 50100)) && \
     MYSQL_VERSION_ID < 50701
     /*
-       This eliminates the delay when my_end() is called and other threads
+       This eliminates the delay when mysys_end() is called and other threads
        have been initialized but not ended.
     */
     my_thread_end_wait_time= 0;
@@ -116,12 +116,12 @@ void myodbc_end()
 
 #ifdef MY_DONT_FREE_DBUG
     /*
-       Function my_end() was changed to deallocate DBUG memory by default,
+       Function mysys_end() was changed to deallocate DBUG memory by default,
        a flag MY_DONT_FREE_DBUG was added to disable this new behaviour
     */
-    my_end(MY_DONT_FREE_DBUG);
+    mysys_end(MY_DONT_FREE_DBUG);
 #else
-    my_end(0);
+    mysys_end(0);
 #endif
   }
 }

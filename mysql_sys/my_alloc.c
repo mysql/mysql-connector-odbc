@@ -209,7 +209,7 @@ void *alloc_root(MEM_ROOT *mem_root, size_t length)
   if (!is_mem_available(mem_root, length))
   {
     if (mem_root->error_for_capacity_exceeded)
-      my_error(EE_CAPACITY_EXCEEDED, MYF(0),
+      mysys_error(EE_CAPACITY_EXCEEDED, MYF(0),
                (ulonglong) mem_root->max_capacity);
     else
       DBUG_RETURN(NULL);
@@ -271,7 +271,7 @@ void *alloc_root(MEM_ROOT *mem_root, size_t length)
     if (!is_mem_available(mem_root, get_size))
     {
       if (mem_root->error_for_capacity_exceeded)
-        my_error(EE_CAPACITY_EXCEEDED, MYF(0),
+        mysys_error(EE_CAPACITY_EXCEEDED, MYF(0),
                  (ulonglong) mem_root->max_capacity);
       else
         DBUG_RETURN(NULL);

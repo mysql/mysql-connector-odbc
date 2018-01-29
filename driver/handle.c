@@ -7,16 +7,16 @@
   conditions of the GPLv2 as it is applied to this software, see the
   FLOSS License Exception
   <http://www.mysql.com/about/legal/licensing/foss-exception.html>.
-  
+
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published
   by the Free Software Foundation; version 2 of the License.
-  
+
   This program is distributed in the hope that it will be useful, but
   WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
   or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
   for more details.
-  
+
   You should have received a copy of the GNU General Public License along
   with this program; if not, write to the Free Software Foundation, Inc.,
   51 Franklin St, Fifth Floor, Boston, MA 02110-1301  USA
@@ -177,7 +177,7 @@ SQLRETURN SQL_API my_SQLAllocConnect(SQLHENV henv, SQLHDBC *phdbc)
 #ifdef _UNIX_
     long *thread_count;
     thread_count= (long*)pthread_getspecific(myodbc_thread_counter_key);
-    
+
     /* Increment or allocate the thread counter */
     if (thread_count)
     {
@@ -242,8 +242,8 @@ SQLRETURN SQL_API my_SQLAllocConnect(SQLHENV henv, SQLHDBC *phdbc)
     dbc->commit_flag= 0;
     dbc->stmt_options.max_rows= dbc->stmt_options.max_length= 0L;
     dbc->stmt_options.cursor_type= SQL_CURSOR_FORWARD_ONLY;  /* ODBC default */
-    /* 
-      Query timeout is unknown, assign with the first request in 
+    /*
+      Query timeout is unknown, assign with the first request in
       get_constmt_attr. It might never be needed, so we are not getting it
       at the connect stage
     */
@@ -357,7 +357,7 @@ SQLRETURN SQL_API my_SQLFreeConnect(SQLHDBC hdbc)
     {
       long *thread_count;
       thread_count= (long*)pthread_getspecific(myodbc_thread_counter_key);
-      
+
       if (thread_count)
       {
         if (*thread_count)
@@ -644,7 +644,8 @@ SQLRETURN SQL_API my_SQLFreeStmtExtended(SQLHSTMT hstmt,SQLUSMALLINT fOption,
     }
     else
     {
-      if(stmt->result && stmt->result->field_alloc.pre_alloc)
+      if(stmt->result && stmt->result->field_alloc &&
+         stmt->result->field_alloc->pre_alloc)
       {
         free_root(&stmt->result->field_alloc, MYF(0));
       }
@@ -877,7 +878,7 @@ SQLRETURN SQL_API SQLAllocHandle(SQLSMALLINT HandleType,
 
 /*
   @type    : ODBC 3.8
-  @purpose : Mapped to SQLCancel if HandleType is 
+  @purpose : Mapped to SQLCancel if HandleType is
 */
 SQLRETURN SQL_API SQLCancelHandle(SQLSMALLINT  HandleType,
                           SQLHANDLE    Handle)

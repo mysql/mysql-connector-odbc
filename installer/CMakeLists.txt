@@ -40,8 +40,13 @@ IF(WIN32)
     LINK_DIRECTORIES(${MYSQL_DIR}/lib)
   ENDIF(CMAKE_BUILD_TYPE STREQUAL "Debug")
 
-  TARGET_LINK_LIBRARIES(myodbc-installer myodbc-util ${ODBCLIB} ${ODBCINSTLIB}
-      ${MYSQL_CLIENT_LIBS})
+  IF(MYSQL8)
+    TARGET_LINK_LIBRARIES(myodbc-installer myodbc-util ${ODBCLIB} ${ODBCINSTLIB}
+        ${MYSQL_CLIENT_LIBS} legacy_stdio_definitions.lib)
+  ELSE()
+    TARGET_LINK_LIBRARIES(myodbc-installer myodbc-util ${ODBCLIB} ${ODBCINSTLIB}
+        ${MYSQL_CLIENT_LIBS})
+  ENDIF()
 
   IF (WITH_NODEFAULTLIB)
     SET_TARGET_PROPERTIES(myodbc-installer PROPERTIES

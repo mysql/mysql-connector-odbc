@@ -86,10 +86,15 @@ IF (NOT WIN32)
   ENDIF (GTK2_LIBRARIES)
 ENDIF (NOT WIN32)
 
-TARGET_LINK_LIBRARIES(myodbc5S
+IF(WIN32 AND MYSQL8)
+  TARGET_LINK_LIBRARIES(myodbc5S
+                      myodbc-util ${ODBCLIB} ${ODBCINSTLIB} ${MYSQL_CLIENT_LIBS}
+                      ${PLATFORM_LIBS} legacy_stdio_definitions.lib)
+ELSE(MYSQL8)
+  TARGET_LINK_LIBRARIES(myodbc5S
                       myodbc-util ${ODBCLIB} ${ODBCINSTLIB} ${MYSQL_CLIENT_LIBS}
                       ${PLATFORM_LIBS})
-
+ENDIF(MYSQL8)
 
 IF (WIN32)
     IF (WITH_NODEFAULTLIB)

@@ -58,17 +58,17 @@ size_t my_fread(FILE *stream, uchar *Buffer, size_t Count, myf MyFlags)
       if (ferror(stream))
       {
         char errbuf[MYSYS_STRERROR_SIZE];
-        my_error(EE_READ, MYF(0),
+        mysys_error(EE_READ, MYF(0),
                  my_filename(my_fileno(stream)),
-                 errno, my_strerror(errbuf, sizeof(errbuf), errno));
+                 errno, mysys_strerror(errbuf, sizeof(errbuf), errno));
       }
       else
       if (MyFlags & (MY_NABP | MY_FNABP))
       {
         char errbuf[MYSYS_STRERROR_SIZE];
-        my_error(EE_EOFERR, MYF(0),
+        mysys_error(EE_EOFERR, MYF(0),
                  my_filename(my_fileno(stream)), errno,
-                 my_strerror(errbuf, sizeof(errbuf), errno));
+                 mysys_strerror(errbuf, sizeof(errbuf), errno));
       }
     }
     set_my_errno(errno ? errno : -1);
@@ -131,9 +131,9 @@ size_t my_fwrite(FILE *stream, const uchar *Buffer, size_t Count, myf MyFlags)
         if (MyFlags & (MY_WME | MY_FAE | MY_FNABP))
         {
           char errbuf[MYSYS_STRERROR_SIZE];
-          my_error(EE_WRITE, MYF(0),
+          mysys_error(EE_WRITE, MYF(0),
                    my_filename(my_fileno(stream)),
-                   errno, my_strerror(errbuf, sizeof(errbuf), errno));
+                   errno, mysys_strerror(errbuf, sizeof(errbuf), errno));
         }
         writtenbytes= (size_t) -1;        /* Return that we got error */
         break;

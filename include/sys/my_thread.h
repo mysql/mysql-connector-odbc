@@ -178,7 +178,7 @@ void my_thread_exit(void *value_ptr);
 extern my_bool my_thread_global_init();
 extern void my_thread_global_reinit();
 extern void my_thread_global_end();
-extern my_bool my_thread_init();
+extern my_bool mysys_thread_init();
 extern void my_thread_end();
 
 C_MODE_END

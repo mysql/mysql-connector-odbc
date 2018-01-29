@@ -27,14 +27,25 @@
 
 #define DONT_DEFINE_VOID
 
-#if MYSQLCLIENT_STATIC_LINKING
+#if (MYSQLCLIENT_STATIC_LINKING)
+#if (MYSQL8)
+#define WIN32_LEAN_AND_MEAN
+#include <my_config.h>
+#include <my_sys.h>
+#include <mysql.h>
+#include <mysqld_error.h>
 
+#define my_bool bool
+#define mysys_end my_end
+
+#else // MYSQL8
 #include <my_global.h>
 #include <mysql.h>
 #include <my_sys.h>
 #include <my_list.h>
 #include <m_string.h>
 #include <mysqld_error.h>
+#endif // MYSQL8
 
 #else
 
@@ -43,6 +54,7 @@
 #include <mysql.h>
 #include "include/sys_main.h"
 #include <mysqld_error.h>
+#define myodbc_qsort my_qsort
 
 #endif
 
@@ -57,7 +69,6 @@ extern "C"
 #if MYSQL_VERSION_ID < MIN_MYSQL_VERSION
 # error "Connector/ODBC requires v4.1 (or later) of the MySQL client library"
 #endif
-
 
 #ifdef MYSQLCLIENT_STATIC_LINKING
 
@@ -87,7 +98,7 @@ extern "C"
 #define myodbc_mutex_trylock native_mutex_trylock
 #define myodbc_mutex_init native_mutex_init
 #define myodbc_mutex_destroy native_mutex_destroy
-#define sort_dynamic(A,cmp) my_qsort((A)->buffer, (A)->elements, (A)->size_of_element, (cmp))
+#define sort_dynamic(A,cmp) myodbc_qsort((A)->buffer, (A)->elements, (A)->size_of_element, (cmp))
 #define push_dynamic(A,B) insert_dynamic((A),(B))
 #define myodbc_snprintf my_snprintf
 

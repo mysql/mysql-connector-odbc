@@ -50,20 +50,20 @@ PSI_memory_key key_memory_win_IP_ADAPTER_ADDRESSES;
 #endif /* _WIN32 */
 
 	/* from my_init */
-char *	home_dir=0;
-const char      *my_progname=0;
-char		curr_dir[FN_REFLEN]= {0},
-		home_dir_buff[FN_REFLEN]= {0};
-ulong		my_stream_opened=0,my_file_opened=0, my_tmp_file_created=0;
-ulong           my_file_total_opened= 0;
-int		my_umask=0664, my_umask_dir=0777;
+char *	sys_home_dir=0;
+const char      *mysys_progname=0;
+char		sys_curr_dir[FN_REFLEN]= {0},
+		sys_home_dir_buff[FN_REFLEN]= {0};
+ulong		mysys_stream_opened=0,mysys_file_opened=0, mysys_tmp_file_created=0;
+ulong           mysys_file_total_opened= 0;
+int		mysys_umask=0664, mysys_umask_dir=0777;
 
 struct st_my_file_info my_file_info_default[MY_NFILE];
-uint   my_file_limit= MY_NFILE;
-struct st_my_file_info *my_file_info= my_file_info_default;
+uint   mysys_file_limit= MY_NFILE;
+struct st_my_file_info *mysys_file_info= my_file_info_default;
 
 	/* from mf_reccache.c */
-ulong my_default_record_cache_size=RECORD_CACHE_SIZE;
+ulong mysys_default_record_cache_size=RECORD_CACHE_SIZE;
 
 	/* from soundex.c */
 				/* ABCDEFGHIJKLMNOPQRSTUVWXYZ */
@@ -71,8 +71,8 @@ ulong my_default_record_cache_size=RECORD_CACHE_SIZE;
 const char *soundex_map=	  "01230120022455012623010202";
 
 	/* from my_malloc */
-USED_MEM* my_once_root_block=0;			/* pointer to first block */
-uint	  my_once_extra=ONCE_ALLOC_INIT;	/* Memory to alloc / block */
+USED_MEM* mysys_once_root_block=0;			/* pointer to first block */
+uint	  mysys_once_extra=ONCE_ALLOC_INIT;	/* Memory to alloc / block */
 
 	/* from my_largepage.c */
 #ifdef HAVE_LINUX_LARGE_PAGES
@@ -81,12 +81,12 @@ uint    my_large_page_size= 0;
 #endif
 
 	/* from errors.c */
-void (*error_handler_hook)(uint error, const char *str, myf MyFlags)=
-  my_message_stderr;
-void (*fatal_error_handler_hook)(uint error, const char *str, myf MyFlags)=
-  my_message_stderr;
-void (*local_message_hook)(enum loglevel ll, const char *format, va_list args)=
-  my_message_local_stderr;
+void (*sys_error_handler_hook)(uint error, const char *str, myf MyFlags)=
+  mysys_message_stderr;
+void (*fatal_sys_error_handler_hook)(uint error, const char *str, myf MyFlags)=
+  mysys_message_stderr;
+void (*sys_local_message_hook)(enum loglevel ll, const char *format, va_list args)=
+  mysys_message_local_stderr;
 
 static void enter_cond_dummy(void *a MY_ATTRIBUTE((unused)),
                              mysql_cond_t *b MY_ATTRIBUTE((unused)),
@@ -115,14 +115,14 @@ static int is_killed_dummy(const void *a MY_ATTRIBUTE((unused)))
   implementations will be set during server startup by
   init_server_components().
 */
-void (*enter_cond_hook)(void *, mysql_cond_t *, mysql_mutex_t *,
+void (*enter_sys_cond_hook)(void *, mysql_cond_t *, mysql_mutex_t *,
                         const PSI_stage_info *, PSI_stage_info *,
                         const char *, const char *, int)= enter_cond_dummy;
 
-void (*exit_cond_hook)(void *, const PSI_stage_info *,
+void (*exit_sys_cond_hook)(void *, const PSI_stage_info *,
                        const char *, const char *, int)= exit_cond_dummy;
 
-int (*is_killed_hook)(const void *)= is_killed_dummy;
+int (*is_sys_killed_hook)(const void *)= is_killed_dummy;
 
 #if defined(ENABLED_DEBUG_SYNC)
 /**
@@ -138,6 +138,6 @@ ulonglong query_performance_frequency, query_performance_offset;
 #endif
 
 	/* How to disable options */
-my_bool my_disable_locking=0;
-my_bool my_enable_symlinks= 1;
+my_bool mysys_disable_locking=0;
+my_bool mysys_enable_symlinks= 1;
 

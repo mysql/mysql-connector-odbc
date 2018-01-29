@@ -59,15 +59,15 @@ void pack_dirname(char * to, const char *from)
   if ((d_length= cleanup_dirname(to,to)) != 0)
   {
     length=0;
-    if (home_dir)
+    if (sys_home_dir)
     {
-      length= strlen(home_dir);
-      if (home_dir[length-1] == FN_LIBCHAR)
+      length= strlen(sys_home_dir);
+      if (sys_home_dir[length-1] == FN_LIBCHAR)
 	length--;				/* Don't test last '/' */
     }
     if (length > 1 && length < d_length)
     {						/* test if /xx/yy -> ~/yy */
-      if (memcmp(to,home_dir,length) == 0 && to[length] == FN_LIBCHAR)
+      if (memcmp(to,sys_home_dir,length) == 0 && to[length] == FN_LIBCHAR)
       {
 	to[0]=FN_HOMELIB;			/* Filename begins with ~ */
 	(void) my_stpmov(to+1,to+length);
@@ -77,7 +77,7 @@ void pack_dirname(char * to, const char *from)
     {						/* Test if cwd is ~/... */
       if (length > 1 && length < buff_length)
       {
-	if (memcmp(buff,home_dir,length) == 0 && buff[length] == FN_LIBCHAR)
+	if (memcmp(buff,sys_home_dir,length) == 0 && buff[length] == FN_LIBCHAR)
 	{
 	  buff[0]=FN_HOMELIB;
 	  (void) my_stpmov(buff+1,buff+length);
@@ -115,7 +115,7 @@ void pack_dirname(char * to, const char *from)
   "/~/" removes all before ~
   //" is same as "/", except on Win32 at start of a file
   "/./" is removed
-  Unpacks home_dir if "~/.." used
+  Unpacks sys_home_dir if "~/.." used
   Unpacks current dir if if "./.." used
 
   RETURN
@@ -171,23 +171,23 @@ size_t cleanup_dirname(char *to, const char *from)
 	  pos--;
 	  if (*pos == FN_HOMELIB && (pos == start || pos[-1] == FN_LIBCHAR))
 	  {
-	    if (!home_dir)
+	    if (!sys_home_dir)
 	    {
 	      pos+=length+1;			/* Don't unpack ~/.. */
 	      continue;
 	    }
-	    pos=my_stpcpy(buff,home_dir)-1;	/* Unpacks ~/.. */
+	    pos=my_stpcpy(buff,sys_home_dir)-1;	/* Unpacks ~/.. */
 	    if (*pos == FN_LIBCHAR)
 	      pos--;				/* home ended with '/' */
 	  }
 	  if (*pos == FN_CURLIB && (pos == start || pos[-1] == FN_LIBCHAR))
 	  {
-	    if (my_getwd(curr_dir,FN_REFLEN,MYF(0)))
+	    if (my_getwd(sys_curr_dir,FN_REFLEN,MYF(0)))
 	    {
 	      pos+=length+1;			/* Don't unpack ./.. */
 	      continue;
 	    }
-	    pos=my_stpcpy(buff,curr_dir)-1;	/* Unpacks ./.. */
+	    pos=my_stpcpy(buff,sys_curr_dir)-1;	/* Unpacks ./.. */
 	    if (*pos == FN_LIBCHAR)
 	      pos--;				/* home ended with '/' */
 	  }
@@ -284,7 +284,7 @@ size_t normalize_dirname(char *to, const char *from)
 
   @details
   - Uses normalize_dirname()
-  - Expands ~/... to home_dir/...
+  - Expands ~/... to sys_home_dir/...
   - Changes a UNIX filename to system filename (replaces / with \ on windows)
 
   @returns
@@ -324,7 +324,7 @@ size_t unpack_dirname(char * to, const char *from)
 static char * expand_tilde(char **path)
 {
   if (path[0][0] == FN_LIBCHAR)
-    return home_dir;			/* ~/ expanded to home */
+    return sys_home_dir;			/* ~/ expanded to home */
 #ifdef HAVE_GETPWNAM
   {
     char *str,save;

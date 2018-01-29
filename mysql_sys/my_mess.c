@@ -25,31 +25,31 @@
   which calls several other tools whose messages should be
   distinguishable from each other's, and from mysql_upgrade's.
 
-  This is low-level, in most cases, you should use my_message_local()
-  instead (which by default goes through my_message_local_stderr(),
+  This is low-level, in most cases, you should use mysys_message_local()
+  instead (which by default goes through mysys_message_local_stderr(),
   which is a wrapper around this function that adds a severity level).
 
   @param error    The error number. Currently unused.
   @param str      The message to print. Not trailing \n needed.
   @param MyFlags  ME_BELL to beep, or 0.
 */
-void my_message_stderr(uint error MY_ATTRIBUTE((unused)),
+void mysys_message_stderr(uint error MY_ATTRIBUTE((unused)),
                        const char *str, myf MyFlags)
 {
-  DBUG_ENTER("my_message_stderr");
+  DBUG_ENTER("mysys_message_stderr");
   DBUG_PRINT("enter",("message: %s",str));
   (void) fflush(stdout);
   if (MyFlags & ME_BELL)
     (void) fputc('\007', stderr);
-  if (my_progname)
+  if (mysys_progname)
   {
     size_t l;
     const char *r;
 
-    if ((r= strrchr(my_progname, FN_LIBCHAR)))
+    if ((r= strrchr(mysys_progname, FN_LIBCHAR)))
       r++;
     else
-      r= my_progname;
+      r= mysys_progname;
 
     l= strlen(r);
  #ifdef _WIN32

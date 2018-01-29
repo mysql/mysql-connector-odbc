@@ -42,7 +42,7 @@ extern PSI_cond_key key_IO_CACHE_SHARE_cond,
 
 #endif /* HAVE_PSI_INTERFACE */
 
-extern PSI_stage_info stage_waiting_for_table_level_lock;
+extern PSI_stage_info sys_stage_waiting_for_table_level_lock;
 
 extern mysql_mutex_t THR_LOCK_malloc, THR_LOCK_open, THR_LOCK_keycache;
 extern mysql_mutex_t THR_LOCK_lock, THR_LOCK_net;
@@ -109,9 +109,9 @@ extern File     my_win_open(const char *path, int oflag);
 extern int      my_win_close(File fd);
 extern size_t   my_win_read(File fd, uchar *buffer, size_t  count);
 extern size_t   my_win_write(File fd, const uchar *buffer, size_t count);
-extern size_t   my_win_pread(File fd, uchar *buffer, size_t count, 
+extern size_t   my_win_pread(File fd, uchar *buffer, size_t count,
                              my_off_t offset);
-extern size_t   my_win_pwrite(File fd, const uchar *buffer, size_t count, 
+extern size_t   my_win_pwrite(File fd, const uchar *buffer, size_t count,
                               my_off_t offset);
 extern my_off_t my_win_lseek(File fd, my_off_t pos, int whence);
 extern int      my_win_chsize(File fd,  my_off_t newlength);

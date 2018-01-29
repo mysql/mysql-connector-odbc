@@ -7,16 +7,16 @@
   conditions of the GPLv2 as it is applied to this software, see the
   FLOSS License Exception
   <http://www.mysql.com/about/legal/licensing/foss-exception.html>.
-  
+
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published
   by the Free Software Foundation; version 2 of the License.
-  
+
   This program is distributed in the hope that it will be useful, but
   WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
   or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
   for more details.
-  
+
   You should have received a copy of the GNU General Public License along
   with this program; if not, write to the Free Software Foundation, Inc.,
   51 Franklin St, Fifth Floor, Boston, MA 02110-1301  USA
@@ -37,8 +37,8 @@
 const SQLULEN sql_select_unlimited= (SQLULEN)-1;
 
 /**
-  Execute a SQL statement with setting sql_select_limit for each 
-  execution as SQL_ATTR_MAX_ROWS applies to all result sets on 
+  Execute a SQL statement with setting sql_select_limit for each
+  execution as SQL_ATTR_MAX_ROWS applies to all result sets on
   the statement and not connection.
 
   @param[in] dbc            The database connection
@@ -51,7 +51,7 @@ SQLRETURN exec_stmt_query(STMT *stmt, const char *query,
                           SQLULEN query_length, my_bool req_lock)
 {
   SQLRETURN rc;
-  if(!SQL_SUCCEEDED(rc= set_sql_select_limit(stmt->dbc, 
+  if(!SQL_SUCCEEDED(rc= set_sql_select_limit(stmt->dbc,
                           stmt->stmt_options.max_rows, req_lock)))
   {
     /* if setting sql_select_limit fails, the query will probably fail anyway too */
@@ -73,11 +73,11 @@ SQLRETURN exec_stmt_query(STMT *stmt, const char *query,
   @param[in] req_lock  The flag if dbc->lock thread lock should be used
                        when executing a query
   */
-SQLRETURN odbc_stmt(DBC *dbc, const char *query, 
+SQLRETURN odbc_stmt(DBC *dbc, const char *query,
                     SQLULEN query_length, my_bool req_lock)
 {
   SQLRETURN result= SQL_SUCCESS;
- 
+
   if (req_lock)
   {
     myodbc_mutex_lock(&dbc->lock);
@@ -209,7 +209,7 @@ void fix_result_types(STMT *stmt)
       irrec->length /= sizeof(SQL_WCHAR);
     irrec->octet_length= get_transfer_octet_length(stmt, field);
     irrec->display_size= get_display_size(stmt, field);
-    /* According ODBC specs(http://msdn.microsoft.com/en-us/library/ms713558%28v=VS.85%29.aspx) 
+    /* According ODBC specs(http://msdn.microsoft.com/en-us/library/ms713558%28v=VS.85%29.aspx)
       "SQL_DESC_OCTET_LENGTH ... For variable-length character or binary types,
       this is the maximum length in bytes. This value does not include the null
       terminator" Thus there is no need to add 1 to octet_length for char types */
@@ -523,7 +523,7 @@ copy_ansi_result(STMT *stmt,
                           stmt->dbc->ds->handle_binary_as_char;
 
   CHARSET_INFO *to_cs= stmt->dbc->ansi_charset_info,
-               *from_cs= get_charset(field->charsetnr && (!convert_binary) ? 
+               *from_cs= get_charset(field->charsetnr && (!convert_binary) ?
                                      field->charsetnr : UTF8_CHARSET_NUMBER,
                                      MYF(0));
 
@@ -1103,7 +1103,7 @@ SQLSMALLINT get_sql_data_type(STMT *stmt, MYSQL_FIELD *field, char *buff)
         buff= myodbc_stpmov(buff, "int");
       else
         buff= myodbc_stpmov(buff, "bigint");
-      
+
       if (field->flags & UNSIGNED_FLAG)
         (void)myodbc_stpmov(buff, " unsigned");
     }
@@ -1959,7 +1959,7 @@ SQLLEN get_bookmark_value(SQLSMALLINT fCType, SQLPOINTER rgbValue)
   {
   case SQL_C_CHAR:
   case SQL_C_BINARY:
-    return atol((SQLCHAR *) rgbValue);     
+    return atol((SQLCHAR *) rgbValue);
 
   case SQL_C_WCHAR:
     return sqlwchartoul((SQLWCHAR *)rgbValue, NULL);
@@ -1990,7 +1990,7 @@ SQLLEN get_bookmark_value(SQLSMALLINT fCType, SQLPOINTER rgbValue)
 
 int str_to_ts(SQL_TIMESTAMP_STRUCT *ts, const char *str, int len, int zeroToMin,
               BOOL dont_use_set_locale)
-{ 
+{
     uint year, length;
     char buff[DATETIME_DIGITS + 1], *to;
     const char *end;
@@ -2062,7 +2062,7 @@ int str_to_ts(SQL_TIMESTAMP_STRUCT *ts, const char *str, int len, int zeroToMin,
     {
       *to= 0;
     }
-    
+
     year= (digit(buff[0])*1000+digit(buff[1])*100+digit(buff[2])*10+digit(buff[3]));
 
     if (!strncmp(&buff[4], "00", 2) || !strncmp(&buff[6], "00", 2))
@@ -2094,7 +2094,7 @@ int str_to_ts(SQL_TIMESTAMP_STRUCT *ts, const char *str, int len, int zeroToMin,
 */
 
 my_bool str_to_time_st(SQL_TIME_STRUCT *ts, const char *str)
-{ 
+{
     char buff[24],*to, *tokens[3] = {0, 0, 0};
     int num= 0, int_hour=0, int_min= 0, int_sec= 0;
     SQL_TIME_STRUCT tmp_time;
@@ -2111,8 +2111,8 @@ my_bool str_to_time_st(SQL_TIME_STRUCT *ts, const char *str)
             *to++= *str;
         else if (num < 2)
         {
-          /* 
-            terminate the string and remember the beginning of the 
+          /*
+            terminate the string and remember the beginning of the
             new one only if the time component number is not out of
             range
           */
@@ -2236,7 +2236,7 @@ ulong str_to_time_as_long(const char *str, uint length)
         while ( str != end && isdigit(str[0]) )
         {
             tmp_value= tmp_value*10 + (uint) (uchar) (*str - '0');
-            ++str; 
+            ++str;
             --length;
         }
         date[i]= tmp_value;
@@ -2278,14 +2278,14 @@ int check_if_server_is_alive( DBC *dbc )
 
                     CR_COMMANDS_OUT_OF_SYNC
                     CR_SERVER_GONE_ERROR
-                    CR_UNKNOWN_ERROR   
+                    CR_UNKNOWN_ERROR
 
                 But if you do a mysql_ping() after bringing down the server
                 you get CR_SERVER_LOST.
 
                 PAH - 9.MAR.06
             */
-            
+
             if ( mysql_errno( &dbc->mysql ) == CR_SERVER_LOST )
                 result = 1;
         }
@@ -2495,8 +2495,8 @@ void end_query_log(FILE *query_log)
 
 my_bool is_minimum_version(const char *server_version,const char *version)
 {
-  /* 
-    Variables have to be initialized if we don't want to get random 
+  /*
+    Variables have to be initialized if we don't want to get random
     values after sscanf
   */
   uint major1= 0, major2= 0, minor1= 0, minor2= 0, build1= 0, build2= 0;
@@ -2527,14 +2527,17 @@ my_bool is_minimum_version(const char *server_version,const char *version)
  @param[in]   escape_id     Escaping an identified that will be quoted
 
 */
-ulong myodbc_escape_string(MYSQL *mysql __attribute__((unused)),
+ulong myodbc_escape_string(STMT *stmt,
                            char *to, ulong to_length,
                            const char *from, ulong length, int escape_id)
 {
   const char *to_start= to;
   const char *end, *to_end=to_start + (to_length ? to_length-1 : 2*length);
   my_bool overflow= FALSE;
-  CHARSET_INFO *charset_info= mysql->charset;
+  /*get_charset_by_csname(charset,
+                        MYF(MY_CS_PRIMARY),
+                        MYF(0));*/
+  CHARSET_INFO *charset_info= stmt->dbc->cxn_charset_info;
   my_bool use_mb_flag= use_mb(charset_info);
   for (end= from + length; from < end; ++from)
   {
@@ -3139,7 +3142,7 @@ SQLCHAR* proc_get_param_name(SQLCHAR *proc, int len, SQLCHAR *cname)
 
   while ((len--) && (quote_symbol != '\0' ? *proc != quote_symbol : !isspace(*proc)))
     *(cname++)= *(proc++);
-  
+
   return quote_symbol ? proc + 1 : proc;
 }
 
@@ -3170,7 +3173,7 @@ SQLCHAR* proc_get_param_dbtype(SQLCHAR *proc, int len, SQLCHAR *ptype)
     ptype= trim_str;
     (*ptype)= 0;
   }
-  
+
   /* trim spaces from the end */
   ptype-=1;
   while (isspace(*(ptype)))
@@ -3322,7 +3325,7 @@ SQLUINTEGER proc_parse_sizes(SQLCHAR *ptype, int len, SQLSMALLINT *dec)
 {
   int parsed= 0;
   SQLUINTEGER param_size= 0;
-  
+
   if (ptype == NULL)
   {
     /* That shouldn't happen though */
@@ -3346,7 +3349,7 @@ SQLUINTEGER proc_parse_sizes(SQLCHAR *ptype, int len, SQLSMALLINT *dec)
     }
 
     /* 1st number is column size, 2nd is decimal digits */
-    if (!parsed) 
+    if (!parsed)
       param_size= atoi(number_to_parse);
     else
       *dec= (SQLSMALLINT)atoi(number_to_parse);
@@ -3372,7 +3375,7 @@ SQLUINTEGER proc_parse_enum_set(SQLCHAR *ptype, int len, BOOL is_enum)
 {
   SQLUINTEGER total_len= 0, elem_num= 0, max_len= 0, cur_len= 0;
   char quote_symbol= '\0';
-  
+
   /* theoretically ')' can be inside quotes as part of enum value */
   while ((len > 0) && (quote_symbol != '\0' || *ptype!= ')'))
   {
@@ -3416,10 +3419,10 @@ SQLUINTEGER proc_get_param_size(SQLCHAR *ptype, int len, int sql_type_index, SQL
   SQLUINTEGER param_size= SQL_TYPE_MAP_values[sql_type_index].type_length;
   SQLCHAR *start_pos= strchr(ptype, '(');
   SQLCHAR *end_pos= strrchr(ptype, ')');
-  
+
   /* no decimal digits by default */
   *dec= SQL_NO_TOTAL;
-  
+
   switch (SQL_TYPE_MAP_values[sql_type_index].mysql_type)
   {
     /* these type sizes need to be parsed */
@@ -3450,7 +3453,7 @@ SQLUINTEGER proc_get_param_size(SQLCHAR *ptype, int len, int sql_type_index, SQL
       else /* just normal character type */
       {
         param_size= proc_parse_sizes(start_pos, end_pos - start_pos, dec);
-        if (param_size == 0 && 
+        if (param_size == 0 &&
             SQL_TYPE_MAP_values[sql_type_index].sql_type == SQL_BINARY)
            param_size= 1;
       }
@@ -3461,7 +3464,7 @@ SQLUINTEGER proc_get_param_size(SQLCHAR *ptype, int len, int sql_type_index, SQL
 
       /* fall through*/
     case MYSQL_TYPE_DATETIME:
-    
+
     case MYSQL_TYPE_TINY:
     case MYSQL_TYPE_SHORT:
     case MYSQL_TYPE_INT24:
@@ -3487,12 +3490,12 @@ Gets parameter columns size
 
 Returns parameter octet length
 */
-SQLLEN proc_get_param_col_len(STMT *stmt, int sql_type_index, SQLULEN col_size, 
+SQLLEN proc_get_param_col_len(STMT *stmt, int sql_type_index, SQLULEN col_size,
                               SQLSMALLINT decimal_digits, unsigned int flags, char * str_buff)
 {
   MYSQL_FIELD temp_fld;
 
-  temp_fld.length= (unsigned long)col_size + 
+  temp_fld.length= (unsigned long)col_size +
     (SQL_TYPE_MAP_values[sql_type_index].mysql_type == MYSQL_TYPE_DECIMAL ?
     1 + (flags & UNSIGNED_FLAG ? 0 : 1) : 0); /* add 1for sign, if needed, and 1 for decimal point */
 
@@ -3524,12 +3527,12 @@ SQLLEN proc_get_param_col_len(STMT *stmt, int sql_type_index, SQLULEN col_size,
 
   Returns parameter octet length
 */
-SQLLEN proc_get_param_octet_len(STMT *stmt, int sql_type_index, SQLULEN col_size, 
+SQLLEN proc_get_param_octet_len(STMT *stmt, int sql_type_index, SQLULEN col_size,
                                 SQLSMALLINT decimal_digits, unsigned int flags, char * str_buff)
 {
   MYSQL_FIELD temp_fld;
 
-  temp_fld.length= (unsigned long)col_size + 
+  temp_fld.length= (unsigned long)col_size +
     (SQL_TYPE_MAP_values[sql_type_index].mysql_type == MYSQL_TYPE_DECIMAL ?
     1 + (flags & UNSIGNED_FLAG ? 0 : 1) : 0); /* add 1for sign, if needed, and 1 for decimal point */
 
@@ -3572,7 +3575,7 @@ char *proc_param_tokenize(char *str, int *params_num)
     ++str;
     --len;
   }
-  
+
   if (len && *str && *str != ')')
     *params_num= 1;
 
@@ -3623,7 +3626,7 @@ char *proc_param_tokenize(char *str, int *params_num)
 char *proc_param_next_token(char *str, char *str_end)
 {
   int end_token= strlen(str);
-  
+
   /* return the next string after \0 byte */
   if (str + end_token + 1 < str_end)
     return (char*)(str + end_token + 1);
@@ -3903,7 +3906,7 @@ char* get_limit_numbers(CHARSET_INFO* cs, char *query, char * query_end,
   // Skip spaces after LIMIT
   while ((query_end > query) && myodbc_isspace(cs, query, query_end))
     ++query;
-  
+
   // Collect all numbers for the offset
   while ((query_end > query) && myodbc_isnum(cs, query, query_end))
   {
@@ -3975,7 +3978,7 @@ const char* check_row_locking(CHARSET_INFO* cs, char * query, char * query_end, 
     check = lock_in_share_mode;
     index_max = 4;
   }
-    
+
   for (i = 0; i < index_max; ++i)
   {
     token = mystr_get_prev_token(cs, &before_token, query);
@@ -4006,7 +4009,7 @@ MY_LIMIT_CLAUSE find_position4limit(CHARSET_INFO* cs, char *query, char * query_
   else // No LIMIT in SELECT
   {
     const char *locking_pos = NULL;
-    
+
     if ((locking_pos = check_row_locking(cs, query, query_end, FALSE)) ||
         (locking_pos = check_row_locking(cs, query, query_end, TRUE)))
     {
@@ -4160,12 +4163,12 @@ SQLRETURN set_query_timeout(STMT *stmt, SQLULEN new_value)
 SQLULEN get_query_timeout(STMT *stmt)
 {
   SQLULEN query_timeout= SQL_QUERY_TIMEOUT_DEFAULT; /* 0 */
-  
+
   if (is_minimum_version(stmt->dbc->mysql.server_version, "5.7.8"))
   {
     /* Be cautious with very long values even if they don't make sense */
     char query_timeout_char[32]= {0};
-    uint length= get_session_variable(stmt, "MAX_EXECUTION_TIME", 
+    uint length= get_session_variable(stmt, "MAX_EXECUTION_TIME",
                                       (char*)query_timeout_char);
     /* Terminate the string just in case */
     query_timeout_char[length]= 0;
@@ -4182,7 +4185,7 @@ const char get_identifier_quote(STMT *stmt)
 
   if (is_minimum_version(stmt->dbc->mysql.server_version, "3.23.06"))
   {
-    /* 
+    /*
       The full list of all SQL modes takes over 512 symbols, so we reserve
       some for the future
      */
@@ -4192,7 +4195,7 @@ const char get_identifier_quote(STMT *stmt)
       with the first non-space value. Thus (sql_mode+1).
     */
     uint length= get_session_variable(stmt, "SQL_MODE", (char*)(sql_mode+1));
-    
+
     const char *end=  sql_mode + length;
     if (find_first_token(stmt->dbc->ansi_charset_info, sql_mode, end, "ANSI_QUOTES"))
     {
@@ -4220,7 +4223,7 @@ my_bool myodbc_net_realloc(NET *net, size_t length)
     net->last_errno= ER_NET_PACKET_TOO_LARGE;
     return 1;
   }
-  pkt_length = (length+IO_SIZE-1) & ~(IO_SIZE-1); 
+  pkt_length = (length+IO_SIZE-1) & ~(IO_SIZE-1);
   /*
     We must allocate some extra bytes for the end 0 and to be able to
     read big compressed blocks + 1 safety byte since uint3korr() in

@@ -7,16 +7,16 @@
   conditions of the GPLv2 as it is applied to this software, see the
   FLOSS License Exception
   <http://www.mysql.com/about/legal/licensing/foss-exception.html>.
-  
+
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published
   by the Free Software Foundation; version 2 of the License.
-  
+
   This program is distributed in the hope that it will be useful, but
   WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
   or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
   for more details.
-  
+
   You should have received a copy of the GNU General Public License along
   with this program; if not, write to the Free Software Foundation, Inc.,
   51 Franklin St, Fifth Floor, Boston, MA 02110-1301  USA
@@ -37,8 +37,8 @@
   @type    : internal
   @purpose : validate for give table type from the list
 */
-static my_bool check_table_type(const SQLCHAR *TableType, 
-                                const char *req_type, 
+static my_bool check_table_type(const SQLCHAR *TableType,
+                                const char *req_type,
                                 uint       len)
 {
     char    req_type_quoted[NAME_LEN+2], req_type_quoted1[NAME_LEN+2];
@@ -48,14 +48,14 @@ static my_bool check_table_type(const SQLCHAR *TableType,
     if ( !TableType || !TableType[0] )
         return found;
 
-    /* 
-      Check and return only 'user' tables from current DB and 
-      don't return any tables when its called with 
+    /*
+      Check and return only 'user' tables from current DB and
+      don't return any tables when its called with
       SYSTEM TABLES.
-  
+
       Expected Types:
-        "TABLE", "VIEW", "SYSTEM TABLE", "GLOBAL TEMPORARY", 
-        "LOCAL TEMPORARY", "ALIAS", "SYNONYM",  
+        "TABLE", "VIEW", "SYSTEM TABLE", "GLOBAL TEMPORARY",
+        "LOCAL TEMPORARY", "ALIAS", "SYNONYM",
     */
 
     type= strstr(table_type,",");
@@ -64,8 +64,8 @@ static my_bool check_table_type(const SQLCHAR *TableType,
     while ( type )
     {
         while ( isspace(*(table_type)) ) ++table_type;
-        if ( !myodbc_casecmp(table_type,req_type,len) || 
-             !myodbc_casecmp(table_type,req_type_quoted,len+2) || 
+        if ( !myodbc_casecmp(table_type,req_type,len) ||
+             !myodbc_casecmp(table_type,req_type_quoted,len+2) ||
              !myodbc_casecmp(table_type,req_type_quoted1,len+2) )
         {
             found= 1;
@@ -77,7 +77,7 @@ static my_bool check_table_type(const SQLCHAR *TableType,
     if ( !found )
     {
         while ( isspace(*(table_type)) ) ++table_type;
-        if ( !myodbc_casecmp(table_type,req_type,len) || 
+        if ( !myodbc_casecmp(table_type,req_type,len) ||
              !myodbc_casecmp(table_type,req_type_quoted,len+2) ||
              !myodbc_casecmp(table_type,req_type_quoted1,len+2) )
             found= 1;
@@ -112,11 +112,11 @@ static MYSQL_RES *server_list_dbkeys(STMT *stmt,
     to= myodbc_stpmov(buff, "SHOW KEYS FROM `");
     if (catalog_len)
     {
-      to+= myodbc_escape_string(mysql, to, (ulong)(sizeof(buff) - (to - buff)),
+      to+= myodbc_escape_string(stmt, to, (ulong)(sizeof(buff) - (to - buff)),
                                 (char *)catalog, catalog_len, 1);
       to= myodbc_stpmov(to, "`.`");
     }
-    to+= myodbc_escape_string(mysql, to, (ulong)(sizeof(buff) - (to - buff)),
+    to+= myodbc_escape_string(stmt, to, (ulong)(sizeof(buff) - (to - buff)),
                               (char *)table, table_len, 1);
     to= myodbc_stpmov(to, "`");
 
@@ -493,7 +493,7 @@ SQLTablePrivileges
 */
 /*
   @type    : internal
-  @purpose : checks for the grantability 
+  @purpose : checks for the grantability
 */
 static my_bool is_grantable(char *grant_list)
 {
@@ -561,7 +561,7 @@ static MYSQL_RES *table_privs_raw_data( STMT *      stmt,
 #define MY_MAX_TABPRIV_COUNT 21
 #define MY_MAX_COLPRIV_COUNT 3
 
-char *SQLTABLES_priv_values[]= 
+char *SQLTABLES_priv_values[]=
 {
     NULL,"",NULL,NULL,NULL,NULL,NULL
 };
@@ -736,7 +736,7 @@ MYSQL_FIELD SQLCOLUMNS_priv_fields[]=
 const uint SQLCOLUMNS_PRIV_FIELDS= array_elements(SQLCOLUMNS_priv_values);
 
 
-SQLRETURN 
+SQLRETURN
 list_column_priv_no_i_s(SQLHSTMT hstmt,
                         SQLCHAR *catalog, SQLSMALLINT catalog_len,
                         SQLCHAR *schema __attribute__((unused)),
@@ -841,7 +841,7 @@ MYSQL_RES *table_status_no_i_s(STMT        *stmt,
 	if (catalog && *catalog)
 	{
 		to= myodbc_stpmov(to, "FROM `");
-		to+= myodbc_escape_string(mysql, to, (ulong)(sizeof(buff) - (to - buff)),
+		to+= myodbc_escape_string(stmt, to, (ulong)(sizeof(buff) - (to - buff)),
 			(char *)catalog, catalog_length, 1);
 		to= myodbc_stpmov(to, "` ");
 	}
@@ -860,7 +860,7 @@ MYSQL_RES *table_status_no_i_s(STMT        *stmt,
 		if (wildcard)
 			to+= mysql_real_escape_string(mysql, to, (char *)table, table_length);
 		else
-			to+= myodbc_escape_string(mysql, to, (ulong)(sizeof(buff) - (to - buff)),
+			to+= myodbc_escape_string(stmt, to, (ulong)(sizeof(buff) - (to - buff)),
 			(char *)table, table_length, 0);
 		to= myodbc_stpmov(to, "'");
 	}
@@ -985,10 +985,10 @@ char *SQLFORE_KEYS_values[]= {
 
 
 /*
- * Get a record from the array if exists otherwise allocate a new 
- * record and return.  
+ * Get a record from the array if exists otherwise allocate a new
+ * record and return.
  *
- * @param records MY_FOREIGN_KEY_FIELD record 
+ * @param records MY_FOREIGN_KEY_FIELD record
  * @param recnum  0-based record number
  *
  * @return The requested record or NULL if it doesn't exist
@@ -1012,8 +1012,8 @@ MY_FOREIGN_KEY_FIELD *fk_get_rec(DYNAMIC_ARRAY *records, unsigned int recnum)
 }
 
 
-/* 
-  If the foreign keys associated with a primary key are requested, the 
+/*
+  If the foreign keys associated with a primary key are requested, the
   result set is ordered by FKTABLE_CAT, FKTABLE_NAME, KEY_SEQ, PKTABLE_NAME
 */
 static int sql_fk_sort(const void *var1, const void *var2)
@@ -1040,8 +1040,8 @@ static int sql_fk_sort(const void *var1, const void *var2)
 }
 
 
-/* 
-  If the primary keys associated with a foreign key are requested, the 
+/*
+  If the primary keys associated with a foreign key are requested, the
   result set is ordered by PKTABLE_CAT, PKTABLE_NAME, KEY_SEQ, FKTABLE_NAME
 */
 static int sql_pk_sort(const void *var1, const void *var2)
@@ -1102,7 +1102,7 @@ SQLRETURN foreign_keys_no_i_s(SQLHSTMT hstmt,
 
   /* Get the list of tables that match szCatalog and szTable */
   myodbc_mutex_lock(&stmt->dbc->lock);
-  local_res= table_status(stmt, szFkCatalogName, cbFkCatalogName, szFkTableName, 
+  local_res= table_status(stmt, szFkCatalogName, cbFkCatalogName, szFkTableName,
                     cbFkTableName, FALSE, TRUE, TRUE);
   if (!local_res && mysql_errno(&stmt->dbc->mysql))
   {
@@ -1124,7 +1124,7 @@ SQLRETURN foreign_keys_no_i_s(SQLHSTMT hstmt,
       mysql_free_result(stmt->result);
     stmt->result= server_show_create_table(stmt,
                                            szFkCatalogName, cbFkCatalogName,
-                                           (SQLCHAR *)table_row[0], 
+                                           (SQLCHAR *)table_row[0],
                                            (SQLSMALLINT)lengths[0]);
 
     if (!stmt->result)
@@ -1137,7 +1137,7 @@ SQLRETURN foreign_keys_no_i_s(SQLHSTMT hstmt,
       goto empty_set_unlock;
     }
     myodbc_mutex_unlock(&stmt->dbc->lock);
-   
+
     /* Convert mysql fields to data that odbc wants */
     alloc= &stmt->alloc_root;
 
@@ -1145,7 +1145,7 @@ SQLRETURN foreign_keys_no_i_s(SQLHSTMT hstmt,
     {
       lengths= mysql_fetch_lengths(stmt->result);
       if (lengths[1])
-      {    
+      {
         const char Fk_keywords[2][12]= {"FOREIGN KEY", "REFERENCES"};
         const char Fk_ref_action[2][12]= {"ON UPDATE", "ON DELETE"};
         const char *pos, *end_pos, *bracket_end, *comma_pos;
@@ -1156,7 +1156,7 @@ SQLRETURN foreign_keys_no_i_s(SQLHSTMT hstmt,
         const char *token= row[1];
 
         quote_char= get_identifier_quote(stmt);
-        while ((token= find_first_token(stmt->dbc->ansi_charset_info, 
+        while ((token= find_first_token(stmt->dbc->ansi_charset_info,
                               token, end, "CONSTRAINT")) != NULL)
         {
           pos= token;
@@ -1164,16 +1164,16 @@ SQLRETURN foreign_keys_no_i_s(SQLHSTMT hstmt,
           key_seq= 0;
 
           /* get constraint name */
-          pos= my_next_token(NULL, &pos, NULL, 
+          pos= my_next_token(NULL, &pos, NULL,
                  quote_char ? quote_char : ' ');
-          end_pos= my_next_token(pos, &pos, constraint_name, 
+          end_pos= my_next_token(pos, &pos, constraint_name,
                      quote_char ? quote_char : ' ');
           token= end_pos;
 
           for (key_search= 0; key_search < 2; ++key_search)
           {
             /* get [FOREIGN KEY | REFERENCES] position */
-            token= find_first_token(stmt->dbc->ansi_charset_info, token - 1, 
+            token= find_first_token(stmt->dbc->ansi_charset_info, token - 1,
                                       end, Fk_keywords[key_search]);
             token += strlen(Fk_keywords[key_search]);
             token= skip_leading_spaces(token);
@@ -1183,16 +1183,16 @@ SQLRETURN foreign_keys_no_i_s(SQLHSTMT hstmt,
             if (*token != '(')
             {
               pos= token;
-              pos= my_next_token(NULL, &pos, NULL, 
+              pos= my_next_token(NULL, &pos, NULL,
                      quote_char ? quote_char : ' ');
-              end_pos= my_next_token(pos, &pos, table_name, 
+              end_pos= my_next_token(pos, &pos, table_name,
                          quote_char ? quote_char : ' ');
               token= end_pos;
             }
 
             token= skip_leading_spaces(token);
-            /* 
-               get foreign key and primary column name 
+            /*
+               get foreign key and primary column name
                in loop 1 and 2 respectively
             */
             if (*token == '(')
@@ -1209,15 +1209,15 @@ SQLRETURN foreign_keys_no_i_s(SQLHSTMT hstmt,
 
               /* Only now it is safe to look for closing parenthese */
               bracket_end= my_next_token(NULL, &bracket_end, NULL, ')');
-              /* 
-                index position need to be maintained for both PK column 
-                and FK column to fetch proper record    
+              /*
+                index position need to be maintained for both PK column
+                and FK column to fetch proper record
               */
               if (key_search == 0)
                 last_index= index;
               else
                 index= last_index;
-              do 
+              do
               {
                 fkRows= fk_get_rec(&records, index);
                 if (!fkRows)
@@ -1230,11 +1230,11 @@ SQLRETURN foreign_keys_no_i_s(SQLHSTMT hstmt,
 
                 if (comma_pos > bracket_end || comma_pos == NULL)
                 {
-                  /* 
+                  /*
                     TODO: make the length calculation more efficient and simple.
                           Add checking for negative values.
                   */
-                  memcpy(buffer, pos + quote_char_length, 
+                  memcpy(buffer, pos + quote_char_length,
                            bracket_end - pos - quote_char_length * 2 - 1);
                   buffer[bracket_end - pos - quote_char_length * 2 - 1]= '\0';
                   if (key_search == 0)
@@ -1263,11 +1263,11 @@ SQLRETURN foreign_keys_no_i_s(SQLHSTMT hstmt,
                 }
                 else
                 {
-                  memcpy(buffer, pos + quote_char_length, 
+                  memcpy(buffer, pos + quote_char_length,
                            comma_pos - pos - quote_char_length * 2 - 1);
                   buffer[comma_pos - pos - quote_char_length * 2 - 1]= '\0';
                   if (key_search == 0)
-                  {    
+                  {
                     myodbc_stpmov(fkRows->FKCOLUMN_NAME, buffer);
                   }
                   else
@@ -1303,7 +1303,7 @@ SQLRETURN foreign_keys_no_i_s(SQLHSTMT hstmt,
             bracket_end= comma_pos= pos= token;
             bracket_end= my_next_token(NULL, &bracket_end, NULL, ')');
             comma_pos= my_next_token(NULL, &comma_pos, NULL, ',');
-            pos= find_first_token(stmt->dbc->ansi_charset_info, pos - 1, 
+            pos= find_first_token(stmt->dbc->ansi_charset_info, pos - 1,
               comma_pos ?
                ((comma_pos < bracket_end) ? comma_pos : bracket_end)
                : bracket_end,
@@ -1354,7 +1354,7 @@ SQLRETURN foreign_keys_no_i_s(SQLHSTMT hstmt,
     goto empty_set;
   }
 
-  /* 
+  /*
     If the primary keys associated with a foreign key are requested, then
     sort order is PKTABLE_CAT, PKTABLE_NAME, KEY_SEQ, FKTABLE_NAME
     Sort order used same as present in no_i_s case, but it is different from
@@ -1365,8 +1365,8 @@ SQLRETURN foreign_keys_no_i_s(SQLHSTMT hstmt,
     sort_dynamic(&records, sql_pk_sort);
   }
 
-  /* 
-    if foreign keys associated with a primary key are requested 
+  /*
+    if foreign keys associated with a primary key are requested
     then sort order is FKTABLE_CAT, FKTABLE_NAME, KEY_SEQ, PKTABLE_NAME
     Sort order used same as present in no_i_s case, but it is different from
     http://msdn.microsoft.com/en-us/library/windows/desktop/ms709315(v=vs.85).aspx
@@ -1391,7 +1391,7 @@ SQLRETURN foreign_keys_no_i_s(SQLHSTMT hstmt,
 
   data= tempdata;
   fkRows= (MY_FOREIGN_KEY_FIELD *) records.buffer;
-  index= 0;  
+  index= 0;
   while (index < records.elements)
   {
     if (szPkTableName && szPkTableName[0])
@@ -1408,7 +1408,7 @@ SQLRETURN foreign_keys_no_i_s(SQLHSTMT hstmt,
     data[2]= strdup_root(alloc, fkRows[index].PKTABLE_NAME);  /* PKTABLE_NAME */
     data[3]= strdup_root(alloc, fkRows[index].PKCOLUMN_NAME); /* PKCOLUMN_NAME */
 
-    data[4]= strdup_root(alloc, fkRows[index].FKTABLE_CAT);   /* FKTABLE_CAT */ 
+    data[4]= strdup_root(alloc, fkRows[index].FKTABLE_CAT);   /* FKTABLE_CAT */
     data[5]= NULL;                                            /* FKTABLE_SCHEM */
     data[6]= strdup_root(alloc, fkRows[index].FKTABLE_NAME);  /* FKTABLE_NAME */
     data[7]= strdup_root(alloc, fkRows[index].FKCOLUMN_NAME); /* FKCOLUMN_NAME */
@@ -1417,8 +1417,8 @@ SQLRETURN foreign_keys_no_i_s(SQLHSTMT hstmt,
     data[8]= strdup_root(alloc, buffer);                      /* KEY_SEQ */
 
     sprintf(buffer,"%d", fkRows[index].UPDATE_RULE);
-    data[9]= strdup_root(alloc, buffer);                      /* UPDATE_RULE */ 
-  
+    data[9]= strdup_root(alloc, buffer);                      /* UPDATE_RULE */
+
     sprintf(buffer,"%d", fkRows[index].DELETE_RULE);
     data[10]= strdup_root(alloc, buffer);                     /* DELETE_RULE */
 
@@ -1461,7 +1461,7 @@ empty_set:
   free_internal_result_buffers(stmt);
   if (stmt->result)
     mysql_free_result(stmt->result);
-  
+
   return create_empty_fake_resultset(stmt, SQLFORE_KEYS_values,
                                      sizeof(SQLFORE_KEYS_values),
                                      SQLFORE_KEYS_fields,
@@ -1749,7 +1749,7 @@ procedure_columns_no_i_s(SQLHSTMT hstmt,
   /* get procedures list */
   myodbc_mutex_lock(&stmt->dbc->lock);
 
-  if (!(proc_list_res= server_list_proc_params(stmt, 
+  if (!(proc_list_res= server_list_proc_params(stmt,
       szCatalogName, cbCatalogName, szProcName, cbProcName)))
   {
     myodbc_mutex_unlock(&stmt->dbc->lock);
@@ -1860,7 +1860,7 @@ procedure_columns_no_i_s(SQLHSTMT hstmt,
         sprintf(param_sql_type, "%d", (int)type_map->sql_type);
       }
       data[mypcDATA_TYPE]= myodbc_strdup(param_sql_type, MYF(0)); /* DATA_TYPE */
-      
+
       if (!myodbc_strcasecmp(type_map->type_name, "set") ||
          !myodbc_strcasecmp(type_map->type_name, "enum"))
       {
@@ -1872,12 +1872,12 @@ procedure_columns_no_i_s(SQLHSTMT hstmt,
       }
 
        /* TYPE_NAME */
-      
+
       proc_get_param_col_len(stmt, sql_type_index, param_size, dec, flags, param_size_buf);
       data[mypcCOLUMN_SIZE]= myodbc_strdup(param_size_buf, MYF(0)); /* COLUMN_SIZE */
 
       data[mypcBUFFER_LENGTH]= myodbc_strdup(param_buffer_len, MYF(0)); /* BUFFER_LENGTH */
-      
+
       if (dec != SQL_NO_TOTAL)
       {
         sprintf(param_decimal, "%d", (int)dec);
@@ -1892,8 +1892,8 @@ procedure_columns_no_i_s(SQLHSTMT hstmt,
       data[mypcNULLABLE]= "1";  /* NULLABLE */
       data[mypcREMARKS]= "";   /* REMARKS */
       data[mypcCOLUMN_DEF]= NullS; /* COLUMN_DEF */
-      
-      if(type_map->sql_type == SQL_TYPE_DATE || 
+
+      if(type_map->sql_type == SQL_TYPE_DATE ||
          type_map->sql_type == SQL_TYPE_TIME ||
          type_map->sql_type == SQL_TYPE_TIMESTAMP)
       {
@@ -1944,7 +1944,7 @@ procedure_columns_no_i_s(SQLHSTMT hstmt,
       token = proc_param_next_token(token, param_str_end);
     }
   }
-  
+
   return_params_num= total_params_num;
 
   if (cbColumnName)
@@ -1994,10 +1994,10 @@ procedure_columns_no_i_s(SQLHSTMT hstmt,
 
   stmt->result= proc_list_res;
   stmt->result_array= (MYSQL_ROW) myodbc_malloc(sizeof(char*) * SQLPROCEDURECOLUMNS_FIELDS *
-                                            (return_params_num ? return_params_num : total_params_num), 
+                                            (return_params_num ? return_params_num : total_params_num),
                                             MYF(MY_ZEROFILL));
   tempdata= stmt->result_array;
-  
+
   if(params_r->next)
   {
     params= params_r->next;
@@ -2420,17 +2420,17 @@ tables_no_i_s(SQLHSTMT hstmt,
     MYSQL_RES *catalog_res= NULL;
     my_ulonglong row_count= 0;
     MYSQL_ROW catalog_row;
-    unsigned long *lengths;    
+    unsigned long *lengths;
     unsigned long count= 0;
     my_bool is_info_schema= 0;
     SQLRETURN rc = SQL_SUCCESS;
 
-    /* 
-      empty (but non-NULL) schema and table returns catalog list 
+    /*
+      empty (but non-NULL) schema and table returns catalog list
       If no_i_s then call 'show database' to list all catalogs (database).
     */
     if (catalog_len && ((!schema_len && schema && !table_len && table)
-        || (catalog && (!server_has_i_s(stmt->dbc) || 
+        || (catalog && (!server_has_i_s(stmt->dbc) ||
                         stmt->dbc->ds->no_information_schema))))
     {
       myodbc_mutex_lock(&stmt->dbc->lock);
@@ -2454,9 +2454,9 @@ tables_no_i_s(SQLHSTMT hstmt,
     }
     else
     {
-      /* 
-        Set is_info_schema for determining mysql_table_status 
-        parameters later 
+      /*
+        Set is_info_schema for determining mysql_table_status
+        parameters later
       */
       is_info_schema= 1;
     }
@@ -2529,20 +2529,20 @@ tables_no_i_s(SQLHSTMT hstmt,
     if (user_tables || views)
     {
        /*
-        If database result set (catalog_res) was produced loop  
+        If database result set (catalog_res) was produced loop
         through all database to fetch table list inside database
       */
-      while (catalog_res && (catalog_row= mysql_fetch_row(catalog_res)) 
+      while (catalog_res && (catalog_row= mysql_fetch_row(catalog_res))
              || is_info_schema)
       {
         myodbc_mutex_lock(&stmt->dbc->lock);
 
         if (is_info_schema)
         {
-          /* 
-            If i_s then all databases are fetched in single loop 
-            for SQL_ALL_CATALOGS (%) and catalog selection is handled 
-            inside mysql_table_status_i_s 
+          /*
+            If i_s then all databases are fetched in single loop
+            for SQL_ALL_CATALOGS (%) and catalog selection is handled
+            inside mysql_table_status_i_s
           */
           stmt->result= table_status(stmt, catalog, catalog_len,
                                      table, table_len, TRUE,
@@ -2550,10 +2550,10 @@ tables_no_i_s(SQLHSTMT hstmt,
         }
         else
         {
-          /* 
-            If no i_s then all databases, except information_schema as 
-						it contains SYSTEM VIEW table types, are fetched are sent to 
-            mysql_table_status_show to get result for SQL_ALL_CATALOGS 
+          /*
+            If no i_s then all databases, except information_schema as
+						it contains SYSTEM VIEW table types, are fetched are sent to
+            mysql_table_status_show to get result for SQL_ALL_CATALOGS
             (%) and catalog selection is handled in this function
           */
           if(myodbc_strcasecmp(catalog_row[0], "information_schema") == 0)
@@ -2607,7 +2607,7 @@ tables_no_i_s(SQLHSTMT hstmt,
 
           if (!(stmt->result_array=
                 (char **)myodbc_realloc((char *)stmt->result_array,
-                                       sizeof(char *) * 
+                                       sizeof(char *) *
                                        SQLTABLES_FIELDS * row_count,
                                        MYF(MY_ZEROFILL))))
           {
@@ -2622,7 +2622,7 @@ tables_no_i_s(SQLHSTMT hstmt,
           {
             /* Set db to fetched database row from show database result set */
             if (!is_info_schema && lengths[0])
-            {  
+            {
               db= strmake_root(&stmt->alloc_root,
                                 catalog_row[0], lengths[0]);
             }
@@ -2681,10 +2681,10 @@ tables_no_i_s(SQLHSTMT hstmt,
             count+= SQLTABLES_FIELDS;
           }
         }
-        /* 
+        /*
           If i_s then loop only once to fetch database name,
-          as mysql_table_status_i_s handles SQL_ALL_CATALOGS (%) 
-          functionality and all databases with tables are returned 
+          as mysql_table_status_i_s handles SQL_ALL_CATALOGS (%)
+          functionality and all databases with tables are returned
           in one result set and so no further loops are required.
         */
         is_info_schema= 0;

@@ -7,16 +7,16 @@
   conditions of the GPLv2 as it is applied to this software, see the
   FLOSS License Exception
   <http://www.mysql.com/about/legal/licensing/foss-exception.html>.
-  
+
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published
   by the Free Software Foundation; version 2 of the License.
-  
+
   This program is distributed in the hope that it will be useful, but
   WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
   or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
   for more details.
-  
+
   You should have received a copy of the GNU General Public License along
   with this program; if not, write to the Free Software Foundation, Inc.,
   51 Franklin St, Fifth Floor, Boston, MA 02110-1301  USA
@@ -49,9 +49,9 @@ my_bool server_has_i_s(DBC *dbc)
   @purpose : returns the next token
 */
 
-const char *my_next_token(const char *prev_token, 
-                          const char **token, 
-                                char *data, 
+const char *my_next_token(const char *prev_token,
+                          const char **token,
+                                char *data,
                           const char chr)
 {
     const char *cur_token;
@@ -62,7 +62,7 @@ const char *my_next_token(const char *prev_token,
         {
             uint len= (uint)(cur_token-prev_token);
             strncpy(data,prev_token, len);
-            data[len]= 0;    
+            data[len]= 0;
         }
         *token= (char *)cur_token+1;
         prev_token= cur_token;
@@ -164,7 +164,7 @@ static MYSQL_RES *table_status_i_s(STMT        *stmt,
   if (catalog_name && *catalog_name)
   {
     to= myodbc_stpmov(to, "TABLE_SCHEMA LIKE '");
-    to+= myodbc_escape_string(mysql, to, (ulong)(sizeof(buff) - (to - buff)),
+    to+= myodbc_escape_string(stmt, to, (ulong)(sizeof(buff) - (to - buff)),
                               (char *)catalog_name, catalog_len, 1);
     to= myodbc_stpmov(to, "' ");
     clause_added= TRUE;
@@ -212,7 +212,7 @@ static MYSQL_RES *table_status_i_s(STMT        *stmt,
     }
     else
     {
-      to+= myodbc_escape_string(mysql, to, (ulong)(sizeof(buff) - (to - buff)),
+      to+= myodbc_escape_string(stmt, to, (ulong)(sizeof(buff) - (to - buff)),
                                 (char *)table_name, table_len, 0);
     }
     to= myodbc_stpmov(to, "'");
@@ -300,7 +300,7 @@ int add_name_condition_oa_id(HSTMT hstmt, char ** pos, SQLCHAR * name,
     /* According to http://msdn.microsoft.com/en-us/library/ms714579%28VS.85%29.aspx
     identifier argument cannot be NULL with one exception not actual for mysql) */
     if (!metadata_id && _default)
-      *pos= myodbc_stpmov(*pos, _default); 
+      *pos= myodbc_stpmov(*pos, _default);
     else
       return 1;
   }
@@ -344,7 +344,7 @@ int add_name_condition_pv_id(HSTMT hstmt, char ** pos, SQLCHAR * name,
     /* According to http://msdn.microsoft.com/en-us/library/ms714579%28VS.85%29.aspx
        identifier argument cannot be NULL with one exception not actual for mysql) */
     if (!metadata_id && _default)
-      *pos= myodbc_stpmov(*pos, _default); 
+      *pos= myodbc_stpmov(*pos, _default);
     else
       return 1;
   }

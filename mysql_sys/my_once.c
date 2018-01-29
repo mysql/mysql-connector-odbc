@@ -31,7 +31,7 @@
       MyFlags
 
   NOTES
-    No DBUG_ENTER... here to get smaller dbug-startup 
+    No DBUG_ENTER... here to get smaller dbug-startup
 */
 
 void* my_once_alloc(size_t Size, myf MyFlags)
@@ -42,9 +42,9 @@ void* my_once_alloc(size_t Size, myf MyFlags)
   USED_MEM **prev;
 
   Size= ALIGN_SIZE(Size);
-  prev= &my_once_root_block;
+  prev= &mysys_once_root_block;
   max_left=0;
-  for (next=my_once_root_block ; next && next->left < Size ; next= next->next)
+  for (next=mysys_once_root_block ; next && next->left < Size ; next= next->next)
   {
     if (next->left > max_left)
       max_left=next->left;
@@ -53,14 +53,14 @@ void* my_once_alloc(size_t Size, myf MyFlags)
   if (! next)
   {						/* Time to alloc new block */
     get_size= Size+ALIGN_SIZE(sizeof(USED_MEM));
-    if (max_left*4 < my_once_extra && get_size < my_once_extra)
-      get_size=my_once_extra;			/* Normal alloc */
+    if (max_left*4 < mysys_once_extra && get_size < mysys_once_extra)
+      get_size=mysys_once_extra;			/* Normal alloc */
 
     if ((next = (USED_MEM*) malloc(get_size)) == 0)
     {
       set_my_errno(errno);
       if (MyFlags & (MY_FAE+MY_WME))
-	my_error(EE_OUTOFMEMORY, MYF(ME_FATALERROR), get_size);
+	mysys_error(EE_OUTOFMEMORY, MYF(ME_FATALERROR), get_size);
       return((uchar*) 0);
     }
     DBUG_PRINT("test",("my_once_malloc %lu byte malloced", (ulong) get_size));
@@ -109,12 +109,12 @@ void my_once_free(void)
   USED_MEM *next,*old;
   DBUG_ENTER("my_once_free");
 
-  for (next=my_once_root_block ; next ; )
+  for (next=mysys_once_root_block ; next ; )
   {
     old=next; next= next->next ;
     free((uchar*) old);
   }
-  my_once_root_block=0;
+  mysys_once_root_block=0;
 
   DBUG_VOID_RETURN;
 } /* my_once_free */

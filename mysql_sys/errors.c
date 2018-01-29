@@ -58,7 +58,7 @@ const char *globerrs[GLOBERRS]=
 
 
 /*
- We cannot call my_error/my_printf_error here in this function.
+ We cannot call my_error/mysys_printf_error here in this function.
   Those functions will set status variable in diagnostic area
   and there is no provision to reset them back.
   Here we are waiting for free space and will wait forever till
@@ -70,10 +70,10 @@ void wait_for_free_space(const char *filename, int errors)
   if (!(errors % MY_WAIT_GIVE_USER_A_MESSAGE))
   {
     char errbuf[MYSYS_STRERROR_SIZE];
-    my_message_local(ERROR_LEVEL, EE(EE_DISK_FULL),
+    mysys_message_local(ERROR_LEVEL, EE(EE_DISK_FULL),
                      filename,my_errno,
-                     my_strerror(errbuf, sizeof(errbuf), my_errno()));
-    my_message_local(ERROR_LEVEL,
+                     mysys_strerror(errbuf, sizeof(errbuf), my_errno()));
+    mysys_message_local(ERROR_LEVEL,
                      "Retry in %d secs. Message reprinted in %d secs",
                      MY_WAIT_FOR_USER_TO_FIX_PANIC,
                      MY_WAIT_GIVE_USER_A_MESSAGE * MY_WAIT_FOR_USER_TO_FIX_PANIC );

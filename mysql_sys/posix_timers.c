@@ -16,7 +16,7 @@
 
 #include "my_global.h"
 #include "my_thread.h"      /* my_thread_init, my_thread_end */
-#include "my_sys.h"         /* my_message_local */
+#include "my_sys.h"         /* mysys_message_local */
 #include "my_timer.h"       /* my_timer_t */
 
 #include <string.h>         /* memset */
@@ -105,7 +105,7 @@ start_helper_thread(void)
 
   if (pthread_barrier_init(&barrier, NULL, 2))
   {
-    my_message_local(ERROR_LEVEL,
+    mysys_message_local(ERROR_LEVEL,
                      "Failed to initialize pthread barrier. errno=%d", errno);
     return -1;
   }
@@ -113,7 +113,7 @@ start_helper_thread(void)
   if (mysql_thread_create(key_thread_timer_notifier, &timer_notify_thread,
                           NULL, timer_notify_thread_func, &barrier))
   {
-    my_message_local(ERROR_LEVEL,
+    mysys_message_local(ERROR_LEVEL,
                      "Failed to create timer notify thread (errno= %d).",
                      errno);
     pthread_barrier_destroy(&barrier);
@@ -142,7 +142,7 @@ my_timer_initialize(void)
 
   if (sigfillset(&set))
   {
-    my_message_local(ERROR_LEVEL,
+    mysys_message_local(ERROR_LEVEL,
                      "Failed to intialize signal set (errno=%d).", errno);
     return -1;
   }
@@ -247,7 +247,7 @@ start_helper_thread(void)
   if (mysql_thread_create(key_thread_timer_notifier, &timer_notify_thread,
                           NULL, timer_notify_thread_func, NULL))
   {
-    my_message_local(ERROR_LEVEL,
+    mysys_message_local(ERROR_LEVEL,
                      "Failed to create timer notify thread (errno= %d).",
                      errno);
     return -1;
@@ -271,7 +271,7 @@ my_timer_initialize(void)
 
   if ((port_id= port_create()) < 0)
   {
-    my_message_local(ERROR_LEVEL, "Failed to create port (errno= %d).", errno);
+    mysys_message_local(ERROR_LEVEL, "Failed to create port (errno= %d).", errno);
     return -1;
   }
 

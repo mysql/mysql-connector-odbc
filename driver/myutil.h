@@ -7,16 +7,16 @@
   conditions of the GPLv2 as it is applied to this software, see the
   FLOSS License Exception
   <http://www.mysql.com/about/legal/licensing/foss-exception.html>.
-  
+
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published
   by the Free Software Foundation; version 2 of the License.
-  
+
   This program is distributed in the hope that it will be useful, but
   WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
   or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
   for more details.
-  
+
   You should have received a copy of the GNU General Public License along
   with this program; if not, write to the Free Software Foundation, Inc.,
   51 Franklin St, Fifth Floor, Boston, MA 02110-1301  USA
@@ -230,14 +230,14 @@ SQLRETURN SQL_API my_SQLExtendedFetch(SQLHSTMT hstmt, SQLUSMALLINT fFetchType,
 				      SQLLEN irow, SQLULEN *pcrow,
 				      SQLUSMALLINT *rgfRowStatus, my_bool upd_status);
 SQLRETURN SQL_API myodbc_single_fetch( SQLHSTMT hstmt, SQLUSMALLINT fFetchType,
-              SQLLEN irow, SQLULEN *pcrow, 
+              SQLLEN irow, SQLULEN *pcrow,
               SQLUSMALLINT *rgfRowStatus, my_bool upd_status);
-SQLRETURN SQL_API sql_get_data(STMT *stmt, SQLSMALLINT fCType, 
-              uint column_number, SQLPOINTER rgbValue, 
+SQLRETURN SQL_API sql_get_data(STMT *stmt, SQLSMALLINT fCType,
+              uint column_number, SQLPOINTER rgbValue,
               SQLLEN cbValueMax, SQLLEN *pcbValue,
               char *value, ulong length, DESCREC *arrec);
-SQLRETURN SQL_API sql_get_bookmark_data(STMT *stmt, SQLSMALLINT fCType, 
-              uint column_number, SQLPOINTER rgbValue, 
+SQLRETURN SQL_API sql_get_bookmark_data(STMT *stmt, SQLSMALLINT fCType,
+              uint column_number, SQLPOINTER rgbValue,
               SQLLEN cbValueMax, SQLLEN *pcbValue,
               char *value, ulong length, DESCREC *arrec);
 SQLRETURN SQL_API my_SQLSetPos(SQLHSTMT hstmt, SQLSETPOSIROW irow,
@@ -286,7 +286,7 @@ int     myodbc_strcasecmp         (const char *s, const char *t);
 int     myodbc_casecmp            (const char *s, const char *t, uint len);
 my_bool reget_current_catalog     (DBC *dbc);
 
-ulong   myodbc_escape_string      (MYSQL *mysql, char *to, ulong to_length,
+ulong   myodbc_escape_string      (STMT *stmt, char *to, ulong to_length,
                                   const char *from, ulong length, int escape_id);
 
 DESCREC*  desc_get_rec            (DESC *desc, int recnum, my_bool expand);
@@ -339,7 +339,7 @@ SQLUINTEGER proc_get_param_size   (SQLCHAR *ptype, int len, int sql_type_index,
 SQLLEN      proc_get_param_octet_len  (STMT *stmt, int sql_type_index,
                                       SQLULEN col_size, SQLSMALLINT decimal_digits,
                                       unsigned int flags, char * str_buff);
-SQLLEN      proc_get_param_col_len    (STMT *stmt, int sql_type_index, SQLULEN col_size, 
+SQLLEN      proc_get_param_col_len    (STMT *stmt, int sql_type_index, SQLULEN col_size,
                                       SQLSMALLINT decimal_digits, unsigned int flags,
                                       char * str_buff);
 int         proc_get_param_sql_type_index (SQLCHAR *ptype, int len);
@@ -527,11 +527,11 @@ void free_connection_stmts(DBC *dbc);
 #define CHECK_DBC_OUTPUT(e, d) if(d == NULL) return set_env_error((ENV *)e, MYERR_S1009, NULL, 0)
 
 #define CHECK_STMT_OUTPUT(d, s) if(s == NULL) return set_conn_error((DBC *)d, MYERR_S1009, NULL, 0)
- 
+
 #define CHECK_DESC_OUTPUT(d, s) CHECK_STMT_OUTPUT(d, s)
 
 #define CHECK_DATA_OUTPUT(s, d) if(d == NULL) return set_error((STMT *)s, MYERR_S1000, "Invalid output buffer", 0)
- 
+
 #define IF_NOT_NULL(v, x) if (v != NULL) x
 
 #endif /* __MYUTIL_H__ */

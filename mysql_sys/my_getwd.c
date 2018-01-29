@@ -30,10 +30,10 @@
 	/* Test if hard pathname */
 	/* Returns 1 if dirname is a hard path */
 
-int test_if_hard_path(const char *dir_name)
+int sys_test_if_hard_path(const char *dir_name)
 {
   if (dir_name[0] == FN_HOMELIB && dir_name[1] == FN_LIBCHAR)
-    return (home_dir != NullS && test_if_hard_path(home_dir));
+    return (sys_home_dir != NullS && sys_test_if_hard_path(sys_home_dir));
   if (dir_name[0] == FN_LIBCHAR)
     return (TRUE);
 #ifdef FN_DEVCHAR
@@ -41,14 +41,14 @@ int test_if_hard_path(const char *dir_name)
 #else
   return FALSE;
 #endif
-} /* test_if_hard_path */
+} /* sys_test_if_hard_path */
 
 
 /*
   Test if a name contains an (absolute or relative) path.
 
   SYNOPSIS
-    has_path()
+    sys_has_path()
     name                The name to test.
 
   RETURN
@@ -56,9 +56,9 @@ int test_if_hard_path(const char *dir_name)
     FALSE       name does not contain a path.
 */
 
-my_bool has_path(const char *name)
+my_bool sys_has_path(const char *name)
 {
-  return MY_TEST(strchr(name, FN_LIBCHAR)) 
+  return MY_TEST(strchr(name, FN_LIBCHAR))
 #if FN_LIBCHAR != '/'
     || MY_TEST(strchr(name,'/'))
 #endif

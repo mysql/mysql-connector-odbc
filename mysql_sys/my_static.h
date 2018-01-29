@@ -25,12 +25,12 @@
 #include "my_sys.h"
 
 C_MODE_START
-extern char curr_dir[FN_REFLEN], home_dir_buff[FN_REFLEN];
+extern char sys_curr_dir[FN_REFLEN], sys_home_dir_buff[FN_REFLEN];
 
 extern const char *soundex_map;
 
-extern USED_MEM* my_once_root_block;
-extern uint	 my_once_extra;
+extern USED_MEM* mysys_once_root_block;
+extern uint	 mysys_once_extra;
 
 extern struct st_my_file_info my_file_info_default[MY_NFILE];
 

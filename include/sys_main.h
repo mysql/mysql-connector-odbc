@@ -39,6 +39,8 @@ typedef int		myf_t;	/* Type of MyFlags in my_funcs */
 /* Macros for converting *constants* to the right type */
 #define MYF(v)		(myf) (v)
 
+typedef unsigned int PSI_memory_key;
+
 typedef struct st_dynamic_array
 {
   uchar *buffer;
@@ -54,7 +56,7 @@ typedef struct st_dynamic_string
   size_t length, max_length, alloc_increment;
 } DYNAMIC_STRING;
 
-#ifdef USE_MYSQL_HEADERS
+#ifdef MYSQL8
 typedef struct st_used_mem
 {				   /* struct for once_alloc (block) */
   struct st_used_mem *next;	   /* Next block in use */
@@ -95,6 +97,9 @@ typedef struct st_mem_root
   PSI_memory_key m_psi_key;
 } MEM_ROOT;
 
+#endif
+
+#ifdef USE_MYSQL_HEADERS
 typedef struct st_list {
   struct st_list *prev, *next;
   void *data;
@@ -157,7 +162,7 @@ extern size_t my_snprintf(char* to, size_t n, const char* fmt, ...);
 extern void my_thread_end();
 
 extern my_bool my_sys_init(void);
-extern void my_end(int infoflag);
+extern void mysys_end(int infoflag);
 extern void my_qsort(void *base_ptr, size_t total_elems, size_t size, qsort_cmp cmp);
 
 extern int is_prefix(const char *a, const char *b);

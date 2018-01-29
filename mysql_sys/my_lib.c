@@ -152,8 +152,8 @@ MY_DIR	*my_dir(const char *path, myf MyFlags)
   if (MyFlags & (MY_FAE | MY_WME))
   {
     char errbuf[MYSYS_STRERROR_SIZE];
-    my_error(EE_DIR, MYF(0), path,
-             my_errno(), my_strerror(errbuf, sizeof(errbuf), my_errno()));
+    mysys_error(EE_DIR, MYF(0), path,
+             my_errno(), mysys_strerror(errbuf, sizeof(errbuf), my_errno()));
   }
   DBUG_RETURN((MY_DIR *) NULL);
 } /* my_dir */
@@ -316,8 +316,8 @@ error:
   if (MyFlags & MY_FAE+MY_WME)
   {
     char errbuf[MYSYS_STRERROR_SIZE];
-    my_error(EE_DIR, MYF(0), path,
-             errno, my_strerror(errbuf, sizeof(errbuf), errno));
+    mysys_error(EE_DIR, MYF(0), path,
+             errno, mysys_strerror(errbuf, sizeof(errbuf), errno));
   }
   DBUG_RETURN((MY_DIR *) NULL);
 } /* my_dir */
@@ -370,8 +370,8 @@ error:
   if (my_flags & (MY_FAE+MY_WME))
   {
     char errbuf[MYSYS_STRERROR_SIZE];
-    my_error(EE_STAT, MYF(0), path,
-             my_errno(), my_strerror(errbuf, sizeof(errbuf), my_errno()));
+    mysys_error(EE_STAT, MYF(0), path,
+             my_errno(), mysys_strerror(errbuf, sizeof(errbuf), my_errno()));
     DBUG_RETURN((MY_STAT *) NULL);
   }
   DBUG_RETURN((MY_STAT *) NULL);

@@ -241,9 +241,12 @@ SQLRETURN myodbc_do_connect(DBC *dbc, DataSource *ds)
                 ds_get_utf8attr(ds->sslcapath, &ds->sslcapath8),
                 ds_get_utf8attr(ds->sslcipher, &ds->sslcipher8));
 
+#if MYSQL_VERSION_ID < 80003
   if (ds->sslverify)
     mysql_options(mysql, MYSQL_OPT_SSL_VERIFY_SERVER_CERT,
                   (const char *)&opt_ssl_verify_server_cert);
+#endif
+
 #if MYSQL_VERSION_ID >= 50660
   if (ds->rsakey)
   {
@@ -322,8 +325,11 @@ SQLRETURN myodbc_do_connect(DBC *dbc, DataSource *ds)
   }
 #endif
 
+#if (MYSQL_VERSION_ID < 80003)
   mysql->options.use_ssl = !ds->disable_ssl_default;
-#if MYSQL_VERSION_ID >= 50703
+#endif
+
+#if (MYSQL_VERSION_ID >= 50703 && MYSQL_VERSION_ID < 80003)
   {
     if (ds->ssl_enforce)
     {
