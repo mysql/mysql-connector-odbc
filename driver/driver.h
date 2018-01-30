@@ -119,13 +119,8 @@ extern "C"
 /* Max Primary keys in a cursor * WHERE clause */
 #define MY_MAX_PK_PARTS 32
 
-#if MYSQL_VERSION_ID >= 50500
-# define x_free(A) { void *tmp= (A); if (tmp) my_free((char *) tmp); }
-# ifndef NEAR
-#  define NEAR 
-# endif
-#else
-# define x_free(A) { void *tmp= (A); if (tmp) my_free((char *) tmp,MYF(MY_WME+MY_FAE)); }
+#ifndef NEAR
+#define NEAR 
 #endif
 
 /* We don't make any assumption about what the default may be. */
@@ -413,6 +408,7 @@ typedef struct limit_scroller
 {
    char               *query, *offset_pos;
    unsigned int       row_count;
+   unsigned long long start_offset;
    unsigned long long next_offset, total_rows, query_len;
 
 } MY_LIMIT_SCROLLER;
@@ -449,6 +445,7 @@ typedef struct tagSTMT
 {
   DBC               *dbc;
   MYSQL_RES         *result;
+  MEM_ROOT          alloc_root;
   my_bool           fake_result;
   MYSQL_ROW	        array,result_array,current_values;
   MYSQL_ROW	        (*fix_fields)(struct tagSTMT *stmt,MYSQL_ROW row);

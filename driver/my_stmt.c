@@ -72,8 +72,15 @@ my_bool free_current_result(STMT *stmt)
       free_result_bind(stmt);
       res= mysql_stmt_free_result(stmt->ssps);
     }
+    free_internal_result_buffers(stmt);
     /* We need to always free stmt->result because SSPS keep metadata there */
-    mysql_free_result(stmt->result);
+    if (stmt->fake_result)
+    {
+      x_free(stmt->result);
+    }
+    else
+      mysql_free_result(stmt->result);
+
     stmt->result= NULL;
   }
   return res;
@@ -102,6 +109,7 @@ MYSQL_RES * stmt_get_result(STMT *stmt, BOOL force_use)
    we need to use/store each resultset of multiple resultsets */
 MYSQL_RES * get_result_metadata(STMT *stmt, BOOL force_use)
 {
+  free_internal_result_buffers(stmt);
   /* just a precaution, mysql_free_result checks for NULL anywat */
   mysql_free_result(stmt->result);
 
@@ -406,6 +414,7 @@ SQLRETURN prepare(STMT *stmt, char * query, SQLINTEGER query_length)
 
       stmt->param_count= mysql_stmt_param_count(stmt->ssps);
 
+      free_internal_result_buffers(stmt);
       /* make sure we free the result from the previous time */
       mysql_free_result(stmt->result);
 
@@ -563,6 +572,7 @@ void scroller_create(STMT * stmt, char *query, SQLULEN query_len)
   MY_LIMIT_CLAUSE limit= find_position4limit(stmt->dbc->ansi_charset_info,
                                             query, query + query_len);
 
+  stmt->scroller.start_offset= limit.offset;
   stmt->scroller.total_rows= myodbc_max(stmt->stmt_options.max_rows, 0);
 
   if (limit.begin != limit.end)
@@ -622,18 +632,19 @@ unsigned long long scroller_move(STMT * stmt)
 SQLRETURN scroller_prefetch(STMT * stmt)
 {
   if (stmt->scroller.total_rows > 0
-    && stmt->scroller.next_offset >= stmt->scroller.total_rows)
+      && stmt->scroller.next_offset >= (stmt->scroller.total_rows + stmt->scroller.start_offset))
   {
     /* (stmt->scroller.next_offset - stmt->scroller.row_count) - current offset,
        0 minimum. scroller initialization makes impossible row_count to be > 
        stmt's max_rows */
      long long count= stmt->scroller.total_rows -
-      (stmt->scroller.next_offset - stmt->scroller.row_count);
+      (stmt->scroller.next_offset - stmt->scroller.row_count - stmt->scroller.start_offset);
 
     if (count > 0)
     {
       myodbc_snprintf(stmt->scroller.offset_pos + MAX64_BUFF_SIZE, MAX32_BUFF_SIZE,
-              "%*u", MAX32_BUFF_SIZE - 1, count);
+              "%*u", MAX32_BUFF_SIZE - 1, (unsigned long)count);
+      stmt->scroller.offset_pos[MAX64_BUFF_SIZE + MAX32_BUFF_SIZE - 1] = ' ';
     }
     else
     {
