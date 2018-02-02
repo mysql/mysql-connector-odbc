@@ -43,8 +43,8 @@ typedef CRITICAL_SECTION native_mutex_t;
 typedef int native_mutexattr_t;
 #else
 typedef pthread_key_t thread_local_key_t;
-typedef pthread_mutex_t native_mutex_t;
-typedef pthread_mutexattr_t native_mutexattr_t;
+//typedef pthread_mutex_t native_mutex_t;
+//typedef pthread_mutexattr_t native_mutexattr_t;
 #endif
 
 

@@ -53,8 +53,9 @@
   To instrument memory, a memory key must be obtained using @c register_memory.
   Using a zero key always disable the instrumentation.
 */
+#ifndef MYODBC_MYSQL_H
 typedef unsigned int PSI_memory_key;
-
+#endif
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */

@@ -56,7 +56,10 @@ typedef unsigned long long my_socket;
 #else
 typedef mode_t MY_MODE;
 typedef socklen_t socket_len_t;
+#ifndef my_socket_defined
+#define my_socket_defined
 typedef int     my_socket;      /* File descriptor for sockets */
+#endif
 #endif /* _WIN32 */
 
 #endif /* COMPONENTS_SERVICES_MY_IO_BITS_H */

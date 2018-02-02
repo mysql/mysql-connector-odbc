@@ -61,9 +61,9 @@ typedef unsigned long uint32;
 #error Neither int or long is of 4 bytes width
 #endif
 
-/* 
-  Using [unsigned] long long is preferable as [u]longlong because we use 
-  [unsigned] long long unconditionally in many places, 
+/*
+  Using [unsigned] long long is preferable as [u]longlong because we use
+  [unsigned] long long unconditionally in many places,
   for example in constants with [U]LL suffix.
 */
 typedef unsigned long long int ulonglong; /* ulong or unsigned long long */
@@ -71,10 +71,12 @@ typedef long long int	longlong;
 typedef longlong int64;
 typedef ulonglong uint64;
 
+#ifndef MYODBC_MYSQL_H
 #if defined (_WIN32)
 typedef unsigned __int64 my_ulonglong;
 #else
 typedef unsigned long long my_ulonglong;
+#endif
 #endif
 
 typedef intptr_t intptr;
