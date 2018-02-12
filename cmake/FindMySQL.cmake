@@ -112,6 +112,7 @@ set(ENV_OR_OPT_VARS
   MYSQL_DIR
   MYSQL_INCLUDE_DIR
   MYSQL_LIB_DIR
+  MYSQL_LIB_DIR_LIST
   MYSQL_CFLAGS
   MYSQL_CXXFLAGS
   MYSQL_CONFIG_EXECUTABLE
@@ -594,10 +595,12 @@ elseif(MYSQL_CONFIG_EXECUTABLE)
   # In case mysql_config returns several paths: libmysqlclient is last
   LIST(LENGTH MYSQL_LIB_DIR n)
   IF( ${n} GREATER 1)
+    #copy list of directories
+    SET(MYSQL_LIB_DIR_LIST ${MYSQL_LIB_DIR})
+
     MATH(EXPR ind "${n}-1")
     LIST(GET MYSQL_LIB_DIR ${ind} MYSQL_LIB_DIR)
   ENDIF()
-
   if(NOT MYSQL_LIB_DIR)
     message(FATAL_ERROR "Could not find the library dir from running "
                         "\"${MYSQL_CONFIG_EXECUTABLE}\"")
@@ -819,6 +822,15 @@ endif()
 
 include_directories("${MYSQL_INCLUDE_DIR}")
 link_directories("${MYSQL_LIB_DIR}")
+
+MESSAGE(STATUS "MYSQL_LIB_DIR_LIST = ${MYSQL_LIB_DIR_LIST}")
+IF(MYSQL_LIB_DIR_LIST)
+  FOREACH(__libpath IN LISTS MYSQL_LIB_DIR_LIST)
+    link_directories("${__libpath}")
+  ENDFOREACH()
+ENDIF()
+
+
 
 ##########################################################################
 #
