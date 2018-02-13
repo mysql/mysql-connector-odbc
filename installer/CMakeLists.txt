@@ -65,6 +65,14 @@ ELSE(WIN32)
         LINK_FLAGS "${MYSQLODBCCONN_LINK_FLAGS_ENV} ${MYSQL_LINK_FLAGS}")
 ENDIF(WIN32)
 
+if(APPLE)
+  set_property(TARGET myodbc-installer PROPERTY BUILD_WITH_INSTALL_RPATH ON)
+  set_property(TARGET myodbc-installer APPEND PROPERTY INSTALL_RPATH "@loader_path")
+elseif(NOT WIN32)
+  set_property(TARGET myodbc-installer PROPERTY BUILD_WITH_INSTALL_RPATH ON)
+  set_property(TARGET myodbc-installer APPEND PROPERTY INSTALL_RPATH "$ORIGIN")
+endif()
+
 IF(MYSQL_CXX_LINKAGE)
   SET_TARGET_PROPERTIES(myodbc-installer PROPERTIES 
         LINKER_LANGUAGE CXX
