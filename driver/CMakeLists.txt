@@ -1,4 +1,4 @@
-# Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
 #
 # The MySQL Connector/ODBC is licensed under the terms of the GPLv2
 # <http://www.gnu.org/licenses/old-licenses/gpl-2.0.html>, like most
@@ -46,7 +46,7 @@ WHILE(${DRIVER_INDEX} LESS ${DRIVERS_COUNT})
   LIST(GET CONNECTOR_DRIVER_TYPES_SHORT ${DRIVER_INDEX} CONNECTOR_DRIVER_TYPE_SHORT)
   LIST(GET CONNECTOR_DRIVER_TYPE_LIST ${DRIVER_INDEX} DRIVER_TYPE)
 
-  SET(DRIVER_NAME "myodbc5${CONNECTOR_DRIVER_TYPE_SHORT}")
+  SET(DRIVER_NAME "myodbc8${CONNECTOR_DRIVER_TYPE_SHORT}")
 
   SET(DRIVER_SRCS
     catalog.c catalog_no_i_s.c connect.c cursor.c desc.c dll.c error.c execute.c
@@ -163,7 +163,7 @@ SET(DRIVER_INDEX 0)
 WHILE(${DRIVER_INDEX} LESS ${DRIVERS_COUNT})
 
   LIST(GET CONNECTOR_DRIVER_TYPES_SHORT ${DRIVER_INDEX} CONNECTOR_DRIVER_TYPE_SHORT)
-  SET(DRIVER_NAME "myodbc5${CONNECTOR_DRIVER_TYPE_SHORT}")
+  SET(DRIVER_NAME "myodbc8${CONNECTOR_DRIVER_TYPE_SHORT}")
 
   ADD_CUSTOM_COMMAND(TARGET ${DRIVER_NAME} POST_BUILD
                    COMMAND ${CMAKE_COMMAND}

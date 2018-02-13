@@ -30,18 +30,18 @@ bit directory as well, i.e. a 64-bit package contains both 32-bit and
   doc/README.txt
   doc/COPYING.txt
   doc/Licenses_for_Third-Party_Components.txt
-  x86/myodbc5.lib
-  x86/myodbc5.dll
-  x86/myodbc5S.lib
-  x86/myodbc5S.dll
+  x86/myodbc8.lib
+  x86/myodbc8.dll
+  x86/myodbc8S.lib
+  x86/myodbc8S.dll
   x86/myodbc-installer.exe
 
 and in addition if a 64-bit package
 
-  x64/myodbc5.lib
-  x64/myodbc5.dll
-  x64/myodbc5S.lib
-  x64/myodbc5S.dll
+  x64/myodbc8.lib
+  x64/myodbc8.dll
+  x64/myodbc8S.lib
+  x64/myodbc8S.dll
   x64/myodbc-installer.exe
 
 4) CMake

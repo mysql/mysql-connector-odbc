@@ -62,4 +62,4 @@ TMP_PRIVATE_BINDIR = $(TMP_INSTDIR)$(PRIVATE_BINDIR)
 
 override_dh_auto_install:
 	dh_auto_install -- libdir=$(PRIVATE_BINDIR) DESTDIR=$(TMP_INSTDIR)
-	#mv $(TMP_INSTDIR)/usr/lib/$(DEB_HOST_MULTIARCH)/odbc/libmyodbc5-$(base_version).so $(TMP_INSTDIR)/usr/lib/$(DEB_HOST_MULTIARCH)/odbc/libmyodbc.so
+	#mv $(TMP_INSTDIR)/usr/lib/$(DEB_HOST_MULTIARCH)/odbc/libmyodbc8-$(base_version).so $(TMP_INSTDIR)/usr/lib/$(DEB_HOST_MULTIARCH)/odbc/libmyodbc.so

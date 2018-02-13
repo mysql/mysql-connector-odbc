@@ -251,15 +251,15 @@ MySQLGetInfo(SQLHDBC hdbc, SQLUSMALLINT fInfoType,
   case SQL_DRIVER_NAME:
 #ifdef MYODBC_UNICODEDRIVER
 # ifdef WIN32
-    MYINFO_SET_STR("myodbc5w.dll");
+    MYINFO_SET_STR("myodbc8w.dll");
 # else
-    MYINFO_SET_STR("libmyodbc5w.so");
+    MYINFO_SET_STR("libmyodbc8w.so");
 # endif
 #else
 # ifdef WIN32
-    MYINFO_SET_STR("myodbc5a.dll");
+    MYINFO_SET_STR("myodbc8a.dll");
 # else
-    MYINFO_SET_STR("libmyodbc5a.so");
+    MYINFO_SET_STR("libmyodbc8a.so");
 # endif
 #endif
   case SQL_DRIVER_ODBC_VER:

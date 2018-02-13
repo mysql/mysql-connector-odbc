@@ -42,8 +42,8 @@ REM # be exported to the environment and pollute it
 SETLOCAL
 
 SET    driver_name=none
-SET    driver_lib=myodbc5
-SET    driver_lib_setup=myodbc5S
+SET    driver_lib=myodbc8
+SET    driver_lib_setup=myodbc8S
 SET    installer=myodbc-installer
 
 IF "%~1" == "" GOTO :doFindDriver

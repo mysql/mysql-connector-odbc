@@ -66,12 +66,12 @@ BEGIN
             VALUE "CompanyName", "Oracle Corporation\0"
             VALUE "FileDescription", "MySQL ODBC 5.3 Driver Setup Library\0"
             VALUE "FileVersion", MYODBC_STRFILEVER
-            VALUE "InternalName", "myodbc5S\0"
-            VALUE "LegalCopyright", "Copyright (c) 1995, 2013, Oracle and/or its affiliates.\0"
+            VALUE "InternalName", "myodbc8S\0"
+            VALUE "LegalCopyright", "Copyright (c) 1995, 2018, Oracle and/or its affiliates.\0"
             VALUE "LegalTrademarks", "MySQL, MyODBC, Connector/ODBC are trademarks of Oracle Corporation\0"
-            VALUE "OriginalFilename", "myodbc5S.dll\0"
+            VALUE "OriginalFilename", "myodbc8S.dll\0"
             VALUE "PrivateBuild", "Production\0"
-            VALUE "ProductName", "Connector/ODBC 5.3\0"
+            VALUE "ProductName", "Connector/ODBC 8.0\0"
             VALUE "ProductVersion", MYODBC_STRPRODUCTVER
             VALUE "SpecialBuild", "GA release\0"
         END

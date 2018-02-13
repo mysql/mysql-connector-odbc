@@ -45,7 +45,7 @@
 #define ER_ALL_COLUMNS_IGNORED	 537
 
 /*
-  myodbc5 error prefix
+  myodbc8 error prefix
 */
 #define MYODBC_ERROR_PREFIX	 "[MySQL][ODBC "MYODBC_STRDRIVERID" Driver]"
 #define MYODBC_ERROR_CODE_START  500

@@ -106,7 +106,7 @@ do
   fi
 
   echo "Registering $driver_type driver..."
-  $bindir/myodbc-installer -a -d -n "MySQL ODBC @CONNECTOR_MAJOR@.@CONNECTOR_MINOR@ $driver_type Driver" -t "Driver=$libdir/libmyodbc5$suffix.so;"
+  $bindir/myodbc-installer -a -d -n "MySQL ODBC @CONNECTOR_MAJOR@.@CONNECTOR_MINOR@ $driver_type Driver" -t "Driver=$libdir/libmyodbc8$suffix.so;"
 
 # ----------------------------------------------------------------------
 # CREATE A SAMPLE DSN
