@@ -126,7 +126,7 @@ extern "C"
 #define sort_dynamic(A,cmp) myodbc_qsort((A)->buffer, (A)->elements, (A)->size_of_element, (cmp))
 #define push_dynamic(A,B) insert_dynamic((A),(B))
 
-#ifdef _WIN32
+#if defined(_WIN32) || defined(__APPLE__)
 #define myodbc_snprintf snprintf
 #else
 #define myodbc_snprintf my_snprintf
