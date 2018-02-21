@@ -49,15 +49,15 @@ WHILE(${DRIVER_INDEX} LESS ${DRIVERS_COUNT})
   SET(DRIVER_NAME "myodbc8${CONNECTOR_DRIVER_TYPE_SHORT}")
 
   SET(DRIVER_SRCS
-    catalog.c catalog_no_i_s.c connect.c cursor.c desc.c dll.c error.c execute.c
-    handle.c info.c driver.c options.c parse.c prepare.c results.c transact.c
-    my_prepared_stmt.c my_stmt.c utility.c)
+    catalog.cc catalog_no_i_s.cc connect.cc cursor.cc desc.cc dll.cc error.cc execute.cc
+    handle.cc info.cc driver.cc options.cc parse.cc prepare.cc results.cc transact.cc
+    my_prepared_stmt.cc my_stmt.cc utility.cc)
 
   IF(UNICODE)
-    SET(DRIVER_SRCS ${DRIVER_SRCS} unicode.c)
+    SET(DRIVER_SRCS ${DRIVER_SRCS} unicode.cc)
 	  SET(WIDECHARCALL "W")
   ELSE(UNICODE)
-    SET(DRIVER_SRCS ${DRIVER_SRCS} ansi.c)
+    SET(DRIVER_SRCS ${DRIVER_SRCS} ansi.cc)
     SET(WIDECHARCALL "")
   ENDIF(UNICODE)
 

@@ -7,16 +7,16 @@
   conditions of the GPLv2 as it is applied to this software, see the
   FLOSS License Exception
   <http://www.mysql.com/about/legal/licensing/foss-exception.html>.
-  
+
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published
   by the Free Software Foundation; version 2 of the License.
-  
+
   This program is distributed in the hope that it will be useful, but
   WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
   or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
   for more details.
-  
+
   You should have received a copy of the GNU General Public License along
   with this program; if not, write to the Free Software Foundation, Inc.,
   51 Franklin St, Fifth Floor, Boston, MA 02110-1301  USA
@@ -44,6 +44,11 @@
 */
 #if USE_UNIXODBC
 # define SQLGetPrivateProfileStringW MySQLGetPrivateProfileStringW
+int INSTAPI
+MySQLGetPrivateProfileStringW(const MyODBC_LPCWSTR lpszSection, const MyODBC_LPCWSTR lpszEntry,
+                              const MyODBC_LPCWSTR lpszDefault, LPWSTR lpszRetBuffer,
+                              int cbRetBuffer, const MyODBC_LPCWSTR lpszFilename);
+
 #endif
 
 
@@ -423,7 +428,7 @@ int driver_lookup_name(Driver *driver)
   SQLWCHAR *pdrv= drivers;
   SQLWCHAR driverinfo[1024];
   int len;
-  short slen; /* WORD needed for windows */
+  WORD slen; /* WORD needed for windows */
   SAVE_MODE();
 
   /* get list of drivers */
@@ -573,7 +578,7 @@ int driver_from_kvpair_semicolon(Driver *driver, const SQLWCHAR *attrs)
     {
       if (end - split >= ODBCDRIVER_STRLEN)
       {
-        /* 
+        /*
           The value is longer than the allocated buffer length
           for driver->lib or driver->setup_lib
         */
@@ -673,7 +678,7 @@ void ds_delete(DataSource *ds)
   x_free(ds->savefile);
   x_free(ds->plugin_dir);
   x_free(ds->default_auth);
-  
+
   x_free(ds->name8);
   x_free(ds->driver8);
   x_free(ds->description8);
@@ -950,7 +955,7 @@ int ds_lookup(DataSource *ds)
    * In Windows XP, there is a bug in SQLGetPrivateProfileString
    * when mode is ODBC_BOTH_DSN and we are looking for a system
    * DSN. In this case SQLGetPrivateProfileString will find the
-   * system dsn but return a corrupt list of attributes. 
+   * system dsn but return a corrupt list of attributes.
    *
    * See debug code above to print the exact data returned.
    * See also: http://support.microsoft.com/kb/909122/

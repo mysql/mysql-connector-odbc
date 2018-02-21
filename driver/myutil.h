@@ -331,9 +331,9 @@ enum enum_field_types map_sql2mysql_type(SQLSMALLINT sql_type);
 
 /* proc_* functions - used to parse prcedures headers in SQLProcedureColumns */
 char *      proc_param_tokenize   (char *str, int *params_num);
-SQLCHAR *   proc_get_param_type   (SQLCHAR *proc, int len, SQLSMALLINT *ptype);
-SQLCHAR*    proc_get_param_name   (SQLCHAR *proc, int len, SQLCHAR *cname);
-SQLCHAR*    proc_get_param_dbtype (SQLCHAR *proc, int len, SQLCHAR *ptype);
+char *      proc_get_param_type   (char *proc, int len, SQLSMALLINT *ptype);
+char *    proc_get_param_name   (char *proc, int len, char *cname);
+char *      proc_get_param_dbtype (char *proc, int len, char *ptype);
 SQLUINTEGER proc_get_param_size   (SQLCHAR *ptype, int len, int sql_type_index,
                                   SQLSMALLINT *dec);
 SQLLEN      proc_get_param_octet_len  (STMT *stmt, int sql_type_index,
@@ -342,7 +342,7 @@ SQLLEN      proc_get_param_octet_len  (STMT *stmt, int sql_type_index,
 SQLLEN      proc_get_param_col_len    (STMT *stmt, int sql_type_index, SQLULEN col_size,
                                       SQLSMALLINT decimal_digits, unsigned int flags,
                                       char * str_buff);
-int         proc_get_param_sql_type_index (SQLCHAR *ptype, int len);
+int         proc_get_param_sql_type_index (const char*ptype, int len);
 SQLTypeMap *proc_get_param_map_by_index   (int index);
 char *      proc_param_next_token         (char *str, char *str_end);
 

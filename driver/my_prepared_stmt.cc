@@ -7,16 +7,16 @@
   conditions of the GPLv2 as it is applied to this software, see the
   FLOSS License Exception
   <http://www.mysql.com/about/legal/licensing/foss-exception.html>.
-  
+
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published
   by the Free Software Foundation; version 2 of the License.
-  
+
   This program is distributed in the hope that it will be useful, but
   WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
   or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
   for more details.
-  
+
   You should have received a copy of the GNU General Public License along
   with this program; if not, write to the Free Software Foundation, Inc.,
   51 Franklin St, Fifth Floor, Boston, MA 02110-1301  USA
@@ -179,20 +179,20 @@ BOOL ssps_get_out_params(STMT *stmt)
 
               if (aprec->octet_length_ptr)
               {
-                octet_length_ptr= ptr_offset_adjust(aprec->octet_length_ptr,
+                octet_length_ptr= (SQLLEN*)ptr_offset_adjust(aprec->octet_length_ptr,
                                               stmt->apd->bind_offset_ptr,
                                               stmt->apd->bind_type,
                                               sizeof(SQLLEN), 0);
               }
 
-              indicator_ptr= ptr_offset_adjust(aprec->indicator_ptr,
+              indicator_ptr= (SQLLEN*)ptr_offset_adjust(aprec->indicator_ptr,
                                            stmt->apd->bind_offset_ptr,
                                            stmt->apd->bind_type,
                                            sizeof(SQLLEN), 0);
 
               default_size= bind_length(aprec->concise_type,
                                         aprec->octet_length);
-              target= ptr_offset_adjust(aprec->data_ptr, stmt->apd->bind_offset_ptr,
+              target= (char*)ptr_offset_adjust(aprec->data_ptr, stmt->apd->bind_offset_ptr,
                                     stmt->apd->bind_type, default_size, 0);
 
               reset_getdata_position(stmt);
@@ -233,8 +233,8 @@ BOOL ssps_get_out_params(STMT *stmt)
 
     if (stmt->out_params_state != OPS_STREAMS_PENDING)
     {
-      /* This MAGICAL fetch is required. If there are streams - it has to be after 
-         streams are all done, perhaps when stmt->out_params_state is changed from 
+      /* This MAGICAL fetch is required. If there are streams - it has to be after
+         streams are all done, perhaps when stmt->out_params_state is changed from
          OPS_STREAMS_PENDING */
       mysql_stmt_fetch(stmt->ssps);
     }
@@ -255,7 +255,7 @@ int ssps_get_result(STMT *stmt)
     }
 
   }
-  
+
   return 0;
 }
 
@@ -433,7 +433,7 @@ allocate_buffer_for_field(const MYSQL_FIELD * const field, BOOL outparams)
     case MYSQL_TYPE_SET:
     #endif
     case MYSQL_TYPE_BIT:
-      result.type= MYSQL_TYPE_BIT;
+      result.type= (enum_field_types)MYSQL_TYPE_BIT;
       if (outparams)
       {
         /* For out params we surprisingly get it as string representation of a
@@ -456,7 +456,7 @@ allocate_buffer_for_field(const MYSQL_FIELD * const field, BOOL outparams)
 
   if (result.size > 0)
   {
-    result.buffer= myodbc_malloc(result.size, MYF(0));
+    result.buffer= (char*)myodbc_malloc(result.size, MYF(0));
   }
 
   return result;
@@ -489,7 +489,7 @@ static MYSQL_ROW fetch_varlength_columns(STMT *stmt, MYSQL_ROW columns)
         if (stmt->lengths[i] < *stmt->result_bind[i].length)
         {
           /* TODO Realloc error proc */
-          stmt->array[i]= myodbc_realloc(stmt->array[i], *stmt->result_bind[i].length,
+          stmt->array[i]= (char*)myodbc_realloc(stmt->array[i], *stmt->result_bind[i].length,
             MYF(MY_ALLOW_ZERO_PTR));
           stmt->lengths[i]= *stmt->result_bind[i].length;
         }
@@ -545,11 +545,11 @@ int ssps_bind_result(STMT *stmt)
   }
   else
   {
-    my_bool       *is_null= myodbc_malloc(sizeof(my_bool)*num_fields,
+    my_bool       *is_null= (my_bool*)myodbc_malloc(sizeof(my_bool)*num_fields,
                                       MYF(MY_ZEROFILL));
-    my_bool       *err=     myodbc_malloc(sizeof(my_bool)*num_fields,
+    my_bool       *err=     (my_bool*)myodbc_malloc(sizeof(my_bool)*num_fields,
                                       MYF(MY_ZEROFILL));
-    unsigned long *len=     myodbc_malloc(sizeof(unsigned long)*num_fields,
+    unsigned long *len=     (unsigned long*)myodbc_malloc(sizeof(unsigned long)*num_fields,
                                       MYF(MY_ZEROFILL));
 
     /*TODO care about memory allocation errors */
@@ -580,16 +580,16 @@ int ssps_bind_result(STMT *stmt)
         &&  stmt->result_bind[i].buffer_type  != MYSQL_TYPE_NULL)
       {
         stmt->fix_fields= fetch_varlength_columns;
-        
+
         /* Need to alloc it only once*/
         if (stmt->lengths == NULL)
         {
-          stmt->lengths= myodbc_malloc(sizeof(unsigned long)*num_fields, MYF(MY_ZEROFILL));
+          stmt->lengths= (unsigned long*)myodbc_malloc(sizeof(unsigned long)*num_fields, MYF(MY_ZEROFILL));
         }
         /* Buffer of initial length? */
       }
     }
-    
+
     return mysql_stmt_bind_result(stmt->ssps, stmt->result_bind);
   }
 
@@ -740,7 +740,7 @@ char * ssps_get_string(STMT *stmt, ulong column_number, char *value, ulong *leng
 
   /* Basically should be prevented by earlied tests of
     conversion possibility */
-  return col_rbind->buffer;
+  return (char*)col_rbind->buffer;
 }
 /* }}} */
 
@@ -810,7 +810,7 @@ long double ssps_get_double(STMT *stmt, ulong column_number, char *value, ulong 
 
     /* TODO : Geometry? default ? */
   }
-  
+
   /* Basically should be prevented by earlied tests of
      conversion possibility */
   return .0;
@@ -848,7 +848,7 @@ long long ssps_get_int64(STMT *stmt, ulong column_number, char *value, ulong len
     {
       long long uval = 0;
       /* This length is in bytes, on the contrary to what can be seen in mysql_resultset.cpp where the Meta is used */
-      return binary2numeric(&uval, col_rbind->buffer, *col_rbind->length);
+      return binary2numeric(&uval, (char*)col_rbind->buffer, *col_rbind->length);
     }
 
     case MYSQL_TYPE_YEAR:  // fetched as a SMALLINT
@@ -921,7 +921,7 @@ long long ssps_get_int64(STMT *stmt, ulong column_number, char *value, ulong len
           }
           break;
         default:
-          return 0; 
+          return 0;
       }
       return ret;
     }

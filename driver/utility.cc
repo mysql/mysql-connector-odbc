@@ -384,7 +384,7 @@ char *dupp_str(char *from,int length)
         return myodbc_strdup("",MYF(MY_WME));
     if ( length == SQL_NTS )
         length= strlen(from);
-    if ( (to= myodbc_malloc(length+1,MYF(MY_WME))) )
+    if ( (to= (char*)myodbc_malloc(length+1,MYF(MY_WME))) )
     {
         memcpy(to,from,length);
         to[length]= 0;
@@ -619,10 +619,8 @@ copy_ansi_result(STMT *stmt,
   while (src < src_end)
   {
     /* Find the conversion functions. */
-    int (*mb_wc)(struct charset_info_st *, my_wc_t *, const uchar *,
-                 const uchar *) = from_cs->cset->mb_wc;
-    int (*wc_mb)(struct charset_info_st *, my_wc_t, uchar *s,
-                 uchar *e)= to_cs->cset->wc_mb;
+    auto mb_wc = from_cs->cset->mb_wc;
+    auto wc_mb = to_cs->cset->wc_mb;
     my_wc_t wc;
     uchar dummy[7]; /* Longer than any single character in our charsets. */
     int to_cnvres;
@@ -831,10 +829,8 @@ copy_wchar_result(STMT *stmt,
   while (src < src_end)
   {
     /* Find the conversion functions. */
-    int (*mb_wc)(struct charset_info_st *, my_wc_t *, const uchar *,
-                 const uchar *) = from_cs->cset->mb_wc;
-    int (*wc_mb)(struct charset_info_st *, my_wc_t, uchar *s,
-                 uchar *e)= utf8_charset_info->cset->wc_mb;
+    auto mb_wc = from_cs->cset->mb_wc;
+    auto wc_mb = utf8_charset_info->cset->wc_mb;
     my_wc_t wc;
     uchar u8[5]; /* Max length of utf-8 string we'll see. */
     SQLWCHAR dummy[2]; /* If SQLWCHAR is UTF-16, we may need two chars. */
@@ -1959,7 +1955,7 @@ SQLLEN get_bookmark_value(SQLSMALLINT fCType, SQLPOINTER rgbValue)
   {
   case SQL_C_CHAR:
   case SQL_C_BINARY:
-    return atol((SQLCHAR *) rgbValue);
+    return atol((const char*) rgbValue);
 
   case SQL_C_WCHAR:
     return sqlwchartoul((SQLWCHAR *)rgbValue, NULL);
@@ -2728,7 +2724,7 @@ void sqlnum_from_str(const char *numstr, SQL_NUMERIC_STRUCT *sqlnum,
   int usedig;
   int i;
   int len;
-  char *decpt= strchr(numstr, '.');
+  char *decpt= strchr((char*)numstr, '.');
   int overflow= 0;
   SQLSCHAR reqscale= sqlnum->scale;
   SQLCHAR reqprec= sqlnum->precision;
@@ -3089,7 +3085,7 @@ SQLRETURN set_sql_select_limit(DBC *dbc, SQLULEN lim_value, my_bool req_lock)
 
   Returns position in the param string after parameter type
 */
-SQLCHAR *proc_get_param_type(SQLCHAR *proc, int len, SQLSMALLINT *ptype)
+char *proc_get_param_type(char *proc, int len, SQLSMALLINT *ptype)
 {
   while (isspace(*proc) && (len--))
     ++proc;
@@ -3126,7 +3122,7 @@ SQLCHAR *proc_get_param_type(SQLCHAR *proc, int len, SQLSMALLINT *ptype)
 
   Returns position in the param string after parameter name
 */
-SQLCHAR* proc_get_param_name(SQLCHAR *proc, int len, SQLCHAR *cname)
+char* proc_get_param_name(char *proc, int len, char *cname)
 {
   char quote_symbol= '\0';
 
@@ -3156,7 +3152,7 @@ SQLCHAR* proc_get_param_name(SQLCHAR *proc, int len, SQLCHAR *cname)
 
   Returns position in the param string after parameter type name
 */
-SQLCHAR* proc_get_param_dbtype(SQLCHAR *proc, int len, SQLCHAR *ptype)
+char* proc_get_param_dbtype(char *proc, int len, char *ptype)
 {
   char *trim_str, *start_pos= ptype;
 
@@ -3188,76 +3184,76 @@ SQLCHAR* proc_get_param_dbtype(SQLCHAR *proc, int len, SQLCHAR *ptype)
 SQLTypeMap SQL_TYPE_MAP_values[TYPE_MAP_SIZE]=
 {
   /* SQL_BIT= -7 */
-  {"bit", 3, SQL_BIT, MYSQL_TYPE_BIT, 1, 1},
-  {"bool", 4, SQL_BIT, MYSQL_TYPE_BIT, 1, 1},
+  {(SQLCHAR*)"bit", 3, SQL_BIT, MYSQL_TYPE_BIT, 1, 1},
+  {(SQLCHAR*)"bool", 4, SQL_BIT, MYSQL_TYPE_BIT, 1, 1},
 
   /* SQL_TINY= -6 */
-  {"tinyint", 7, SQL_TINYINT, MYSQL_TYPE_TINY, 1, 1},
+  {(SQLCHAR*)"tinyint", 7, SQL_TINYINT, MYSQL_TYPE_TINY, 1, 1},
 
   /* SQL_BIGINT= -5 */
-  {"bigint", 6, SQL_BIGINT, MYSQL_TYPE_LONGLONG, 20, 1},
+  {(SQLCHAR*)"bigint", 6, SQL_BIGINT, MYSQL_TYPE_LONGLONG, 20, 1},
 
   /* SQL_LONGVARBINARY= -4 */
-  {"long varbinary", 14, SQL_LONGVARBINARY, MYSQL_TYPE_MEDIUM_BLOB, 16777215, 1},
-  {"blob", 4, SQL_LONGVARBINARY, MYSQL_TYPE_BLOB, 65535, 1},
-  {"longblob", 8, SQL_LONGVARBINARY, MYSQL_TYPE_LONG_BLOB, 4294967295UL, 1},
-  {"tinyblob", 8, SQL_LONGVARBINARY, MYSQL_TYPE_TINY_BLOB, 255, 1},
-  {"mediumblob", 10, SQL_LONGVARBINARY, MYSQL_TYPE_MEDIUM_BLOB, 16777215,1 },
+  {(SQLCHAR*)"long varbinary", 14, SQL_LONGVARBINARY, MYSQL_TYPE_MEDIUM_BLOB, 16777215, 1},
+  {(SQLCHAR*)"blob", 4, SQL_LONGVARBINARY, MYSQL_TYPE_BLOB, 65535, 1},
+  {(SQLCHAR*)"longblob", 8, SQL_LONGVARBINARY, MYSQL_TYPE_LONG_BLOB, 4294967295UL, 1},
+  {(SQLCHAR*)"tinyblob", 8, SQL_LONGVARBINARY, MYSQL_TYPE_TINY_BLOB, 255, 1},
+  {(SQLCHAR*)"mediumblob", 10, SQL_LONGVARBINARY, MYSQL_TYPE_MEDIUM_BLOB, 16777215,1 },
 
   /* SQL_VARBINARY= -3 */
-  {"varbinary", 9, SQL_VARBINARY, MYSQL_TYPE_VAR_STRING, 0, 1},
+  {(SQLCHAR*)"varbinary", 9, SQL_VARBINARY, MYSQL_TYPE_VAR_STRING, 0, 1},
 
   /* SQL_BINARY= -2 */
-  {"binary", 6, SQL_BINARY, MYSQL_TYPE_STRING, 0, 1},
+  {(SQLCHAR*)"binary", 6, SQL_BINARY, MYSQL_TYPE_STRING, 0, 1},
 
   /* SQL_LONGVARCHAR= -1 */
-  {"long varchar", 12, SQL_LONGVARCHAR, MYSQL_TYPE_MEDIUM_BLOB, 16777215, 0},
-  {"text", 4, SQL_LONGVARCHAR, MYSQL_TYPE_BLOB, 65535, 0},
-  {"mediumtext", 10, SQL_LONGVARCHAR, MYSQL_TYPE_MEDIUM_BLOB, 16777215, 0},
-  {"longtext", 8, SQL_LONGVARCHAR, MYSQL_TYPE_LONG_BLOB, 4294967295UL, 0},
-  {"tinytext", 8, SQL_LONGVARCHAR, MYSQL_TYPE_TINY_BLOB, 255, 0},
+  {(SQLCHAR*)"long varchar", 12, SQL_LONGVARCHAR, MYSQL_TYPE_MEDIUM_BLOB, 16777215, 0},
+  {(SQLCHAR*)"text", 4, SQL_LONGVARCHAR, MYSQL_TYPE_BLOB, 65535, 0},
+  {(SQLCHAR*)"mediumtext", 10, SQL_LONGVARCHAR, MYSQL_TYPE_MEDIUM_BLOB, 16777215, 0},
+  {(SQLCHAR*)"longtext", 8, SQL_LONGVARCHAR, MYSQL_TYPE_LONG_BLOB, 4294967295UL, 0},
+  {(SQLCHAR*)"tinytext", 8, SQL_LONGVARCHAR, MYSQL_TYPE_TINY_BLOB, 255, 0},
 
   /* SQL_CHAR= 1 */
-  {"char", 4, SQL_CHAR, MYSQL_TYPE_STRING, 0, 0},
-  {"enum", 4, SQL_CHAR, MYSQL_TYPE_STRING, 0, 0},
-  {"set", 3, SQL_CHAR, MYSQL_TYPE_STRING, 0, 0},
+  {(SQLCHAR*)"char", 4, SQL_CHAR, MYSQL_TYPE_STRING, 0, 0},
+  {(SQLCHAR*)"enum", 4, SQL_CHAR, MYSQL_TYPE_STRING, 0, 0},
+  {(SQLCHAR*)"set", 3, SQL_CHAR, MYSQL_TYPE_STRING, 0, 0},
 
   /* SQL_NUMERIC= 2 */
-  {"numeric", 7, SQL_NUMERIC, MYSQL_TYPE_DECIMAL, 0, 1},
+  {(SQLCHAR*)"numeric", 7, SQL_NUMERIC, MYSQL_TYPE_DECIMAL, 0, 1},
 
   /* SQL_DECIMAL= 3 */
-  {"decimal", 7, SQL_DECIMAL, MYSQL_TYPE_DECIMAL, 0, 1},
+  {(SQLCHAR*)"decimal", 7, SQL_DECIMAL, MYSQL_TYPE_DECIMAL, 0, 1},
 
   /* SQL_INTEGER= 4 */
-  {"int", 3, SQL_INTEGER, MYSQL_TYPE_LONG, 10, 1},
-  {"mediumint", 9, SQL_INTEGER, MYSQL_TYPE_INT24, 8, 1},
+  {(SQLCHAR*)"int", 3, SQL_INTEGER, MYSQL_TYPE_LONG, 10, 1},
+  {(SQLCHAR*)"mediumint", 9, SQL_INTEGER, MYSQL_TYPE_INT24, 8, 1},
 
   /* SQL_SMALLINT= 5 */
-  {"smallint", 8, SQL_SMALLINT, MYSQL_TYPE_SHORT, 5, 1},
+  {(SQLCHAR*)"smallint", 8, SQL_SMALLINT, MYSQL_TYPE_SHORT, 5, 1},
 
   /* SQL_REAL= 7 */
-  {"float", 5, SQL_REAL, MYSQL_TYPE_FLOAT, 7, 1},
+  {(SQLCHAR*)"float", 5, SQL_REAL, MYSQL_TYPE_FLOAT, 7, 1},
 
   /* SQL_DOUBLE= 8 */
-  {"double", 6, SQL_DOUBLE, MYSQL_TYPE_DOUBLE, 15, 1},
+  {(SQLCHAR*)"double", 6, SQL_DOUBLE, MYSQL_TYPE_DOUBLE, 15, 1},
 
   /* SQL_DATETIME= 9 */
-  {"datetime", 8, SQL_TYPE_TIMESTAMP, MYSQL_TYPE_DATETIME, 19, 1},
+  {(SQLCHAR*)"datetime", 8, SQL_TYPE_TIMESTAMP, MYSQL_TYPE_DATETIME, 19, 1},
 
   /* SQL_VARCHAR= 12 */
-  {"varchar", 7, SQL_VARCHAR, MYSQL_TYPE_VARCHAR, 0, 0},
+  {(SQLCHAR*)"varchar", 7, SQL_VARCHAR, MYSQL_TYPE_VARCHAR, 0, 0},
 
   /* SQL_TYPE_DATE= 91 */
-  {"date", 4, SQL_TYPE_DATE, MYSQL_TYPE_DATE, 10, 1},
+  {(SQLCHAR*)"date", 4, SQL_TYPE_DATE, MYSQL_TYPE_DATE, 10, 1},
 
   /* YEAR - SQL_SMALLINT */
-  {"year", 4, SQL_SMALLINT, MYSQL_TYPE_YEAR, 2, 1},
+  {(SQLCHAR*)"year", 4, SQL_SMALLINT, MYSQL_TYPE_YEAR, 2, 1},
 
   /* SQL_TYPE_TIMESTAMP= 93 */
-  {"timestamp", 9, SQL_TYPE_TIMESTAMP, MYSQL_TYPE_TIMESTAMP, 19, 1},
+  {(SQLCHAR*)"timestamp", 9, SQL_TYPE_TIMESTAMP, MYSQL_TYPE_TIMESTAMP, 19, 1},
 
   /* SQL_TYPE_TIME= 92 */
-  {"time", 4, SQL_TYPE_TIME, MYSQL_TYPE_TIME, 8, 1}
+  {(SQLCHAR*)"time", 4, SQL_TYPE_TIME, MYSQL_TYPE_TIME, 8, 1}
 
 };
 
@@ -3269,7 +3265,7 @@ enum enum_field_types map_sql2mysql_type(SQLSMALLINT sql_type)
   {
     if (SQL_TYPE_MAP_values[i].sql_type == sql_type)
     {
-      return SQL_TYPE_MAP_values[i].mysql_type;
+      return (enum_field_types)SQL_TYPE_MAP_values[i].mysql_type;
     }
   }
 
@@ -3284,13 +3280,13 @@ enum enum_field_types map_sql2mysql_type(SQLSMALLINT sql_type)
 
   Returns position in the param string after parameter type name
 */
-int proc_get_param_sql_type_index(SQLCHAR *ptype, int len)
+int proc_get_param_sql_type_index(const char *ptype, int len)
 {
   int i;
   for (i= 0; i < TYPE_MAP_SIZE; ++i)
   {
     if (len >= SQL_TYPE_MAP_values[i].name_length &&
-        (!myodbc_casecmp(ptype, SQL_TYPE_MAP_values[i].type_name,
+        (!myodbc_casecmp(ptype, (const char*)SQL_TYPE_MAP_values[i].type_name,
          SQL_TYPE_MAP_values[i].name_length)))
       return i;
   }
@@ -3335,7 +3331,7 @@ SQLUINTEGER proc_parse_sizes(SQLCHAR *ptype, int len, SQLSMALLINT *dec)
   while ((len > 0) && (*ptype!= ')') && (parsed < 2))
   {
     int n_index= 0;
-    SQLCHAR number_to_parse[16]= "\0";
+    char number_to_parse[16]= "\0";
 
     /* skip all non-digit characters */
     while (!isdigit(*ptype) && (len-- >= 0) && (*ptype!= ')'))
@@ -3417,8 +3413,8 @@ SQLUINTEGER proc_parse_enum_set(SQLCHAR *ptype, int len, BOOL is_enum)
 SQLUINTEGER proc_get_param_size(SQLCHAR *ptype, int len, int sql_type_index, SQLSMALLINT *dec)
 {
   SQLUINTEGER param_size= SQL_TYPE_MAP_values[sql_type_index].type_length;
-  SQLCHAR *start_pos= strchr(ptype, '(');
-  SQLCHAR *end_pos= strrchr(ptype, ')');
+  SQLCHAR *start_pos= (SQLCHAR*)strchr((const char*)ptype, '(');
+  SQLCHAR *end_pos= (SQLCHAR*)strrchr((const char*)ptype, ')');
 
   /* no decimal digits by default */
   *dec= SQL_NO_TOTAL;
@@ -3442,11 +3438,11 @@ SQLUINTEGER proc_get_param_size(SQLCHAR *ptype, int len, int sql_type_index, SQL
     case MYSQL_TYPE_VARCHAR:
     case MYSQL_TYPE_VAR_STRING:
     case MYSQL_TYPE_STRING:
-      if (!myodbc_strcasecmp(SQL_TYPE_MAP_values[sql_type_index].type_name, "set"))
+      if (!myodbc_strcasecmp((const char*)(SQL_TYPE_MAP_values[sql_type_index].type_name), "set"))
       {
         param_size= proc_parse_enum_set(start_pos, end_pos - start_pos, FALSE);
       }
-      else if (!myodbc_strcasecmp(SQL_TYPE_MAP_values[sql_type_index].type_name, "enum"))
+      else if (!myodbc_strcasecmp((const char*)(SQL_TYPE_MAP_values[sql_type_index].type_name), "enum"))
       {
         param_size= proc_parse_enum_set(start_pos, end_pos - start_pos, TRUE);
       }
@@ -3503,7 +3499,7 @@ SQLLEN proc_get_param_col_len(STMT *stmt, int sql_type_index, SQLULEN col_size,
   temp_fld.decimals= decimal_digits;
   temp_fld.flags= flags;
   temp_fld.charsetnr= stmt->dbc->ansi_charset_info->number;
-  temp_fld.type= SQL_TYPE_MAP_values[sql_type_index].mysql_type;
+  temp_fld.type= (enum_field_types)(SQL_TYPE_MAP_values[sql_type_index].mysql_type);
 
   if (str_buff != NULL)
   {
@@ -3540,7 +3536,7 @@ SQLLEN proc_get_param_octet_len(STMT *stmt, int sql_type_index, SQLULEN col_size
   temp_fld.decimals= decimal_digits;
   temp_fld.flags= flags;
   temp_fld.charsetnr= stmt->dbc->ansi_charset_info->number;
-  temp_fld.type= SQL_TYPE_MAP_values[sql_type_index].mysql_type;
+  temp_fld.type= (enum_field_types)(SQL_TYPE_MAP_values[sql_type_index].mysql_type);
 
   if (str_buff != NULL)
   {
@@ -3898,7 +3894,7 @@ char *add_to_buffer(NET *net,char *to,const char *from,ulong length)
   @return the position where LIMIT OFFS, ROWS is ending
 */
 char* get_limit_numbers(CHARSET_INFO* cs, char *query, char * query_end,
-                       unsigned long long *offs_out, unsigned long *rows_out)
+                       unsigned long long *offs_out, unsigned int *rows_out)
 {
   char digit_buf[30];
   int index_pos = 0;

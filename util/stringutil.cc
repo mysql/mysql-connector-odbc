@@ -52,7 +52,7 @@ SQLWCHAR *sqlchar_as_sqlwchar(CHARSET_INFO *charset_info, SQLCHAR *str,
   SQLCHAR *pos, *str_end;
   SQLWCHAR *out;
   SQLINTEGER i, out_bytes;
-  my_bool free_str= FALSE;
+  my_bool free_str= 0;
 
   if (str && *len == SQL_NTS)
   {
@@ -81,7 +81,7 @@ SQLWCHAR *sqlchar_as_sqlwchar(CHARSET_INFO *charset_info, SQLCHAR *str,
                            (char *)str, *len, charset_info,
                            &used_bytes, &used_chars, errors);
     str= u8;
-    free_str= TRUE;
+    free_str= 1;
   }
 
   str_end= str + *len;
@@ -522,10 +522,8 @@ copy_and_convert(char *to, uint32 to_length, CHARSET_INFO *to_cs,
   const uchar *from_end= (const uchar*) from+from_length;
   char *to_start= to;
   uchar *to_end= (uchar*) to+to_length;
-  int (*mb_wc)(struct charset_info_st *, my_wc_t *, const uchar *,
-               const uchar *)= from_cs->cset->mb_wc;
-  int (*wc_mb)(struct charset_info_st *, my_wc_t, uchar *s, uchar *e)=
-    to_cs->cset->wc_mb;
+  auto mb_wc= from_cs->cset->mb_wc;
+  auto wc_mb= to_cs->cset->wc_mb;
   uint error_count= 0;
 
   *used_bytes= *used_chars= 0;
@@ -921,10 +919,10 @@ static const MY_CSET_OS_NAME charsets[]=
   {"utf8",           "utf8",     my_cs_exact},
   {"utf-8",          "utf8",     my_cs_exact},
 #endif
-  {NULL,             NULL,       0}
+  {NULL,             NULL,       (my_cs_match_type)0}
 };
 
-
+#if(!MYSQL8)
 const char *
 my_os_charset_to_mysql_charset(const char *csname)
 {
@@ -956,7 +954,7 @@ def:
 
   return csname;
 }
-
+#endif
 
 /*
  Converts from wchar_t to SQLWCHAR and copies the result into the provided

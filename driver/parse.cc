@@ -416,10 +416,10 @@ const char * skip_leading_spaces(const char *str)
 /**
  Detect if a statement is a SET NAMES statement.
 */
-int is_set_names_statement(const SQLCHAR *query)
+int is_set_names_statement(const char *query)
 {
   query= skip_leading_spaces(query);
-  return myodbc_casecmp((char *)query, "SET NAMES", 9) == 0;
+  return myodbc_casecmp(query, "SET NAMES", 9) == 0;
 }
 
 
@@ -433,7 +433,7 @@ int is_select_statement(const MY_PARSED_QUERY *query)
 
 
 /* These functions expect that leasding spaces have been skipped */
-BOOL is_drop_procedure(const SQLCHAR * query)
+BOOL is_drop_procedure(const char* query)
 {
   if (myodbc_casecmp(query, "DROP", 4) == 0 && *(query+4) != '\0'
     && isspace(*(query+4)))
@@ -446,7 +446,7 @@ BOOL is_drop_procedure(const SQLCHAR * query)
 }
 
 
-BOOL is_drop_function(const SQLCHAR * query)
+BOOL is_drop_function(const char* query)
 {
   if (myodbc_casecmp(query, "DROP", 4) == 0 && *(query+4) != '\0'
     && isspace(*(query+4)))
@@ -461,7 +461,7 @@ BOOL is_drop_function(const SQLCHAR * query)
 
 /* In fact this function catches all CREATE queries with DEFINER as well.
    But so far we are fine with that and even are using that.*/
-BOOL is_create_procedure(const SQLCHAR * query)
+BOOL is_create_procedure(const char* query)
 {
   if (myodbc_casecmp(query, "CREATE", 6) == 0 && *(query+6) != '\0'
     && isspace(*(query+6)))
@@ -480,7 +480,7 @@ BOOL is_create_procedure(const SQLCHAR * query)
 }
 
 
-BOOL is_create_function(const SQLCHAR * query)
+BOOL is_create_function(const char* query)
 {
   if (myodbc_casecmp(query, "CREATE", 6) == 0 && *(query+6) != '\0'
     && isspace(*(query+6)))
@@ -493,7 +493,7 @@ BOOL is_create_function(const SQLCHAR * query)
 }
 
 
-BOOL is_use_db(const SQLCHAR * query)
+BOOL is_use_db(const char* query)
 {
   if (myodbc_casecmp(query, "USE", 3) == 0 && *(query+3) != '\0'
     && isspace(*(query+3)))

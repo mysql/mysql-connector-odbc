@@ -30,15 +30,17 @@
 #ifndef _STRINGUTIL_H
 #define _STRINGUTIL_H
 
+#include "../MYODBC_MYSQL.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#include "../MYODBC_MYSQL.h"
-
 #include <string.h>
 #include <sql.h>
 #include <sqlext.h>
+
+#include "unicode_transcode.h"
 
 #define myodbc_min(a, b) ((a) < (b) ? (a) : (b))
 #define myodbc_max(a, b) ((a) > (b) ? (a) : (b))
@@ -50,11 +52,6 @@ extern "C" {
 #endif
 
 #define MAX_BYTES_PER_UTF8_CP 4 /* max 4 bytes per utf8 codepoint */
-
-/* Unicode transcoding */
-typedef unsigned int UTF32;
-typedef unsigned short UTF16;
-typedef unsigned char UTF8;
 
 extern CHARSET_INFO *utf8_charset_info;
 

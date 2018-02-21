@@ -31,7 +31,7 @@ ELSE (UNICODE OR NOT ANSI)
 ENDIF (UNICODE OR NOT ANSI)
 
 
-SET(SETUP_SRCS ConfigDSN.c callbacks.c setupgui.h utils.c)
+SET(SETUP_SRCS ConfigDSN.cc callbacks.cc setupgui.h utils.cc)
 
 IF (WIN32)
   SET(SETUP_SRCS ${SETUP_SRCS}
@@ -48,8 +48,8 @@ IF (WIN32)
   SET(PLATFORM_LIBS comctl32)
 ELSE (WIN32)
   SET(SETUP_SRCS ${SETUP_SRCS}
-                 gtk/odbcdialogparams.c
-                 gtk/ODBCINSTGetProperties.c
+                 gtk/odbcdialogparams.cc
+                 gtk/ODBCINSTGetProperties.cc
   )
   INCLUDE (FindPkgConfig)
   PKG_CHECK_MODULES(GTK2 gtk+-2.0)

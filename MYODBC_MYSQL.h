@@ -34,13 +34,28 @@
 #include <my_sys.h>
 #include <mysql.h>
 #include <mysqld_error.h>
+#include <my_alloc.h>
+#include <mysql/service_my_snprintf.h>
+#include <mysql/service_mysql_alloc.h>
+#include <m_ctype.h>
+#include <my_io.h>
 
 #define my_bool bool
 #define mysys_end my_end
+
+#ifndef TRUE
+#define TRUE 1
+#endif
+
+#ifndef FALSE
+#define FALSE 0
+#endif
+
 #ifdef _WIN32
 typedef DWORD thread_local_key_t;
 typedef CRITICAL_SECTION native_mutex_t;
 typedef int native_mutexattr_t;
+
 #else
 typedef pthread_key_t thread_local_key_t;
 //typedef pthread_mutex_t native_mutex_t;
@@ -110,7 +125,12 @@ extern "C"
 #define myodbc_mutex_destroy native_mutex_destroy
 #define sort_dynamic(A,cmp) myodbc_qsort((A)->buffer, (A)->elements, (A)->size_of_element, (cmp))
 #define push_dynamic(A,B) insert_dynamic((A),(B))
+
+#ifdef _WIN32
+#define myodbc_snprintf snprintf
+#else
 #define myodbc_snprintf my_snprintf
+#endif
 
   static my_bool inline myodbc_allocate_dynamic(DYNAMIC_ARRAY *array, uint max_elements)
   {
@@ -139,11 +159,11 @@ extern "C"
       if (!(new_ptr = (uchar*)myodbc_realloc(array->buffer, size*
         array->size_of_element,
         MYF(MY_WME | MY_ALLOW_ZERO_PTR))))
-        return TRUE;
+        return 1;
       array->buffer = new_ptr;
       array->max_element = size;
     }
-    return FALSE;
+    return 0;
   }
 
   static void inline delete_dynamic_element(DYNAMIC_ARRAY *array, uint idx)

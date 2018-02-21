@@ -31,6 +31,8 @@
 #endif
 
 #include <odbcinstext.h>
+#include <cstdlib>
+#include <cstring>
 
 static const char *MYODBC_OPTIONS[][3] = {
   {"SERVER",            "T", "The host name of the MySQL server"},
@@ -112,7 +114,7 @@ int ODBCINSTGetProperties(HODBCINSTPROPERTY propertyList)
         propertyList->nPromptType= ODBCINST_PROMPTTYPE_COMBOBOX;
 
         /* Prepare data for the combobox */
-        propertyList->aPromptData= malloc(sizeof(paramsOnOff));
+        propertyList->aPromptData= (char**)malloc(sizeof(paramsOnOff));
         memcpy(propertyList->aPromptData, paramsOnOff, sizeof(paramsOnOff)); 
       break;
 

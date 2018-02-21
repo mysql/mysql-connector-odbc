@@ -62,7 +62,7 @@
 
 #include "MYODBC_MYSQL.h"
 #include "installer.h"
-
+#include "unicode_transcode.h"
 #include <sql.h>
 
 #ifdef __cplusplus
@@ -91,9 +91,6 @@ void syncTabsData(HWND hwnd, DataSource *params);
 void syncTabs(HWND hwnd, DataSource *params);
 void FillParameters(HWND hwnd, DataSource *params);
   
-/* Temporary buffer used in conversion macro */
-SQLWCHAR tmpbuf[1024];
-
 #define _W(string) wchar_t_as_sqlwchar((wchar_t*)string, (SQLWCHAR*)tmpbuf, \
                                           sizeof(string) / sizeof(wchar_t))
 
@@ -189,6 +186,8 @@ void setSensitive(gchar *widget_name, gboolean state);
 gboolean getBoolFieldData(gchar *widget_name);
 void setBoolFieldData(gchar *widget_name, gboolean checked);
 void getStrFieldData(gchar *widget_name, SQLWCHAR **param);
+void getComboFieldData(gchar *widget_name, SQLWCHAR **param);
+void setComboFieldData(gchar *widget_name, SQLWCHAR *param, SQLCHAR **param8);
 
 /* param8 is the output buffer in UTF8 for GTK */
 void setStrFieldData(gchar *widget_name, SQLWCHAR *param, SQLCHAR **param8);

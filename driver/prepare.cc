@@ -90,13 +90,13 @@ SQLRETURN my_SQLPrepare(SQLHSTMT hstmt, SQLCHAR *szSqlStr, SQLINTEGER cbSqlStr,
      (dupp_str will make it an empty string) */
   if (!(dupe && szSqlStr))
   {
-    if (!(szSqlStr= dupp_str((char *)szSqlStr, cbSqlStr)))
+    if (!(szSqlStr= (SQLCHAR*)dupp_str((char *)szSqlStr, cbSqlStr)))
     {
       return set_error(stmt, MYERR_S1001, NULL, 4001);
     }
   }
 
-  return prepare(stmt, szSqlStr, cbSqlStr);
+  return prepare(stmt, (char*)szSqlStr, cbSqlStr);
 }
 
 

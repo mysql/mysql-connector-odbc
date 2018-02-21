@@ -870,7 +870,7 @@ MySQLGetInfo(SQLHDBC hdbc, SQLUSMALLINT fInfoType,
     {
       char buff[80];
       sprintf(buff, "Unsupported option: %d to SQLGetInfo", fInfoType);
-      return set_conn_error(hdbc, MYERR_S1C00, buff, 4000);
+      return set_conn_error((DBC*)hdbc, MYERR_S1C00, buff, 4000);
     }
   }
 

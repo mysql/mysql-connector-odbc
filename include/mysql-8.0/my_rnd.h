@@ -2,7 +2,7 @@
 #define MY_RANDOM_INCLUDED
 
 /*
-   Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
+   Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License, version 2.0,
@@ -26,22 +26,14 @@
 
 /**
   @file include/my_rnd.h
-  A wrapper to use OpenSSL/YaSSL PRNGs.
+  A wrapper to use OpenSSL/wolfSSL PRNGs.
 */
 
 #include <stddef.h>
 
 #include "mysql_com.h"  // IWYU pragma: keep
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 double my_rnd_ssl(struct rand_struct *rand_st);
 int my_rand_buffer(unsigned char *buffer, size_t buffer_size);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* MY_RANDOM_INCLUDED */

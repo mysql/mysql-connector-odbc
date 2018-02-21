@@ -7,16 +7,16 @@
   conditions of the GPLv2 as it is applied to this software, see the
   FLOSS License Exception
   <http://www.mysql.com/about/legal/licensing/foss-exception.html>.
-  
+
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published
   by the Free Software Foundation; version 2 of the License.
-  
+
   This program is distributed in the hope that it will be useful, but
   WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
   or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
   for more details.
-  
+
   You should have received a copy of the GNU General Public License along
   with this program; if not, write to the Free Software Foundation, Inc.,
   51 Franklin St, Fifth Floor, Boston, MA 02110-1301  USA
@@ -29,7 +29,7 @@
 
 #ifndef __DRIVER_H__
 #define __DRIVER_H__
-                                                                               
+
 #include "../MYODBC_MYSQL.h"
 #include "../MYODBC_CONF.h"
 #include "../MYODBC_ODBC.h"
@@ -86,9 +86,9 @@ extern "C"
 # define FreeLibrary(module) dlclose((module))
 #endif
 
-#define ODBC_DRIVER	  "ODBC "MYODBC_STRSERIES" Driver"
-#define DRIVER_NAME	  "MySQL ODBC "MYODBC_STRSERIES" Driver"
-#define DRIVER_NONDSN_TAG "DRIVER={MySQL ODBC "MYODBC_STRSERIES" Driver}"
+#define ODBC_DRIVER	  "ODBC " MYODBC_STRSERIES " Driver"
+#define DRIVER_NAME	  "MySQL ODBC " MYODBC_STRSERIES " Driver"
+#define DRIVER_NONDSN_TAG "DRIVER={MySQL ODBC " MYODBC_STRSERIES " Driver}"
 
 #if defined(__APPLE__)
 
@@ -120,7 +120,7 @@ extern "C"
 #define MY_MAX_PK_PARTS 32
 
 #ifndef NEAR
-#define NEAR 
+#define NEAR
 #endif
 
 /* We don't make any assumption about what the default may be. */
@@ -232,7 +232,7 @@ typedef struct {
   SQLLEN        count;
   SQLLEN        bookmark_count;
   /* Everywhere(http://msdn.microsoft.com/en-us/library/ms713560(VS.85).aspx
-     http://msdn.microsoft.com/en-us/library/ms712631(VS.85).aspx) I found 
+     http://msdn.microsoft.com/en-us/library/ms712631(VS.85).aspx) I found
      it's referred as SQLULEN* */
   SQLULEN      *rows_processed_ptr;
 
@@ -534,8 +534,17 @@ extern myodbc_mutex_t myodbc_lock;
 # define MYSQL_TYPE_BIT 16
 #endif
 
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
 #include "myutil.h"
 #include "stringutil.h"
+
+#ifdef __cplusplus
+}
+#endif
 
 SQLRETURN SQL_API MySQLColAttribute(SQLHSTMT hstmt, SQLUSMALLINT column,
                                     SQLUSMALLINT attrib, SQLCHAR **char_attr,

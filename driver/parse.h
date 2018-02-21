@@ -7,16 +7,16 @@
   conditions of the GPLv2 as it is applied to this software, see the
   FLOSS License Exception
   <http://www.mysql.com/about/legal/licensing/foss-exception.html>.
-  
+
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published
   by the Free Software Foundation; version 2 of the License.
-  
+
   This program is distributed in the hope that it will be useful, but
   WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
   or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
   for more details.
-  
+
   You should have received a copy of the GNU General Public License along
   with this program; if not, write to the Free Software Foundation, Inc.,
   51 Franklin St, Fifth Floor, Boston, MA 02110-1301  USA
@@ -109,7 +109,7 @@ typedef struct syntax_markers
 
   } keyword;
   /* TODO: comments */
-  
+
 } MY_SYNTAX_MARKERS;
 
 typedef struct parsed_query
@@ -207,7 +207,7 @@ const char *find_first_token(CHARSET_INFO *charset, const char * begin,
                        const char * end, const char * target);
 const char *skip_leading_spaces(const char *str);
 
-int         is_set_names_statement  (const SQLCHAR *query);
+int         is_set_names_statement  (const char *query);
 int         is_select_statement     (const MY_PARSED_QUERY *query);
 BOOL        is_drop_procedure       (const SQLCHAR * query);
 BOOL        is_drop_function        (const SQLCHAR * query);

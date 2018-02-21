@@ -145,7 +145,7 @@ char *check_if_positioned_cursor_exists(STMT *pStmt, STMT **pStmtCursor)
          list_element;
          list_element= list_element->next)
     {
-      *pStmtCursor= (HSTMT)list_element->data;
+      *pStmtCursor= (STMT*)list_element->data;
 
       /*
         Even if the cursor name matches, the statement must have a
@@ -468,7 +468,7 @@ static my_bool insert_field(STMT *stmt, MYSQL_RES *result,
 
   if (ssps_used(stmt))
   {
-    dummy= get_string(stmt, nSrcCol, NULL, &length, as_string);
+    dummy= get_string(stmt, nSrcCol, NULL, (ulong*)&length, as_string);
     row_data= &dummy;
   }
   else
@@ -767,7 +767,7 @@ static SQLRETURN build_set_clause(STMT *stmt, SQLULEN irow,
 
         if ( arrec->octet_length_ptr )
         {
-            pcbValue= ptr_offset_adjust(arrec->octet_length_ptr,
+            pcbValue= (SQLLEN*)ptr_offset_adjust(arrec->octet_length_ptr,
                                         stmt->ard->bind_offset_ptr,
                                         stmt->ard->bind_type,
                                         sizeof(SQLLEN), irow);
@@ -814,7 +814,7 @@ static SQLRETURN build_set_clause(STMT *stmt, SQLULEN irow,
                                              irow);
         aprec->octet_length= arrec->octet_length;
         if (length == SQL_NTS)
-            length= strlen(aprec->data_ptr);
+            length= strlen((const char*)aprec->data_ptr);
 
         aprec->octet_length_ptr= &length;
         aprec->indicator_ptr= &length;
@@ -971,7 +971,7 @@ static SQLRETURN fetch_bookmark(STMT *stmt)
                                         arrec->octet_length, rowset_pos - 1);
     }
 
-    curr_bookmark_index= atol((SQLCHAR *) TargetValuePtr);
+    curr_bookmark_index= atol((const char*) TargetValuePtr);
 
     nReturn= myodbc_single_fetch(stmt, SQL_FETCH_ABSOLUTE, 
                                 curr_bookmark_index,
@@ -1043,7 +1043,7 @@ static SQLRETURN setpos_delete_bookmark(STMT *stmt, DYNAMIC_STRING *dynQuery)
                                         arrec->octet_length, rowset_pos);
     }
 
-    curr_bookmark_index= atol((SQLCHAR *) TargetValuePtr);
+    curr_bookmark_index= atol((const char*) TargetValuePtr);
     dynQuery->length= query_length;
 
     /* append our WHERE clause to our DELETE statement */
@@ -1198,7 +1198,7 @@ static SQLRETURN setpos_update_bookmark(STMT *stmt, DYNAMIC_STRING *dynQuery)
                                         arrec->octet_length, rowset_pos);
     }
 
-    curr_bookmark_index= atol((SQLCHAR *) TargetValuePtr);
+    curr_bookmark_index= atol((const char*) TargetValuePtr);
 
     dynQuery->length= query_length;
     nReturn= build_set_clause(stmt, curr_bookmark_index, dynQuery);
@@ -1437,7 +1437,7 @@ static SQLRETURN batch_insert( STMT *stmt, SQLULEN irow, DYNAMIC_STRING *ext_que
                 switch (ind_or_len) {
                 case SQL_NTS:
                   if (aprec->data_ptr)
-                    length= strlen(aprec->data_ptr);
+                    length= strlen((const char*)aprec->data_ptr);
                   break;
 
                 /*
@@ -1518,8 +1518,8 @@ static SQLRETURN batch_insert( STMT *stmt, SQLULEN irow, DYNAMIC_STRING *ext_que
 
           if (arrec->octet_length_ptr)
           {
-            pcbValue= ptr_offset_adjust(arrec->octet_length_ptr,
-                                          stmt->ard->bind_offset_ptr,
+            pcbValue= (SQLLEN*)ptr_offset_adjust(arrec->octet_length_ptr,
+                                          (SQLULEN*)stmt->ard->bind_offset_ptr,
                                           stmt->ard->bind_type,
                                           sizeof(SQLLEN), i);
           }
@@ -1960,7 +1960,7 @@ SQLRETURN SQL_API SQLBulkOperations(SQLHSTMT  Handle, SQLSMALLINT Operation)
       break;
     }
   default:
-    return set_error(Handle,MYERR_S1C00,NULL,0);
+    return set_error((STMT*)Handle,MYERR_S1C00,NULL,0);
   }
 
   return sqlRet;

@@ -203,7 +203,7 @@ server_list_dbcolumns(STMT *stmt,
        here again */
     myodbc_mutex_lock(&dbc->lock);
 
-    strncpy(buff, szCatalog, cbCatalog);
+    strncpy(buff, (const char*)szCatalog, cbCatalog);
     buff[cbCatalog]= '\0';
 
     if (mysql_select_db(mysql, buff))
@@ -215,9 +215,9 @@ server_list_dbcolumns(STMT *stmt,
   else
     myodbc_mutex_lock(&dbc->lock);
 
-  strncpy(buff, szTable, cbTable);
+  strncpy(buff, (const char*)szTable, cbTable);
   buff[cbTable]= '\0';
-  strncpy(column_buff, szColumn, cbColumn);
+  strncpy(column_buff, (const char*)szColumn, cbColumn);
   column_buff[cbColumn]= '\0';
 
   result= mysql_list_fields(mysql, buff, column_buff);
@@ -454,7 +454,7 @@ columns_no_i_s(STMT * stmt, SQLCHAR *szCatalog, SQLSMALLINT cbCatalog,
         }
         else
         {
-          char *def= alloc_root(alloc, strlen(field->def) + 3);
+          char *def= (char*)alloc_root(alloc, strlen(field->def) + 3);
           if (is_numeric_mysql_type(field))
           {
             sprintf(def, "%s", field->def);
@@ -640,7 +640,7 @@ list_table_priv_no_i_s(SQLHSTMT hstmt,
         data[2]= row[2];
         data[3]= row[3];
         data[4]= row[1];
-        data[6]= is_grantable(row[4]) ? "YES" : "NO";
+        data[6]= (char *)(is_grantable(row[4]) ? "YES" : "NO");
             ++row_count;
 
         if ( !(grant= my_next_token(grant,&grants,token,',')) )
@@ -792,7 +792,7 @@ list_column_priv_no_i_s(SQLHSTMT hstmt,
       data[3]= row[3];
       data[4]= row[4];
       data[5]= row[1];
-      data[7]= is_grantable(row[6]) ? "YES":"NO";
+      data[7]= (char*)(is_grantable(row[6]) ? "YES":"NO");
             ++row_count;
 
       if ( !(grant= my_next_token(grant,&grants,token,',')) )
@@ -1396,7 +1396,7 @@ SQLRETURN foreign_keys_no_i_s(SQLHSTMT hstmt,
   {
     if (szPkTableName && szPkTableName[0])
     {
-      if (myodbc_strcasecmp(szPkTableName, fkRows[index].PKTABLE_NAME))
+      if (myodbc_strcasecmp((const char*)szPkTableName, (const char*)fkRows[index].PKTABLE_NAME))
       {
         ++index;
         continue;
@@ -1803,7 +1803,7 @@ procedure_columns_no_i_s(SQLHSTMT hstmt,
       SQLTypeMap *type_map;
       SQLSMALLINT dec;
       SQLULEN param_size= 0;
-      MYSQL_ROW data= myodbc_malloc(sizeof(SQLPROCEDURECOLUMNS_values), MYF(MY_ZEROFILL));
+      MYSQL_ROW data= (MYSQL_ROW)myodbc_malloc(sizeof(SQLPROCEDURECOLUMNS_values), MYF(MY_ZEROFILL));
       /* temp variables for debugging */
       SQLUINTEGER dec_int= 0;
       SQLINTEGER sql_type_int= 0;
@@ -1814,26 +1814,25 @@ procedure_columns_no_i_s(SQLHSTMT hstmt,
         nReturn= handle_connection_error(stmt);
         goto exit_with_free;
       }
-
       token= proc_get_param_type(token, (int)strlen(token), &ptype);
-      token= proc_get_param_name(token, (int)strlen(token), param_name);
-      token= proc_get_param_dbtype(token, (int)strlen(token), param_dbtype);
+      token= proc_get_param_name(token, (int)strlen(token), (char*)param_name);
+      token= proc_get_param_dbtype(token, (int)strlen(token), (char*)param_dbtype);
 
       /* param_dbtype is lowercased in the proc_get_param_dbtype */
-      if (strstr(param_dbtype, "unsigned"))
+      if (strstr((const char*)param_dbtype, "unsigned"))
         flags |= UNSIGNED_FLAG;
 
-      sql_type_index= proc_get_param_sql_type_index(param_dbtype, (int)strlen(param_dbtype));
+      sql_type_index= proc_get_param_sql_type_index((const char*)param_dbtype, (int)strlen((const char*)param_dbtype));
       type_map= proc_get_param_map_by_index(sql_type_index);
 
-      param_size= proc_get_param_size(param_dbtype, (int)strlen(param_dbtype), sql_type_index, &dec);
+      param_size= proc_get_param_size(param_dbtype, (int)strlen((const char*)param_dbtype), sql_type_index, &dec);
 
-      proc_get_param_octet_len(stmt, sql_type_index, param_size, dec, flags, param_buffer_len);
+      proc_get_param_octet_len(stmt, sql_type_index, param_size, dec, flags, (char*)param_buffer_len);
 
       data[mypcPROCEDURE_CAT]= myodbc_strdup(row[2], MYF(0));   /* PROCEDURE_CAT */
       data[mypcPROCEDURE_SCHEM]= NULL;                      /* PROCEDURE_SCHEM */
       data[mypcPROCEDURE_NAME]= myodbc_strdup(row[0], MYF(0));  /* PROCEDURE_NAME */
-      data[mypcCOLUMN_NAME]= myodbc_strdup(param_name, MYF(0)); /* COLUMN_NAME */
+      data[mypcCOLUMN_NAME]= myodbc_strdup((const char*)param_name, MYF(0)); /* COLUMN_NAME */
 
       if (cbColumnName)
       {
@@ -1848,40 +1847,40 @@ procedure_columns_no_i_s(SQLHSTMT hstmt,
         ptype= SQL_RETURN_VALUE;
       }
 
-      sprintf(param_type, "%d", ptype);
-      data[mypcCOLUMN_TYPE]= myodbc_strdup(param_type, MYF(0)); /* COLUMN_TYPE */
+      sprintf((char*)param_type, "%d", ptype);
+      data[mypcCOLUMN_TYPE]= myodbc_strdup((const char*)param_type, MYF(0)); /* COLUMN_TYPE */
 
-      if (!myodbc_strcasecmp(type_map->type_name, "bit") && param_size > 1)
+      if (!myodbc_strcasecmp((const char*)type_map->type_name, "bit") && param_size > 1)
       {
-        sprintf(param_sql_type, "%d", SQL_BINARY);
+        sprintf((char*)param_sql_type, "%d", SQL_BINARY);
       }
       else
       {
-        sprintf(param_sql_type, "%d", (int)type_map->sql_type);
+        sprintf((char*)param_sql_type, "%d", (int)type_map->sql_type);
       }
-      data[mypcDATA_TYPE]= myodbc_strdup(param_sql_type, MYF(0)); /* DATA_TYPE */
+      data[mypcDATA_TYPE]= myodbc_strdup((const char*)param_sql_type, MYF(0)); /* DATA_TYPE */
 
-      if (!myodbc_strcasecmp(type_map->type_name, "set") ||
-         !myodbc_strcasecmp(type_map->type_name, "enum"))
+      if (!myodbc_strcasecmp((const char*)type_map->type_name, "set") ||
+         !myodbc_strcasecmp((const char*)type_map->type_name, "enum"))
       {
         data[mypcTYPE_NAME]= myodbc_strdup("char", MYF(0));
       }
       else
       {
-        data[mypcTYPE_NAME]= myodbc_strdup(type_map->type_name, MYF(0));
+        data[mypcTYPE_NAME]= myodbc_strdup((const char*)type_map->type_name, MYF(0));
       }
 
        /* TYPE_NAME */
 
-      proc_get_param_col_len(stmt, sql_type_index, param_size, dec, flags, param_size_buf);
-      data[mypcCOLUMN_SIZE]= myodbc_strdup(param_size_buf, MYF(0)); /* COLUMN_SIZE */
+      proc_get_param_col_len(stmt, sql_type_index, param_size, dec, flags, (char*)param_size_buf);
+      data[mypcCOLUMN_SIZE]= myodbc_strdup((const char*)param_size_buf, MYF(0)); /* COLUMN_SIZE */
 
-      data[mypcBUFFER_LENGTH]= myodbc_strdup(param_buffer_len, MYF(0)); /* BUFFER_LENGTH */
+      data[mypcBUFFER_LENGTH]= myodbc_strdup((const char*)param_buffer_len, MYF(0)); /* BUFFER_LENGTH */
 
       if (dec != SQL_NO_TOTAL)
       {
-        sprintf(param_decimal, "%d", (int)dec);
-        data[mypcDECIMAL_DIGITS]= myodbc_strdup(param_decimal, MYF(0)); /* DECIMAL_DIGITS */
+        sprintf((char*)param_decimal, "%d", (int)dec);
+        data[mypcDECIMAL_DIGITS]= myodbc_strdup((const char*)param_decimal, MYF(0)); /* DECIMAL_DIGITS */
         data[mypcNUM_PREC_RADIX]= "10"; /* NUM_PREC_RADIX */
       }
       else
@@ -1897,8 +1896,8 @@ procedure_columns_no_i_s(SQLHSTMT hstmt,
          type_map->sql_type == SQL_TYPE_TIME ||
          type_map->sql_type == SQL_TYPE_TIMESTAMP)
       {
-        sprintf(param_desc_type, "%d", SQL_DATETIME);
-        data[mypcSQL_DATA_TYPE]= myodbc_strdup(param_desc_type, MYF(0)); /* SQL_DATA_TYPE  */
+        sprintf((char*)param_desc_type, "%d", SQL_DATETIME);
+        data[mypcSQL_DATA_TYPE]= myodbc_strdup((const char*)param_desc_type, MYF(0)); /* SQL_DATA_TYPE  */
         data[mypcSQL_DATETIME_SUB]= myodbc_strdup(data[mypcDATA_TYPE], MYF(0)); /* SQL_DATETIME_SUB */
       }
       else
@@ -1911,15 +1910,15 @@ procedure_columns_no_i_s(SQLHSTMT hstmt,
           is_binary_sql_type(type_map->sql_type))
       {
         /* Actualy can use data[mypcBUFFER_LENGTH] here and don't do myodbc_strdup */
-        data[mypcCHAR_OCTET_LENGTH]= myodbc_strdup(param_buffer_len, MYF(0)); /* CHAR_OCTET_LENGTH */
+        data[mypcCHAR_OCTET_LENGTH]= myodbc_strdup((const char*)param_buffer_len, MYF(0)); /* CHAR_OCTET_LENGTH */
       }
       else
       {
         data[mypcCHAR_OCTET_LENGTH]= NULL;                     /* CHAR_OCTET_LENGTH */
       }
 
-      sprintf(param_pos, "%d", (int) param_ordinal_position);
-      data[mypcORDINAL_POSITION]= myodbc_strdup(param_pos, MYF(0)); /* ORDINAL_POSITION */
+      sprintf((char*)param_pos, "%d", (int) param_ordinal_position);
+      data[mypcORDINAL_POSITION]= myodbc_strdup((const char*)param_pos, MYF(0)); /* ORDINAL_POSITION */
       ++param_ordinal_position;
 
       data[mypcIS_NULLABLE]= "YES"; /* IS_NULLABLE */
@@ -2038,7 +2037,7 @@ procedure_columns_no_i_s(SQLHSTMT hstmt,
 
 empty_set:
 
-  nReturn= create_empty_fake_resultset(hstmt, SQLPROCEDURECOLUMNS_values,
+  nReturn= create_empty_fake_resultset((STMT*)hstmt, SQLPROCEDURECOLUMNS_values,
                                       sizeof(SQLPROCEDURECOLUMNS_values),
                                       SQLPROCEDURECOLUMNS_fields,
                                       SQLPROCEDURECOLUMNS_FIELDS);
@@ -2567,7 +2566,7 @@ tables_no_i_s(SQLHSTMT hstmt,
           if (stmt->result)
             mysql_free_result(stmt->result);
 
-          stmt->result= table_status(stmt, catalog_row[0], (SQLSMALLINT)lengths[0],
+          stmt->result= table_status(stmt, (SQLCHAR*)catalog_row[0], (SQLSMALLINT)lengths[0],
                                      table, (SQLSMALLINT)table_len, TRUE,
                                      user_tables, views);
         }
@@ -2676,7 +2675,7 @@ tables_no_i_s(SQLHSTMT hstmt,
                     db);
             data[1+count]= "";
             data[2+count]= strdup_root(&stmt->alloc_root, row[0]);
-            data[3+count]= view ? "VIEW" : "TABLE";
+            data[3+count]= (char *)(view ? "VIEW" : "TABLE");
             data[4+count] = strdup_root(&stmt->alloc_root, row[comment_index]);
             count+= SQLTABLES_FIELDS;
           }

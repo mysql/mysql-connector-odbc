@@ -339,7 +339,7 @@ int desc_find_dae_rec(DESC *desc)
   {
     rec= desc_get_rec(desc, i, FALSE);
     assert(rec);
-    octet_length_ptr= ptr_offset_adjust(rec->octet_length_ptr,
+    octet_length_ptr= (SQLLEN*)ptr_offset_adjust(rec->octet_length_ptr,
                                         desc->bind_offset_ptr,
                                         desc->bind_type,
                                         sizeof(SQLLEN), /*row*/0);
@@ -881,7 +881,7 @@ MySQLSetDescField(SQLHDESC hdesc, SQLSMALLINT recnum, SQLSMALLINT fldid,
   {
   case SQL_DESC_COUNT:
     /* we just force the descriptor record count to expand */
-    (void)desc_get_rec(desc, (SQLINTEGER)val - 1, TRUE);
+    (void)desc_get_rec(desc, (size_t)val - 1, TRUE);
     break;
   case SQL_DESC_NAME:
     /* We don't support named parameters, values stay as initialized */
@@ -889,7 +889,7 @@ MySQLSetDescField(SQLHDESC hdesc, SQLSMALLINT recnum, SQLSMALLINT fldid,
                           "Option value changed",
                           MYERR_01S02);
   case SQL_DESC_UNNAMED:
-    if (((SQLINTEGER)val) == SQL_NAMED)
+    if ((size_t)val == SQL_NAMED)
       return set_desc_error(desc, "HY092",
                             "Invalid attribute/option identifier",
                             MYERR_S1092);

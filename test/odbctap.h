@@ -74,12 +74,9 @@
 /* Get routines for helping with Unicode conversion. */
 #define ODBCTAP
 
-typedef unsigned int UTF32;
-typedef unsigned short UTF16;
-typedef unsigned char UTF8;
-
-#include "../util/unicode_transcode.c"
 #include "mysql_version.h"
+#include "../util/unicode_transcode.h"
+
 
 void printMessage(const char *fmt, ...)
 {

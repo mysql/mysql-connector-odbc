@@ -429,7 +429,7 @@ columns_i_s(SQLHSTMT hstmt, SQLCHAR *catalog_name, SQLSMALLINT catalog_len,
 
 {
   /* The function is just a stub. We call non-I_S version of the function before implementing the I_S one */
-  return columns_no_i_s(hstmt, catalog_name, catalog_len,schema_name, schema_len,
+  return columns_no_i_s((STMT*)hstmt, catalog_name, catalog_len,schema_name, schema_len,
                         table_name, table_len, column_name, column_len);
 }
 
@@ -472,7 +472,7 @@ MySQLColumns(SQLHSTMT hstmt, SQLCHAR *catalog_name, SQLSMALLINT catalog_len,
   }
   else
   {
-    return columns_no_i_s(hstmt, catalog_name, catalog_len,schema_name, schema_len,
+    return columns_no_i_s((STMT*)hstmt, catalog_name, catalog_len,schema_name, schema_len,
                           table_name, table_len, column_name, column_len);
   }
 }
@@ -629,7 +629,7 @@ MySQLTablePrivileges(SQLHSTMT hstmt,
   @type    : internal
   @purpose : returns a column privileges result, NULL on error
 */
-static SQLRETURN list_column_priv_i_s(HSTMT *     hstmt,
+static SQLRETURN list_column_priv_i_s(HSTMT       hstmt,
                                       SQLCHAR *   catalog_name,
                                       SQLSMALLINT catalog_len,
                                       SQLCHAR *   schema_name,
@@ -969,7 +969,7 @@ SQLRETURN foreign_keys_i_s(SQLHSTMT hstmt,
   if (!SQL_SUCCEEDED(rc))
     return rc;
 
-  return my_SQLExecute(hstmt);
+  return my_SQLExecute((STMT*)hstmt);
 }
 /**
   Retrieve either a list of foreign keys in a specified table, or the list
@@ -1095,7 +1095,7 @@ MySQLProcedures(SQLHSTMT hstmt,
                           "FROM DUAL WHERE 1=0", SQL_NTS, FALSE)))
       return rc;
 
-    return my_SQLExecute(hstmt);
+    return my_SQLExecute((STMT*)hstmt);
   }
 
   /*
@@ -1166,7 +1166,7 @@ MySQLProcedures(SQLHSTMT hstmt,
       return rc;
   }
 
-  return my_SQLExecute(hstmt);
+  return my_SQLExecute((STMT*)hstmt);
 }
 
 

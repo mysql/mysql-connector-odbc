@@ -96,7 +96,7 @@ void myodbc_init(void)
 */
 void myodbc_end()
 {
-  if (!--myodbc_inited)
+  if (myodbc_inited)
   {
     x_free(decimal_point);
     x_free(default_locale);

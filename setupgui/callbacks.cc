@@ -42,6 +42,7 @@ SQLWCHAR *mytest(HWND hwnd, DataSource *params)
   SQLHDBC hDbc= hDBC;
   SQLHENV hEnv= SQL_NULL_HENV;
   SQLWCHAR *msg;
+  SQLWCHAR tmpbuf[1024];
 
   /* 
     In case of file data source we do not want it to be created
@@ -187,6 +188,7 @@ LIST *mygetcharsets(HWND hwnd, DataSource* params)
   LIST        *csl= NULL;
   SQLWCHAR    *preservedDatabase= params->database;
   BOOL        preservedNoCatalog= params->no_catalog;
+  SQLWCHAR tmpbuf[1024];
 
   /* 
     In case of file data source we do not want it to be created

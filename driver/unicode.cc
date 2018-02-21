@@ -1024,10 +1024,10 @@ SQLSetConnectAttrWImpl(SQLHDBC hdbc, SQLINTEGER attribute,
 
     if (is_connected(dbc))
       value= sqlwchar_as_sqlchar(dbc->cxn_charset_info,
-                                 value, &len, &errors);
+                                 (SQLWCHAR*)value, &len, &errors);
     else
       value= sqlwchar_as_sqlchar(default_charset_info,
-                                 value, &len, &errors);
+                                 (SQLWCHAR*)value, &len, &errors);
     free_value= TRUE;
   }
 
@@ -1232,19 +1232,19 @@ SQLTablesW(SQLHSTMT hstmt,
   len= catalog_len;
   catalog8= sqlwchar_as_sqlchar(dbc->cxn_charset_info, catalog, &len, &errors);
   if (catalog && !len)
-    catalog8= "";
+    catalog8= (SQLCHAR*)"";
   catalog_len= (SQLSMALLINT)len;
 
   len= schema_len;
   schema8= sqlwchar_as_sqlchar(dbc->cxn_charset_info, schema, &len, &errors);
   if (schema && !len)
-    schema8= "";
+    schema8= (SQLCHAR*)"";
   schema_len= (SQLSMALLINT)len;
 
   len= table_len;
   table8= sqlwchar_as_sqlchar(dbc->cxn_charset_info, table, &len, &errors);
   if (table && !len)
-    table8= "";
+    table8= (SQLCHAR*)"";
   table_len= (SQLSMALLINT)len;
 
   len= type_len;
@@ -1312,7 +1312,7 @@ SQLBrowseConnectW(SQLHDBC hdbc, SQLWCHAR *in, SQLSMALLINT in_len,
 {
   CHECK_HANDLE(hdbc);
 
-  return set_conn_error(hdbc,MYERR_S1000,
+  return set_conn_error((DBC*)hdbc,MYERR_S1000,
                         "Driver does not support this API", 0);
 }
 

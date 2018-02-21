@@ -29,7 +29,7 @@ IF(DL_INCLUDES)
   INCLUDE_DIRECTORIES(${DL_INCLUDES})
 ENDIF(DL_INCLUDES)
 
-ADD_EXECUTABLE(myodbc-installer myodbc-installer.c)
+ADD_EXECUTABLE(myodbc-installer myodbc-installer.cc)
 
 IF(WIN32)
   IF(CMAKE_BUILD_TYPE STREQUAL "Debug")

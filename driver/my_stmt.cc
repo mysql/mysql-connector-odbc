@@ -453,7 +453,7 @@ SQLRETURN append2param_value(STMT *stmt, DESCREC * aprec, const char *chunk, uns
   {
     /* Append to old value */
     assert(aprec->par.alloced);
-    if ( !(aprec->par.value= myodbc_realloc(aprec->par.value,
+    if ( !(aprec->par.value= (char*)myodbc_realloc(aprec->par.value,
                                         aprec->par.value_length + length + 1,
                                         MYF(0))) )
     {
@@ -468,7 +468,7 @@ SQLRETURN append2param_value(STMT *stmt, DESCREC * aprec, const char *chunk, uns
   else
   {
     /* New value */
-    if ( !(aprec->par.value= myodbc_malloc(length+1,MYF(0))) )
+    if ( !(aprec->par.value= (char*)myodbc_malloc(length+1,MYF(0))) )
     {
       return set_error(stmt,MYERR_S1001,NULL,4001);
     }

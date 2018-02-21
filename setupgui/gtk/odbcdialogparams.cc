@@ -366,7 +366,7 @@ void getStrFieldData(gchar *widget_name, SQLWCHAR **param)
     {
     const gchar *entry_text= gtk_entry_get_text(widget);
     /* copy the value for using in DataSource */
-    utf8_as_sqlwchar(*param, (len + 1) * sizeof (SQLWCHAR), (char*)entry_text,
+    utf8_as_sqlwchar(*param, (len + 1) * sizeof (SQLWCHAR), (SQLCHAR*)entry_text,
                        strlen((char*)entry_text));
     }
   }
@@ -423,7 +423,7 @@ void getComboFieldData(gchar *widget_name, SQLWCHAR **param)
     {
       const gchar *entry_text= gtk_entry_get_text(entry);
       /* copy the value for using in DataSource */
-      utf8_as_sqlwchar(*param, (len + 1) * sizeof (SQLWCHAR), (char*)entry_text,
+      utf8_as_sqlwchar(*param, (len + 1) * sizeof (SQLWCHAR), (SQLCHAR*)entry_text,
                          strlen((char*)entry_text));
     }
   }

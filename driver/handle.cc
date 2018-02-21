@@ -156,7 +156,7 @@ SQLRETURN my_GetLastError(ENV *henv)
                   0,
                   NULL );
 
-    ret = set_env_error(henv,MYERR_S1001,msg,0);
+    ret = set_env_error(henv,MYERR_S1001,(const char*)msg,0);
     LocalFree(msg);
 
     return ret;
@@ -185,7 +185,7 @@ SQLRETURN SQL_API my_SQLAllocConnect(SQLHENV henv, SQLHDBC *phdbc)
     }
     else
     {
-      thread_count= myodbc_malloc(sizeof(long), MYF(0));
+      thread_count= (long*)myodbc_malloc(sizeof(long), MYF(0));
       (*thread_count)= 1;
       pthread_setspecific(myodbc_thread_counter_key, thread_count);
 
@@ -198,12 +198,12 @@ SQLRETURN SQL_API my_SQLAllocConnect(SQLHENV henv, SQLHDBC *phdbc)
     {
         char buff[255];
         sprintf(buff, "Wrong libmysqlclient library version: %ld.  MyODBC needs at least version: %ld", mysql_get_client_version(), MIN_MYSQL_VERSION);
-        return(set_env_error(henv, MYERR_S1000, buff, 0));
+        return(set_env_error((ENV*)henv, MYERR_S1000, buff, 0));
     }
 
     if (!penv->odbc_ver)
     {
-        return set_env_error(henv, MYERR_S1010,
+        return set_env_error((ENV*)henv, MYERR_S1010,
                              "Can't allocate connection "
                              "until ODBC version specified.", 0);
     }
@@ -214,20 +214,20 @@ SQLRETURN SQL_API my_SQLAllocConnect(SQLHENV henv, SQLHDBC *phdbc)
         if (!hdbc)
         {
             *phdbc= SQL_NULL_HENV;
-            return(my_GetLastError(henv));
+            return(my_GetLastError((ENV*)henv));
         }
 
         if ((*phdbc= (SQLHDBC)GlobalLock(hdbc)) == SQL_NULL_HDBC)
         {
             *phdbc= SQL_NULL_HENV;
-            return(my_GetLastError(henv));
+            return(my_GetLastError((ENV*)henv));
         }
     }
 #else
     if (!(*phdbc= (SQLHDBC) myodbc_malloc(sizeof(DBC),MYF(MY_ZEROFILL))))
     {
         *phdbc= SQL_NULL_HDBC;
-        return(set_env_error(henv,MYERR_S1001,NULL,0));
+        return(set_env_error((ENV*)henv,MYERR_S1001,NULL,0));
     }
 #endif /* _UNIX_ */
 
@@ -401,7 +401,7 @@ BOOL allocate_param_bind(DYNAMIC_ARRAY **param_bind, uint elements)
 {
   if (*param_bind == NULL)
   {
-    *param_bind= myodbc_malloc(sizeof(DYNAMIC_ARRAY), MYF(0));
+    *param_bind= (DYNAMIC_ARRAY*)myodbc_malloc(sizeof(DYNAMIC_ARRAY), MYF(0));
 
     if (*param_bind == NULL)
     {
@@ -644,10 +644,13 @@ SQLRETURN SQL_API my_SQLFreeStmtExtended(SQLHSTMT hstmt,SQLUSMALLINT fOption,
     }
     else
     {
-      if(stmt->result && stmt->result->field_alloc &&
-         stmt->result->field_alloc->pre_alloc)
+      if(stmt->result && stmt->result->field_alloc
+#if (!MYSQLCLIENT_STATIC_LINKING || !MYSQL8)
+         && stmt->result->field_alloc->pre_alloc
+#endif
+         )
       {
-        free_root(&stmt->result->field_alloc, MYF(0));
+        free_root(stmt->result->field_alloc, MYF(0));
       }
 
       x_free(stmt->result);
@@ -817,7 +820,7 @@ SQLRETURN my_SQLFreeDesc(SQLHANDLE hdesc)
   /* reset all stmts it was on - to their implicit desc */
   for (lstmt= desc->exp.stmts; lstmt; lstmt= next)
   {
-    STMT *stmt= lstmt->data;
+    STMT *stmt= (STMT*)lstmt->data;
     next= lstmt->next;
     if (IS_APD(desc))
       stmt->apd= stmt->imp_apd;
@@ -869,7 +872,7 @@ SQLRETURN SQL_API SQLAllocHandle(SQLSMALLINT HandleType,
             break;
 
         default:
-            return set_conn_error(InputHandle,MYERR_S1C00,NULL,0);
+            return set_conn_error((DBC*)InputHandle,MYERR_S1C00,NULL,0);
     }
 
     return error;

@@ -473,7 +473,7 @@ sql_get_data(STMT *stmt, SQLSMALLINT fCType, uint column_number,
     {
       if (value == NULL)
       {
-        return ssps_fetch_chunk(stmt, (SQLCHAR *)rgbValue, cbValueMax, pcbValue);
+        return ssps_fetch_chunk(stmt, (char*)rgbValue, (unsigned long)cbValueMax, (unsigned long*)pcbValue);
       }
     }
 
@@ -679,7 +679,7 @@ sql_get_data(STMT *stmt, SQLSMALLINT fCType, uint column_number,
             SQL_INTERVAL_STRUCT *interval= (SQL_INTERVAL_STRUCT *)rgbValue;
             memset(interval, 0, sizeof(SQL_INTERVAL_STRUCT));
 
-            interval->interval_type= fCType;
+            interval->interval_type= (SQLINTERVAL)fCType;
             interval->intval.day_second.hour= ts.hour;
             interval->intval.day_second.minute= ts.minute;
 
@@ -944,7 +944,7 @@ static SQLRETURN check_result(STMT *stmt)
         }
         else
         {
-          set_sql_select_limit(stmt, real_max_rows, TRUE);
+          set_sql_select_limit(stmt->dbc, real_max_rows, TRUE);
         }
         stmt->stmt_options.max_rows= real_max_rows;
       }
@@ -980,7 +980,7 @@ SQLRETURN do_dummy_parambind(SQLHSTMT hstmt)
                                                        SQL_PARAM_INPUT,
                                                        SQL_C_CHAR,
                                                        SQL_VARCHAR, 0, 0,
-                                                       "NULL", SQL_NTS, NULL)))
+                                                       (SQLPOINTER)"NULL", SQL_NTS, NULL)))
                 return rc;
             /* reset back to false (this is the *dummy* param bind) */
             aprec->par.real_param_done= FALSE;
@@ -1087,7 +1087,7 @@ MySQLDescribeCol(SQLHSTMT hstmt, SQLUSMALLINT column,
 
   if (stmt->dbc->ds->return_table_names_for_SqlDescribeCol && irrec->table_name)
   {
-    char *tmp= myodbc_malloc(strlen((char *)irrec->name) +
+    char *tmp= (char*)myodbc_malloc(strlen((char *)irrec->name) +
                          strlen((char *)irrec->table_name) + 2,
                          MYF(0));
     if (!tmp)
@@ -1159,7 +1159,7 @@ MySQLColAttribute(SQLHSTMT hstmt, SQLUSMALLINT column,
   }
 
   if (column == 0 || column > stmt->ird->count)
-    return set_error(hstmt,  MYERR_07009, NULL, 0);
+    return set_error((STMT*)hstmt,  MYERR_07009, NULL, 0);
 
   if (!num_attr)
     num_attr= &nparam;
@@ -1747,7 +1747,7 @@ fill_fetch_bookmark_buffers(STMT *stmt, ulong value, uint rownum)
 
     if (arrec->octet_length_ptr)
     {
-      pcbValue= ptr_offset_adjust(arrec->octet_length_ptr, 
+      pcbValue= (SQLLEN*)ptr_offset_adjust(arrec->octet_length_ptr, 
                                     stmt->ard->bind_offset_ptr, 
                                     stmt->ard->bind_type, 
                                     sizeof(SQLLEN), rownum);
@@ -1824,7 +1824,7 @@ fill_fetch_buffers(STMT *stmt, MYSQL_ROW values, uint rownum)
        */
       if (arrec->octet_length_ptr)
       {
-        pcbValue= ptr_offset_adjust(arrec->octet_length_ptr, 
+        pcbValue= (SQLLEN*)ptr_offset_adjust(arrec->octet_length_ptr, 
                                       stmt->ard->bind_offset_ptr, 
                                       stmt->ard->bind_type, 
                                       sizeof(SQLLEN), rownum);
@@ -1947,7 +1947,7 @@ SQLRETURN SQL_API myodbc_single_fetch( SQLHSTMT             hstmt,
             }
             else
             {
-              brow= atol((SQLCHAR *) stmt->stmt_options.bookmark_ptr);
+              brow= atol((const char*) stmt->stmt_options.bookmark_ptr);
             }
           }
 

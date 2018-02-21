@@ -7,16 +7,16 @@
   conditions of the GPLv2 as it is applied to this software, see the
   FLOSS License Exception
   <http://www.mysql.com/about/legal/licensing/foss-exception.html>.
-  
+
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published
   by the Free Software Foundation; version 2 of the License.
-  
+
   This program is distributed in the hope that it will be useful, but
   WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
   or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
   for more details.
-  
+
   You should have received a copy of the GNU General Public License along
   with this program; if not, write to the Free Software Foundation, Inc.,
   51 Franklin St, Fifth Floor, Boston, MA 02110-1301  USA
@@ -195,8 +195,8 @@ SQLRETURN myodbc_do_connect(DBC *dbc, DataSource *ds)
   if (ds->initstmt && ds->initstmt[0])
   {
     /* Check for SET NAMES */
-    if (is_set_names_statement((SQLCHAR *)ds_get_utf8attr(ds->initstmt,
-                                                          &ds->initstmt8)))
+    if (is_set_names_statement(ds_get_utf8attr(ds->initstmt,
+                                              &ds->initstmt8)))
     {
       return set_dbc_error(dbc, "HY000",
                            "SET NAMES not allowed by driver", 0);
@@ -343,15 +343,15 @@ SQLRETURN myodbc_do_connect(DBC *dbc, DataSource *ds)
   {
     unsigned int mode = 0;
     ds_get_utf8attr(ds->sslmode, &ds->sslmode8);
-    if (!myodbc_strcasecmp(ODBC_SSL_MODE_DISABLED, ds->sslmode8))
+    if (!myodbc_strcasecmp(ODBC_SSL_MODE_DISABLED, (const char*)ds->sslmode8))
       mode = SSL_MODE_DISABLED;
-    if (!myodbc_strcasecmp(ODBC_SSL_MODE_PREFERRED, ds->sslmode8))
+    if (!myodbc_strcasecmp(ODBC_SSL_MODE_PREFERRED, (const char*)ds->sslmode8))
       mode = SSL_MODE_PREFERRED;
-    if (!myodbc_strcasecmp(ODBC_SSL_MODE_REQUIRED, ds->sslmode8))
+    if (!myodbc_strcasecmp(ODBC_SSL_MODE_REQUIRED, (const char*)ds->sslmode8))
       mode = SSL_MODE_REQUIRED;
-    if (!myodbc_strcasecmp(ODBC_SSL_MODE_VERIFY_CA, ds->sslmode8))
+    if (!myodbc_strcasecmp(ODBC_SSL_MODE_VERIFY_CA, (const char*)ds->sslmode8))
       mode = SSL_MODE_VERIFY_CA;
-    if (!myodbc_strcasecmp(ODBC_SSL_MODE_VERIFY_IDENTITY, ds->sslmode8))
+    if (!myodbc_strcasecmp(ODBC_SSL_MODE_VERIFY_IDENTITY, (const char*)ds->sslmode8))
       mode = SSL_MODE_VERIFY_IDENTITY;
 
     // Don't do anything if there is no match with any of the available modes
@@ -441,7 +441,7 @@ SQLRETURN myodbc_do_connect(DBC *dbc, DataSource *ds)
     dbc->database= myodbc_strdup(ds_get_utf8attr(ds->database, &ds->database8),
                              MYF(MY_WME));
   }
-  
+
   if (ds->save_queries && !dbc->query_log)
     dbc->query_log= init_query_log();
 
@@ -462,7 +462,7 @@ SQLRETURN myodbc_do_connect(DBC *dbc, DataSource *ds)
     {
       rc= SQL_SUCCESS_WITH_INFO;
       dbc->commit_flag= CHECK_AUTOCOMMIT_ON;
-      set_conn_error(dbc, MYERR_01S02,
+      set_conn_error((DBC*)dbc, MYERR_01S02,
                      "Transactions are not enabled, option value "
                      "SQL_AUTOCOMMIT_OFF changed to SQL_AUTOCOMMIT_ON", 0);
     }
@@ -510,7 +510,7 @@ SQLRETURN myodbc_do_connect(DBC *dbc, DataSource *ds)
     {
       dbc->txn_isolation= SQL_TXN_READ_UNCOMMITTED;
       rc= SQL_SUCCESS_WITH_INFO;
-      set_conn_error(dbc, MYERR_01S02,
+      set_conn_error((DBC*)dbc, MYERR_01S02,
                      "Transactions are not enabled, so transaction isolation "
                      "was ignored.", 0);
     }
@@ -556,20 +556,20 @@ SQLRETURN SQL_API MySQLConnect(SQLHDBC   hdbc,
   DataSource *ds;
 
 #ifdef NO_DRIVERMANAGER
-  return set_dbc_error(dbc, "HY000",
+  return set_dbc_error((DBC*)dbc, "HY000",
                        "SQLConnect requires DSN and driver manager", 0);
 #else
 
   /* Can't connect if we're already connected. */
   if (is_connected(dbc))
-    return set_conn_error(hdbc, MYERR_08002, NULL, 0);
+    return set_conn_error((DBC*)hdbc, MYERR_08002, NULL, 0);
 
   /* Reset error state */
   CLEAR_DBC_ERROR(dbc);
 
   if (szDSN && !szDSN[0])
   {
-    return set_conn_error(hdbc, MYERR_S1000,
+    return set_conn_error((DBC*)hdbc, MYERR_S1000,
                           "Invalid connection parameters", 0);
   }
 
@@ -660,8 +660,8 @@ SQLRETURN SQL_API MySQLDriverConnect(SQLHDBC hdbc, SQLHWND hwnd,
   if (ds->name)
   {
      ds_lookup(ds);
-    
-    /* 
+
+    /*
       If DSN is used:
       1 - we want the connection string options to override DSN options
       2 - no need to check for parsing erros as it was done before
@@ -702,7 +702,7 @@ SQLRETURN SQL_API MySQLDriverConnect(SQLHDBC hdbc, SQLHWND hwnd,
     break;
 
   default:
-    rc= set_dbc_error(hdbc, "HY110", "Invalid driver completion.", 0);
+    rc= set_dbc_error((DBC*)hdbc, "HY110", "Invalid driver completion.", 0);
     goto error;
   }
 
@@ -712,7 +712,7 @@ SQLRETURN SQL_API MySQLDriverConnect(SQLHDBC hdbc, SQLHWND hwnd,
   */
   if (bPrompt)
   {
-    rc= set_dbc_error(hdbc, "HY000",
+    rc= set_dbc_error((DBC*)hdbc, "HY000",
                            "Prompting is not supported on this platform. "
                            "Please provide all required connect information.",
                            0);
@@ -740,7 +740,7 @@ SQLRETURN SQL_API MySQLDriverConnect(SQLHDBC hdbc, SQLHWND hwnd,
               "Could not determine the driver name; "
               "could not lookup setup library. DSN=(%s)\n",
               ds_get_utf8attr(ds->name, &ds->name8));
-      rc= set_dbc_error(hdbc, "HY000", szError, 0);
+      rc= set_dbc_error((DBC*)hdbc, "HY000", szError, 0);
       goto error;
     }
 
@@ -748,7 +748,7 @@ SQLRETURN SQL_API MySQLDriverConnect(SQLHDBC hdbc, SQLHWND hwnd,
     /* We can not present a prompt if we have a null window handle. */
     if (!hwnd)
     {
-      rc= set_dbc_error(hdbc, "IM008", "Invalid window handle", 0);
+      rc= set_dbc_error((DBC*)hdbc, "IM008", "Invalid window handle", 0);
       goto error;
     }
 
@@ -765,14 +765,14 @@ SQLRETURN SQL_API MySQLDriverConnect(SQLHDBC hdbc, SQLHWND hwnd,
       sprintf(sz, "Could not find driver '%s' in system information.",
               ds_get_utf8attr(ds->driver, &ds->driver8));
 
-      rc= set_dbc_error(hdbc, "IM003", sz, 0);
+      rc= set_dbc_error((DBC*)hdbc, "IM003", sz, 0);
       goto error;
     }
 
     if (!*pDriver->setup_lib)
 #endif
     {
-      rc= set_dbc_error(hdbc, "HY000",
+      rc= set_dbc_error((DBC*)hdbc, "HY000",
                         "Could not determine the file name of setup library.",
                         0);
       goto error;
@@ -794,7 +794,7 @@ SQLRETURN SQL_API MySQLDriverConnect(SQLHDBC hdbc, SQLHWND hwnd,
       char sz[1024];
       sprintf(sz, "Could not load the setup library '%s'.",
               ds_get_utf8attr(pDriver->setup_lib, &pDriver->setup_lib8));
-      rc= set_dbc_error(hdbc, "HY000", sz, 0);
+      rc= set_dbc_error((DBC*)hdbc, "HY000", sz, 0);
       goto error;
     }
 
@@ -809,10 +809,10 @@ SQLRETURN SQL_API MySQLDriverConnect(SQLHDBC hdbc, SQLHWND hwnd,
                     NULL, GetLastError(),
                     MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
                     (LPTSTR)&pszMsg, 0, NULL);
-      rc= set_dbc_error(hdbc, "HY000", (char *)pszMsg, 0);
+      rc= set_dbc_error((DBC*)hdbc, "HY000", (char *)pszMsg, 0);
       LocalFree(pszMsg);
 #else
-      rc= set_dbc_error(hdbc, "HY000", dlerror(), 0);
+      rc= set_dbc_error((DBC*)hdbc, "HY000", dlerror(), 0);
 #endif
       goto error;
     }
@@ -832,14 +832,14 @@ SQLRETURN SQL_API MySQLDriverConnect(SQLHDBC hdbc, SQLHWND hwnd,
     sqlwcharncat2(prompt_instr, W_DRIVER_PARAM, &prompt_inlen);
     sqlwcharncat2(prompt_instr, ds->driver, &prompt_inlen);
 
-    /* 
+    /*
       In case the client app did not provide the out string we use our
       inner buffer prompt_outstr
     */
     if (!pFunc(hwnd, prompt_instr, fDriverCompletion,
                prompt_outstr, sizeof(prompt_outstr), pcbConnStrOut))
     {
-      set_dbc_error(hdbc, "HY000", "User cancelled.", 0);
+      set_dbc_error((DBC*)hdbc, "HY000", "User cancelled.", 0);
       rc= SQL_NO_DATA;
       goto error;
     }
@@ -854,7 +854,7 @@ SQLRETURN SQL_API MySQLDriverConnect(SQLHDBC hdbc, SQLHWND hwnd,
       goto error;
     }
 
-    /* 
+    /*
       We don't need prompt_outstr after the new DataSource is created.
       Copy its contents into szConnStrOut if possible
     */
@@ -886,7 +886,7 @@ connected:
   {
     size_t inlen, copylen;
     SQLWCHAR *internal_out_str= szConnStrIn;
-    
+
     if (ds->savefile)
     {
       SQLWCHAR *pwd_temp= ds->pwd;
@@ -895,7 +895,7 @@ connected:
       /* make sure the password does not go into the output buffer */
       ds->pwd= NULL;
       ds->pwd8= NULL;
-      
+
       ds_to_kvpair(ds, prompt_outstr, sizeof(prompt_outstr)/sizeof(SQLWCHAR), ';');
       internal_out_str= (SQLWCHAR*)prompt_outstr;
 
@@ -917,7 +917,7 @@ connected:
   if (pcbConnStrOut &&
       cbConnStrOutMax - sizeof(SQLWCHAR) == *pcbConnStrOut * sizeof(SQLWCHAR))
   {
-    set_dbc_error(hdbc, "01004", "String data, right truncated.", 0);
+    set_dbc_error((DBC*)hdbc, "01004", "String data, right truncated.", 0);
     rc= SQL_SUCCESS_WITH_INFO;
   }
 
@@ -966,7 +966,7 @@ SQLRETURN SQL_API SQLDisconnect(SQLHDBC hdbc)
   CHECK_HANDLE(hdbc);
 
   free_connection_stmts(dbc);
-  
+
   mysql_close(&dbc->mysql);
 
   if (dbc->ds && dbc->ds->save_queries)

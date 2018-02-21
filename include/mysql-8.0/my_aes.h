@@ -1,7 +1,7 @@
 #ifndef MY_AES_INCLUDED
 #define MY_AES_INCLUDED
 
-/* Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+/* Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
 
  This program is free software; you can redistribute it and/or modify
  it under the terms of the GNU General Public License, version 2.0,
@@ -23,7 +23,6 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301  USA */
 
-
 /**
   @file include/my_aes.h
   Wrapper to give simple interface for MySQL to AES standard encryption.
@@ -32,51 +31,49 @@
 #include "my_inttypes.h"
 #include "my_macros.h"
 
-C_MODE_START
-
 /** AES IV size is 16 bytes for all supported ciphers except ECB */
 #define MY_AES_IV_SIZE 16
 
 /** AES block size is fixed to be 128 bits for CBC and ECB */
 #define MY_AES_BLOCK_SIZE 16
 
-
 /** Supported AES cipher/block mode combos */
-enum my_aes_opmode
-{
-   my_aes_128_ecb,
-   my_aes_192_ecb,
-   my_aes_256_ecb,
-   my_aes_128_cbc,
-   my_aes_192_cbc,
-   my_aes_256_cbc
-#ifndef HAVE_YASSL
-   ,my_aes_128_cfb1,
-   my_aes_192_cfb1,
-   my_aes_256_cfb1,
-   my_aes_128_cfb8,
-   my_aes_192_cfb8,
-   my_aes_256_cfb8,
-   my_aes_128_cfb128,
-   my_aes_192_cfb128,
-   my_aes_256_cfb128,
-   my_aes_128_ofb,
-   my_aes_192_ofb,
-   my_aes_256_ofb
+enum my_aes_opmode {
+  my_aes_128_ecb,
+  my_aes_192_ecb,
+  my_aes_256_ecb,
+  my_aes_128_cbc,
+  my_aes_192_cbc,
+  my_aes_256_cbc
+#ifndef HAVE_WOLFSSL
+  ,
+  my_aes_128_cfb1,
+  my_aes_192_cfb1,
+  my_aes_256_cfb1,
+  my_aes_128_cfb8,
+  my_aes_192_cfb8,
+  my_aes_256_cfb8,
+  my_aes_128_cfb128,
+  my_aes_192_cfb128,
+  my_aes_256_cfb128,
+  my_aes_128_ofb,
+  my_aes_192_ofb,
+  my_aes_256_ofb
 #endif
 };
 
 #define MY_AES_BEGIN my_aes_128_ecb
-#ifdef HAVE_YASSL
+#ifdef HAVE_WOLFSSL
 #define MY_AES_END my_aes_256_cbc
 #else
 #define MY_AES_END my_aes_256_ofb
 #endif
 
 /* If bad data discovered during decoding */
-#define MY_AES_BAD_DATA  -1
+#define MY_AES_BAD_DATA -1
 
-/** String representations of the supported AES modes. Keep in sync with my_aes_opmode */
+/** String representations of the supported AES modes. Keep in sync with
+ * my_aes_opmode */
 extern const char *my_aes_opmode_names[];
 
 /**
@@ -84,20 +81,21 @@ extern const char *my_aes_opmode_names[];
 
   @param [in] source           Pointer to data for encryption
   @param [in] source_length    Size of encryption data
-  @param [out] dest            Buffer to place encrypted data (must be large enough)
+  @param [out] dest            Buffer to place encrypted data (must be large
+  enough)
   @param [in] key              Key to be used for encryption
   @param [in] key_length       Length of the key. Will handle keys of any length
   @param [in] mode             encryption mode
-  @param [in] iv               16 bytes initialization vector if needed. Otherwise NULL
+  @param [in] iv               16 bytes initialization vector if needed.
+  Otherwise NULL
   @param [in] padding          if padding needed.
   @return              size of encrypted data, or negative in case of error
 */
 
 int my_aes_encrypt(const unsigned char *source, uint32 source_length,
-                   unsigned char *dest,
-		   const unsigned char *key, uint32 key_length,
-                   enum my_aes_opmode mode, const unsigned char *iv,
-                   bool padding = true);
+                   unsigned char *dest, const unsigned char *key,
+                   uint32 key_length, enum my_aes_opmode mode,
+                   const unsigned char *iv, bool padding = true);
 
 /**
   Decrypt an AES encrypted buffer
@@ -113,12 +111,10 @@ int my_aes_encrypt(const unsigned char *source, uint32 source_length,
   @return size of original data.
 */
 
-
 int my_aes_decrypt(const unsigned char *source, uint32 source_length,
-                   unsigned char *dest,
-                   const unsigned char *key, uint32 key_length,
-                   enum my_aes_opmode mode, const unsigned char *iv,
-                   bool padding = true);
+                   unsigned char *dest, const unsigned char *key,
+                   uint32 key_length, enum my_aes_opmode mode,
+                   const unsigned char *iv, bool padding = true);
 
 /**
   Calculate the size of a buffer large enough for encrypted data.
@@ -135,13 +131,10 @@ int my_aes_get_size(uint32 source_length, enum my_aes_opmode opmode);
 
   @param opmode           encryption mode
 
-  @retval TRUE   IV needed
-  @retval FALSE  IV not needed
+  @retval true   IV needed
+  @retval false  IV not needed
 */
 
 bool my_aes_needs_iv(my_aes_opmode opmode);
-
-
-C_MODE_END
 
 #endif /* MY_AES_INCLUDED */

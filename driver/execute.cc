@@ -528,8 +528,9 @@ SQLRETURN convert_c_type2str(STMT *stmt, SQLSMALLINT ctype, DESCREC *iprec,
         /* length is in bytes, we want chars */
         *length= *length / sizeof(SQLWCHAR);
 
-        *res= sqlwchar_as_utf8_ext((SQLWCHAR*)*res, length, buff, buff_max,
-                                    &has_utf8_maxlen4);
+        *res= (char*)sqlwchar_as_utf8_ext((SQLWCHAR*)*res, (SQLINTEGER*)length,
+                                          (SQLCHAR*)buff, buff_max,
+                                          &has_utf8_maxlen4);
 
 
         if (has_utf8_maxlen4 &&
@@ -780,14 +781,14 @@ SQLRETURN insert_param(STMT *stmt, uchar *place4param, DESC* apd,
 
     if (aprec->octet_length_ptr)
     {
-      octet_length_ptr= ptr_offset_adjust(aprec->octet_length_ptr,
+      octet_length_ptr= (SQLLEN*)ptr_offset_adjust(aprec->octet_length_ptr,
                                           apd->bind_offset_ptr,
                                           apd->bind_type,
                                           sizeof(SQLLEN), row);
       length= *octet_length_ptr;
     }
 
-    indicator_ptr= ptr_offset_adjust(aprec->indicator_ptr,
+    indicator_ptr= (SQLLEN*)ptr_offset_adjust(aprec->indicator_ptr,
                                      apd->bind_offset_ptr,
                                      apd->bind_type,
                                      sizeof(SQLLEN), row);
@@ -796,7 +797,7 @@ SQLRETURN insert_param(STMT *stmt, uchar *place4param, DESC* apd,
     {
       SQLINTEGER default_size= bind_length(aprec->concise_type,
                                            aprec->octet_length);
-      data= ptr_offset_adjust(aprec->data_ptr, apd->bind_offset_ptr,
+      data= (char*)ptr_offset_adjust(aprec->data_ptr, apd->bind_offset_ptr,
                               apd->bind_type, default_size, row);
     }
 
@@ -1202,7 +1203,7 @@ SQLRETURN insert_param(STMT *stmt, uchar *place4param, DESC* apd,
           goto memerror;
         }
 
-        copy_binhex_result(stmt, to, length * 2 + 1, &transformed_len, 0, data, length);
+        copy_binhex_result(stmt, (SQLCHAR*)to, length * 2 + 1, &transformed_len, 0, data, length);
         to += transformed_len;
       }
       else
@@ -1352,7 +1353,7 @@ SQLRETURN my_SQLExecute( STMT *pStmt )
       return set_error(pStmt, MYERR_S1010,
                        "No previous SQLPrepare done", 0);
 
-  if (is_set_names_statement((SQLCHAR *)GET_QUERY(&pStmt->query)))
+  if (is_set_names_statement(GET_QUERY(&pStmt->query)))
   {
     return set_error(pStmt, MYERR_42000,
                      "SET NAMES not allowed by driver", 0);
@@ -1424,11 +1425,11 @@ SQLRETURN my_SQLExecute( STMT *pStmt )
       if ( pStmt->ipd->rows_processed_ptr )
         *pStmt->ipd->rows_processed_ptr+= 1;
 
-      param_operation_ptr= ptr_offset_adjust(pStmt->apd->array_status_ptr,
+      param_operation_ptr= (SQLUSMALLINT*)ptr_offset_adjust(pStmt->apd->array_status_ptr,
                                             NULL,
                                             0/*SQL_BIND_BY_COLUMN*/,
                                             sizeof(SQLUSMALLINT), row);
-      param_status_ptr= ptr_offset_adjust(pStmt->ipd->array_status_ptr,
+      param_status_ptr= (SQLUSMALLINT*)ptr_offset_adjust(pStmt->ipd->array_status_ptr,
                                             NULL,
                                             0/*SQL_BIND_BY_COLUMN*/,
                                             sizeof(SQLUSMALLINT), row);
@@ -1598,7 +1599,7 @@ SQLRETURN my_SQLExecute( STMT *pStmt )
   {
     while (++row < pStmt->apd->array_size)
     {
-      param_status_ptr= ptr_offset_adjust(pStmt->ipd->array_status_ptr,
+      param_status_ptr= (SQLUSMALLINT*)ptr_offset_adjust(pStmt->ipd->array_status_ptr,
                                           NULL,
                                           0/*SQL_BIND_BY_COLUMN*/,
                                           sizeof(SQLUSMALLINT), row);
@@ -1663,7 +1664,7 @@ static SQLRETURN find_next_dae_param(STMT *stmt,  SQLPOINTER *token)
     SQLLEN *octet_length_ptr;
 
     assert(aprec);
-    octet_length_ptr= ptr_offset_adjust(aprec->octet_length_ptr,
+    octet_length_ptr= (SQLLEN*)ptr_offset_adjust(aprec->octet_length_ptr,
                                         apd->bind_offset_ptr,
                                         apd->bind_type,
                                         sizeof(SQLLEN), 0);
@@ -1868,7 +1869,7 @@ SQLRETURN SQL_API SQLPutData( SQLHSTMT      hstmt,
     }
     else
     {
-      cbValue= strlen(rgbValue);
+      cbValue= strlen((const char*)rgbValue);
     }
   }
 
@@ -1927,9 +1928,9 @@ SQLRETURN SQL_API SQLCancel(SQLHSTMT hstmt)
 
   /** @todo need to preserve and use ssl params */
 
-  if (!mysql_real_connect(second, dbc->ds->server8, dbc->ds->uid8,
-                          dbc->ds->pwd8, NULL, dbc->ds->port,
-                          dbc->ds->socket8, 0))
+  if (!mysql_real_connect(second, (const char*)dbc->ds->server8, (const char*)dbc->ds->uid8,
+                          (const char*)dbc->ds->pwd8, NULL, dbc->ds->port,
+                          (const char*)dbc->ds->socket8, 0))
   {
     /* We do not set the SQLSTATE here, per the ODBC spec. */
     return SQL_ERROR;

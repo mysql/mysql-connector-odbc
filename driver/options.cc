@@ -271,7 +271,7 @@ MySQLSetConnectAttr(SQLHDBC hdbc, SQLINTEGER Attribute,
           return SQL_SUCCESS;
         }
         if (!(trans_supported(dbc)) || dbc->ds->disable_transactions)
-          return set_conn_error(dbc,MYERR_S1C00,
+          return set_conn_error((DBC*)dbc,MYERR_S1C00,
                                 "Transactions are not enabled", 4000);
 
         if (autocommit_on(dbc))
@@ -325,12 +325,12 @@ MySQLSetConnectAttr(SQLHDBC hdbc, SQLINTEGER Attribute,
 
         if (cat_len > NAME_LEN)
         {
-          return set_conn_error(hdbc, MYERR_01004, 
+          return set_conn_error((DBC*)hdbc, MYERR_01004, 
                                 "Invalid string or buffer length", 0);
         }
 
         if (!(db= fix_str((char *)ldb, (char *)ValuePtr, StringLengthPtr)))
-          return set_conn_error(hdbc,MYERR_S1009,NULL, 0);
+          return set_conn_error((DBC*)hdbc,MYERR_S1009,NULL, 0);
 
         myodbc_mutex_lock(&dbc->lock);
         if (is_connected(dbc))
@@ -352,7 +352,7 @@ MySQLSetConnectAttr(SQLHDBC hdbc, SQLINTEGER Attribute,
     case SQL_ATTR_ODBC_CURSORS:
       if (dbc->ds->force_use_of_forward_only_cursors &&
         ValuePtr != (SQLPOINTER) SQL_CUR_USE_ODBC)
-        return set_conn_error(hdbc,MYERR_01S02,
+        return set_conn_error((DBC*)hdbc,MYERR_01S02,
                               "Forcing the Driver Manager to use ODBC cursor library",0);
       break;
 
@@ -364,7 +364,7 @@ MySQLSetConnectAttr(SQLHDBC hdbc, SQLINTEGER Attribute,
       {
         char buff[100];
         sprintf(buff,"Suppose to set this attribute '%d' through driver manager, not by the driver",(int) Attribute);
-        return set_conn_error(hdbc,MYERR_01S02,buff,0);
+        return set_conn_error((DBC*)hdbc,MYERR_01S02,buff,0);
       }
 
     case SQL_ATTR_PACKET_SIZE:
@@ -397,7 +397,7 @@ MySQLSetConnectAttr(SQLHDBC hdbc, SQLINTEGER Attribute,
                   level);
           if (SQL_SUCCEEDED(rc = odbc_stmt(dbc, buff, SQL_NTS, TRUE)))
           {
-            dbc->txn_isolation= (SQLINTEGER)ValuePtr;
+            dbc->txn_isolation= (size_t)ValuePtr;
           }
 
           return rc;
@@ -633,13 +633,13 @@ MySQLSetStmtAttr(SQLHSTMT hstmt, SQLINTEGER Attribute, SQLPOINTER ValuePtr,
 
               if (desc->alloc_type == SQL_DESC_ALLOC_AUTO &&
                   desc->stmt != stmt)
-                return set_error(hstmt,MYERR_S1017,
+                return set_error((STMT*)hstmt,MYERR_S1017,
                                  "Invalid use of an automatically allocated "
                                  "descriptor handle",0);
 
               if (desc->alloc_type == SQL_DESC_ALLOC_USER &&
                   stmt->dbc != desc->exp.dbc)
-                return set_error(hstmt,MYERR_S1024,
+                return set_error((STMT*)hstmt,MYERR_S1024,
                                  "Invalid attribute value",0);
 
               if (Attribute == SQL_ATTR_APP_PARAM_DESC)
@@ -656,7 +656,7 @@ MySQLSetStmtAttr(SQLHSTMT hstmt, SQLINTEGER Attribute, SQLPOINTER ValuePtr,
               if (desc->desc_type != DESC_UNKNOWN &&
                   desc->desc_type != desc_type)
               {
-                return set_error(hstmt,MYERR_S1024,
+                return set_error((STMT*)hstmt,MYERR_S1024,
                                  "Descriptor type mismatch",0);
               }
 
@@ -691,13 +691,13 @@ MySQLSetStmtAttr(SQLHSTMT hstmt, SQLINTEGER Attribute, SQLPOINTER ValuePtr,
         case SQL_ATTR_AUTO_IPD:
         case SQL_ATTR_ENABLE_AUTO_IPD:
             if (ValuePtr != (SQLPOINTER)SQL_FALSE)
-                return set_error(hstmt,MYERR_S1C00,
+                return set_error((STMT*)hstmt,MYERR_S1C00,
                                  "Optional feature not implemented",0);
             break;
 
         case SQL_ATTR_IMP_PARAM_DESC:
         case SQL_ATTR_IMP_ROW_DESC:
-            return set_error(hstmt,MYERR_S1024,
+            return set_error((STMT*)hstmt,MYERR_S1024,
                              "Invalid attribute/option identifier",0);
 
         case SQL_ATTR_PARAM_BIND_OFFSET_PTR:
@@ -748,7 +748,7 @@ MySQLSetStmtAttr(SQLHSTMT hstmt, SQLINTEGER Attribute, SQLPOINTER ValuePtr,
                                         ValuePtr, SQL_IS_INTEGER);
 
         case SQL_ATTR_ROW_NUMBER:
-            return set_error(hstmt,MYERR_S1000,
+            return set_error((STMT*)hstmt,MYERR_S1000,
                              "Trying to set read-only attribute",0);
 
         case SQL_ATTR_ROW_OPERATION_PTR:
@@ -924,7 +924,7 @@ SQLSetEnvAttr(SQLHENV    henv,
   CHECK_HANDLE(henv);
 
   if (((ENV *)henv)->connections)
-      return set_env_error(henv, MYERR_S1010, NULL, 0);
+      return set_env_error((ENV*)henv, MYERR_S1010, NULL, 0);
 
   switch (Attribute)
   {
@@ -940,7 +940,7 @@ SQLSetEnvAttr(SQLHENV    henv,
             break;
 #endif
           default:
-            return set_env_error(henv,MYERR_S1024,NULL,0);
+            return set_env_error((ENV*)henv,MYERR_S1024,NULL,0);
           }
           break;
         }
@@ -949,7 +949,7 @@ SQLSetEnvAttr(SQLHENV    henv,
               break;
 
       default:
-          return set_env_error(henv,MYERR_S1C00,NULL,0);
+          return set_env_error((ENV*)henv,MYERR_S1C00,NULL,0);
   }
   return SQL_SUCCESS;
 }
@@ -985,7 +985,7 @@ SQLGetEnvAttr(SQLHENV    henv,
             break;
 
         default:
-            return set_env_error(henv,MYERR_S1C00,NULL,0);
+            return set_env_error((ENV*)henv,MYERR_S1C00,NULL,0);
     }
     return SQL_SUCCESS;
 }

@@ -1225,7 +1225,7 @@ SQLSetConnectAttrImpl(SQLHDBC hdbc, SQLINTEGER attribute,
     {
       uint errors= 0;
       value= sqlchar_as_sqlchar(dbc->ansi_charset_info, dbc->cxn_charset_info,
-                                value, &value_len, &errors);
+                                (SQLCHAR*)value, &value_len, &errors);
       if (!value && value_len == -1)
       {
         set_mem_error(&dbc->mysql);
@@ -1503,7 +1503,7 @@ SQLTables(SQLHSTMT hstmt,
       catalog= sqlchar_as_sqlchar(dbc->ansi_charset_info, dbc->cxn_charset_info,
                                   catalog, &len, &errors);
       if (!len)
-        catalog= "";
+        catalog= (SQLCHAR*)"";
       catalog_len= (SQLSMALLINT)len;
       len= SQL_NTS;
     }
@@ -1513,7 +1513,7 @@ SQLTables(SQLHSTMT hstmt,
       schema= sqlchar_as_sqlchar(dbc->ansi_charset_info, dbc->cxn_charset_info,
                                  schema, &len, &errors);
       if (!len)
-        schema= "";
+        schema= (SQLCHAR*)"";
       schema_len= (SQLSMALLINT)len;
       len= SQL_NTS;
     }
@@ -1523,7 +1523,7 @@ SQLTables(SQLHSTMT hstmt,
       table= sqlchar_as_sqlchar(dbc->ansi_charset_info, dbc->cxn_charset_info,
                                 table, &len, &errors);
       if (!len)
-        table= "";
+        table= (SQLCHAR*)"";
       table_len= (SQLSMALLINT)len;
       len= SQL_NTS;
     }
@@ -1609,7 +1609,7 @@ SQLBrowseConnect(SQLHDBC hdbc, SQLCHAR *in, SQLSMALLINT in_len,
 {
   CHECK_HANDLE(hdbc);
 
-  return set_conn_error(hdbc,MYERR_S1000,
+  return set_conn_error((DBC*)hdbc,MYERR_S1000,
                         "Driver does not support this API", 0);
 }
 

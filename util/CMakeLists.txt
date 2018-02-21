@@ -22,15 +22,15 @@
 
 ##########################################################################
 
-SET(myodbc-util_SRCS stringutil.c
+SET(myodbc-util_SRCS stringutil.cc
                   stringutil.h
-                  unicode_transcode.c
-                  installer.c
+                  unicode_transcode.cc
+                  installer.cc
                   installer.h)
 
 IF(NOT WIN32)
   SET(myodbc-util_SRCS ${myodbc-util_SRCS}
-                      odbcinstw.c)
+                      odbcinstw.cc)
 ENDIF(NOT WIN32)
 
 ADD_LIBRARY(myodbc-util STATIC ${myodbc-util_SRCS})

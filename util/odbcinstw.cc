@@ -68,7 +68,7 @@ MySQLGetPrivateProfileStringW(const MyODBC_LPCWSTR lpszSection, const MyODBC_LPC
 
   if (lpszRetBuffer && cbRetBuffer)
   {
-    ret= malloc(cbRetBuffer + 1);
+    ret= (char*)malloc(cbRetBuffer + 1);
     /*
       We cannot rely on getting correct results from the next call of
       SQLGetPrivateProfileString. So, taking precautions against unititialized

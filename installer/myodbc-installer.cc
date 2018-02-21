@@ -7,16 +7,16 @@
   conditions of the GPLv2 as it is applied to this software, see the
   FLOSS License Exception
   <http://www.mysql.com/about/legal/licensing/foss-exception.html>.
-  
+
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published
   by the Free Software Foundation; version 2 of the License.
-  
+
   This program is distributed in the hope that it will be useful, but
   WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
   or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
   for more details.
-  
+
   You should have received a copy of the GNU General Public License along
   with this program; if not, write to the Free Software Foundation, Inc.,
   51 Franklin St, Fifth Floor, Boston, MA 02110-1301  USA
@@ -27,13 +27,13 @@
           MyODBC.
 
           This program can register/deregister a myodbc driver and create
-          a sample dsn. The key thing here is that it does this with 
+          a sample dsn. The key thing here is that it does this with
           cross-platform code - thanks to the ODBC installer API. This is
-          most useful to those creating installers (apps using myodbc or 
+          most useful to those creating installers (apps using myodbc or
           myodbc itself).
 
           For example, this program is used in the postinstall script
-          of the MyODBC for Mac OS X installer package. 
+          of the MyODBC for Mac OS X installer package.
 */
 
 /*
@@ -114,7 +114,7 @@ const char usage[] =
 "|                                                                      \n"
 #ifndef _WIN32
 "|    Register a Unicode driver (UNIX example)                          \n"
-"|    shell> myodbc-installer -d -a -n \"MySQL ODBC "MYODBC_STRSERIES" Unicode Driver\" \\ \n"
+"|    shell> myodbc-installer -d -a -n \"MySQL ODBC " MYODBC_STRSERIES " Unicode Driver\" \\ \n"
 "|              -t \"DRIVER=/path/to/driver/libmyodbc8w.so;SETUP=/path/to/gui/myodbc8S.so\"\n"
 "|                                                                      \n"
 "|      Note                                                            \n"
@@ -130,7 +130,7 @@ const char usage[] =
 "|                                                                      \n"
 #else
 "|    Register a Unicode driver (Windows example)                       \n"
-"|    shell> myodbc-installer -d -a -n \"MySQL ODBC "MYODBC_STRSERIES" Unicode Driver\" \\ \n"
+"|    shell> myodbc-installer -d -a -n \"MySQL ODBC " MYODBC_STRSERIES " Unicode Driver\" \\ \n"
 "|              -t \"DRIVER=myodbc8w.dll;SETUP=myodbc8S.dll\"\n"
 "|                                                                      \n"
 "|      Note                                                            \n"
@@ -140,7 +140,7 @@ const char usage[] =
 #endif
 "|    Add a new system data source name for Unicode driver              \n"
 "|    shell> myodbc-installer -s -a -c2 -n \"test\" \\                  \n"
-"|              -t \"DRIVER=MySQL ODBC "MYODBC_STRSERIES" Unicode Driver;SERVER=localhost;DATABASE=test;UID=myid;PWD=mypwd\"\n"
+"|              -t \"DRIVER=MySQL ODBC " MYODBC_STRSERIES " Unicode Driver;SERVER=localhost;DATABASE=test;UID=myid;PWD=mypwd\"\n"
 "|                                                                      \n"
 "|    List data source name attributes for 'test'                       \n"
 "|    shell> myodbc-installer -s -l -c2 -n \"test\"                    \n"
