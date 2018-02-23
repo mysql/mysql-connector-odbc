@@ -192,8 +192,16 @@ IF(MYSQL8)
     ssleay32.*
   )
 
+  SET(_SSL_PATH)
+
+  IF(WIN32)
+    SET(_SSL_PATH ${MYSQL_DIR}/bin/)
+  ELSE(WIN32)
+    SET(_SSL_PATH ${MYSQL_DIR}/lib/)
+  ENDIF(WIN32)
+
   FOREACH(_lib_to_find IN LISTS ssl_libs_to_find)
-    INSTALL(DIRECTORY ${MYSQL_DIR}/lib/ DESTINATION ${LIB_SUBDIR}
+    INSTALL(DIRECTORY ${_SSL_PATH} DESTINATION ${LIB_SUBDIR}
           FILES_MATCHING
           PATTERN "mecab" EXCLUDE
           PATTERN "pkgconfig" EXCLUDE
