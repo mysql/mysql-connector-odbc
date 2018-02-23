@@ -583,6 +583,20 @@ static char *ui_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" \
 "                            <property name=\"top_attach\">2</property>\n" \
 "                          </packing>\n" \
 "                        </child>\n" \
+"                        <child>\n" \
+"                          <object class=\"GtkCheckButton\" id=\"get_server_public_key\">\n" \
+"                            <property name=\"label\" translatable=\"yes\">Get Server Public Key</property>\n" \
+"                            <property name=\"visible\">True</property>\n" \
+"                            <property name=\"can_focus\">True</property>\n" \
+"                            <property name=\"receives_default\">False</property>\n" \
+"                            <property name=\"use_action_appearance\">False</property>\n" \
+"                            <property name=\"draw_indicator\">True</property>\n" \
+"                          </object>\n" \
+"                          <packing>\n" \
+"                            <property name=\"left_attach\">1</property>\n" \
+"                            <property name=\"top_attach\">3</property>\n" \
+"                          </packing>\n" \
+"                        </child>\n" \
 "                      </object>\n" \
 "                      <packing>\n" \
 "                        <property name=\"expand\">True</property>\n" \
