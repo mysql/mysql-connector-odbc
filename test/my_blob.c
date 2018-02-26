@@ -716,7 +716,7 @@ DECLARE_TEST(t_bug9781)
 
   ok_sql(hstmt, "DROP TABLE IF EXISTS t_bug9781");
   ok_sql(hstmt, "CREATE TABLE t_bug9781 (g GEOMETRY)");
-  ok_sql(hstmt, "INSERT INTO t_bug9781 VALUES (GeomFromText('POINT(0 0)'))");
+  ok_sql(hstmt, "INSERT INTO t_bug9781 VALUES (St_GeomFromText('POINT(0 0)'))");
 
   ok_sql(hstmt, "SELECT AsBinary(g) FROM t_bug9781");
 

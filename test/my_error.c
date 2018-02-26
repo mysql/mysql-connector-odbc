@@ -621,7 +621,9 @@ DECLARE_TEST(t_passwordexpire)
   ok_sql(hstmt, "DROP TABLE IF EXISTS t_password_expire");
   SQLExecDirect(hstmt, (SQLCHAR *)"DROP USER t_pwd_expire", SQL_NTS);
 
-  ok_sql(hstmt, "GRANT ALL ON *.* TO  t_pwd_expire IDENTIFIED BY 'foo'");
+  ok_sql(hstmt, "DROP USER IF EXISTS t_pwd_expire");
+  ok_sql(hstmt, "CREATE USER t_pwd_expire IDENTIFIED BY 'foo'");
+  ok_sql(hstmt, "GRANT ALL ON *.* TO  t_pwd_expire");
   ok_sql(hstmt, "ALTER USER t_pwd_expire PASSWORD EXPIRE");
 
   ok_env(henv, SQLAllocConnect(henv, &hdbc1));
