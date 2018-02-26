@@ -32,7 +32,7 @@
 
 char *default_locale, *decimal_point, *thousands_sep;
 uint decimal_point_length,thousands_sep_length;
-static my_bool myodbc_inited=0;
+static int myodbc_inited=0;
 
 
 /*
@@ -69,8 +69,11 @@ void myodbc_init(void)
    sigaction(SIGPIPE, &action, NULL);
 #endif
 
-  if (myodbc_inited++)
+  ++myodbc_inited;
+  
+  if (myodbc_inited > 1)
     return;
+    
   my_sys_init();
   {
     struct lconv *tmp;
@@ -96,7 +99,8 @@ void myodbc_init(void)
 */
 void myodbc_end()
 {
-  if (myodbc_inited)
+  --myodbc_inited;
+  if (!myodbc_inited)
   {
     x_free(decimal_point);
     x_free(default_locale);
