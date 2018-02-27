@@ -1105,11 +1105,17 @@ DECLARE_TEST(t_bug28168)
   wchar_t dummy[256]= {0};
   wchar_t *wstr;
   SQLWCHAR errmsgtxt[256]= {0}, sqlstate[6]= {0};
-  SQLWCHAR *grantQuery= W(L"GRANT ALL ON t_bug28168 to "
+
+  SQLWCHAR *dropQuery= W(L"DROP USER IF EXISTS "
+    L"'\x03A8\x0391\x03A1\x039F uid'@localhost");
+  SQLWCHAR *dropQuery2= W(L"DROP USER IF EXISTS "
+    L"'\x03A8\x0391\x03A1\x039F uid'@'%'");
+    
+  SQLWCHAR *createQuery= W(L"CREATE USER "
     L"'\x03A8\x0391\x03A1\x039F uid'@"
     L"localhost identified by "
     L"'\x03A8\x0391\x03A1\x039F pwd'");
-  SQLWCHAR *grantQuery2= W(L"GRANT ALL ON t_bug28168 to "
+  SQLWCHAR *createQuery2= W(L"CREATE USER "
     L"'\x03A8\x0391\x03A1\x039F uid'@"
     L"'%' identified by "
     L"'\x03A8\x0391\x03A1\x039F pwd'");
@@ -1145,8 +1151,11 @@ DECLARE_TEST(t_bug28168)
     Grant for localhost and for all other hosts if the test server
     runs remotely
   */
-  ok_stmt(hstmt1, SQLExecDirectW(hstmt1, grantQuery, SQL_NTS));
-  ok_stmt(hstmt1, SQLExecDirectW(hstmt1, grantQuery2, SQL_NTS));
+  ok_stmt(hstmt1, SQLExecDirectW(hstmt1, dropQuery, SQL_NTS));
+  ok_stmt(hstmt1, SQLExecDirectW(hstmt1, dropQuery2, SQL_NTS));
+  
+  ok_stmt(hstmt1, SQLExecDirectW(hstmt1, createQuery, SQL_NTS));
+  ok_stmt(hstmt1, SQLExecDirectW(hstmt1, createQuery2, SQL_NTS));
 
   *conn_in= L'\0';
   wcscat(conn_in, L"DRIVER=");

@@ -163,7 +163,11 @@ DECLARE_TEST(t_isolation)
   is_num(isolation, SQL_TXN_READ_UNCOMMITTED);
 
   /* Check that it was actually changed on the server. */
-  ok_sql(hstmt, "SELECT @@tx_isolation");
+  if (mysql_min_version(hdbc, "8.0", 3))
+    ok_sql(hstmt, "SELECT @@transaction_isolation");
+  else
+    ok_sql(hstmt, "SELECT @@tx_isolation");
+    
   ok_stmt(hstmt, SQLBindCol(hstmt, 1, SQL_C_CHAR, tx_isolation,
                             sizeof(tx_isolation), NULL));
   ok_stmt(hstmt, SQLFetch(hstmt));

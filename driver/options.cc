@@ -545,8 +545,13 @@ MySQLGetConnectAttr(SQLHDBC hdbc, SQLINTEGER attrib, SQLCHAR **char_attr,
         *((SQLINTEGER *)num_attr)= SQL_TRANSACTION_REPEATABLE_READ;
         break;
       }
+      
+      if (is_minimum_version(dbc->mysql.server_version, "8.0"))
+        result = odbc_stmt(dbc, "SELECT @@transaction_isolation", SQL_NTS, TRUE);
+      else
+        result = odbc_stmt(dbc, "SELECT @@tx_isolation", SQL_NTS, TRUE);
 
-      if (odbc_stmt(dbc, "SELECT @@tx_isolation", SQL_NTS, TRUE))
+      if (result != SQL_SUCCESS)
       {
         return set_handle_error(SQL_HANDLE_DBC, hdbc, MYERR_S1000,
                                 "Failed to get isolation level", 0);

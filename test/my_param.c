@@ -752,7 +752,7 @@ DECLARE_TEST(t_bug49029)
   SQLCHAR buff[6];
   SQLULEN len= 5;
 
-  ok_stmt(hstmt, SQLExecDirect(hstmt, "set @@session.sql_mode='NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION,NO_BACKSLASH_ESCAPES'", SQL_NTS));
+  ok_stmt(hstmt, SQLExecDirect(hstmt, "set @@session.sql_mode='NO_ENGINE_SUBSTITUTION,NO_BACKSLASH_ESCAPES'", SQL_NTS));
 
   ok_stmt(hstmt, SQLBindParameter(hstmt, 1, SQL_PARAM_INPUT, SQL_C_BINARY, SQL_BINARY,
     0, 0, (SQLPOINTER)bData, 0, &len));

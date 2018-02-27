@@ -344,7 +344,7 @@ DECLARE_TEST(charset_utf8)
 
   free_basic_handles(&henv1, &hdbc1, &hstmt1);
 
-  ok_sql(hstmt, "DROP TABLE IF EXISTS t_bug19345");
+  //ok_sql(hstmt, "DROP TABLE IF EXISTS t_bug19345");
 
   return OK;
 }
@@ -861,8 +861,13 @@ DECLARE_TEST(t_bug31959)
                           (SQLCHAR *)"READ-COMMITTED",
                           (SQLCHAR *)"READ-UNCOMMITTED"};
 
-  ok_stmt(hstmt, SQLPrepare(hstmt,
+  if (mysql_min_version(hdbc, "8.0", 3))
+    ok_stmt(hstmt, SQLPrepare(hstmt,
+                            (SQLCHAR *)"select @@transaction_isolation", SQL_NTS));
+  else
+    ok_stmt(hstmt, SQLPrepare(hstmt,
                             (SQLCHAR *)"select @@tx_isolation", SQL_NTS));
+    
 
   /* check all 4 valid isolation levels */
   for(i = 3; i >= 0; --i)

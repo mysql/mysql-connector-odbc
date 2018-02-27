@@ -619,11 +619,10 @@ DECLARE_TEST(t_passwordexpire)
   }
 
   ok_sql(hstmt, "DROP TABLE IF EXISTS t_password_expire");
-  SQLExecDirect(hstmt, (SQLCHAR *)"DROP USER t_pwd_expire", SQL_NTS);
+  SQLExecDirect(hstmt, (SQLCHAR *)"DROP USER IF EXISTS t_pwd_expire", SQL_NTS);
 
-  ok_sql(hstmt, "DROP USER IF EXISTS t_pwd_expire");
   ok_sql(hstmt, "CREATE USER t_pwd_expire IDENTIFIED BY 'foo'");
-  ok_sql(hstmt, "GRANT ALL ON *.* TO  t_pwd_expire");
+  ok_sql(hstmt, "GRANT ALL ON *.* TO t_pwd_expire");
   ok_sql(hstmt, "ALTER USER t_pwd_expire PASSWORD EXPIRE");
 
   ok_env(henv, SQLAllocConnect(henv, &hdbc1));
@@ -656,7 +655,7 @@ DECLARE_TEST(t_passwordexpire)
   /*strcat((char *)conn_in, ";INITSTMT={set password= password('bar')}");*/
   ok_con(hdbc1, SQLAllocStmt(hdbc1, &hstmt1));
 
-  ok_sql(hstmt1, "SET PASSWORD= password('bar')");
+  ok_sql(hstmt1, "SET PASSWORD='bar'");
 
   /* Just to verify that we got normal connection */
   ok_sql(hstmt1, "select 1");
