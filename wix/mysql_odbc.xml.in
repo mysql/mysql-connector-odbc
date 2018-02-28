@@ -122,6 +122,7 @@
       <ComponentRef Id="driver" />
       <ComponentRef Id="setup" />
       <ComponentRef Id="installer" />
+      <ComponentRef Id="ssl" />
     <?if $(var.odbc_64bit) = 1 ?>
     </Feature>
     <?else ?>

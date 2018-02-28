@@ -84,6 +84,10 @@
                 <File Id="installer.pdb" Name="myodbc-installer.pdb" DiskId="1" Source="x64\myodbc-installer.pdb" />
               <?endif?>
             </Component>
+            <Component Id="ssl" Guid="39342019-EE47-4414-A69D-D442C2FA0241" SharedDllRefCount="yes" Win64="yes">
+              <File Id="libeay32.dll" Name="libeay32.dll" KeyPath="yes" DiskId="1" Source="x64\libeay32.dll" />
+              <File Id="ssleay32.dll" Name="ssleay32.dll" DiskId="1" Source="x64\ssleay32.dll" />
+            </Component>
           <?else ?>
             <Component Id="lib" Guid="FED572C6-4778-4C54-A713-8D67D4758043" SharedDllRefCount="yes">
               <File Id="myodbca.lib" Name="myodbc8a.lib" KeyPath="yes" DiskId="1" Source="x86\myodbc8a.lib" />
@@ -121,6 +125,10 @@
               <?if $(var.odbc_pdb) = 1 ?>
                 <File Id="installer.pdb" Name="myodbc-installer.pdb" DiskId="1" Source="x86\myodbc-installer.pdb" />
               <?endif?>
+            </Component>
+            <Component Id="ssl" Guid="80FD9287-2DF7-4609-B1A2-863ED313FB21" SharedDllRefCount="yes">
+              <File Id="libeay32.dll" Name="libeay32.dll" KeyPath="yes" DiskId="1" Source="x86\libeay32.dll" />
+              <File Id="ssleay32.dll" Name="ssleay32.dll" DiskId="1" Source="x86\ssleay32.dll" />
             </Component>
           <?endif ?>
             </Directory>  <!--INSTALLDIR-->
