@@ -35,7 +35,6 @@
 #include <mysql.h>
 #include <mysqld_error.h>
 #include <my_alloc.h>
-#include <mysql/service_my_snprintf.h>
 #include <mysql/service_mysql_alloc.h>
 #include <m_ctype.h>
 #include <my_io.h>
@@ -126,11 +125,7 @@ extern "C"
 #define sort_dynamic(A,cmp) myodbc_qsort((A)->buffer, (A)->elements, (A)->size_of_element, (cmp))
 #define push_dynamic(A,B) insert_dynamic((A),(B))
 
-#if defined(_WIN32) || defined(__APPLE__)
 #define myodbc_snprintf snprintf
-#else
-#define myodbc_snprintf my_snprintf
-#endif
 
   static my_bool inline myodbc_allocate_dynamic(DYNAMIC_ARRAY *array, uint max_elements)
   {
