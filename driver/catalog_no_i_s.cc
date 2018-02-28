@@ -1637,29 +1637,58 @@ static MYSQL_RES *server_list_proc_params(STMT *stmt,
 {
   DBC   *dbc = stmt->dbc;
   MYSQL *mysql= &dbc->mysql;
-  char   buff[255+4*NAME_LEN+1], *pos;
+  char   buff[1024+4*NAME_LEN+1], *pos;
 
-  pos= myodbc_stpmov(buff, "SELECT name, CONCAT(IF(length(returns)>0, CONCAT('RETURN_VALUE ', returns, if(length(param_list)>0, ',', '')),''), param_list),"
-                    "db, type FROM mysql.proc WHERE Db=");
-
-
-  if (catalog_len)
+  if((is_minimum_version(dbc->mysql.server_version, "8.0")))
   {
-    pos= myodbc_stpmov(pos, "'");
-    pos+= mysql_real_escape_string(mysql, pos, (char *)catalog, catalog_len);
-    pos= myodbc_stpmov(pos, "'");
+    pos= myodbc_stpmov(buff, "select SPECIFIC_NAME, GROUP_CONCAT(IF(ISNULL(PARAMETER_NAME), "
+                             "concat('RETURN_VALUE ', DTD_IDENTIFIER), "
+                             "concat(PARAMETER_MODE, ' ', PARAMETER_NAME, ' ', DTD_IDENTIFIER)) "
+                             "ORDER BY ORDINAL_POSITION ASC SEPARATOR ', ') "
+                             "PARAMS_LIST, SPECIFIC_SCHEMA, ROUTINE_TYPE FROM information_schema.parameters "
+                             "WHERE SPECIFIC_SCHEMA = ");
+    if (catalog_len)
+    {
+      pos= myodbc_stpmov(pos, "'");
+      pos+= mysql_real_escape_string(mysql, pos, (char *)catalog, catalog_len);
+      pos= myodbc_stpmov(pos, "'");
+    }
+    else
+      pos= myodbc_stpmov(pos, "DATABASE()");
+
+    if (proc_name_len)
+    {
+      pos= myodbc_stpmov(pos, " AND SPECIFIC_NAME = '");
+      pos+= mysql_real_escape_string(mysql, pos, (char *)proc_name, proc_name_len);
+      pos= myodbc_stpmov(pos, "'");
+    }
+
+    pos= myodbc_stpmov(pos, " GROUP BY SPECIFIC_NAME, SPECIFIC_SCHEMA, ROUTINE_TYPE");
   }
   else
-    pos= myodbc_stpmov(pos, "DATABASE()");
-
-  if (proc_name_len)
   {
-    pos= myodbc_stpmov(pos, " AND name LIKE '");
-    pos+= mysql_real_escape_string(mysql, pos, (char *)proc_name, proc_name_len);
-    pos= myodbc_stpmov(pos, "'");
-  }
+    pos = myodbc_stpmov(buff, "SELECT name, CONCAT(IF(length(returns)>0, CONCAT('RETURN_VALUE ', returns, if(length(param_list)>0, ',', '')),''), param_list),"
+                        "db, type FROM mysql.proc WHERE Db=");
 
-  pos= myodbc_stpmov(pos, " ORDER BY Db, name");
+
+    if (catalog_len)
+    {
+      pos = myodbc_stpmov(pos, "'");
+      pos += mysql_real_escape_string(mysql, pos, (char *)catalog, catalog_len);
+      pos = myodbc_stpmov(pos, "'");
+    }
+    else
+      pos = myodbc_stpmov(pos, "DATABASE()");
+
+    if (proc_name_len)
+    {
+      pos = myodbc_stpmov(pos, " AND name LIKE '");
+      pos += mysql_real_escape_string(mysql, pos, (char *)proc_name, proc_name_len);
+      pos = myodbc_stpmov(pos, "'");
+    }
+
+    pos = myodbc_stpmov(pos, " ORDER BY Db, name");
+  }
 
   assert(pos - buff < sizeof(buff));
   MYLOG_DBC_QUERY(dbc, buff);
