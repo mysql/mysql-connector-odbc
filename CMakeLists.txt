@@ -129,11 +129,15 @@ if (CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang" OR CMAKE_S
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 endif()
 
+if(APPLE)
+  set(CMAKE_MACOSX_RPATH ON)
+endif()
 
 INCLUDE(CheckTypeSize)
 include(CheckCSourceCompiles)
 include(CheckCXXSourceCompiles)
 INCLUDE(${CMAKE_SOURCE_DIR}/cmake/character_sets.cmake)
+include(${CMAKE_SOURCE_DIR}/cmake/libutils.cmake)
 
 # We need some extra FAIL_REGEX patterns
 # Note that CHECK_C_SOURCE_COMPILES is a misnomer, it will also link.

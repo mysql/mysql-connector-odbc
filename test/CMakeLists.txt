@@ -80,6 +80,14 @@ FOREACH(T my_basics my_blob my_bulk my_catalog1 my_catalog2 my_crash my_curext m
   ENDIF(WIN32)
   ADD_TEST(${T} ${T})
 
+if(APPLE)
+  set_property(TARGET ${T} PROPERTY BUILD_WITH_INSTALL_RPATH ON)
+  set_property(TARGET ${T} APPEND PROPERTY INSTALL_RPATH "@loader_path")
+elseif(NOT WIN32)
+  set_property(TARGET ${T} PROPERTY BUILD_WITH_INSTALL_RPATH ON)
+  set_property(TARGET ${T} APPEND PROPERTY INSTALL_RPATH "$ORIGIN")
+endif()
+
 ENDFOREACH(T)
 
 # Adding testsuites for testing driver without DM. May be useful to test behaviors that normally are initiated by DM only

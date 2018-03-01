@@ -73,6 +73,8 @@ elseif(NOT WIN32)
   set_property(TARGET myodbc-installer APPEND PROPERTY INSTALL_RPATH "$ORIGIN")
 endif()
 
+mangle_osx_rpaths(myodbc-installer)
+
 IF(MYSQL_CXX_LINKAGE)
   SET_TARGET_PROPERTIES(myodbc-installer PROPERTIES 
         LINKER_LANGUAGE CXX

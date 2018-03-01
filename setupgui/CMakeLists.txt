@@ -90,11 +90,11 @@ IF(WIN32 AND MYSQL8)
   TARGET_LINK_LIBRARIES(myodbc8S
                       myodbc-util ${ODBCLIB} ${ODBCINSTLIB} ${MYSQL_CLIENT_LIBS}
                       ${PLATFORM_LIBS} legacy_stdio_definitions.lib)
-ELSE(MYSQL8)
+ELSE(WIN32 AND MYSQL8)
   TARGET_LINK_LIBRARIES(myodbc8S
                       myodbc-util ${ODBCLIB} ${ODBCINSTLIB} ${MYSQL_CLIENT_LIBS}
                       ${PLATFORM_LIBS})
-ENDIF(MYSQL8)
+ENDIF(WIN32 AND MYSQL8)
 
 IF (WIN32)
     IF (WITH_NODEFAULTLIB)
