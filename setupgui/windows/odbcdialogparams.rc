@@ -149,6 +149,8 @@ BEGIN
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,125,27,113,10
     CONTROL         "Disable default SSL", IDC_CHECK_disable_ssl_default
                     "Button", BS_AUTOCHECKBOX | WS_TABSTOP, 125, 42, 113, 10
+    CONTROL         "Get Server Public Key", IDC_CHECK_get_server_public_key
+                    "Button", BS_AUTOCHECKBOX | WS_TABSTOP, 125, 57, 113, 10
 
     RTEXT           "Plugin Directory:",IDC_STATIC,12,132,67,8
     EDITTEXT        IDC_EDIT_plugin_dir,90,132,97,12,ES_AUTOHSCROLL
@@ -273,12 +275,12 @@ END
 // TEXTINCLUDE
 //
 
-1 TEXTINCLUDE 
+1 TEXTINCLUDE
 BEGIN
     "resource.h\0"
 END
 
-2 TEXTINCLUDE 
+2 TEXTINCLUDE
 BEGIN
     "#define APSTUDIO_HIDDEN_SYMBOLS\r\n"
     "#include ""windows.h""\r\n"
@@ -286,7 +288,7 @@ BEGIN
     "\0"
 END
 
-3 TEXTINCLUDE 
+3 TEXTINCLUDE
 BEGIN
     "\r\n"
     "\0"
@@ -308,7 +310,7 @@ IDB_LOGO                BITMAP                  "connector_odbc_header.bmp"
 //
 
 #ifdef APSTUDIO_INVOKED
-GUIDELINES DESIGNINFO 
+GUIDELINES DESIGNINFO
 BEGIN
     IDD_TAB5, DIALOG
     BEGIN
@@ -323,7 +325,7 @@ END
 // String Table
 //
 
-STRINGTABLE 
+STRINGTABLE
 BEGIN
     IDC_DIALOG              "DIALOG"
 END

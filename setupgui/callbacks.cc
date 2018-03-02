@@ -7,16 +7,16 @@
   conditions of the GPLv2 as it is applied to this software, see the
   FLOSS License Exception
   <http://www.mysql.com/about/legal/licensing/foss-exception.html>.
-  
+
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published
   by the Free Software Foundation; version 2 of the License.
-  
+
   This program is distributed in the hope that it will be useful, but
   WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
   or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
   for more details.
-  
+
   You should have received a copy of the GNU General Public License along
   with this program; if not, write to the Free Software Foundation, Inc.,
   51 Franklin St, Fifth Floor, Boston, MA 02110-1301  USA
@@ -44,7 +44,7 @@ SQLWCHAR *mytest(HWND hwnd, DataSource *params)
   SQLWCHAR *msg;
   SQLWCHAR tmpbuf[1024];
 
-  /* 
+  /*
     In case of file data source we do not want it to be created
     when clicking the Test button
   */
@@ -108,7 +108,7 @@ LIST *mygetdatabases(HWND hwnd, DataSource* params)
   SQLWCHAR    *preservedDatabase= params->database;
   BOOL        preservedNoCatalog= params->no_catalog;
 
-  /* 
+  /*
     In case of file data source we do not want it to be created
     when clicking the Test button
   */
@@ -190,7 +190,7 @@ LIST *mygetcharsets(HWND hwnd, DataSource* params)
   BOOL        preservedNoCatalog= params->no_catalog;
   SQLWCHAR tmpbuf[1024];
 
-  /* 
+  /*
     In case of file data source we do not want it to be created
     when clicking the Test button
   */
@@ -338,6 +338,7 @@ void syncTabsData(HWND hwnd, DataSource *params)
   GET_BOOL_TAB(CONNECTION_TAB, can_handle_exp_pwd);
   GET_BOOL_TAB(CONNECTION_TAB, enable_cleartext_plugin);
   GET_BOOL_TAB(CONNECTION_TAB, disable_ssl_default);
+  GET_BOOL_TAB(CONNECTION_TAB, get_server_public_key);
 
   GET_COMBO_TAB(CONNECTION_TAB, charset);
   GET_STRING_TAB(CONNECTION_TAB, initstmt);
@@ -400,8 +401,8 @@ void syncTabsData(HWND hwnd, DataSource *params)
   GET_BOOL_TAB(MISC_TAB, no_date_overflow);
 }
 
-/* 
- Sets the options in the dialog tabs using DataSource 
+/*
+ Sets the options in the dialog tabs using DataSource
 */
 void syncTabs(HWND hwnd, DataSource *params)
 {
@@ -415,6 +416,7 @@ void syncTabs(HWND hwnd, DataSource *params)
   SET_BOOL_TAB(CONNECTION_TAB, can_handle_exp_pwd);
   SET_BOOL_TAB(CONNECTION_TAB, enable_cleartext_plugin);
   SET_BOOL_TAB(CONNECTION_TAB, disable_ssl_default);
+  SET_BOOL_TAB(CONNECTION_TAB, get_server_public_key);
 
 #ifdef _WIN32
   if ( getTabCtrlTabPages(CONNECTION_TAB-1))
@@ -455,7 +457,7 @@ void syncTabs(HWND hwnd, DataSource *params)
   }
 
   /* 4 - debug*/
-  SET_BOOL_TAB(DEBUG_TAB,save_queries); 
+  SET_BOOL_TAB(DEBUG_TAB,save_queries);
 
   /* 5 - ssl related */
 #ifdef _WIN32
@@ -464,16 +466,16 @@ void syncTabs(HWND hwnd, DataSource *params)
   {
     if(params->sslkey)
       SET_STRING_TAB(SSL_TAB, sslkey);
-    
+
     if(params->sslcert)
       SET_STRING_TAB(SSL_TAB, sslcert);
-    
+
     if(params->sslca)
       SET_STRING_TAB(SSL_TAB, sslca);
-    
+
     if(params->sslcapath)
       SET_STRING_TAB(SSL_TAB, sslcapath);
-    
+
     if(params->sslcipher)
       SET_STRING_TAB(SSL_TAB, sslcipher);
 

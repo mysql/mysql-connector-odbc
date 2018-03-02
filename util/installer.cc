@@ -173,6 +173,8 @@ static SQLWCHAR W_CAN_HANDLE_EXP_PWD[]=
   {'C','A','N','_','H','A','N','D','L','E','_','E','X','P','_','P','W','D',0};
 static SQLWCHAR W_ENABLE_CLEARTEXT_PLUGIN[]=
   {'E','N','A','B','L','E','_','C','L','E','A', 'R', 'T', 'E', 'X', 'T', '_','P','L','U','G','I','N',0};
+static SQLWCHAR W_GET_SERVER_PUBLIC_KEY[] =
+{ 'G','E','T','_','S','E','R','V', 'E', 'R','_','P','U','B','L', 'I', 'C','_','K','E','Y',0 };
 static SQLWCHAR W_SAVEFILE[]=  {'S','A','V','E','F','I','L','E',0};
 static SQLWCHAR W_PLUGIN_DIR[]=
   {'P','L','U','G','I','N','_','D','I','R',0};
@@ -877,6 +879,8 @@ void ds_map_param(DataSource *ds, const SQLWCHAR *param,
     *booldest= &ds->can_handle_exp_pwd;
   else if (!sqlwcharcasecmp(W_ENABLE_CLEARTEXT_PLUGIN, param))
     *booldest= &ds->enable_cleartext_plugin;
+  else if (!sqlwcharcasecmp(W_GET_SERVER_PUBLIC_KEY, param))
+    *booldest = &ds->get_server_public_key;
   else if (!sqlwcharcasecmp(W_PLUGIN_DIR, param))
     *strdest= &ds->plugin_dir;
   else if (!sqlwcharcasecmp(W_DEFAULT_AUTH, param))
@@ -1379,6 +1383,7 @@ int ds_add(DataSource *ds)
   if (ds_add_intprop(ds->name, W_NO_SSPS, ds->no_ssps)) goto error;
   if (ds_add_intprop(ds->name, W_CAN_HANDLE_EXP_PWD, ds->can_handle_exp_pwd)) goto error;
   if (ds_add_intprop(ds->name, W_ENABLE_CLEARTEXT_PLUGIN, ds->enable_cleartext_plugin)) goto error;
+  if (ds_add_intprop(ds->name, W_GET_SERVER_PUBLIC_KEY, ds->get_server_public_key)) goto error;
   if (ds_add_strprop(ds->name, W_PLUGIN_DIR  , ds->plugin_dir  )) goto error;
   if (ds_add_strprop(ds->name, W_DEFAULT_AUTH, ds->default_auth)) goto error;
   if (ds_add_intprop(ds->name, W_DISABLE_SSL_DEFAULT, ds->disable_ssl_default)) goto error;
