@@ -7,16 +7,16 @@
   conditions of the GPLv2 as it is applied to this software, see the
   FLOSS License Exception
   <http://www.mysql.com/about/legal/licensing/foss-exception.html>.
-  
+
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published
   by the Free Software Foundation; version 2 of the License.
-  
+
   This program is distributed in the hope that it will be useful, but
   WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
   or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
   for more details.
-  
+
   You should have received a copy of the GNU General Public License along
   with this program; if not, write to the Free Software Foundation, Inc.,
   51 Franklin St, Fifth Floor, Boston, MA 02110-1301  USA
@@ -183,14 +183,14 @@ SQLRETURN SQL_API my_SQLBindParameter( SQLHSTMT     StatementHandle,
     if (!SQL_SUCCEEDED(rc= stmt_SQLSetDescField(stmt, stmt->ipd,
                                                 ParameterNumber,
                                                 SQL_DESC_CONCISE_TYPE,
-                                                (SQLPOINTER)(SQLINTEGER)ParameterType,
+                                                (SQLPOINTER)(size_t)ParameterType,
                                                 SQL_IS_SMALLINT)))
         return rc;
 
     if (!SQL_SUCCEEDED(rc= stmt_SQLSetDescField(stmt, stmt->ipd,
                                                 ParameterNumber,
                                                 SQL_DESC_PARAMETER_TYPE,
-                                                (SQLPOINTER)(SQLINTEGER)InputOutputType,
+                                                (SQLPOINTER)(size_t)InputOutputType,
                                                 SQL_IS_SMALLINT)))
         return rc;
 
@@ -205,7 +205,7 @@ SQLRETURN SQL_API my_SQLBindParameter( SQLHSTMT     StatementHandle,
     case SQL_INTERVAL_MINUTE_TO_SECOND:
         rc= stmt_SQLSetDescField(stmt, stmt->ipd, ParameterNumber,
                                  SQL_DESC_PRECISION,
-                                 (SQLPOINTER)(SQLINTEGER)DecimalDigits,
+                                 (SQLPOINTER)(size_t)DecimalDigits,
                                  SQL_IS_SMALLINT);
         break;
     case SQL_CHAR:
@@ -222,7 +222,7 @@ SQLRETURN SQL_API my_SQLBindParameter( SQLHSTMT     StatementHandle,
     case SQL_DECIMAL:
         rc= stmt_SQLSetDescField(stmt, stmt->ipd, ParameterNumber,
                                  SQL_DESC_SCALE,
-                                 (SQLPOINTER)(SQLINTEGER)DecimalDigits,
+                                 (SQLPOINTER)(size_t)DecimalDigits,
                                  SQL_IS_SMALLINT);
         if (!SQL_SUCCEEDED(rc))
             return rc;
@@ -248,7 +248,7 @@ SQLRETURN SQL_API my_SQLBindParameter( SQLHSTMT     StatementHandle,
 
 
 /**
-  Deprecated function, for more details see SQLBindParamater. 
+  Deprecated function, for more details see SQLBindParamater.
 
   @param[in] stmt           Handle to statement
   @param[in] ipar           Parameter number
@@ -264,18 +264,18 @@ SQLRETURN SQL_API my_SQLBindParameter( SQLHSTMT     StatementHandle,
 */
 
 SQLRETURN SQL_API SQLSetParam(SQLHSTMT        hstmt,
-                              SQLUSMALLINT    ipar, 
-                              SQLSMALLINT     fCType, 
+                              SQLUSMALLINT    ipar,
+                              SQLSMALLINT     fCType,
                               SQLSMALLINT     fSqlType,
-                              SQLULEN         cbColDef, 
+                              SQLULEN         cbColDef,
                               SQLSMALLINT     ibScale,
-                              SQLPOINTER      rgbValue, 
+                              SQLPOINTER      rgbValue,
                               SQLLEN *        pcbValue)
 {
   CHECK_HANDLE(hstmt);
 
-  return my_SQLBindParameter(hstmt, ipar, SQL_PARAM_INPUT_OUTPUT, fCType, 
-                             fSqlType, cbColDef, ibScale, rgbValue, 
+  return my_SQLBindParameter(hstmt, ipar, SQL_PARAM_INPUT_OUTPUT, fCType,
+                             fSqlType, cbColDef, ibScale, rgbValue,
                              SQL_SETPARAM_VALUE_MAX, pcbValue);
 }
 
@@ -286,13 +286,13 @@ SQLRETURN SQL_API SQLSetParam(SQLHSTMT        hstmt,
 */
 
 SQLRETURN SQL_API SQLBindParameter( SQLHSTMT        hstmt,
-                                    SQLUSMALLINT    ipar, 
+                                    SQLUSMALLINT    ipar,
                                     SQLSMALLINT     fParamType,
-                                    SQLSMALLINT     fCType, 
+                                    SQLSMALLINT     fCType,
                                     SQLSMALLINT     fSqlType,
-                                    SQLULEN         cbColDef, 
+                                    SQLULEN         cbColDef,
                                     SQLSMALLINT     ibScale,
-                                    SQLPOINTER      rgbValue, 
+                                    SQLPOINTER      rgbValue,
                                     SQLLEN          cbValueMax,
                                     SQLLEN *        pcbValue )
 {
@@ -338,13 +338,13 @@ SQLRETURN SQL_API SQLDescribeParam( SQLHSTMT        hstmt,
 */
 
 #ifdef USE_SQLPARAMOPTIONS_SQLULEN_PTR
-SQLRETURN SQL_API SQLParamOptions( SQLHSTMT     hstmt, 
+SQLRETURN SQL_API SQLParamOptions( SQLHSTMT     hstmt,
                                    SQLULEN      crow,
                                    SQLULEN      *pirow )
 {
   SQLINTEGER buflen= SQL_IS_ULEN;
 #else
-SQLRETURN SQL_API SQLParamOptions( SQLHSTMT     hstmt, 
+SQLRETURN SQL_API SQLParamOptions( SQLHSTMT     hstmt,
                                    SQLUINTEGER  crow,
                                    SQLUINTEGER *pirow )
 {
@@ -359,7 +359,7 @@ SQLRETURN SQL_API SQLParamOptions( SQLHSTMT     hstmt,
                            (SQLPOINTER)crow, buflen);
   if (!SQL_SUCCEEDED(rc))
     return rc;
-  /* 
+  /*
      We make the assumption that if this is using the pointer to a 64-bit
      value, then it is correct. However the SQL_DESC_ROWS_PROCESSED_PTR is a
      pointer to a 32-bit value so we zero-out the unused half and save a
@@ -417,7 +417,7 @@ SQLRETURN SQL_API SQLSetScrollOptions(  SQLHSTMT        hstmt,
     CHECK_HANDLE(hstmt);
 
     return stmt_SQLSetDescField(stmt, stmt->ard, 0, SQL_DESC_ARRAY_SIZE,
-                                (SQLPOINTER)(SQLUINTEGER)crowRowset,
+                                (SQLPOINTER)(size_t)crowRowset,
                                 SQL_IS_USMALLINT);
 }
 

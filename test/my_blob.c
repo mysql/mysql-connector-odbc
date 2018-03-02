@@ -7,16 +7,16 @@
   conditions of the GPLv2 as it is applied to this software, see the
   FLOSS License Exception
   <http://www.mysql.com/about/legal/licensing/foss-exception.html>.
-  
+
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published
   by the Free Software Foundation; version 2 of the License.
-  
+
   This program is distributed in the hope that it will be useful, but
   WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
   or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
   for more details.
-  
+
   You should have received a copy of the GNU General Public License along
   with this program; if not, write to the Free Software Foundation, Inc.,
   51 Franklin St, Fifth Floor, Boston, MA 02110-1301  USA
@@ -641,31 +641,31 @@ DECLARE_TEST(t_text_fetch)
     rc = SQLFetch(hstmt);
     while (rc == SQL_SUCCESS || rc == SQL_SUCCESS_WITH_INFO)
     {
-       printf("# row '%ld' (lengths:", row_count);
+       printf("# row '%ld' (lengths:", (long)row_count);
        rc = SQLGetData(hstmt,1,SQL_C_CHAR,(char *)data,TEST_ODBC_TEXT_LEN,&length);
        mystmt(hstmt,rc);
-       printf("%ld", length);
+       printf("%ld", (long)length);
        myassert(length == 255);
 
        rc = SQLGetData(hstmt,2,SQL_C_CHAR,(char *)data,TEST_ODBC_TEXT_LEN,&length);
        mystmt(hstmt,rc);
-       printf(",%ld", length);
+       printf(",%ld", (long)length);
        myassert(length == TEST_ODBC_TEXT_LEN/2);
 
        rc = SQLGetData(hstmt,3,SQL_C_CHAR,(char *)data,TEST_ODBC_TEXT_LEN,&length);
        mystmt(hstmt,rc);
-       printf(",%ld", length);
+       printf(",%ld", (long)length);
        myassert(length == (SQLINTEGER)(TEST_ODBC_TEXT_LEN/1.5));
 
        rc = SQLGetData(hstmt,4,SQL_C_CHAR,(char *)data,TEST_ODBC_TEXT_LEN,&length);
        mystmt(hstmt,rc);
-       printf(",%ld)\n", length);
+       printf(",%ld)\n", (long)length);
        myassert(length == TEST_ODBC_TEXT_LEN-1);
        row_count++;
 
        rc = SQLFetch(hstmt);
     }
-    printMessage("total rows: %ld", row_count);
+    printMessage("total rows: %ld", (long)row_count);
     myassert(row_count == i);
 
     SQLFreeStmt(hstmt, SQL_UNBIND);
@@ -721,7 +721,7 @@ DECLARE_TEST(t_bug9781)
   {
     ok_sql(hstmt, "INSERT INTO t_bug9781 VALUES (St_GeomFromText('POINT(0 0)'))");
     ok_sql(hstmt, "SELECT St_AsBinary(g) FROM t_bug9781");
-  
+
   }
   else
   {
@@ -780,8 +780,8 @@ DECLARE_TEST(t_bug10562)
 }
 
 
-/* 
-  Bug#11746572: TEXT FIELDS WITH BINARY COLLATIONS 
+/*
+  Bug#11746572: TEXT FIELDS WITH BINARY COLLATIONS
   Test for text field with latin1_bin and latin1_swedish_ci collation
   Output of text column should contain same input value and not hexadecimal
   value of input.
@@ -794,9 +794,9 @@ DECLARE_TEST(t_bug_11746572)
 
   ok_sql(hstmt, "DROP TABLE if exists bug_11746572");
 
-  /* 
-    create table 'bug_11746572' with blob column and text columns 
-    with collation latin1_bin and latin1_swedish_ci.  
+  /*
+    create table 'bug_11746572' with blob column and text columns
+    with collation latin1_bin and latin1_swedish_ci.
   */
   ok_sql(hstmt,"CREATE TABLE bug_11746572( blob_field BLOB ,"
     "  text_bin TEXT CHARACTER SET latin1 COLLATE latin1_bin,"
@@ -810,9 +810,9 @@ DECLARE_TEST(t_bug_11746572)
 
   ok_stmt(hstmt, SQLFetch(hstmt));
 
-  /* 
-    Verify inserted data is changed to hexadecimal value for blob field 
-    and remains unchanged for text field for both binary and non-binary 
+  /*
+    Verify inserted data is changed to hexadecimal value for blob field
+    and remains unchanged for text field for both binary and non-binary
     collation.
   */
   ok_stmt(hstmt, SQLGetData(hstmt, 1, SQL_C_CHAR, szData, MAX_ROW_DATA_LEN,NULL));
@@ -824,16 +824,16 @@ DECLARE_TEST(t_bug_11746572)
   ok_stmt(hstmt, SQLGetData(hstmt, 3, SQL_C_CHAR, szData, MAX_ROW_DATA_LEN,NULL));
   is_str(szData, "text", 4);
 
-  ok_stmt(hstmt, SQLDescribeCol(hstmt, 1, ColName, MAX_NAME_LEN, 
+  ok_stmt(hstmt, SQLDescribeCol(hstmt, 1, ColName, MAX_NAME_LEN,
                         NULL, &SqlType, NULL, NULL, NULL));
   is_num(SqlType, SQL_LONGVARBINARY);
 
-  ok_stmt(hstmt, SQLDescribeCol(hstmt, 2, ColName, MAX_NAME_LEN, 
+  ok_stmt(hstmt, SQLDescribeCol(hstmt, 2, ColName, MAX_NAME_LEN,
                         NULL, &SqlType, NULL, NULL, NULL));
 
   is_num(SqlType, unicode_driver ? SQL_WLONGVARCHAR : SQL_LONGVARCHAR);
 
-  ok_stmt(hstmt, SQLDescribeCol(hstmt, 3, ColName, MAX_NAME_LEN, 
+  ok_stmt(hstmt, SQLDescribeCol(hstmt, 3, ColName, MAX_NAME_LEN,
                         NULL, &SqlType, NULL, NULL, NULL));
   is_num(SqlType, SQL_LONGVARCHAR);
 

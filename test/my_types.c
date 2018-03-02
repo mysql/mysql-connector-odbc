@@ -7,16 +7,16 @@
   conditions of the GPLv2 as it is applied to this software, see the
   FLOSS License Exception
   <http://www.mysql.com/about/legal/licensing/foss-exception.html>.
-  
+
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published
   by the Free Software Foundation; version 2 of the License.
-  
+
   This program is distributed in the hope that it will be useful, but
   WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
   or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
   for more details.
-  
+
   You should have received a copy of the GNU General Public License along
   with this program; if not, write to the Free Software Foundation, Inc.,
   51 Franklin St, Fifth Floor, Boston, MA 02110-1301  USA
@@ -808,9 +808,9 @@ int sqlnum_test_from_str(SQLHANDLE hstmt,
   ok_desc(ard, SQLSetDescField(ard, 1, SQL_DESC_TYPE,
                                (SQLPOINTER) SQL_C_NUMERIC, SQL_IS_INTEGER));
   ok_desc(ard, SQLSetDescField(ard, 1, SQL_DESC_PRECISION,
-                               (SQLPOINTER)(SQLINTEGER) prec, SQL_IS_INTEGER));
+                               (SQLPOINTER)(size_t)prec, SQL_IS_INTEGER));
   ok_desc(ard, SQLSetDescField(ard, 1, SQL_DESC_SCALE,
-                               (SQLPOINTER)(SQLINTEGER) scale, SQL_IS_INTEGER));
+                               (SQLPOINTER)(size_t)scale, SQL_IS_INTEGER));
   ok_desc(ard, SQLSetDescField(ard, 1, SQL_DESC_DATA_PTR,
                                sqlnum, SQL_IS_POINTER));
 
@@ -1062,7 +1062,7 @@ DECLARE_TEST(t_bug31220)
   expect_stmt(hstmt, SQLFetch(hstmt), SQL_ERROR);
   is(check_sqlstate(hstmt, "07006") == OK);
   is_num(outlen, 999);
-  return OK;  
+  return OK;
 }
 
 
@@ -1080,9 +1080,9 @@ DECLARE_TEST(t_bug29402)
   const SQLCHAR *expected= "\x80""100";
 
   is(OK == alloc_basic_handles_with_opt(&henv1, &hdbc1, &hstmt1, NULL,
-                                        NULL, NULL, NULL, 
+                                        NULL, NULL, NULL,
                                         "NO_BINARY_RESULT=1;CHARSET=CP1250"));
-  
+
   ok_stmt(hstmt1, SQLExecDirect(hstmt1, "SELECT CONCAT(_cp1250 0x80, 100) concated", SQL_NTS));
 
   ok_stmt(hstmt1, SQLDescribeCol(hstmt1, 1, column_name, sizeof(column_name),
@@ -1137,7 +1137,7 @@ DECLARE_TEST(t_bug29402)
 
 
 /*
-  Bug #67793 - MySQL ODBC drivers incorrectly returns TIME columns, where 
+  Bug #67793 - MySQL ODBC drivers incorrectly returns TIME columns, where
   value > '99:59:59'
 */
 DECLARE_TEST(t_bug67793)
@@ -1175,7 +1175,7 @@ DECLARE_TEST(t_bug67793)
   is_num(sts.second, 15);
 
   ok_stmt(hstmt, SQLFreeStmt(hstmt, SQL_CLOSE));
-  return OK;  
+  return OK;
 }
 
 
@@ -1214,7 +1214,7 @@ DECLARE_TEST(t_bug69545)
   }
 
   ok_stmt(hstmt, SQLFreeStmt(hstmt, SQL_CLOSE));
-  return OK;  
+  return OK;
 }
 
 

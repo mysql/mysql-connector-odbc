@@ -7,16 +7,16 @@
   conditions of the GPLv2 as it is applied to this software, see the
   FLOSS License Exception
   <http://www.mysql.com/about/legal/licensing/foss-exception.html>.
-  
+
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published
   by the Free Software Foundation; version 2 of the License.
-  
+
   This program is distributed in the hope that it will be useful, but
   WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
   or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
   for more details.
-  
+
   You should have received a copy of the GNU General Public License along
   with this program; if not, write to the Free Software Foundation, Inc.,
   51 Franklin St, Fifth Floor, Boston, MA 02110-1301  USA
@@ -201,7 +201,7 @@ sql_get_bookmark_data(STMT *stmt, SQLSMALLINT fCType, uint column_number,
   {
     return set_stmt_error(stmt, "HY090", "Invalid string or buffer length", 0);
   }
-  
+
   /* get the exact type if we don't already have it */
   if (fCType == SQL_C_DEFAULT)
   {
@@ -244,14 +244,14 @@ sql_get_bookmark_data(STMT *stmt, SQLSMALLINT fCType, uint column_number,
         if (result_end)
           *result_end= 0;
       }
-      return ret;     
+      return ret;
     }
 
   case SQL_C_WCHAR:
     {
       int ret;
-      ret= utf8_as_sqlwchar((SQLWCHAR *)rgbValue, 
-                      (SQLINTEGER)(cbValueMax / sizeof(SQLWCHAR)), 
+      ret= utf8_as_sqlwchar((SQLWCHAR *)rgbValue,
+                      (SQLINTEGER)(cbValueMax / sizeof(SQLWCHAR)),
                       (SQLCHAR *)value, length);
       if (!ret)
       {
@@ -261,13 +261,13 @@ sql_get_bookmark_data(STMT *stmt, SQLSMALLINT fCType, uint column_number,
 
       if (pcbValue)
         *pcbValue= (SQLINTEGER)(cbValueMax / sizeof(SQLWCHAR));
-      
+
     }
 
   case SQL_C_TINYINT:
   case SQL_C_STINYINT:
     if (rgbValue)
-      *((SQLSCHAR *)rgbValue)= (SQLSCHAR) get_int(stmt, column_number, 
+      *((SQLSCHAR *)rgbValue)= (SQLSCHAR) get_int(stmt, column_number,
                                                   value, length);
     *pcbValue= 1;
     break;
@@ -282,7 +282,7 @@ sql_get_bookmark_data(STMT *stmt, SQLSMALLINT fCType, uint column_number,
   case SQL_C_SHORT:
   case SQL_C_SSHORT:
     if (rgbValue)
-      *((SQLSMALLINT *)rgbValue)= (SQLSMALLINT) get_int(stmt, column_number, 
+      *((SQLSMALLINT *)rgbValue)= (SQLSMALLINT) get_int(stmt, column_number,
                                                         value, length);
     *pcbValue= sizeof(SQLSMALLINT);
     break;
@@ -314,7 +314,7 @@ sql_get_bookmark_data(STMT *stmt, SQLSMALLINT fCType, uint column_number,
 
   case SQL_C_ULONG:
     if (rgbValue)
-      *((SQLUINTEGER *)rgbValue)= (SQLUINTEGER) get_int64(stmt, column_number, 
+      *((SQLUINTEGER *)rgbValue)= (SQLUINTEGER) get_int64(stmt, column_number,
                                                           value, length);
     *pcbValue= sizeof(SQLUINTEGER);
     break;
@@ -336,7 +336,7 @@ sql_get_bookmark_data(STMT *stmt, SQLSMALLINT fCType, uint column_number,
   case SQL_C_SBIGINT:
     /** @todo This is not right. SQLBIGINT is not always longlong. */
     if (rgbValue)
-      *((longlong *)rgbValue)= (longlong) get_int64(stmt, column_number, 
+      *((longlong *)rgbValue)= (longlong) get_int64(stmt, column_number,
                                                     value, length);
     *pcbValue= sizeof(longlong);
     break;
@@ -344,7 +344,7 @@ sql_get_bookmark_data(STMT *stmt, SQLSMALLINT fCType, uint column_number,
   case SQL_C_UBIGINT:
     /** @todo This is not right. SQLUBIGINT is not always ulonglong.  */
     if (rgbValue)
-        *((ulonglong *)rgbValue)= (ulonglong) get_int64(stmt, column_number, 
+        *((ulonglong *)rgbValue)= (ulonglong) get_int64(stmt, column_number,
                                                         value, length);
     *pcbValue= sizeof(ulonglong);
     break;
@@ -481,10 +481,10 @@ sql_get_data(STMT *stmt, SQLSMALLINT fCType, uint column_number,
     {
     case SQL_C_CHAR:
       /*
-        Handle BLOB -> CHAR conversion 
+        Handle BLOB -> CHAR conversion
         Conversion only for field which is having binary character set (63)
       */
-      if (((field->flags & (BLOB_FLAG|BINARY_FLAG)) 
+      if (((field->flags & (BLOB_FLAG|BINARY_FLAG))
                 == (BLOB_FLAG|BINARY_FLAG) )
                 && field->charsetnr == BINARY_CHARSET_NUMBER )
       {
@@ -803,7 +803,7 @@ sql_get_data(STMT *stmt, SQLSMALLINT fCType, uint column_number,
       if (field->type == MYSQL_TYPE_TIME)
       {
         SQL_TIME_STRUCT ts;
-        
+
         if (str_to_time_st(&ts, tmp))
         {
           *pcbValue= SQL_NULL_DATA;
@@ -900,7 +900,7 @@ sql_get_data(STMT *stmt, SQLSMALLINT fCType, uint column_number,
                                 "Numeric value out of range", 0);
       }
       break;
-    
+
     default:
       return set_error(stmt,MYERR_07006,
                        "Restricted data type attribute violation",0);
@@ -1300,11 +1300,11 @@ MySQLColAttribute(SQLHSTMT hstmt, SQLUSMALLINT column,
   @purpose : binds application data buffers to columns in the result set
 */
 
-SQLRETURN SQL_API SQLBindCol(SQLHSTMT      StatementHandle, 
+SQLRETURN SQL_API SQLBindCol(SQLHSTMT      StatementHandle,
                              SQLUSMALLINT  ColumnNumber,
-                             SQLSMALLINT   TargetType, 
+                             SQLSMALLINT   TargetType,
                              SQLPOINTER    TargetValuePtr,
-                             SQLLEN        BufferLength, 
+                             SQLLEN        BufferLength,
                              SQLLEN *      StrLen_or_IndPtr)
 {
   SQLRETURN rc;
@@ -1347,7 +1347,7 @@ SQLRETURN SQL_API SQLBindCol(SQLHSTMT      StatementHandle,
     return SQL_SUCCESS;
   }
 
-  if ((ColumnNumber == 0 && stmt->stmt_options.bookmarks == SQL_UB_OFF) || 
+  if ((ColumnNumber == 0 && stmt->stmt_options.bookmarks == SQL_UB_OFF) ||
       (stmt->state == ST_EXECUTED && ColumnNumber > stmt->ird->count))
   {
     return set_stmt_error(stmt, "07009", "Invalid descriptor index",
@@ -1358,12 +1358,12 @@ SQLRETURN SQL_API SQLBindCol(SQLHSTMT      StatementHandle,
 
   if ((rc= stmt_SQLSetDescField(stmt, stmt->ard, ColumnNumber,
                                 SQL_DESC_CONCISE_TYPE,
-                                (SQLPOINTER)(SQLINTEGER) TargetType,
+                                (SQLPOINTER)(size_t) TargetType,
                                 SQL_IS_SMALLINT)) != SQL_SUCCESS)
     return rc;
   if ((rc= stmt_SQLSetDescField(stmt, stmt->ard, ColumnNumber,
                                 SQL_DESC_OCTET_LENGTH,
-                                (SQLPOINTER) bind_length(TargetType,
+                                (SQLPOINTER)(size_t)bind_length(TargetType,
                                                          BufferLength),
                                 SQL_IS_LEN)) != SQL_SUCCESS)
     return rc;
@@ -1425,11 +1425,11 @@ SQLRETURN SQL_API SQLGetData(SQLHSTMT      StatementHandle,
     SQLRETURN result;
     ulong length= 0;
     DESCREC *irrec, *arrec;
-    /* 
-      Signed column number required for bookmark column 0, 
-      which will become -1 when decremented later. 
+    /*
+      Signed column number required for bookmark column 0,
+      which will become -1 when decremented later.
     */
-    SQLSMALLINT sColNum= ColumnNumber; 
+    SQLSMALLINT sColNum= ColumnNumber;
 
     CHECK_HANDLE(stmt);
 
@@ -1439,14 +1439,14 @@ SQLRETURN SQL_API SQLGetData(SQLHSTMT      StatementHandle,
       return SQL_ERROR;
     }
 
-    if ((sColNum < 1 
-         && stmt->stmt_options.bookmarks == (SQLUINTEGER) SQL_UB_OFF) 
+    if ((sColNum < 1
+         && stmt->stmt_options.bookmarks == (SQLUINTEGER) SQL_UB_OFF)
         || ColumnNumber > stmt->ird->count )
     {
       return set_stmt_error(stmt, "07009", "Invalid descriptor index", MYERR_07009);
     }
 
-    if (sColNum == 0 && TargetType != SQL_C_BOOKMARK 
+    if (sColNum == 0 && TargetType != SQL_C_BOOKMARK
         && TargetType != SQL_C_VARBOOKMARK)
     {
       return set_stmt_error(stmt, "HY003", "Program type out of range", 0);
@@ -1472,7 +1472,7 @@ SQLRETURN SQL_API SQLGetData(SQLHSTMT      StatementHandle,
         /* In getdatat column we keep out parameter column number in the result */
         sColNum= stmt->getdata.column;
       }
-        
+
       if (TargetType != SQL_C_BINARY)
       {
         return set_stmt_error(stmt, "HYC00", "Stream output parameters supported for SQL_C_BINARY"
@@ -1498,7 +1498,7 @@ SQLRETURN SQL_API SQLGetData(SQLHSTMT      StatementHandle,
     {
       char _value[21];
       /* save position set using SQLSetPos in buffer */
-      int _len= sprintf(_value, "%ld", (stmt->cursor_row > 0) ? 
+      int _len= sprintf(_value, "%ld", (stmt->cursor_row > 0) ?
                                     stmt->cursor_row : 0);
 
       arrec= desc_get_rec(stmt->ard, sColNum, FALSE);
@@ -1550,8 +1550,8 @@ SQLRETURN SQL_API SQLMoreResults( SQLHSTMT hStmt )
     http://msdn.microsoft.com/en-us/library/ms714673%28v=vs.85%29.aspx
 
     For some drivers, output parameters and return values are not available
-    until all result sets and row counts have been processed. For such 
-    drivers, output parameters and return values become available when 
+    until all result sets and row counts have been processed. For such
+    drivers, output parameters and return values become available when
     SQLMoreResults returns SQL_NO_DATA.
   */
   if ( pStmt->state != ST_EXECUTED )
@@ -1615,7 +1615,7 @@ SQLRETURN SQL_API SQLMoreResults( SQLHSTMT hStmt )
                               mysql_errno(&pStmt->dbc->mysql));
     goto exitSQLMoreResults;
   }
-  
+
   /* checking if next result is SP OUT params and fetch them if needed */
   if (IS_PS_OUT_PARAMS(pStmt))
   {
@@ -1660,7 +1660,7 @@ exitSQLMoreResults:
   or an SQL_UPDATE or SQL_DELETE operation in SQLSetPos
 */
 
-SQLRETURN SQL_API SQLRowCount( SQLHSTMT hstmt, 
+SQLRETURN SQL_API SQLRowCount( SQLHSTMT hstmt,
                                SQLLEN * pcrow )
 {
     STMT *stmt= (STMT *) hstmt;
@@ -1739,17 +1739,17 @@ fill_fetch_bookmark_buffers(STMT *stmt, ulong value, uint rownum)
 
     if (arrec->data_ptr)
     {
-      TargetValuePtr= ptr_offset_adjust(arrec->data_ptr, 
-                                        stmt->ard->bind_offset_ptr, 
-                                        stmt->ard->bind_type, 
+      TargetValuePtr= ptr_offset_adjust(arrec->data_ptr,
+                                        stmt->ard->bind_offset_ptr,
+                                        stmt->ard->bind_type,
                                         arrec->octet_length, rownum);
     }
 
     if (arrec->octet_length_ptr)
     {
-      pcbValue= (SQLLEN*)ptr_offset_adjust(arrec->octet_length_ptr, 
-                                    stmt->ard->bind_offset_ptr, 
-                                    stmt->ard->bind_type, 
+      pcbValue= (SQLLEN*)ptr_offset_adjust(arrec->octet_length_ptr,
+                                    stmt->ard->bind_offset_ptr,
+                                    stmt->ard->bind_type,
                                     sizeof(SQLLEN), rownum);
     }
 
@@ -1789,7 +1789,7 @@ fill_fetch_buffers(STMT *stmt, MYSQL_ROW values, uint rownum)
   int i;
   ulong length= 0;
   DESCREC *irrec, *arrec;
- 
+
   for (i= 0; i < myodbc_min(stmt->ird->count, stmt->ard->count); ++i, ++values)
   {
     irrec= desc_get_rec(stmt->ird, i, FALSE);
@@ -1805,9 +1805,9 @@ fill_fetch_buffers(STMT *stmt, MYSQL_ROW values, uint rownum)
 
       if (arrec->data_ptr)
       {
-        TargetValuePtr= ptr_offset_adjust(arrec->data_ptr, 
-                                          stmt->ard->bind_offset_ptr, 
-                                          stmt->ard->bind_type, 
+        TargetValuePtr= ptr_offset_adjust(arrec->data_ptr,
+                                          stmt->ard->bind_offset_ptr,
+                                          stmt->ard->bind_type,
                                           arrec->octet_length, rownum);
       }
 
@@ -1824,9 +1824,9 @@ fill_fetch_buffers(STMT *stmt, MYSQL_ROW values, uint rownum)
        */
       if (arrec->octet_length_ptr)
       {
-        pcbValue= (SQLLEN*)ptr_offset_adjust(arrec->octet_length_ptr, 
-                                      stmt->ard->bind_offset_ptr, 
-                                      stmt->ard->bind_type, 
+        pcbValue= (SQLLEN*)ptr_offset_adjust(arrec->octet_length_ptr,
+                                      stmt->ard->bind_offset_ptr,
+                                      stmt->ard->bind_type,
                                       sizeof(SQLLEN), rownum);
       }
 
@@ -1952,7 +1952,7 @@ SQLRETURN SQL_API myodbc_single_fetch( SQLHSTMT             hstmt,
           }
 
           cur_row= brow + irow;
-          if (cur_row < 0 && (long)-irow <= (long)stmt->ard->array_size) 
+          if (cur_row < 0 && (long)-irow <= (long)stmt->ard->array_size)
           {
             cur_row= 0;
           }
@@ -1979,7 +1979,7 @@ SQLRETURN SQL_API myodbc_single_fetch( SQLHSTMT             hstmt,
 
         switch (scroller_prefetch(stmt))
         {
-          case SQL_NO_DATA: 
+          case SQL_NO_DATA:
             set_stmt_error(stmt, "01S07", "One or more row has error.", 0);
             return SQL_SUCCESS_WITH_INFO; //SQL_NO_DATA_FOUND
           case SQL_ERROR:   return set_error(stmt,MYERR_S1000,
@@ -2113,7 +2113,7 @@ SQLRETURN SQL_API myodbc_single_fetch( SQLHSTMT             hstmt,
       }
     }
 
-    /* "Fetching" includes buffers filling. I think errors in that 
+    /* "Fetching" includes buffers filling. I think errors in that
        have to affect row status */
 
     if (rgfRowStatus)
@@ -2471,11 +2471,11 @@ SQLRETURN SQL_API my_SQLExtendedFetch( SQLHSTMT             hstmt,
         }
       }
 
-      if (fFetchType == SQL_FETCH_BOOKMARK && 
+      if (fFetchType == SQL_FETCH_BOOKMARK &&
            stmt->stmt_options.bookmarks == SQL_UB_VARIABLE)
       {
         row_book= fill_fetch_bookmark_buffers(stmt, irow + i + 1, i);
-      }  
+      }
       row_res= fill_fetch_buffers(stmt, values, i);
 
       /* For SQL_SUCCESS we need all rows to be SQL_SUCCESS */
@@ -2498,7 +2498,7 @@ SQLRETURN SQL_API my_SQLExtendedFetch( SQLHSTMT             hstmt,
         }
       }
 
-      /* "Fetching" includes buffers filling. I think errors in that 
+      /* "Fetching" includes buffers filling. I think errors in that
          have to affect row status */
 
       if (rgfRowStatus)
@@ -2622,7 +2622,7 @@ SQLRETURN SQL_API SQLFetchScroll( SQLHSTMT      StatementHandle,
     options= &stmt->stmt_options;
     options->rowStatusPtr_ex= NULL;
 
-    if (FetchOrientation == SQL_FETCH_BOOKMARK 
+    if (FetchOrientation == SQL_FETCH_BOOKMARK
         && stmt->stmt_options.bookmark_ptr)
     {
       DESCREC *arrec;
@@ -2633,7 +2633,7 @@ SQLRETURN SQL_API SQLFetchScroll( SQLHSTMT      StatementHandle,
         return SQL_ERROR; // The error info is already set inside desc_get_rec()
       }
 
-      FetchOffset += get_bookmark_value(arrec->concise_type, 
+      FetchOffset += get_bookmark_value(arrec->concise_type,
                        stmt->stmt_options.bookmark_ptr);
     }
 

@@ -7,16 +7,16 @@
   conditions of the GPLv2 as it is applied to this software, see the
   FLOSS License Exception
   <http://www.mysql.com/about/legal/licensing/foss-exception.html>.
-  
+
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published
   by the Free Software Foundation; version 2 of the License.
-  
+
   This program is distributed in the hope that it will be useful, but
   WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
   or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
   for more details.
-  
+
   You should have received a copy of the GNU General Public License along
   with this program; if not, write to the Free Software Foundation, Inc.,
   51 Franklin St, Fifth Floor, Boston, MA 02110-1301  USA
@@ -711,12 +711,12 @@ DECLARE_TEST(t_pos_datetime_delete1)
 
     rc = SQLRowCount(hstmt1,&row_count);
     mystmt(hstmt1,rc);
-    fprintf(stdout, "rows affected: %d\n", row_count);
+    fprintf(stdout, "rows affected: %d\n", (int)row_count);
     myassert(row_count == 1);
 
     rc = SQLExtendedFetch(hstmt,SQL_FETCH_NEXT,1,NULL,&rgfRowStatus);
     mystmt(hstmt,rc);
-    fprintf(stdout,"current_row: %d\n", int_data);
+    fprintf(stdout,"current_row: %d\n", (int)int_data);
 
     rc = SQLExtendedFetch(hstmt,SQL_FETCH_NEXT,1,NULL,&rgfRowStatus);
     mystmt(hstmt,rc);
@@ -732,7 +732,7 @@ DECLARE_TEST(t_pos_datetime_delete1)
 
     rc = SQLRowCount(hstmt1,&row_count);
     mystmt(hstmt1,rc);
-    fprintf(stdout, "rows affected: %d\n", row_count);
+    fprintf(stdout, "rows affected: %d\n", (int)row_count);
     myassert(row_count == 1);
 
     SQLFreeStmt(hstmt,SQL_UNBIND);
@@ -2525,8 +2525,8 @@ DECLARE_TEST(bug6741)
   /* verify it */
   for(i = 0; i < BUG6741_VALS; ++i)
   {
-    printf("xval[%d] = %d\n", i, results[i].xval);
-    printf("ylen[%d] = %ld\n", i, results[i].ylen);
+    printf("xval[%d] = %d\n", i, (int)results[i].xval);
+    printf("ylen[%d] = %ld\n", i, (long)results[i].ylen);
     is_num(results[i].xval, i);
     if(i % 2)
     {
@@ -2620,7 +2620,7 @@ DECLARE_TEST(t_update_offsets)
   ok_stmt(hstmt, SQLSetStmtAttr(hstmt, SQL_ATTR_CURSOR_TYPE,
                                 (SQLPOINTER)SQL_CURSOR_STATIC, 0));
   ok_stmt(hstmt, SQLSetStmtAttr(hstmt, SQL_ATTR_ROW_ARRAY_SIZE,
-                                (SQLPOINTER)rowcnt, 0));
+                                (SQLPOINTER)((size_t)rowcnt), 0));
   ok_stmt(hstmt, SQLSetStmtAttr(hstmt, SQL_ATTR_ROW_BIND_TYPE,
                                 (SQLPOINTER)row_size, 0));
   ok_stmt(hstmt, SQLSetStmtAttr(hstmt, SQL_ATTR_ROW_BIND_OFFSET_PTR,
@@ -2738,7 +2738,7 @@ DECLARE_TEST(t_bug32420)
   /* Don't cache result option in the connection string */
   is(OK == alloc_basic_handles_with_opt(&henv1, &hdbc1, &hstmt1, USE_DRIVER,
                                         NULL, NULL, NULL, "NO_CACHE=1"));
-  
+
   ok_sql(hstmt1, "drop table if exists bug32420");
   ok_sql(hstmt1, "CREATE TABLE bug32420 ("\
                 "tt_int INT PRIMARY KEY auto_increment,"\
@@ -3100,7 +3100,7 @@ typedef struct {
 } t_dae_row;
 DECLARE_TEST(t_dae_setpos_insert)
 {
-  SQLPOINTER holder= (SQLPOINTER) 0xcfcdcecc;
+  SQLPOINTER holder= (SQLPOINTER)((size_t)0xcfcdcecc);
   SQLPOINTER paramptr;
   SQLLEN offset= 0;
   t_dae_row data[2];
@@ -3109,7 +3109,7 @@ DECLARE_TEST(t_dae_setpos_insert)
   data[1].z= 40;
   sprintf(data[1].y, "1234567890");
   data[1].ylen= SQL_LEN_DATA_AT_EXEC(10);
-  
+
   ok_sql(hstmt, "drop table if exists t_dae");
   ok_sql(hstmt, "create table t_dae (x int not null, y varchar(5000), z int, "
                 "primary key (x) )");
@@ -3135,7 +3135,7 @@ DECLARE_TEST(t_dae_setpos_insert)
 
   offset= 0;
   ok_sql(hstmt, "select x, y, z from t_dae");
-  
+
   ok_stmt(hstmt, SQLBindCol(hstmt, 2, SQL_C_CHAR, data[0].y, 11, &data[0].ylen));
   ok_stmt(hstmt, SQLFetch(hstmt));
 
@@ -3143,7 +3143,7 @@ DECLARE_TEST(t_dae_setpos_insert)
   is_num(40, data[0].z);
   is_str(data[0].y, data[1].y, 11);
   is_num(10, data[0].ylen);
-  
+
   ok_stmt(hstmt, SQLFreeStmt(hstmt, SQL_CLOSE));
   ok_sql(hstmt, "drop table if exists t_dae");
   return OK;
@@ -3160,7 +3160,7 @@ DECLARE_TEST(t_dae_setpos_update)
   SQLCHAR *yval= (SQLCHAR *) "1234567890";
   SQLCHAR yout[11];
   SQLLEN ylen= SQL_LEN_DATA_AT_EXEC(10);
-  SQLPOINTER holder= (SQLPOINTER) 0xcfcdcecc;
+  SQLPOINTER holder= (SQLPOINTER)((size_t)0xcfcdcecc);
   SQLPOINTER paramptr;
   /* setup */
   ok_sql(hstmt, "drop table if exists t_dae");
@@ -3199,7 +3199,7 @@ DECLARE_TEST(t_dae_setpos_update)
   is_num(40, z);
   is_str(yval, yout, 11);
   is_num(10, ylen);
-  
+
   ok_stmt(hstmt, SQLFreeStmt(hstmt, SQL_CLOSE));
   ok_sql(hstmt, "drop table if exists t_dae");
   return OK;
@@ -3253,7 +3253,7 @@ DECLARE_TEST(t_bug39961)
   is_str(my_fetch_str(hstmt, buf, 1), "0.1000", 4);
   expect_stmt(hstmt, SQLFetch(hstmt), SQL_NO_DATA);
   ok_stmt(hstmt, SQLFreeStmt(hstmt, SQL_CLOSE));
-  
+
   ok_sql(hstmt, "drop table if exists t_bug39961");
   return OK;
 }
@@ -3293,7 +3293,7 @@ DECLARE_TEST(t_bug41946)
 
   /* We have to close the cursor before issuing next sql query */
   ok_stmt(hstmt, SQLFreeStmt(hstmt, SQL_CLOSE));
-    
+
   ok_sql(hstmt, "select * from other_test_db.t_41946");
 
 	ok_stmt(hstmt, SQLFetch(hstmt));
@@ -3310,7 +3310,7 @@ DECLARE_TEST(t_bug41946)
 
 
 /**
- Bug#14810497: SQLPUTDATA DON'T HANDLE UNICODE STRING WITH SQL_NTS IN 
+ Bug#14810497: SQLPUTDATA DON'T HANDLE UNICODE STRING WITH SQL_NTS IN
                STRING LENGTH.
 */
 DECLARE_TEST(t_sqlputdata)
@@ -3340,7 +3340,7 @@ DECLARE_TEST(t_sqlputdata)
   if (rc == SQL_NEED_DATA)
   {
     SQLPOINTER parameter;
-    if (SQLParamData(hstmt, &parameter) == SQL_NEED_DATA 
+    if (SQLParamData(hstmt, &parameter) == SQL_NEED_DATA
         && parameter == (SQLPOINTER)1)
     {
       ok_stmt(hstmt, SQLPutData(hstmt, wcdata,  SQL_NTS));

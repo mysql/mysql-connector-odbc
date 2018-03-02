@@ -367,7 +367,7 @@ columns_no_i_s(STMT * stmt, SQLCHAR *szCatalog, SQLSMALLINT cbCatalog,
       row[6]= strdup_root(alloc, buff);
 
       /* BUFFER_LENGTH */
-      sprintf(buff, "%ld", get_transfer_octet_length(stmt, field));
+      sprintf(buff, "%ld", (long)get_transfer_octet_length(stmt, field));
       row[7]= strdup_root(alloc, buff);
 
       if (is_char_sql_type(type) || is_wchar_sql_type(type) ||
@@ -2195,7 +2195,7 @@ special_columns_no_i_s(SQLHSTMT hstmt, SQLUSMALLINT fColType,
             row[2]= strdup_root(alloc,buff);
             fill_column_size_buff(buff, stmt, field);
             row[4]= strdup_root(alloc,buff);
-            sprintf(buff, "%ld", get_transfer_octet_length(stmt, field));
+            sprintf(buff, "%ld", (long)get_transfer_octet_length(stmt, field));
             row[5]= strdup_root(alloc,buff);
             {
               SQLSMALLINT digits= get_decimal_digits(stmt, field);
@@ -2271,7 +2271,7 @@ special_columns_no_i_s(SQLHSTMT hstmt, SQLUSMALLINT fColType,
         row[2]= strdup_root(alloc,buff);
         fill_column_size_buff(buff, stmt, field);
         row[4]= strdup_root(alloc,buff);
-        sprintf(buff,"%ld", get_transfer_octet_length(stmt, field));
+        sprintf(buff,"%ld", (long)get_transfer_octet_length(stmt, field));
         row[5]= strdup_root(alloc,buff);
         {
           SQLSMALLINT digits= get_decimal_digits(stmt, field);

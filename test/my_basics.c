@@ -7,16 +7,16 @@
   conditions of the GPLv2 as it is applied to this software, see the
   FLOSS License Exception
   <http://www.mysql.com/about/legal/licensing/foss-exception.html>.
-  
+
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published
   by the Free Software Foundation; version 2 of the License.
-  
+
   This program is distributed in the hope that it will be useful, but
   WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
   or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
   for more details.
-  
+
   You should have received a copy of the GNU General Public License along
   with this program; if not, write to the Free Software Foundation, Inc.,
   51 Franklin St, Fifth Floor, Boston, MA 02110-1301  USA
@@ -281,7 +281,7 @@ DECLARE_TEST(charset_utf8)
 
   ok_stmt(hstmt, SQLFreeStmt(hstmt, SQL_CLOSE));
 
-  is(OK == alloc_basic_handles_with_opt(&henv1, &hdbc1, &hstmt1, NULL, 
+  is(OK == alloc_basic_handles_with_opt(&henv1, &hdbc1, &hstmt1, NULL,
                                         NULL, NULL, NULL, "CHARSET=utf8"));
 
   ok_sql(hstmt1, "SELECT _latin1 0x73E36F207061756C6F");
@@ -398,8 +398,8 @@ DECLARE_TEST(t_bug7445)
   DECLARE_BASIC_HANDLES(henv1, hdbc1, hstmt1);
   SQLLEN nRowCount;
 
-  is(OK == alloc_basic_handles_with_opt(&henv1, &hdbc1, &hstmt1, NULL, 
-                                        NULL, NULL, NULL, 
+  is(OK == alloc_basic_handles_with_opt(&henv1, &hdbc1, &hstmt1, NULL,
+                                        NULL, NULL, NULL,
                                         "MULTI_STATEMENTS=1"));
 
   ok_sql(hstmt1, "DROP TABLE IF EXISTS t_bug7445");
@@ -476,7 +476,7 @@ DECLARE_TEST(t_bug30840)
 
   is(OK == alloc_basic_handles_with_opt(&henv1, &hdbc1, &hstmt1, NULL, NULL,
                                         NULL, NULL, "NO_PROMPT=1"));
-  
+
   free_basic_handles(&henv1, &hdbc1, &hstmt1);
   return OK;
 }
@@ -511,7 +511,7 @@ DECLARE_TEST(t_bug30983)
 
 /*
    Test the output string after calling SQLDriverConnect
-   Note: Windows 
+   Note: Windows
    TODO fix this test create a comparable output string
 */
 DECLARE_TEST(t_driverconnect_outstring)
@@ -603,7 +603,7 @@ DECLARE_TEST(setnames_conn)
 
   ok_env(henv, SQLAllocHandle(SQL_HANDLE_DBC, henv, &hdbc1));
 
-  expect_dbc(hdbc1, get_connection(&hdbc1, NULL, NULL, NULL, 
+  expect_dbc(hdbc1, get_connection(&hdbc1, NULL, NULL, NULL,
              NULL, "INITSTMT={set names utf8}"), SQL_ERROR);
 
   ok_con(hdbc1, SQLFreeHandle(SQL_HANDLE_DBC, hdbc1));
@@ -868,13 +868,14 @@ DECLARE_TEST(t_bug31959)
   else
     ok_stmt(hstmt, SQLPrepare(hstmt,
                             (SQLCHAR *)"select @@tx_isolation", SQL_NTS));
-    
+
 
   /* check all 4 valid isolation levels */
   for(i = 3; i >= 0; --i)
   {
+    size_t p = (size_t)levelid[i];
     ok_con(hdbc, SQLSetConnectAttr(hdbc, SQL_ATTR_TXN_ISOLATION,
-                                   (SQLPOINTER)levelid[i], 0));
+                                   (SQLPOINTER)p, 0));
     ok_stmt(hstmt, SQLExecute(hstmt));
     ok_stmt(hstmt, SQLFetch(hstmt));
     ok_stmt(hstmt, SQLGetData(hstmt, 1, SQL_C_CHAR, level, 50, NULL));
@@ -982,7 +983,7 @@ DECLARE_TEST(t_bug48603)
   /* INITSTMT={set @@wait_timeout=%d} */
   sprintf((char *)conn, "CHARSET=utf8;INITSTMT=set @@interactive_timeout=%d;" \
                         "INTERACTIVE=1", timeout+diff);
-  is(OK == alloc_basic_handles_with_opt(&henv1, &hdbc1, &hstmt1, NULL, NULL, 
+  is(OK == alloc_basic_handles_with_opt(&henv1, &hdbc1, &hstmt1, NULL, NULL,
                                         NULL, NULL, conn));
 
 
@@ -1019,7 +1020,7 @@ DECLARE_TEST(t_bug45378)
   sprintf((char *)buff1, " {%s} ", myuid);
   sprintf((char *)buff2, " %s ", mypwd);
 
-  is(OK == alloc_basic_handles_with_opt(&henv1, &hdbc1, &hstmt1, NULL, 
+  is(OK == alloc_basic_handles_with_opt(&henv1, &hdbc1, &hstmt1, NULL,
                                         buff1, buff2, NULL, NULL));
 
   free_basic_handles(&henv1, &hdbc1, &hstmt1);
@@ -1035,10 +1036,10 @@ DECLARE_TEST(t_bug63844)
   SQLHDBC hdbc1;
   SQLCHAR *DatabaseName = mydb;
 
-  /* 
+  /*
     We are not going to use alloc_basic_handles() for a special purpose:
     SQLSetConnectAttr() is to be called before the connection is made
-  */  
+  */
   ok_env(henv, SQLAllocHandle(SQL_HANDLE_DBC, henv, &hdbc1));
 
   ok_con(hdbc1, SQLSetConnectAttr(hdbc1, SQL_ATTR_CURRENT_CATALOG,
@@ -1055,7 +1056,7 @@ DECLARE_TEST(t_bug63844)
 
 
 /*
-  Bug#52996 - DSN connection parameters override those specified in the 
+  Bug#52996 - DSN connection parameters override those specified in the
   connection string
 */
 DECLARE_TEST(t_bug52996)
@@ -1075,7 +1076,7 @@ DECLARE_TEST(t_bug52996)
   ok_sql(hstmt, "INSERT INTO bug52996 (id, c1) VALUES "\
                  "(1,1),(2,2),(3,3)");
 
-  /* 
+  /*
     Use ';' as separator because sprintf doesn't work after '\0'
     The last attribute in the list must end with ';'
   */
@@ -1085,7 +1086,7 @@ DECLARE_TEST(t_bug52996)
                           myserver, myuid, mypwd, mydb);
 
   len= strlen(attrs);
-  
+
   /* replacing ';' by '\0' */
   for (i= 0; i < len; ++i)
   {
@@ -1109,8 +1110,8 @@ DECLARE_TEST(t_bug52996)
     drv[len]= '\0';
   }
 
-  /* 
-    Trying to remove the DSN if it is left from the previous run, 
+  /*
+    Trying to remove the DSN if it is left from the previous run,
     no need to check the result
   */
   SQLConfigDataSource(NULL, ODBC_REMOVE_DSN, drv, "DSN=bug52996dsn\0\0");
@@ -1119,7 +1120,7 @@ DECLARE_TEST(t_bug52996)
   ok_install(SQLConfigDataSource(NULL, ODBC_ADD_DSN, drv, attrs));
 
   /* Connect using the new DSN and override FOUND_ROWS option in DSN */
-  is(OK == alloc_basic_handles_with_opt(&henv1, &hdbc1, &hstmt1, 
+  is(OK == alloc_basic_handles_with_opt(&henv1, &hdbc1, &hstmt1,
                                "bug52996dsn",
                                NULL, NULL, NULL, "FOUND_ROWS=0"));
 

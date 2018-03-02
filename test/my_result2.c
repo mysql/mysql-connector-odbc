@@ -398,7 +398,7 @@ DECLARE_TEST(t_bug32684)
   {
     ok_stmt(hstmt, SQLGetData(hstmt, 2, SQL_C_WCHAR, wbuf,
                               20 * sizeof(SQLWCHAR), &wlen));
-    wprintf(L"# data= %s, len=%d\n\n", wbuf, wlen);
+    wprintf(L"# data= %s, len=%d\n\n", wbuf, (int)wlen);
   } while(wlen > 20 * sizeof(SQLWCHAR));
 
   return OK;
@@ -877,7 +877,7 @@ DECLARE_TEST(t_bug11766437)
   ok_stmt(hstmt, SQLFreeStmt(hstmt, SQL_CLOSE));
 
   ok_stmt(hstmt, SQLSetStmtAttr(hstmt, SQL_ATTR_ROW_ARRAY_SIZE,
-                                (SQLPOINTER)rowcnt, 0));
+                                (SQLPOINTER)((size_t)rowcnt), 0));
 
   /*
     With same text inserted we change binding orientation
@@ -1271,9 +1271,9 @@ DECLARE_TEST(t_prefetch_bug)
       "",       //"select 'Q-003' ... ORDER BY id LIMIT 5, 3",
       "",       //"select 'Q-004' ... ORDER BY id LIMIT 5, 100",
       // "select 'Q-005' ... ORDER BY id FOR UPDATE"
-      " AND argument LIKE '%%FOR UPDATE%%'", 
+      " AND argument LIKE '%%FOR UPDATE%%'",
       // "select 'Q-006' ... ORDER BY id LOCK IN SHARE MODE",
-      " AND argument LIKE '%%LOCK IN SHARE MODE%%'",  
+      " AND argument LIKE '%%LOCK IN SHARE MODE%%'",
       // "select 'Q-007' ... ORDER BY id FOR UPDATE"
       " AND argument LIKE '%%FOR UPDATE%%'",
       // "select 'Q-008' ... ORDER BY id LOCK IN SHARE MODE",
@@ -1299,7 +1299,7 @@ DECLARE_TEST(t_prefetch_bug)
     ok_sql(hstmt, "insert into b_prefecth values(1),(2),(3),(4)," \
           "(5),(6),(7),(8),(9),(10),(11),(12),(13),(14),(15),(16)");
 
-    // Save the old values for 
+    // Save the old values for
     ok_sql(hstmt1, "SELECT CONNECTION_ID()");
     ok_stmt(hstmt1, SQLFetch(hstmt1));
     ok_stmt(hstmt1, SQLGetData(hstmt1, 1, SQL_C_LONG, &con_id, 0, NULL));
