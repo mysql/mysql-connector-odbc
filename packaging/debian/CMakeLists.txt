@@ -35,18 +35,18 @@ project(MySQL_Connector_ODBC_Deb_Init NONE)
 
 include(../../version.cmake)
 
-set(YEAR      2016)  # FIXME automate somehow
+set(YEAR      2018)  # FIXME automate somehow
 set(PRODUCT   "MySQL Connector/ODBC ${CONNECTOR_BASE_VERSION}")
 
 if(NOT DEBIAN_REVISION)
   set(DEBIAN_REVISION 1)
 endif()
 
-if(EXISTS "${CMAKE_SOURCE_DIR}/../../LICENSE.mysql")
-  set(LIC_FILE "LICENSE.mysql")
+set(LIC_FILE "LICENSE.txt")
+
+if(EXTRA_NAME_SUFFIX STREQ "commercial")
   set(VERSION "${CONNECTOR_VERSION}+commercial-${DEBIAN_REVISION}")
 else()
-  set(LIC_FILE "COPYING")
   set(VERSION "${CONNECTOR_VERSION}-${DEBIAN_REVISION}")
 endif()
 

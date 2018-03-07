@@ -663,7 +663,7 @@
       
       <Control Id="Memo" Type="ScrollableText" X="8" Y="55" Width="358" Height="130" Sunken="yes">
     <?if $(var.license) = "commercial"?>  
-        <Text SourceFile="resources/commercial_license.rtf" />
+        <Text SourceFile="resources/License.rtf" />
     <?else ?>
         <Text SourceFile="resources/License.rtf" />
     <?endif?>

@@ -28,8 +28,7 @@ bit directory as well, i.e. a 64-bit package contains both 32-bit and
 64-bit binaries. Copy the required files:
 
   doc/README.txt
-  doc/COPYING.txt
-  doc/Licenses_for_Third-Party_Components.txt
+  doc/LICENSE.txt
   x86/myodbc8.lib
   x86/myodbc8.dll
   x86/myodbc8S.lib

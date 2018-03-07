@@ -57,7 +57,6 @@ REM xcopy /E /Y * mysql-connector-odbc-%1-win-src
 REM root
 mkdir mysql-connector-odbc-%1-win-src 
 copy ChangeLog mysql-connector-odbc-%1-win-src\ChangeLog.rtf
-copy COPYING mysql-connector-odbc-%1-win-src\COPYING.rtf
 copy Build.bat mysql-connector-odbc-%1-win-src
 copy Install.bat mysql-connector-odbc-%1-win-src
 copy Uninstall.bat mysql-connector-odbc-%1-win-src
@@ -68,12 +67,8 @@ copy defines.pri mysql-connector-odbc-%1-win-src
 copy mysql.pri mysql-connector-odbc-%1-win-src
 copy odbc.pri mysql-connector-odbc-%1-win-src
 copy root.pro mysql-connector-odbc-%1-win-src
-copy README mysql-connector-odbc-%1-win-src\README.rtf
-copy BUILD mysql-connector-odbc-%1-win-src\BUILD.rtf
-copy BUILD.win mysql-connector-odbc-%1-win-src\BUILD-win.rtf
-copy INSTALL mysql-connector-odbc-%1-win-src\INSTALL.rtf
-copy INSTALL.win mysql-connector-odbc-%1-win-src\INSTALL-win.rtf
-copy Licenses_for_Third-Party_Components.txt mysql-connector-odbc-%1-win-src
+copy README.txt mysql-connector-odbc-%1-win-src\README.rtf
+copy LICENSE.txt mysql-connector-odbc-%1-win-src
 copy resource.h mysql-connector-odbc-%1-win-src
 copy VersionInfo.h mysql-connector-odbc-%1-win-src
 copy mysql.bmp mysql-connector-odbc-%1-win-src

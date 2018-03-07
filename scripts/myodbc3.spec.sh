@@ -24,11 +24,11 @@
 
 %if 0%{?commercial}
 %global license_type	Commercial
-%global license_files	LICENSE.mysql
+%global license_files	LICENSE.txt
 %global product_suffix	-commercial
 %else
 %global license_type	GPLv2
-%global license_files	COPYING
+%global license_files	LICENSE.txt
 %endif
 
 # Use rpmbuild -ba --define 'shared_mysqlclient 1' ... to build shared
@@ -159,7 +159,7 @@ rm -rf %{buildroot}
 %install
 pushd release
 make DESTDIR=%{buildroot} install VERBOSE=1
-rm -vf  %{buildroot}%{_prefix}/{ChangeLog,README*,LICENSE.*,COPYING,INSTALL*,Licenses_for_Third-Party_Components.txt}
+rm -vf  %{buildroot}%{_prefix}/{ChangeLog,README*,LICENSE*.*}
 mkdir -p %{buildroot}%{_libdir}/mysql-connector-odbc
 mv %{buildroot}%{_prefix}/test %{buildroot}%{_libdir}/mysql-connector-odbc/
 mv bin/dltest                  %{buildroot}%{_libdir}/mysql-connector-odbc/
@@ -219,7 +219,7 @@ fi
 %{_libdir}/libmyodbc8w.so
 %{_libdir}/libmyodbc8a.so
 %doc %{license_files}
-%doc ChangeLog README README.debug INSTALL Licenses_for_Third-Party_Components.txt
+%doc ChangeLog README.txt LICENSE.txt
 
 %if 0%{?odbc_gui}
 %files setup

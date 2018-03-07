@@ -55,14 +55,12 @@ IF NOT EXIST ..\wix-installer\bin\mysql-connector-odbc-%1-win32\Windows\System32
 )
 copy bin\* ..\wix-installer\bin\mysql-connector-odbc-%1-win32\Windows\System32
 copy lib\* ..\wix-installer\bin\mysql-connector-odbc-%1-win32\Windows\System32
-copy Licenses_for_Third-Party_Components.txt ..\wix-installer\bin\mysql-connector-odbc-%1-win32\Windows\System32
-copy COPYING   ..\wix-installer\bin\mysql-connector-odbc-%1-win32\Windows\System32
-copy LICENSE.* ..\wix-installer\bin\mysql-connector-odbc-%1-win32\Windows\System32
+copy LICENSE.txt ..\wix-installer\bin\mysql-connector-odbc-%1-win32\Windows\System32
 
 REM Creating Commercial msi...
 cd ..\wix-installer
-copy bin\mysql-connector-odbc-%1-win32\Windows\System32\LICENSE.mysql bin\mysql-connector-odbc-%1-win32\Windows\System32\myodbc8-license.rtf
-copy bin\mysql-connector-odbc-%1-win32\Windows\System32\LICENSE.mysql resources\commercial_license.rtf
+copy bin\mysql-connector-odbc-%1-win32\Windows\System32\LICENSE.txt bin\mysql-connector-odbc-%1-win32\Windows\System32\myodbc8-license.rtf
+copy bin\mysql-connector-odbc-%1-win32\Windows\System32\LICENSE.txt resources\License.rtf
 call OdbcMakeSetup.bat %1 %2 commercial
 
 REM Creating GPL msi...
@@ -71,7 +69,7 @@ move /Y bin\dist\mysql-connector-odbc-%1-win32.msi bin\dist\mysql-connector-odbc
 move /Y bin\dist\mysql-connector-odbc-%1-win32.zip bin\dist\mysql-connector-odbc-commercial-%1-win32.zip
 move /Y bin\dist\mysql-connector-odbc-%1-win32.msi.md5 bin\dist\mysql-connector-odbc-commercial-%1-win32.msi.md5
 move /Y bin\dist\mysql-connector-odbc-%1-win32.zip.md5 bin\dist\mysql-connector-odbc-commercial-%1-win32.zip.md5
-copy bin\mysql-connector-odbc-%1-win32\Windows\System32\COPYING bin\mysql-connector-odbc-%1-win32\Windows\System32\myodbc8-license.rtf
+copy bin\mysql-connector-odbc-%1-win32\Windows\System32\LICENSE.txt bin\mysql-connector-odbc-%1-win32\Windows\System32\myodbc8-license.rtf
 call OdbcMakeSetup.bat %1 %2 gpl
 
 cd ..\*odbc3
@@ -103,7 +101,7 @@ ECHO "|              i - internal                           |"
 ECHO "|                                                     |"
 ECHO "| EXAMPLE                                             |"
 ECHO "|                                                     |"
-ECHO "| CreateBinaryMsi 3.51.12 p                           |"
+ECHO "| CreateBinaryMsi 8.0.1 p                             |"
 ECHO "|                                                     |"
 ECHO "+-----------------------------------------------------+"
 

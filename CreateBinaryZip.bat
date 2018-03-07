@@ -68,18 +68,15 @@ xcopy /E /Y lib\* mysql-connector-odbc-noinstall-%1-win32\lib
 copy Install.bat mysql-connector-odbc-noinstall-%1-win32
 copy Uninstall.bat mysql-connector-odbc-noinstall-%1-win32
 copy ChangeLog mysql-connector-odbc-noinstall-%1-win32\ChangeLog.rtf
-copy COPYING mysql-connector-odbc-noinstall-%1-win32\COPYING.rtf
-copy README mysql-connector-odbc-noinstall-%1-win32\README.rtf
-copy INSTALL mysql-connector-odbc-noinstall-%1-win32\INSTALL.rtf
-copy INSTALL.win mysql-connector-odbc-noinstall-%1-win32\INSTALL-win.rtf
-copy Licenses_for_Third-Party_Components.txt mysql-connector-odbc-noinstall-%1-win32
+copy README.txt mysql-connector-odbc-noinstall-%1-win32\README.rtf
+copy LICENSE.txt mysql-connector-odbc-noinstall-%1-win32
 
 ECHO Zipping...
 pkzipc -add -maximum -recurse -path=current mysql-connector-odbc-noinstall-%1-win32.zip mysql-connector-odbc-noinstall-%1-win32\*.*
 
 ECHO COMMERCIAL: Create stage area and populate...
 move mysql-connector-odbc-noinstall-%1-win32 mysql-connector-odbc-commercial-noinstall-%1-win32 
-copy LICENSE.mysql mysql-connector-odbc-commercial-noinstall-%1-win32\LICENSE.rtf
+copy LICENSE.txt mysql-connector-odbc-commercial-noinstall-%1-win32\LICENSE.rtf
 
 ECHO Zipping...
 pkzipc -add -maximum -recurse -path=current mysql-connector-odbc-commercial-noinstall-%1-win32.zip mysql-connector-odbc-commercial-noinstall-%1-win32/*.*
