@@ -1,101 +1,30 @@
-/* Copyright (c) 2009, 2016, Oracle and/or its affiliates. All rights reserved.
- 
- This program is free software; you can redistribute it and/or modify
- it under the terms of the GNU General Public License as published by
- the Free Software Foundation; version 2 of the License.
- 
- This program is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- GNU General Public License for more details.
- 
- You should have received a copy of the GNU General Public License
- along with this program; if not, write to the Free Software
- Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA */
-
-#ifndef MY_CONFIG_H
-#define MY_CONFIG_H
-
-/*
- * From configure.cmake, in order of appearance 
- */
-/* #undef HAVE_LLVM_LIBCPP */
-#define _LARGEFILE_SOURCE 1
-
-/* Libraries */
-/* #undef HAVE_LIBM */
-/* #undef HAVE_LIBNSL */
-/* #undef HAVE_LIBCRYPT */
-/* #undef HAVE_LIBSOCKET */
-/* #undef HAVE_LIBDL */
-/* #undef HAVE_LIBRT */
-/* #undef HAVE_LIBWRAP */
-
-/* Header files */
-/* #undef HAVE_ALLOCA_H */
-/* #undef HAVE_ARPA_INET_H */
-/* #undef HAVE_DLFCN_H */
-/* #undef HAVE_EXECINFO_H */
-/* #undef HAVE_FPU_CONTROL_H */
-/* #undef HAVE_GRP_H */
-/* #undef HAVE_IEEEFP_H */
-/* #undef HAVE_LANGINFO_H */
-#define HAVE_MALLOC_H 1
-/* #undef HAVE_NETINET_IN_H */
-/* #undef HAVE_POLL_H */
-/* #undef HAVE_PWD_H */
-/* #undef HAVE_STRINGS_H */
-/* #undef HAVE_SYS_CDEFS_H */
-/* #undef HAVE_SYS_IOCTL_H */
-/* #undef HAVE_SYS_MMAN_H */
-/* #undef HAVE_SYS_RESOURCE_H */
-/* #undef HAVE_SYS_SELECT_H */
-/* #undef HAVE_SYS_SOCKET_H */
-/* #undef HAVE_TERM_H */
-/* #undef HAVE_TERMIOS_H */
-/* #undef HAVE_TERMIO_H */
-/* #undef HAVE_UNISTD_H */
-/* #undef HAVE_SYS_WAIT_H */
-/* #undef HAVE_SYS_PARAM_H */
-/* #undef HAVE_FNMATCH_H */
-/* #undef HAVE_SYS_UN_H */
-/* #undef HAVE_VIS_H */
-/* #undef HAVE_SASL_SASL_H */
-
-/* Libevent */
-/* #undef HAVE_DEVPOLL */
-/* #undef HAVE_SYS_DEVPOLL_H */
-/* #undef HAVE_SYS_EPOLL_H */
-/* #undef HAVE_TAILQFOREACH */
-
-/* Functions */
-#define HAVE_ALIGNED_MALLOC 1
-/* #undef HAVE_BACKTRACE */
-/* #undef HAVE_PRINTSTACK */
-/* #undef HAVE_INDEX */
-/* #undef HAVE_CLOCK_GETTIME */
-/* #undef HAVE_CUSERID */
-/* #undef HAVE_DIRECTIO */
-/* #undef HAVE_FTRUNCATE */
-/* #undef HAVE_COMPRESS */
-/* #undef HAVE_CRYPT */
-/* #undef HAVE_DLOPEN */
-/* #undef HAVE_FCHMOD */
-/* #undef HAVE_FCNTL */
-/* #undef HAVE_FDATASYNC */
-/* #undef HAVE_DECL_FDATASYNC */
-/* #undef HAVE_FEDISABLEEXCEPT */
-/* #undef HAVE_FSEEKO */
-/* #undef HAVE_FSYNC */
-/* #undef HAVE_GETHOSTBYADDR_R */
-/* #undef HAVE_GETHRTIME */
-/* #undef HAVE_GETNAMEINFO */
-/* #undef HAVE_GETPASS */
-/* #undef HAVE_GETPASSPHRASE */
-/* #undef HAVE_GETPWNAM */
-/* #undef HAVE_GETPWUID */
-/* #undef HAVE_GETRLIMIT */
-/* #undef HAVE_GETRUSAGE */
+// Copyright (c) 2009, 2016, Oracle and/or its affiliates. All rights reserved. 
+// 
+// This program is free software; you can redistribute it and/or modify 
+// it under the terms of the GNU General Public License, version 2.0, as 
+// published by the Free Software Foundation. 
+// 
+// This program is also distributed with certain software (including 
+// but not limited to OpenSSL) that is licensed under separate terms, 
+// as designated in a particular file or component or in included license 
+// documentation. The authors of MySQL hereby grant you an 
+// additional permission to link the program and your derivative works 
+// with the separately licensed software that they have included with 
+// MySQL. 
+// 
+// Without limiting anything contained in the foregoing, this file, 
+// which is part of MySQL Server, is also subject to the 
+// Universal FOSS Exception, version 1.0, a copy of which can be found at 
+// http://oss.oracle.com/licenses/universal-foss-exception. 
+// 
+// This program is distributed in the hope that it will be useful, but 
+// WITHOUT ANY WARRANTY; without even the implied warranty of 
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+// See the GNU General Public License, version 2.0, for more details. 
+// 
+// You should have received a copy of the GNU General Public License 
+// along with this program; if not, write to the Free Software Foundation, Inc., 
+// 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA 
 /* #undef HAVE_INITGROUPS */
 /* #undef HAVE_ISSETUGID */
 /* #undef HAVE_GETUID */

@@ -1,30 +1,34 @@
-/*
-  Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
-
-  The MySQL Connector/ODBC is licensed under the terms of the GPLv2
-  <http://www.gnu.org/licenses/old-licenses/gpl-2.0.html>, like most
-  MySQL Connectors. There are special exceptions to the terms and
-  conditions of the GPLv2 as it is applied to this software, see the
-  FLOSS License Exception
-  <http://www.mysql.com/about/legal/licensing/foss-exception.html>.
-  
-  This program is free software; you can redistribute it and/or modify
-  it under the terms of the GNU General Public License as published
-  by the Free Software Foundation; version 2 of the License.
-  
-  This program is distributed in the hope that it will be useful, but
-  WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-  or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
-  for more details.
-  
-  You should have received a copy of the GNU General Public License along
-  with this program; if not, write to the Free Software Foundation, Inc.,
-  51 Franklin St, Fifth Floor, Boston, MA 02110-1301  USA
-*/
+// Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+//
+// This program is free software; you can redistribute it and/or modify
+// it under the terms of the GNU General Public License, version 2.0, as
+// published by the Free Software Foundation.
+//
+// This program is also distributed with certain software (including
+// but not limited to OpenSSL) that is licensed under separate terms,
+// as designated in a particular file or component or in included license
+// documentation. The authors of MySQL hereby grant you an
+// additional permission to link the program and your derivative works
+// with the separately licensed software that they have included with
+// MySQL.
+//
+// Without limiting anything contained in the foregoing, this file,
+// which is part of <MySQL Product>, is also subject to the
+// Universal FOSS Exception, version 1.0, a copy of which can be found at
+// http://oss.oracle.com/licenses/universal-foss-exception.
+//
+// This program is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+// See the GNU General Public License, version 2.0, for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program; if not, write to the Free Software Foundation, Inc.,
+// 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 
 /**
-  @file  info.c
-  @brief Driver information functions.
+@file  info.c
+@brief Driver information functions.
 */
 
 #include "driver.h"
@@ -49,32 +53,32 @@ do { \
   return SQL_SUCCESS; \
 } while(0)
 
-static my_bool myodbc_ov2_inited= 0;
+static my_bool myodbc_ov2_inited = 0;
 
 
 /**
-  Return general information about the driver and data source
-  associated with a connection.
+Return general information about the driver and data source
+associated with a connection.
 
-  @param[in]  hdbc            Handle of database connection
-  @param[in]  fInfoType       Type of information to retrieve
-  @param[out] char_info       Pointer to buffer for returning string
-  @param[out] num_info        Pointer to buffer for returning numeric info
-  @param[out] value_len       Pointer to buffer for returning length (only
-                              used for numeric data)
+@param[in]  hdbc            Handle of database connection
+@param[in]  fInfoType       Type of information to retrieve
+@param[out] char_info       Pointer to buffer for returning string
+@param[out] num_info        Pointer to buffer for returning numeric info
+@param[out] value_len       Pointer to buffer for returning length (only
+used for numeric data)
 */
 SQLRETURN SQL_API
 MySQLGetInfo(SQLHDBC hdbc, SQLUSMALLINT fInfoType,
              SQLCHAR **char_info, SQLPOINTER num_info, SQLSMALLINT *value_len)
 {
-  DBC *dbc= (DBC *)hdbc;
+  DBC *dbc = (DBC *)hdbc;
   SQLSMALLINT dummy;
   SQLINTEGER dummy_value;
 
   if (!value_len)
-    value_len= &dummy;
+    value_len = &dummy;
   if (!num_info)
-    num_info= &dummy_value;
+    num_info = &dummy_value;
 
   switch (fInfoType) {
   case SQL_ACTIVE_ENVIRONMENTS:
@@ -123,9 +127,9 @@ MySQLGetInfo(SQLHDBC hdbc, SQLUSMALLINT fInfoType,
 
   case SQL_CATALOG_USAGE:
     MYINFO_SET_ULONG((!dbc->ds || !dbc->ds->no_catalog) ?
-                     (SQL_CU_DML_STATEMENTS | SQL_CU_PROCEDURE_INVOCATION |
-                      SQL_CU_TABLE_DEFINITION | SQL_CU_INDEX_DEFINITION |
-                      SQL_CU_PRIVILEGE_DEFINITION) :
+      (SQL_CU_DML_STATEMENTS | SQL_CU_PROCEDURE_INVOCATION |
+       SQL_CU_TABLE_DEFINITION | SQL_CU_INDEX_DEFINITION |
+       SQL_CU_PRIVILEGE_DEFINITION) :
                      0);
 
   case SQL_COLLATION_SEQ:
@@ -223,9 +227,9 @@ MySQLGetInfo(SQLHDBC hdbc, SQLUSMALLINT fInfoType,
 
   case SQL_DATABASE_NAME:
     if (is_connected(dbc) && reget_current_catalog(dbc))
-        return set_dbc_error(dbc, "HY000",
-                             "SQLGetInfo() failed to return current catalog.",
-                             0);
+      return set_dbc_error(dbc, "HY000",
+                           "SQLGetInfo() failed to return current catalog.",
+                           0);
     MYINFO_SET_STR(dbc->database ? dbc->database : "null");
 
   case SQL_DATETIME_LITERALS:
@@ -352,8 +356,8 @@ MySQLGetInfo(SQLHDBC hdbc, SQLUSMALLINT fInfoType,
 
   case SQL_INFO_SCHEMA_VIEWS:
     /*
-      We have INFORMATION_SCHEMA.SCHEMATA, but we don't report it
-      because the driver exposes databases (schema) as catalogs.
+    We have INFORMATION_SCHEMA.SCHEMATA, but we don't report it
+    because the driver exposes databases (schema) as catalogs.
     */
     if (is_minimum_version(dbc->mysql.server_version, "5.1"))
       MYINFO_SET_ULONG(SQL_ISV_CHARACTER_SETS | SQL_ISV_COLLATIONS |
@@ -385,9 +389,9 @@ MySQLGetInfo(SQLHDBC hdbc, SQLUSMALLINT fInfoType,
 
   case SQL_KEYWORDS:
     /*
-     These lists were generated by taking the list of reserved words from
-     the MySQL Reference Manual (which is, in turn, generated from the source)
-     with the pre-reserved ODBC keywords removed.
+    These lists were generated by taking the list of reserved words from
+    the MySQL Reference Manual (which is, in turn, generated from the source)
+    with the pre-reserved ODBC keywords removed.
     */
     if (is_minimum_version(dbc->mysql.server_version, "5.7"))
       MYINFO_SET_STR("ACCESSIBLE,ANALYZE,ASENSITIVE,BEFORE,BIGINT,BINARY,BLOB,"
@@ -684,9 +688,9 @@ MySQLGetInfo(SQLHDBC hdbc, SQLUSMALLINT fInfoType,
 
   case SQL_SCROLL_OPTIONS:
     MYINFO_SET_ULONG(SQL_SO_FORWARD_ONLY |
-                     (dbc->ds && dbc->ds->force_use_of_forward_only_cursors ?
-                      0 : SQL_SO_STATIC |
-                     (dbc->ds && dbc->ds->dynamic_cursor ? SQL_SO_DYNAMIC : 0)));
+      (dbc->ds && dbc->ds->force_use_of_forward_only_cursors ?
+       0 : SQL_SO_STATIC |
+       (dbc->ds && dbc->ds->dynamic_cursor ? SQL_SO_DYNAMIC : 0)));
 
   case SQL_SEARCH_PATTERN_ESCAPE:
     MYINFO_SET_STR("\\");
@@ -725,12 +729,12 @@ MySQLGetInfo(SQLHDBC hdbc, SQLUSMALLINT fInfoType,
     MYINFO_SET_ULONG(SQL_SP_BETWEEN | SQL_SP_COMPARISON | SQL_SP_EXISTS |
                      SQL_SP_IN | SQL_SP_ISNOTNULL | SQL_SP_ISNULL |
                      SQL_SP_LIKE /*| SQL_SP_MATCH_FULL  |SQL_SP_MATCH_PARTIAL |
-                     SQL_SP_MATCH_UNIQUE_FULL | SQL_SP_MATCH_UNIQUE_PARTIAL |
-                     SQL_SP_OVERLAPS */ | SQL_SP_QUANTIFIED_COMPARISON /*|
-                     SQL_SP_UNIQUE */);
+                                 SQL_SP_MATCH_UNIQUE_FULL | SQL_SP_MATCH_UNIQUE_PARTIAL |
+                                 SQL_SP_OVERLAPS */ | SQL_SP_QUANTIFIED_COMPARISON /*|
+                                 SQL_SP_UNIQUE */);
 
   case SQL_SQL92_RELATIONAL_JOIN_OPERATORS:
-    MYINFO_SET_ULONG(SQL_SRJO_CROSS_JOIN | SQL_SRJO_INNER_JOIN  |
+    MYINFO_SET_ULONG(SQL_SRJO_CROSS_JOIN | SQL_SRJO_INNER_JOIN |
                      SQL_SRJO_LEFT_OUTER_JOIN | SQL_SRJO_NATURAL_JOIN |
                      SQL_SRJO_RIGHT_OUTER_JOIN);
 
@@ -829,7 +833,7 @@ MySQLGetInfo(SQLHDBC hdbc, SQLUSMALLINT fInfoType,
   case SQL_XOPEN_CLI_YEAR:
     MYINFO_SET_STR("1992");
 
-  /* The following aren't listed in the MSDN documentation. */
+    /* The following aren't listed in the MSDN documentation. */
 
   case SQL_ACCESSIBLE_PROCEDURES:
   case SQL_ACCESSIBLE_TABLES:
@@ -867,11 +871,11 @@ MySQLGetInfo(SQLHDBC hdbc, SQLUSMALLINT fInfoType,
     MYINFO_SET_USHORT(SQL_OSCC_COMPLIANT);
 
   default:
-    {
-      char buff[80];
-      sprintf(buff, "Unsupported option: %d to SQLGetInfo", fInfoType);
-      return set_conn_error((DBC*)hdbc, MYERR_S1C00, buff, 4000);
-    }
+  {
+    char buff[80];
+    sprintf(buff, "Unsupported option: %d to SQLGetInfo", fInfoType);
+    return set_conn_error((DBC*)hdbc, MYERR_S1C00, buff, 4000);
+  }
   }
 
   return SQL_SUCCESS;
@@ -879,10 +883,10 @@ MySQLGetInfo(SQLHDBC hdbc, SQLUSMALLINT fInfoType,
 
 
 /*
-  Function sets up a result set containing details of the types
-  supported by mysql.
+Function sets up a result set containing details of the types
+supported by mysql.
 */
-MYSQL_FIELD SQL_GET_TYPE_INFO_fields[]=
+MYSQL_FIELD SQL_GET_TYPE_INFO_fields[] =
 {
   MYODBC_FIELD_STRING("TYPE_NAME", 32, NOT_NULL_FLAG),
   MYODBC_FIELD_SHORT("DATA_TYPE", NOT_NULL_FLAG),
@@ -905,126 +909,126 @@ MYSQL_FIELD SQL_GET_TYPE_INFO_fields[]=
   MYODBC_FIELD_SHORT("INTERVAL_PRECISION", 0),
 };
 
-const uint SQL_GET_TYPE_INFO_FIELDS= array_elements(SQL_GET_TYPE_INFO_fields);
+const uint SQL_GET_TYPE_INFO_FIELDS = array_elements(SQL_GET_TYPE_INFO_fields);
 #define MYSQL_DATA_TYPES 52
 
 char sql_searchable[6], sql_unsearchable[6], sql_nullable[6], sql_no_nulls[6],
-     sql_bit[6], sql_tinyint[6], sql_smallint[6], sql_integer[6], sql_bigint[6],
-     sql_float[6], sql_real[6], sql_double[6], sql_char[6], sql_varchar[6],
-     sql_longvarchar[6], sql_timestamp[6], sql_decimal[6], sql_numeric[6],
-     sql_varbinary[6], sql_time[6], sql_date[6], sql_binary[6],
-     sql_longvarbinary[6], sql_datetime[6];
+sql_bit[6], sql_tinyint[6], sql_smallint[6], sql_integer[6], sql_bigint[6],
+sql_float[6], sql_real[6], sql_double[6], sql_char[6], sql_varchar[6],
+sql_longvarchar[6], sql_timestamp[6], sql_decimal[6], sql_numeric[6],
+sql_varbinary[6], sql_time[6], sql_date[6], sql_binary[6],
+sql_longvarbinary[6], sql_datetime[6];
 
-char *SQL_GET_TYPE_INFO_values[MYSQL_DATA_TYPES][19]=
+char *SQL_GET_TYPE_INFO_values[MYSQL_DATA_TYPES][19] =
 {
   /* SQL_BIT= -7 */
-  {"bit",sql_bit,"1",NULL,NULL,NULL,sql_nullable,"0",sql_searchable,NULL,"0",NULL,"bit(1)",NULL,NULL,sql_bit,NULL,NULL,NULL},
+  { "bit",sql_bit,"1",NULL,NULL,NULL,sql_nullable,"0",sql_searchable,NULL,"0",NULL,"bit(1)",NULL,NULL,sql_bit,NULL,NULL,NULL },
 
   /* SQL_TINY= -6 */
-  {"tinyint",sql_tinyint,"3",NULL,NULL,NULL,sql_nullable,"0",sql_searchable,"0","0","0","tinyint",NULL,NULL,sql_tinyint,NULL,"10",NULL},
-  {"tinyint unsigned",sql_tinyint,"3",NULL,NULL,NULL,sql_nullable,"0",sql_searchable,"1","0","0","tinyint unsigned",NULL,NULL,sql_tinyint,NULL,"10",NULL},
-  {"tinyint auto_increment",sql_tinyint,"3",NULL,NULL,NULL,sql_no_nulls,"0",sql_searchable,"0","0","1","tinyint auto_increment",NULL,NULL,sql_tinyint, NULL,"10",NULL},
-  {"tinyint unsigned auto_increment",sql_tinyint,"3",NULL,NULL,NULL,sql_no_nulls, "0",sql_searchable,"1","0","1","tinyint unsigned auto_increment",NULL,NULL, sql_tinyint,NULL,"10",NULL},
+  { "tinyint",sql_tinyint,"3",NULL,NULL,NULL,sql_nullable,"0",sql_searchable,"0","0","0","tinyint",NULL,NULL,sql_tinyint,NULL,"10",NULL },
+  { "tinyint unsigned",sql_tinyint,"3",NULL,NULL,NULL,sql_nullable,"0",sql_searchable,"1","0","0","tinyint unsigned",NULL,NULL,sql_tinyint,NULL,"10",NULL },
+  { "tinyint auto_increment",sql_tinyint,"3",NULL,NULL,NULL,sql_no_nulls,"0",sql_searchable,"0","0","1","tinyint auto_increment",NULL,NULL,sql_tinyint, NULL,"10",NULL },
+  { "tinyint unsigned auto_increment",sql_tinyint,"3",NULL,NULL,NULL,sql_no_nulls, "0",sql_searchable,"1","0","1","tinyint unsigned auto_increment",NULL,NULL, sql_tinyint,NULL,"10",NULL },
 
   /* SQL_BIGINT= -5 */
-  {"bigint",sql_bigint,"19",NULL,NULL,NULL,sql_nullable,"0",sql_searchable,"0","0","0","bigint",NULL,NULL,sql_bigint,NULL,"10",NULL},
-  {"bigint unsigned",sql_bigint,"20",NULL,NULL,NULL,sql_nullable,"0",sql_searchable,"1","0","0","bigint unsigned",NULL,NULL,sql_bigint,NULL,"10",NULL},
-  {"bigint auto_increment",sql_bigint,"19",NULL,NULL,NULL,sql_no_nulls,"0",sql_searchable,"0","0","1","bigint auto_increment",NULL,NULL,sql_bigint,NULL,"10",NULL},
-  {"bigint unsigned auto_increment",sql_bigint,"20",NULL,NULL,NULL,sql_no_nulls, "0",sql_searchable,"1","0","1","bigint unsigned auto_increment",NULL,NULL,sql_bigint, NULL,"10",NULL},
+  { "bigint",sql_bigint,"19",NULL,NULL,NULL,sql_nullable,"0",sql_searchable,"0","0","0","bigint",NULL,NULL,sql_bigint,NULL,"10",NULL },
+  { "bigint unsigned",sql_bigint,"20",NULL,NULL,NULL,sql_nullable,"0",sql_searchable,"1","0","0","bigint unsigned",NULL,NULL,sql_bigint,NULL,"10",NULL },
+  { "bigint auto_increment",sql_bigint,"19",NULL,NULL,NULL,sql_no_nulls,"0",sql_searchable,"0","0","1","bigint auto_increment",NULL,NULL,sql_bigint,NULL,"10",NULL },
+  { "bigint unsigned auto_increment",sql_bigint,"20",NULL,NULL,NULL,sql_no_nulls, "0",sql_searchable,"1","0","1","bigint unsigned auto_increment",NULL,NULL,sql_bigint, NULL,"10",NULL },
 
   /* SQL_LONGVARBINARY= -4 */
-  {"long varbinary",sql_longvarbinary,"16777215","0x",NULL,NULL,sql_nullable,"0",sql_searchable,NULL,"0",NULL,"mediumblob",NULL,NULL,sql_longvarbinary,NULL,NULL,NULL},
-  {"blob",sql_longvarbinary,"65535","'","'",NULL,sql_nullable,"0",sql_searchable,NULL,"0",NULL,"binary large object (0-65535)",NULL,NULL,sql_longvarbinary,NULL,NULL,NULL},
-  {"longblob",sql_longvarbinary,"2147483647","'","'",NULL,sql_nullable,"0",sql_searchable,NULL,"0",NULL,"binary large object, use mediumblob instead",NULL,NULL,sql_longvarbinary,NULL,NULL,NULL},
-  {"tinyblob",sql_longvarbinary,"255","'","'",NULL,sql_nullable,"0",sql_searchable,NULL,"0",NULL,"binary large object (0-255)",NULL,NULL,sql_longvarbinary,NULL,NULL,NULL},
-  {"mediumblob",sql_longvarbinary,"16777215","'","'",NULL,sql_nullable,"0",sql_searchable,NULL,"0",NULL,"binary large object",NULL,NULL,sql_longvarbinary,NULL,NULL,NULL},
+  { "long varbinary",sql_longvarbinary,"16777215","0x",NULL,NULL,sql_nullable,"0",sql_searchable,NULL,"0",NULL,"mediumblob",NULL,NULL,sql_longvarbinary,NULL,NULL,NULL },
+  { "blob",sql_longvarbinary,"65535","'","'",NULL,sql_nullable,"0",sql_searchable,NULL,"0",NULL,"binary large object (0-65535)",NULL,NULL,sql_longvarbinary,NULL,NULL,NULL },
+  { "longblob",sql_longvarbinary,"2147483647","'","'",NULL,sql_nullable,"0",sql_searchable,NULL,"0",NULL,"binary large object, use mediumblob instead",NULL,NULL,sql_longvarbinary,NULL,NULL,NULL },
+  { "tinyblob",sql_longvarbinary,"255","'","'",NULL,sql_nullable,"0",sql_searchable,NULL,"0",NULL,"binary large object (0-255)",NULL,NULL,sql_longvarbinary,NULL,NULL,NULL },
+  { "mediumblob",sql_longvarbinary,"16777215","'","'",NULL,sql_nullable,"0",sql_searchable,NULL,"0",NULL,"binary large object",NULL,NULL,sql_longvarbinary,NULL,NULL,NULL },
 
   /* SQL_VARBINARY= -3 */
-  {"varbinary",sql_varbinary,"255","'","'","length",sql_nullable,"0",sql_searchable,NULL,"0",NULL,"varbinary",NULL,NULL,sql_varbinary,NULL,NULL,NULL},
+  { "varbinary",sql_varbinary,"255","'","'","length",sql_nullable,"0",sql_searchable,NULL,"0",NULL,"varbinary",NULL,NULL,sql_varbinary,NULL,NULL,NULL },
 
   /* SQL_BINARY= -2 */
-  {"binary",sql_binary,"255","'","'","length",sql_nullable,"0",sql_searchable,NULL,"0",NULL,"binary",NULL,NULL,sql_binary,NULL,NULL,NULL},
+  { "binary",sql_binary,"255","'","'","length",sql_nullable,"0",sql_searchable,NULL,"0",NULL,"binary",NULL,NULL,sql_binary,NULL,NULL,NULL },
 
   /* SQL_LONGVARCHAR= -1 */
-  {"long varchar",sql_longvarchar,"16777215","'","'",NULL,sql_nullable,"0",sql_searchable,NULL,"0",NULL,"mediumtext",NULL,NULL,sql_longvarchar,NULL,NULL,NULL},
-  {"text",sql_longvarchar,"65535","'","'",NULL,sql_nullable,"0",sql_searchable,NULL,"0",NULL,"text(0-65535)",NULL,NULL,sql_longvarchar,NULL,NULL,NULL},
-  {"mediumtext",sql_longvarchar,"16777215","'","'",NULL,sql_nullable,"0",sql_searchable,NULL,"0",NULL,"mediumtext",NULL,NULL,sql_longvarchar,NULL,NULL,NULL},
-  {"longtext",sql_longvarchar,"2147483647","'","'",NULL,sql_nullable,"0",sql_searchable,NULL,"0",NULL,"longtext",NULL,NULL,sql_longvarchar,NULL,NULL,NULL},
-  {"tinytext",sql_longvarchar,"255","'","'",NULL,sql_nullable,"0",sql_searchable,NULL,"0",NULL,"tinytext",NULL,NULL,sql_longvarchar,NULL,NULL,NULL},
+  { "long varchar",sql_longvarchar,"16777215","'","'",NULL,sql_nullable,"0",sql_searchable,NULL,"0",NULL,"mediumtext",NULL,NULL,sql_longvarchar,NULL,NULL,NULL },
+  { "text",sql_longvarchar,"65535","'","'",NULL,sql_nullable,"0",sql_searchable,NULL,"0",NULL,"text(0-65535)",NULL,NULL,sql_longvarchar,NULL,NULL,NULL },
+  { "mediumtext",sql_longvarchar,"16777215","'","'",NULL,sql_nullable,"0",sql_searchable,NULL,"0",NULL,"mediumtext",NULL,NULL,sql_longvarchar,NULL,NULL,NULL },
+  { "longtext",sql_longvarchar,"2147483647","'","'",NULL,sql_nullable,"0",sql_searchable,NULL,"0",NULL,"longtext",NULL,NULL,sql_longvarchar,NULL,NULL,NULL },
+  { "tinytext",sql_longvarchar,"255","'","'",NULL,sql_nullable,"0",sql_searchable,NULL,"0",NULL,"tinytext",NULL,NULL,sql_longvarchar,NULL,NULL,NULL },
 
   /* SQL_CHAR= 1 */
-  {"char",sql_char,"255","'","'","length",sql_nullable,"0",sql_searchable,NULL,"0",NULL,"char",NULL,NULL,sql_char,NULL,NULL,NULL},
+  { "char",sql_char,"255","'","'","length",sql_nullable,"0",sql_searchable,NULL,"0",NULL,"char",NULL,NULL,sql_char,NULL,NULL,NULL },
 
   /* SQL_NUMERIC= 2 */
-  {"numeric",sql_numeric,"19",NULL,NULL,"precision,scale",sql_nullable,"0",sql_searchable,"0","0","0","numeric","0","19",sql_numeric,NULL,"10",NULL},
+  { "numeric",sql_numeric,"19",NULL,NULL,"precision,scale",sql_nullable,"0",sql_searchable,"0","0","0","numeric","0","19",sql_numeric,NULL,"10",NULL },
 
   /* SQL_DECIMAL= 3 */
-  {"decimal",sql_decimal,"19",NULL,NULL,"precision,scale",sql_nullable,"0",sql_searchable,"0","0","0","decimal","0","19",sql_decimal,NULL,"10",NULL},
+  { "decimal",sql_decimal,"19",NULL,NULL,"precision,scale",sql_nullable,"0",sql_searchable,"0","0","0","decimal","0","19",sql_decimal,NULL,"10",NULL },
 
   /* SQL_INTEGER= 4 */
-  {"integer",sql_integer,"10",NULL,NULL,NULL,sql_nullable,"0",sql_searchable,"0","0","0","integer",NULL,NULL,sql_integer,NULL,"10",NULL},
-  {"integer unsigned",sql_integer,"10",NULL,NULL,NULL,sql_nullable,"0",sql_searchable,"1","0","0","integer unsigned",NULL,NULL,sql_integer,NULL,"10",NULL},
-  {"int",sql_integer,"10",NULL,NULL,NULL,sql_nullable,"0",sql_searchable,"0","0","0","integer",NULL,NULL,sql_integer,NULL,"10",NULL},
-  {"int unsigned",sql_integer,"10",NULL,NULL,NULL,sql_nullable,"0",sql_searchable,"1","0","0","integer unsigned",NULL,NULL,sql_integer,NULL,"10",NULL},
-  {"mediumint",sql_integer,"7",NULL,NULL,NULL,sql_nullable,"0",sql_searchable,"0","0","0","Medium integer",NULL,NULL,sql_integer,NULL,"10",NULL},
-  {"mediumint unsigned",sql_integer,"8",NULL,NULL,NULL,sql_nullable,"0",sql_searchable,"1","0","0","Medium integer unsigned",NULL,NULL,sql_integer,NULL,"10",NULL},
-  {"integer auto_increment",sql_integer,"10",NULL,NULL,NULL,sql_no_nulls,"0",sql_searchable,"0","0","1","integer auto_increment",NULL,NULL,sql_integer, NULL,"10",NULL},
-  {"integer unsigned auto_increment",sql_integer,"10",NULL,NULL,NULL,sql_no_nulls, "0",sql_searchable,"1","0","1","integer unsigned auto_increment",NULL,NULL, sql_integer,NULL,"10",NULL},
-  {"int auto_increment",sql_integer,"10",NULL,NULL,NULL,sql_no_nulls,"0",sql_searchable,"0","0","1","integer auto_increment",NULL,NULL,sql_integer, NULL,"10",NULL},
-  {"int unsigned auto_increment",sql_integer,"10",NULL,NULL,NULL,sql_no_nulls,"0",sql_searchable,"1","0","1","integer unsigned auto_increment",NULL,NULL,sql_integer,NULL,"10",NULL},
-  {"mediumint auto_increment",sql_integer,"7",NULL,NULL,NULL,sql_no_nulls,"0",sql_searchable,"0","0","1","Medium integer auto_increment",NULL,NULL,sql_integer,NULL,"10",NULL},
-  {"mediumint unsigned auto_increment",sql_integer,"8",NULL,NULL,NULL,sql_no_nulls, "0",sql_searchable,"1","0","1","Medium integer unsigned auto_increment",NULL,NULL, sql_integer,NULL,"10",NULL},
+  { "integer",sql_integer,"10",NULL,NULL,NULL,sql_nullable,"0",sql_searchable,"0","0","0","integer",NULL,NULL,sql_integer,NULL,"10",NULL },
+  { "integer unsigned",sql_integer,"10",NULL,NULL,NULL,sql_nullable,"0",sql_searchable,"1","0","0","integer unsigned",NULL,NULL,sql_integer,NULL,"10",NULL },
+  { "int",sql_integer,"10",NULL,NULL,NULL,sql_nullable,"0",sql_searchable,"0","0","0","integer",NULL,NULL,sql_integer,NULL,"10",NULL },
+  { "int unsigned",sql_integer,"10",NULL,NULL,NULL,sql_nullable,"0",sql_searchable,"1","0","0","integer unsigned",NULL,NULL,sql_integer,NULL,"10",NULL },
+  { "mediumint",sql_integer,"7",NULL,NULL,NULL,sql_nullable,"0",sql_searchable,"0","0","0","Medium integer",NULL,NULL,sql_integer,NULL,"10",NULL },
+  { "mediumint unsigned",sql_integer,"8",NULL,NULL,NULL,sql_nullable,"0",sql_searchable,"1","0","0","Medium integer unsigned",NULL,NULL,sql_integer,NULL,"10",NULL },
+  { "integer auto_increment",sql_integer,"10",NULL,NULL,NULL,sql_no_nulls,"0",sql_searchable,"0","0","1","integer auto_increment",NULL,NULL,sql_integer, NULL,"10",NULL },
+  { "integer unsigned auto_increment",sql_integer,"10",NULL,NULL,NULL,sql_no_nulls, "0",sql_searchable,"1","0","1","integer unsigned auto_increment",NULL,NULL, sql_integer,NULL,"10",NULL },
+  { "int auto_increment",sql_integer,"10",NULL,NULL,NULL,sql_no_nulls,"0",sql_searchable,"0","0","1","integer auto_increment",NULL,NULL,sql_integer, NULL,"10",NULL },
+  { "int unsigned auto_increment",sql_integer,"10",NULL,NULL,NULL,sql_no_nulls,"0",sql_searchable,"1","0","1","integer unsigned auto_increment",NULL,NULL,sql_integer,NULL,"10",NULL },
+  { "mediumint auto_increment",sql_integer,"7",NULL,NULL,NULL,sql_no_nulls,"0",sql_searchable,"0","0","1","Medium integer auto_increment",NULL,NULL,sql_integer,NULL,"10",NULL },
+  { "mediumint unsigned auto_increment",sql_integer,"8",NULL,NULL,NULL,sql_no_nulls, "0",sql_searchable,"1","0","1","Medium integer unsigned auto_increment",NULL,NULL, sql_integer,NULL,"10",NULL },
 
   /* SQL_SMALLINT= 5 */
-  {"smallint",sql_smallint,"5",NULL,NULL,NULL,sql_nullable,"0",sql_searchable,"0","0","0","smallint",NULL,NULL,sql_smallint,NULL,"10",NULL},
-  {"smallint unsigned",sql_smallint,"5",NULL,NULL,NULL,sql_nullable,"0",sql_searchable,"1","0","0","smallint unsigned",NULL,NULL,sql_smallint,NULL,"10",NULL},
-  {"smallint auto_increment",sql_smallint,"5",NULL,NULL,NULL,sql_no_nulls,"0",sql_searchable,"0","0","1","smallint auto_increment",NULL,NULL,sql_smallint,NULL,"10",NULL},
-  {"smallint unsigned auto_increment",sql_smallint,"5",NULL,NULL,NULL,sql_no_nulls, "0",sql_searchable,"1","0","1","smallint unsigned auto_increment",NULL,NULL, sql_smallint,NULL,"10",NULL},
+  { "smallint",sql_smallint,"5",NULL,NULL,NULL,sql_nullable,"0",sql_searchable,"0","0","0","smallint",NULL,NULL,sql_smallint,NULL,"10",NULL },
+  { "smallint unsigned",sql_smallint,"5",NULL,NULL,NULL,sql_nullable,"0",sql_searchable,"1","0","0","smallint unsigned",NULL,NULL,sql_smallint,NULL,"10",NULL },
+  { "smallint auto_increment",sql_smallint,"5",NULL,NULL,NULL,sql_no_nulls,"0",sql_searchable,"0","0","1","smallint auto_increment",NULL,NULL,sql_smallint,NULL,"10",NULL },
+  { "smallint unsigned auto_increment",sql_smallint,"5",NULL,NULL,NULL,sql_no_nulls, "0",sql_searchable,"1","0","1","smallint unsigned auto_increment",NULL,NULL, sql_smallint,NULL,"10",NULL },
 
   /* SQL_FLOAT= 6 */
-  {"double",sql_float,"15",NULL,NULL,NULL,sql_nullable,"0",sql_searchable,"0","0","0","double","0","4",sql_float, NULL,"10",NULL},
-  {"double auto_increment",sql_float,"15",NULL,NULL,NULL,sql_no_nulls,"0",sql_searchable,"0","0","1","double auto_increment","0","4",sql_float,NULL,"10",NULL},
+  { "double",sql_float,"15",NULL,NULL,NULL,sql_nullable,"0",sql_searchable,"0","0","0","double","0","4",sql_float, NULL,"10",NULL },
+  { "double auto_increment",sql_float,"15",NULL,NULL,NULL,sql_no_nulls,"0",sql_searchable,"0","0","1","double auto_increment","0","4",sql_float,NULL,"10",NULL },
 
   /* SQL_REAL= 7 */
-  {"float",sql_real,"7",NULL,NULL,NULL,sql_nullable, "0",sql_unsearchable,"0","0","0","float","0","2",sql_real, NULL,"10",NULL},
-  {"float auto_increment",sql_real,"7",NULL,NULL,NULL,sql_no_nulls,"0",sql_unsearchable,"0","0","1","float auto_increment","0","2",sql_real,NULL,"10",NULL},
+  { "float",sql_real,"7",NULL,NULL,NULL,sql_nullable, "0",sql_unsearchable,"0","0","0","float","0","2",sql_real, NULL,"10",NULL },
+  { "float auto_increment",sql_real,"7",NULL,NULL,NULL,sql_no_nulls,"0",sql_unsearchable,"0","0","1","float auto_increment","0","2",sql_real,NULL,"10",NULL },
 
   /* SQL_DOUBLE= 8 */
-  {"double",sql_double,"15",NULL,NULL,NULL,sql_nullable,"0",sql_searchable,"0","0","0","double","0","4",sql_double,NULL,"10",NULL},
-  {"double auto_increment",sql_double,"15",NULL,NULL,NULL,sql_no_nulls,"0",sql_searchable,"0","0","1","double auto_increment","0","4",sql_double,NULL,"10",NULL},
+  { "double",sql_double,"15",NULL,NULL,NULL,sql_nullable,"0",sql_searchable,"0","0","0","double","0","4",sql_double,NULL,"10",NULL },
+  { "double auto_increment",sql_double,"15",NULL,NULL,NULL,sql_no_nulls,"0",sql_searchable,"0","0","1","double auto_increment","0","4",sql_double,NULL,"10",NULL },
 
   /* SQL_TYPE_DATE= 91 */
-  {"date",sql_date,"10","'","'",NULL,sql_nullable,"0",sql_searchable,NULL,"0",NULL,"date",NULL,NULL,sql_datetime,sql_date,NULL,NULL},
+  { "date",sql_date,"10","'","'",NULL,sql_nullable,"0",sql_searchable,NULL,"0",NULL,"date",NULL,NULL,sql_datetime,sql_date,NULL,NULL },
 
   /* SQL_TYPE_TIME= 92 */
-  {"time",sql_time,"8","'","'",NULL,sql_nullable,"0",sql_searchable,NULL,"0",NULL,"time",NULL,NULL,sql_datetime,sql_time,NULL,NULL},
+  { "time",sql_time,"8","'","'",NULL,sql_nullable,"0",sql_searchable,NULL,"0",NULL,"time",NULL,NULL,sql_datetime,sql_time,NULL,NULL },
 
   /* YEAR - SQL_SMALLINT */
-  {"year",sql_smallint,"4",NULL,NULL,NULL,sql_nullable,"0",sql_searchable,"0","0","0","year",NULL,NULL,sql_smallint,NULL,"10",NULL},
+  { "year",sql_smallint,"4",NULL,NULL,NULL,sql_nullable,"0",sql_searchable,"0","0","0","year",NULL,NULL,sql_smallint,NULL,"10",NULL },
 
   /* SQL_TYPE_TIMESTAMP= 93 */
-  {"datetime",sql_timestamp,"21","'","'",NULL,sql_nullable,"0",sql_searchable,NULL,"0",NULL,"datetime","0","0",sql_datetime,sql_timestamp,NULL,NULL},
-  {"timestamp",sql_timestamp,"14","'","'",NULL,sql_no_nulls,"0",sql_searchable,NULL,"0",NULL,"timestamp","0","0",sql_datetime,sql_timestamp,NULL,NULL},
+  { "datetime",sql_timestamp,"21","'","'",NULL,sql_nullable,"0",sql_searchable,NULL,"0",NULL,"datetime","0","0",sql_datetime,sql_timestamp,NULL,NULL },
+  { "timestamp",sql_timestamp,"14","'","'",NULL,sql_no_nulls,"0",sql_searchable,NULL,"0",NULL,"timestamp","0","0",sql_datetime,sql_timestamp,NULL,NULL },
 
   /* SQL_VARCHAR= 12 */
-  {"varchar",sql_varchar,"255","'","'","length",sql_nullable,"0",sql_searchable,NULL,"0",NULL,"varchar",NULL,NULL,sql_varchar,NULL,NULL,NULL},
+  { "varchar",sql_varchar,"255","'","'","length",sql_nullable,"0",sql_searchable,NULL,"0",NULL,"varchar",NULL,NULL,sql_varchar,NULL,NULL,NULL },
 
   /* ENUM and SET are not included -- it confuses some applications. */
 };
 
 
 /**
-  Return information about data types supported by the server.
+Return information about data types supported by the server.
 
-  @param[in] hstmt     Handle of statement
-  @param[in] fSqlType  SQL data type or @c SQL_ALL_TYPES
+@param[in] hstmt     Handle of statement
+@param[in] fSqlType  SQL data type or @c SQL_ALL_TYPES
 
-  @since ODBC 1.0
-  @since ISO SQL 92
+@since ODBC 1.0
+@since ISO SQL 92
 */
 SQLRETURN SQL_API MySQLGetTypeInfo(SQLHSTMT hstmt, SQLSMALLINT fSqlType)
 {
-  STMT *stmt= (STMT *)hstmt;
+  STMT *stmt = (STMT *)hstmt;
   uint i;
 
   my_SQLFreeStmt(hstmt, MYSQL_RESET);
@@ -1035,39 +1039,39 @@ SQLRETURN SQL_API MySQLGetTypeInfo(SQLHSTMT hstmt, SQLSMALLINT fSqlType)
     switch (fSqlType)
     {
     case SQL_TYPE_DATE:
-      fSqlType= SQL_DATE;
+      fSqlType = SQL_DATE;
       break;
     case SQL_TYPE_TIME:
-      fSqlType= SQL_TIME;
+      fSqlType = SQL_TIME;
       break;
     case SQL_TYPE_TIMESTAMP:
-      fSqlType= SQL_TIMESTAMP;
+      fSqlType = SQL_TIMESTAMP;
       break;
     }
   }
 
   /* Set up result Data dictionary. */
-  stmt->result= (MYSQL_RES *)myodbc_malloc(sizeof(MYSQL_RES), MYF(MY_ZEROFILL));
-  stmt->fake_result= 1;
-  stmt->result_array= (char **)myodbc_malloc(sizeof(SQL_GET_TYPE_INFO_values),
-                                         MYF(MY_FAE | MY_ZEROFILL));
+  stmt->result = (MYSQL_RES *)myodbc_malloc(sizeof(MYSQL_RES), MYF(MY_ZEROFILL));
+  stmt->fake_result = 1;
+  stmt->result_array = (char **)myodbc_malloc(sizeof(SQL_GET_TYPE_INFO_values),
+                                              MYF(MY_FAE | MY_ZEROFILL));
 
   if (fSqlType == SQL_ALL_TYPES)
   {
     memcpy(stmt->result_array,
            SQL_GET_TYPE_INFO_values,
            sizeof(SQL_GET_TYPE_INFO_values));
-    stmt->result->row_count= MYSQL_DATA_TYPES;
+    stmt->result->row_count = MYSQL_DATA_TYPES;
   }
   else
   {
-    for (i= 0 ; i < MYSQL_DATA_TYPES ; ++i)
+    for (i = 0; i < MYSQL_DATA_TYPES; ++i)
     {
       if (atoi(SQL_GET_TYPE_INFO_values[i][1]) == fSqlType ||
           atoi(SQL_GET_TYPE_INFO_values[i][15]) == fSqlType)
       {
         memcpy(&stmt->result_array[stmt->result->row_count++ *
-                                   SQL_GET_TYPE_INFO_FIELDS],
+               SQL_GET_TYPE_INFO_FIELDS],
                &SQL_GET_TYPE_INFO_values[i][0],
                sizeof(char *) * SQL_GET_TYPE_INFO_FIELDS);
       }
@@ -1080,169 +1084,169 @@ SQLRETURN SQL_API MySQLGetTypeInfo(SQLHSTMT hstmt, SQLSMALLINT fSqlType)
 
 
 /**
- Create strings from some integers for easy initialization of string arrays.
+Create strings from some integers for easy initialization of string arrays.
 
- @todo get rid of this. it is evil.
+@todo get rid of this. it is evil.
 */
 void init_getfunctions(void)
 {
-  my_int2str(SQL_SEARCHABLE,sql_searchable,-10,0);
-  my_int2str(SQL_UNSEARCHABLE,sql_unsearchable,-10,0);
-  my_int2str(SQL_NULLABLE,sql_nullable,-10,0);
-  my_int2str(SQL_NO_NULLS,sql_no_nulls,-10,0);
-  my_int2str(SQL_BIT,sql_bit,-10,0);
-  my_int2str(SQL_TINYINT,sql_tinyint,-10,0);
-  my_int2str(SQL_SMALLINT,sql_smallint,-10,0);
-  my_int2str(SQL_INTEGER,sql_integer,-10,0);
-  my_int2str(SQL_BIGINT,sql_bigint,-10,0);
-  my_int2str(SQL_DECIMAL,sql_decimal,-10,0);
-  my_int2str(SQL_NUMERIC,sql_numeric,-10,0);
-  my_int2str(SQL_REAL,sql_real,-10,0);
-  my_int2str(SQL_FLOAT,sql_float,-10,0);
-  my_int2str(SQL_DOUBLE,sql_double,-10,0);
-  my_int2str(SQL_CHAR,sql_char,-10,0);
-  my_int2str(SQL_VARCHAR,sql_varchar,-10,0);
-  my_int2str(SQL_LONGVARCHAR,sql_longvarchar,-10,0);
-  my_int2str(SQL_LONGVARBINARY,sql_longvarbinary,-10,0);
-  my_int2str(SQL_VARBINARY,sql_varbinary,-10,0);
-  my_int2str(SQL_BINARY,sql_binary,-10,0);
-  my_int2str(SQL_DATETIME,sql_datetime,-10,0);
-  my_int2str(SQL_TYPE_TIMESTAMP,sql_timestamp,-10,0);
-  my_int2str(SQL_TYPE_DATE,sql_date,-10,0);
-  my_int2str(SQL_TYPE_TIME,sql_time,-10,0);
+  my_int2str(SQL_SEARCHABLE, sql_searchable, -10, 0);
+  my_int2str(SQL_UNSEARCHABLE, sql_unsearchable, -10, 0);
+  my_int2str(SQL_NULLABLE, sql_nullable, -10, 0);
+  my_int2str(SQL_NO_NULLS, sql_no_nulls, -10, 0);
+  my_int2str(SQL_BIT, sql_bit, -10, 0);
+  my_int2str(SQL_TINYINT, sql_tinyint, -10, 0);
+  my_int2str(SQL_SMALLINT, sql_smallint, -10, 0);
+  my_int2str(SQL_INTEGER, sql_integer, -10, 0);
+  my_int2str(SQL_BIGINT, sql_bigint, -10, 0);
+  my_int2str(SQL_DECIMAL, sql_decimal, -10, 0);
+  my_int2str(SQL_NUMERIC, sql_numeric, -10, 0);
+  my_int2str(SQL_REAL, sql_real, -10, 0);
+  my_int2str(SQL_FLOAT, sql_float, -10, 0);
+  my_int2str(SQL_DOUBLE, sql_double, -10, 0);
+  my_int2str(SQL_CHAR, sql_char, -10, 0);
+  my_int2str(SQL_VARCHAR, sql_varchar, -10, 0);
+  my_int2str(SQL_LONGVARCHAR, sql_longvarchar, -10, 0);
+  my_int2str(SQL_LONGVARBINARY, sql_longvarbinary, -10, 0);
+  my_int2str(SQL_VARBINARY, sql_varbinary, -10, 0);
+  my_int2str(SQL_BINARY, sql_binary, -10, 0);
+  my_int2str(SQL_DATETIME, sql_datetime, -10, 0);
+  my_int2str(SQL_TYPE_TIMESTAMP, sql_timestamp, -10, 0);
+  my_int2str(SQL_TYPE_DATE, sql_date, -10, 0);
+  my_int2str(SQL_TYPE_TIME, sql_time, -10, 0);
 # if (ODBCVER < 0x0300)
   myodbc_sqlstate2_init();
-  myodbc_ov2_inited= 1;
+  myodbc_ov2_inited = 1;
 # endif
 }
 
 /**
-  Fix some initializations based on the ODBC version.
+Fix some initializations based on the ODBC version.
 */
 void myodbc_ov_init(SQLINTEGER odbc_version)
 {
   if (odbc_version == SQL_OV_ODBC2)
   {
-    my_int2str(SQL_TIMESTAMP,sql_timestamp,-10,0);
-    my_int2str(SQL_DATE,sql_date,-10,0);
-    my_int2str(SQL_TIME,sql_time,-10,0);
+    my_int2str(SQL_TIMESTAMP, sql_timestamp, -10, 0);
+    my_int2str(SQL_DATE, sql_date, -10, 0);
+    my_int2str(SQL_TIME, sql_time, -10, 0);
     myodbc_sqlstate2_init();
-    myodbc_ov2_inited= 1;
+    myodbc_ov2_inited = 1;
   }
   else
   {
     if (!myodbc_ov2_inited)
       return;
-    myodbc_ov2_inited= 0;
+    myodbc_ov2_inited = 0;
 
-    my_int2str(SQL_TYPE_TIMESTAMP,sql_timestamp,-10,0);
-    my_int2str(SQL_TYPE_DATE,sql_date,-10,0);
-    my_int2str(SQL_TYPE_TIME,sql_time,-10,0);
+    my_int2str(SQL_TYPE_TIMESTAMP, sql_timestamp, -10, 0);
+    my_int2str(SQL_TYPE_DATE, sql_date, -10, 0);
+    my_int2str(SQL_TYPE_TIME, sql_time, -10, 0);
     myodbc_sqlstate3_init();
   }
 }
 
 
 /**
-  List of functions supported in the driver.
+List of functions supported in the driver.
 */
-SQLUSMALLINT myodbc3_functions[]=
+SQLUSMALLINT myodbc3_functions[] =
 {
-    SQL_API_SQLALLOCCONNECT,
-    SQL_API_SQLALLOCENV,
-    SQL_API_SQLALLOCHANDLE,
-    SQL_API_SQLALLOCSTMT,
-    SQL_API_SQLBINDCOL,
-    /* SQL_API_SQLBINDPARAM */
-    SQL_API_SQLCANCEL,
+  SQL_API_SQLALLOCCONNECT,
+  SQL_API_SQLALLOCENV,
+  SQL_API_SQLALLOCHANDLE,
+  SQL_API_SQLALLOCSTMT,
+  SQL_API_SQLBINDCOL,
+  /* SQL_API_SQLBINDPARAM */
+  SQL_API_SQLCANCEL,
 #ifndef USE_IODBC
-    SQL_API_SQLCANCELHANDLE,
+  SQL_API_SQLCANCELHANDLE,
 #endif
-    SQL_API_SQLCLOSECURSOR,
-    SQL_API_SQLCOLATTRIBUTE,
-    SQL_API_SQLCOLUMNS,
-    SQL_API_SQLCONNECT,
-    SQL_API_SQLCOPYDESC,
-    SQL_API_SQLDATASOURCES,
-    SQL_API_SQLDESCRIBECOL,
-    SQL_API_SQLDISCONNECT,
-    SQL_API_SQLENDTRAN,
-    SQL_API_SQLERROR,
-    SQL_API_SQLEXECDIRECT,
-    SQL_API_SQLEXECUTE,
-    SQL_API_SQLFETCH,
-    SQL_API_SQLFETCHSCROLL,
-    SQL_API_SQLFREECONNECT,
-    SQL_API_SQLFREEENV,
-    SQL_API_SQLFREEHANDLE,
-    SQL_API_SQLFREESTMT,
-    SQL_API_SQLGETCONNECTATTR,
-    SQL_API_SQLGETCONNECTOPTION,
-    SQL_API_SQLGETCURSORNAME,
-    SQL_API_SQLGETDATA,
-    SQL_API_SQLGETDESCFIELD,
-    SQL_API_SQLGETDESCREC,
-    SQL_API_SQLGETDIAGFIELD,
-    SQL_API_SQLGETDIAGREC,
-    SQL_API_SQLGETENVATTR,
-    SQL_API_SQLGETFUNCTIONS,
-    SQL_API_SQLGETINFO,
-    SQL_API_SQLGETSTMTATTR,
-    SQL_API_SQLGETSTMTOPTION,
-    SQL_API_SQLGETTYPEINFO,
-    SQL_API_SQLNUMRESULTCOLS,
-    SQL_API_SQLPARAMDATA,
-    SQL_API_SQLPREPARE,
-    SQL_API_SQLPUTDATA,
-    SQL_API_SQLROWCOUNT,
-    SQL_API_SQLSETCONNECTATTR,
-    SQL_API_SQLSETCONNECTOPTION,
-    SQL_API_SQLSETCURSORNAME,
-    SQL_API_SQLSETDESCFIELD,
-    SQL_API_SQLSETDESCREC,
-    SQL_API_SQLSETENVATTR,
-    SQL_API_SQLSETPARAM,
-    SQL_API_SQLSETSTMTATTR,
-    SQL_API_SQLSETSTMTOPTION,
-    SQL_API_SQLSPECIALCOLUMNS,
-    SQL_API_SQLSTATISTICS,
-    SQL_API_SQLTABLES,
-    SQL_API_SQLTRANSACT,
-    /* SQL_API_SQLALLOCHANDLESTD */
-    SQL_API_SQLBULKOPERATIONS,
-    SQL_API_SQLBINDPARAMETER,
-    SQL_API_SQLBROWSECONNECT,
-    SQL_API_SQLCOLATTRIBUTES,
-    SQL_API_SQLCOLUMNPRIVILEGES ,
-    SQL_API_SQLDESCRIBEPARAM,
-    SQL_API_SQLDRIVERCONNECT,
-    SQL_API_SQLDRIVERS,
-    SQL_API_SQLEXTENDEDFETCH,
-    SQL_API_SQLFOREIGNKEYS,
-    SQL_API_SQLMORERESULTS,
-    SQL_API_SQLNATIVESQL,
-    SQL_API_SQLNUMPARAMS,
-    SQL_API_SQLPARAMOPTIONS,
-    SQL_API_SQLPRIMARYKEYS,
-    SQL_API_SQLPROCEDURECOLUMNS,
-    SQL_API_SQLPROCEDURES,
-    SQL_API_SQLSETPOS,
-    SQL_API_SQLSETSCROLLOPTIONS,
-    SQL_API_SQLTABLEPRIVILEGES
+  SQL_API_SQLCLOSECURSOR,
+  SQL_API_SQLCOLATTRIBUTE,
+  SQL_API_SQLCOLUMNS,
+  SQL_API_SQLCONNECT,
+  SQL_API_SQLCOPYDESC,
+  SQL_API_SQLDATASOURCES,
+  SQL_API_SQLDESCRIBECOL,
+  SQL_API_SQLDISCONNECT,
+  SQL_API_SQLENDTRAN,
+  SQL_API_SQLERROR,
+  SQL_API_SQLEXECDIRECT,
+  SQL_API_SQLEXECUTE,
+  SQL_API_SQLFETCH,
+  SQL_API_SQLFETCHSCROLL,
+  SQL_API_SQLFREECONNECT,
+  SQL_API_SQLFREEENV,
+  SQL_API_SQLFREEHANDLE,
+  SQL_API_SQLFREESTMT,
+  SQL_API_SQLGETCONNECTATTR,
+  SQL_API_SQLGETCONNECTOPTION,
+  SQL_API_SQLGETCURSORNAME,
+  SQL_API_SQLGETDATA,
+  SQL_API_SQLGETDESCFIELD,
+  SQL_API_SQLGETDESCREC,
+  SQL_API_SQLGETDIAGFIELD,
+  SQL_API_SQLGETDIAGREC,
+  SQL_API_SQLGETENVATTR,
+  SQL_API_SQLGETFUNCTIONS,
+  SQL_API_SQLGETINFO,
+  SQL_API_SQLGETSTMTATTR,
+  SQL_API_SQLGETSTMTOPTION,
+  SQL_API_SQLGETTYPEINFO,
+  SQL_API_SQLNUMRESULTCOLS,
+  SQL_API_SQLPARAMDATA,
+  SQL_API_SQLPREPARE,
+  SQL_API_SQLPUTDATA,
+  SQL_API_SQLROWCOUNT,
+  SQL_API_SQLSETCONNECTATTR,
+  SQL_API_SQLSETCONNECTOPTION,
+  SQL_API_SQLSETCURSORNAME,
+  SQL_API_SQLSETDESCFIELD,
+  SQL_API_SQLSETDESCREC,
+  SQL_API_SQLSETENVATTR,
+  SQL_API_SQLSETPARAM,
+  SQL_API_SQLSETSTMTATTR,
+  SQL_API_SQLSETSTMTOPTION,
+  SQL_API_SQLSPECIALCOLUMNS,
+  SQL_API_SQLSTATISTICS,
+  SQL_API_SQLTABLES,
+  SQL_API_SQLTRANSACT,
+  /* SQL_API_SQLALLOCHANDLESTD */
+  SQL_API_SQLBULKOPERATIONS,
+  SQL_API_SQLBINDPARAMETER,
+  SQL_API_SQLBROWSECONNECT,
+  SQL_API_SQLCOLATTRIBUTES,
+  SQL_API_SQLCOLUMNPRIVILEGES ,
+  SQL_API_SQLDESCRIBEPARAM,
+  SQL_API_SQLDRIVERCONNECT,
+  SQL_API_SQLDRIVERS,
+  SQL_API_SQLEXTENDEDFETCH,
+  SQL_API_SQLFOREIGNKEYS,
+  SQL_API_SQLMORERESULTS,
+  SQL_API_SQLNATIVESQL,
+  SQL_API_SQLNUMPARAMS,
+  SQL_API_SQLPARAMOPTIONS,
+  SQL_API_SQLPRIMARYKEYS,
+  SQL_API_SQLPROCEDURECOLUMNS,
+  SQL_API_SQLPROCEDURES,
+  SQL_API_SQLSETPOS,
+  SQL_API_SQLSETSCROLLOPTIONS,
+  SQL_API_SQLTABLEPRIVILEGES
 };
 
 
 /**
-  Get information on which functions are supported by the driver.
+Get information on which functions are supported by the driver.
 
-  @param[in]  hdbc      Handle of database connection
-  @param[in]  fFunction Function to check, @c SQL_API_ODBC3_ALL_FUNCTIONS,
-                        or @c SQL_API_ALL_FUNCTIONS
-  @param[out] pfExists  Pointer to either one @c SQLUSMALLINT or an array
-                        of SQLUSMALLINT for returning results
+@param[in]  hdbc      Handle of database connection
+@param[in]  fFunction Function to check, @c SQL_API_ODBC3_ALL_FUNCTIONS,
+or @c SQL_API_ALL_FUNCTIONS
+@param[out] pfExists  Pointer to either one @c SQLUSMALLINT or an array
+of SQLUSMALLINT for returning results
 
-  @since ODBC 1.0
-  @since ISO SQL 92
+@since ODBC 1.0
+@since ISO SQL 92
 */
 SQLRETURN SQL_API SQLGetFunctions(SQLHDBC hdbc __attribute__((unused)),
                                   SQLUSMALLINT fFunction,
@@ -1250,17 +1254,17 @@ SQLRETURN SQL_API SQLGetFunctions(SQLHDBC hdbc __attribute__((unused)),
 {
   SQLUSMALLINT index, myodbc_func_size;
 
-  myodbc_func_size= sizeof(myodbc3_functions) / sizeof(myodbc3_functions[0]);
+  myodbc_func_size = sizeof(myodbc3_functions) / sizeof(myodbc3_functions[0]);
 
   if (fFunction == SQL_API_ODBC3_ALL_FUNCTIONS)
   {
     /* Clear and set bits in the 4000 bit vector */
     memset(pfExists, 0,
            sizeof(SQLUSMALLINT) * SQL_API_ODBC3_ALL_FUNCTIONS_SIZE);
-    for (index= 0; index < myodbc_func_size; ++index)
+    for (index = 0; index < myodbc_func_size; ++index)
     {
-      SQLUSMALLINT id= myodbc3_functions[index];
-      pfExists[id >> 4]|= (1 << (id & 0x000F));
+      SQLUSMALLINT id = myodbc3_functions[index];
+      pfExists[id >> 4] |= (1 << (id & 0x000F));
     }
     return SQL_SUCCESS;
   }
@@ -1269,20 +1273,20 @@ SQLRETURN SQL_API SQLGetFunctions(SQLHDBC hdbc __attribute__((unused)),
   {
     /* Clear and set elements in the SQLUSMALLINT 100 element array */
     memset(pfExists, 0, sizeof(SQLUSMALLINT) * 100);
-    for (index= 0; index < myodbc_func_size; ++index)
+    for (index = 0; index < myodbc_func_size; ++index)
     {
       if (myodbc3_functions[index] < 100)
-        pfExists[myodbc3_functions[index]]= SQL_TRUE;
+        pfExists[myodbc3_functions[index]] = SQL_TRUE;
     }
     return SQL_SUCCESS;
   }
 
-  *pfExists= SQL_FALSE;
-  for (index= 0; index < myodbc_func_size; ++index)
+  *pfExists = SQL_FALSE;
+  for (index = 0; index < myodbc_func_size; ++index)
   {
     if (myodbc3_functions[index] == fFunction)
     {
-      *pfExists= SQL_TRUE;
+      *pfExists = SQL_TRUE;
       break;
     }
   }

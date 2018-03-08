@@ -1,17 +1,30 @@
-/* Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
-
-   This program is free software; you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; version 2 of the License.
-
-   This program is distributed in the hope that it will be useful,
-   but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU General Public License for more details.
-
-   You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301  USA */
+// Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved. 
+// 
+// This program is free software; you can redistribute it and/or modify 
+// it under the terms of the GNU General Public License, version 2.0, as 
+// published by the Free Software Foundation. 
+// 
+// This program is also distributed with certain software (including 
+// but not limited to OpenSSL) that is licensed under separate terms, 
+// as designated in a particular file or component or in included license 
+// documentation. The authors of MySQL hereby grant you an 
+// additional permission to link the program and your derivative works 
+// with the separately licensed software that they have included with 
+// MySQL. 
+// 
+// Without limiting anything contained in the foregoing, this file, 
+// which is part of <MySQL Product>, is also subject to the 
+// Universal FOSS Exception, version 1.0, a copy of which can be found at 
+// http://oss.oracle.com/licenses/universal-foss-exception. 
+// 
+// This program is distributed in the hope that it will be useful, but 
+// WITHOUT ANY WARRANTY; without even the implied warranty of 
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+// See the GNU General Public License, version 2.0, for more details. 
+// 
+// You should have received a copy of the GNU General Public License 
+// along with this program; if not, write to the Free Software Foundation, Inc., 
+// 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA 
 
 #include <my_global.h>
 #include "m_string.h"
@@ -461,19 +474,19 @@ CHARSET_INFO my_charset_latin1=
  *
  * The modern sort order is used, where:
  *
- * 'ä'  ->  "ae"
- * 'ö'  ->  "oe"
- * 'ü'  ->  "ue"
- * 'ß'  ->  "ss"
+ * 'ï¿½'  ->  "ae"
+ * 'ï¿½'  ->  "oe"
+ * 'ï¿½'  ->  "ue"
+ * 'ï¿½'  ->  "ss"
  */
 
 
 /*
  * This is a simple latin1 mapping table, which maps all accented
  * characters to their non-accented equivalents.  Note: in this
- * table, 'ä' is mapped to 'A', 'ÿ' is mapped to 'Y', etc. - all
+ * table, 'ï¿½' is mapped to 'A', 'ï¿½' is mapped to 'Y', etc. - all
  * accented characters except the following are treated the same way.
- * Ü, ü, Ö, ö, Ä, ä
+ * ï¿½, ï¿½, ï¿½, ï¿½, ï¿½, ï¿½
  */
 
 static const uchar sort_order_latin1_de[] = {
@@ -539,7 +552,7 @@ static const uchar combo2map[]={
   my_strnxfrm_latin_de() on both strings and compared the result strings.
 
   This means that:
-  Ä must also matches ÁE and Aè, because my_strxn_frm_latin_de() will convert
+  ï¿½ must also matches ï¿½E and Aï¿½, because my_strxn_frm_latin_de() will convert
   both to AE.
 
   The other option would be to not do any accent removal in
@@ -694,7 +707,7 @@ void my_hash_sort_latin1_de(const CHARSET_INFO *cs MY_ATTRIBUTE((unused)),
 
   /*
     Remove end space. We have to do this to be able to compare
-    'AE' and 'Ä' as identical
+    'AE' and 'ï¿½' as identical
   */
   end= skip_trailing_space(key, len);
 
