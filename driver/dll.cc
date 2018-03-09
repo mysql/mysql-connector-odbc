@@ -37,6 +37,7 @@
 char *default_locale, *decimal_point, *thousands_sep;
 uint decimal_point_length,thousands_sep_length;
 static int myodbc_inited=0;
+static int mysys_inited=0;
 
 
 /*
@@ -78,7 +79,12 @@ void myodbc_init(void)
   if (myodbc_inited > 1)
     return;
     
-  my_sys_init();
+  if(!mysys_inited)
+  {
+    my_sys_init();
+    mysys_inited = 1;
+  }
+  
   {
     struct lconv *tmp;
     init_getfunctions();
@@ -122,14 +128,20 @@ void myodbc_end()
     my_thread_end_wait_time= 0;
 #endif
 
+/*
+  TODO: There is a bug in libmysqlclient, which does not allow initializing it
+        after mysys_end() is called. This call can be added later after the
+        proper fix in libmysqlclient.
+*/
+
 #ifdef MY_DONT_FREE_DBUG
     /*
        Function mysys_end() was changed to deallocate DBUG memory by default,
        a flag MY_DONT_FREE_DBUG was added to disable this new behaviour
     */
-    mysys_end(MY_DONT_FREE_DBUG);
+    //mysys_end(MY_DONT_FREE_DBUG);
 #else
-    mysys_end(0);
+    //mysys_end(0);
 #endif
   }
 }
