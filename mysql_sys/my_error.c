@@ -1,17 +1,30 @@
-/* Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
-
-   This program is free software; you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; version 2 of the License.
-
-   This program is distributed in the hope that it will be useful,
-   but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU General Public License for more details.
-
-   You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301  USA */
+// Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved. 
+// 
+// This program is free software; you can redistribute it and/or modify 
+// it under the terms of the GNU General Public License, version 2.0, as 
+// published by the Free Software Foundation. 
+// 
+// This program is also distributed with certain software (including 
+// but not limited to OpenSSL) that is licensed under separate terms, 
+// as designated in a particular file or component or in included license 
+// documentation. The authors of MySQL hereby grant you an 
+// additional permission to link the program and your derivative works 
+// with the separately licensed software that they have included with 
+// MySQL. 
+// 
+// Without limiting anything contained in the foregoing, this file, 
+// which is part of <MySQL Product>, is also subject to the 
+// Universal FOSS Exception, version 1.0, a copy of which can be found at 
+// http://oss.oracle.com/licenses/universal-foss-exception. 
+// 
+// This program is distributed in the hope that it will be useful, but 
+// WITHOUT ANY WARRANTY; without even the implied warranty of 
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+// See the GNU General Public License, version 2.0, for more details. 
+// 
+// You should have received a copy of the GNU General Public License 
+// along with this program; if not, write to the Free Software Foundation, Inc., 
+// 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA 
 
 #include "mysys_priv.h"
 #include "my_sys.h"
@@ -31,11 +44,11 @@
 /*
   WARNING!
   my_error family functions have to be used according following rules:
-  - if message has no parameters, use my_message(ER_CODE, ER(ER_CODE), MYF(N))
-  - if message has parameters and is registered: my_error(ER_CODE, MYF(N), ...)
-  - for free-form messages use my_printf_error(ER_CODE, format, MYF(N), ...)
+  - if message has no parameters, use mysys_message(ER_CODE, ER(ER_CODE), MYF(N))
+  - if message has parameters and is registered: mysys_error(ER_CODE, MYF(N), ...)
+  - for free-form messages use mysys_printf_error(ER_CODE, format, MYF(N), ...)
 
-  These three send their messages using error_handler_hook, which normally
+  These three send their messages using sys_error_handler_hook, which normally
   means we'll send them to the client if we have one, or to error-log / stderr
   otherwise.
 */
@@ -49,7 +62,7 @@
   (3.) the error number for the last message in the array
        (array index (last - first)).
   The function may return NULL pointers and pointers to empty strings.
-  Both kinds will be translated to "Unknown error %d.", if my_error()
+  Both kinds will be translated to "Unknown error %d.", if mysys_error()
   is called with a respective error number.
   The list of header structs is sorted in increasing order of error numbers.
   Negative error numbers are allowed. Overlap of error numbers is not allowed.
@@ -76,7 +89,7 @@ static struct my_err_head *my_errmsgs_list= &my_errmsgs_globerrs;
   @retval buf  always buf. for signature compatibility with strerror(3).
 */
 
-char *my_strerror(char *buf, size_t len, int nr)
+char *mysys_strerror(char *buf, size_t len, int nr)
 {
   char *msg= NULL;
 
@@ -111,7 +124,7 @@ char *my_strerror(char *buf, size_t len, int nr)
       {
         char tmp_buff[256] ;
 
-        my_snprintf(tmp_buff, sizeof(tmp_buff), 
+        my_snprintf(tmp_buff, sizeof(tmp_buff),
                     " [OS Error Code : 0x%x]", thr_winerr());
 
         strcat_s(buf, len, tmp_buff);
@@ -144,7 +157,7 @@ char *my_strerror(char *buf, size_t len, int nr)
 
 
 /**
-  @brief Get an error format string from one of the my_error_register()ed sets
+  @brief Get an error format string from one of the mysys_error_register()ed sets
 
   @note
     NULL values are possible even within a registered range.
@@ -155,7 +168,7 @@ char *my_strerror(char *buf, size_t len, int nr)
   @retval str   C-string
 */
 
-const char *my_get_err_msg(int nr)
+const char *mysys_get_err_msg(int nr)
 {
   const char *format;
   struct my_err_head *meh_p;
@@ -183,14 +196,14 @@ const char *my_get_err_msg(int nr)
   Fill in and print a previously registered error message.
 
   @note
-    Goes through the (sole) function registered in error_handler_hook
+    Goes through the (sole) function registered in sys_error_handler_hook
 
   @param nr        error number
   @param MyFlags   Flags
   @param ...       variable list matching that error format string
 */
 
-void my_error(int nr, myf MyFlags, ...)
+void mysys_error(int nr, myf MyFlags, ...)
 {
   const char *format;
   va_list args;
@@ -198,7 +211,7 @@ void my_error(int nr, myf MyFlags, ...)
   DBUG_ENTER("my_error");
   DBUG_PRINT("my", ("nr: %d  MyFlags: %d  errno: %d", nr, MyFlags, errno));
 
-  if (!(format = my_get_err_msg(nr)))
+  if (!(format = mysys_get_err_msg(nr)))
     (void) my_snprintf(ebuff, sizeof(ebuff), "Unknown error %d", nr);
   else
   {
@@ -207,7 +220,7 @@ void my_error(int nr, myf MyFlags, ...)
                            sizeof(ebuff), format, args);
     va_end(args);
   }
-  (*error_handler_hook)(nr, ebuff, MyFlags);
+  (*sys_error_handler_hook)(nr, ebuff, MyFlags);
   DBUG_VOID_RETURN;
 }
 
@@ -216,7 +229,7 @@ void my_error(int nr, myf MyFlags, ...)
   Print an error message.
 
   @note
-    Goes through the (sole) function registered in error_handler_hook
+    Goes through the (sole) function registered in sys_error_handler_hook
 
   @param error     error number
   @param format    format string
@@ -224,11 +237,11 @@ void my_error(int nr, myf MyFlags, ...)
   @param ...       variable list matching that error format string
 */
 
-void my_printf_error(uint error, const char *format, myf MyFlags, ...)
+void mysys_printf_error(uint error, const char *format, myf MyFlags, ...)
 {
   va_list args;
   char ebuff[ERRMSGSIZE];
-  DBUG_ENTER("my_printf_error");
+  DBUG_ENTER("mysys_printf_error");
   DBUG_PRINT("my", ("nr: %d  MyFlags: %d  errno: %d  Format: %s",
 		    error, MyFlags, errno, format));
 
@@ -236,7 +249,7 @@ void my_printf_error(uint error, const char *format, myf MyFlags, ...)
   (void) my_vsnprintf_ex(&my_charset_utf8_general_ci, ebuff,
                          sizeof(ebuff), format, args);
   va_end(args);
-  (*error_handler_hook)(error, ebuff, MyFlags);
+  (*sys_error_handler_hook)(error, ebuff, MyFlags);
   DBUG_VOID_RETURN;
 }
 
@@ -244,7 +257,7 @@ void my_printf_error(uint error, const char *format, myf MyFlags, ...)
   Print an error message.
 
   @note
-    Goes through the (sole) function registered in error_handler_hook
+    Goes through the (sole) function registered in sys_error_handler_hook
 
   @param error     error number
   @param format    format string
@@ -252,15 +265,15 @@ void my_printf_error(uint error, const char *format, myf MyFlags, ...)
   @param ap        variable list matching that error format string
 */
 
-void my_printv_error(uint error, const char *format, myf MyFlags, va_list ap)
+void mysys_printv_error(uint error, const char *format, myf MyFlags, va_list ap)
 {
   char ebuff[ERRMSGSIZE];
-  DBUG_ENTER("my_printv_error");
+  DBUG_ENTER("mysys_printv_error");
   DBUG_PRINT("my", ("nr: %d  MyFlags: %d  errno: %d  format: %s",
 		    error, MyFlags, errno, format));
 
   (void) my_vsnprintf(ebuff, sizeof(ebuff), format, ap);
-  (*error_handler_hook)(error, ebuff, MyFlags);
+  (*sys_error_handler_hook)(error, ebuff, MyFlags);
   DBUG_VOID_RETURN;
 }
 
@@ -268,28 +281,28 @@ void my_printv_error(uint error, const char *format, myf MyFlags, va_list ap)
   Print an error message.
 
   @note
-    Goes through the (sole) function registered in error_handler_hook
+    Goes through the (sole) function registered in sys_error_handler_hook
 
   @param error     error number
   @param str       error message
   @param MyFlags   Flags
 */
 
-void my_message(uint error, const char *str, myf MyFlags)
+void mysys_message(uint error, const char *str, myf MyFlags)
 {
-  (*error_handler_hook)(error, str, MyFlags);
+  (*sys_error_handler_hook)(error, str, MyFlags);
 }
 
 
 /**
-  Register error messages for use with my_error().
+  Register error messages for use with mysys_error().
 
   @description
 
     The function is expected to return addresses to NUL-terminated
     C character strings.
     NULL pointers and empty strings ("") are allowed. These will be mapped to
-    "Unknown error" when my_error() is called with a matching error number.
+    "Unknown error" when mysys_error() is called with a matching error number.
     This function registers the error numbers 'first' to 'last'.
     No overlapping with previously registered error numbers is allowed.
 
@@ -301,7 +314,7 @@ void my_message(uint error, const char *str, myf MyFlags)
   @retval  != 0     Error
 */
 
-int my_error_register(const char* (*get_errmsg) (int), int first, int last)
+int mysys_error_register(const char* (*get_errmsg) (int), int first, int last)
 {
   struct my_err_head *meh_p;
   struct my_err_head **search_meh_pp;
@@ -344,7 +357,7 @@ int my_error_register(const char* (*get_errmsg) (int), int first, int last)
   @description
 
     This function unregisters the error numbers 'first' to 'last'.
-    These must have been previously registered by my_error_register().
+    These must have been previously registered by mysys_error_register().
     'first' and 'last' must exactly match the registration.
     If a matching registration is present, the header is removed from the
     list.
@@ -356,7 +369,7 @@ int my_error_register(const char* (*get_errmsg) (int), int first, int last)
   @retval  FALSE     OK
 */
 
-my_bool my_error_unregister(int first, int last)
+my_bool mysys_error_unregister(int first, int last)
 {
   struct my_err_head    *meh_p;
   struct my_err_head    **search_meh_pp;
@@ -390,7 +403,7 @@ my_bool my_error_unregister(int first, int last)
   @description
 
     This function unregisters all error numbers that previously have
-    been previously registered by my_error_register().
+    been previously registered by mysys_error_register().
     All headers are removed from the list; the messages themselves are
     not released here as they may be static.
 */
@@ -415,13 +428,13 @@ void my_error_unregister_all(void)
   Issue a message locally (i.e. on the same host the program is
   running on, don't transmit to a client).
 
-  This is the default value for local_message_hook, and therefore
-  the default printer for my_message_local(). mysys users should
-  not call this directly, but go through my_message_local() instead.
+  This is the default value for sys_local_message_hook, and therefore
+  the default printer for mysys_message_local(). mysys users should
+  not call this directly, but go through mysys_message_local() instead.
 
   This printer prepends an Error/Warning/Note label to the string,
-  then prints it to stderr using my_message_stderr().
-  Since my_message_stderr() appends a '\n', the format string
+  then prints it to stderr using mysys_message_stderr().
+  Since mysys_message_stderr() appends a '\n', the format string
   should not end in a newline.
 
   @param ll      log level: (ERROR|WARNING|INFORMATION)_LEVEL
@@ -429,20 +442,20 @@ void my_error_unregister_all(void)
   @param format  a format string a la printf. Should not end in '\n'
   @param args    parameters to go with that format string
 */
-void my_message_local_stderr(enum loglevel ll,
+void mysys_message_local_stderr(enum loglevel ll,
                              const char *format, va_list args)
 {
   char   buff[1024];
   size_t len;
 
-  DBUG_ENTER("my_message_local_stderr");
+  DBUG_ENTER("mysys_message_local_stderr");
 
   len= my_snprintf(buff, sizeof(buff), "[%s] ",
                    (ll == ERROR_LEVEL ? "ERROR" : ll == WARNING_LEVEL ?
                     "Warning" : "Note"));
   my_vsnprintf(buff + len, sizeof(buff) - len, format, args);
 
-  my_message_stderr(0, buff, MYF(0));
+  mysys_message_stderr(0, buff, MYF(0));
 
   DBUG_VOID_RETURN;
 }
@@ -451,8 +464,8 @@ void my_message_local_stderr(enum loglevel ll,
   Issue a message locally (i.e. on the same host the program is
   running on, don't transmit to a client).
 
-  This goes through local_message_hook, i.e. by default, it calls
-  my_message_local_stderr() which prepends an Error/Warning/Note
+  This goes through sys_local_message_hook, i.e. by default, it calls
+  mysys_message_local_stderr() which prepends an Error/Warning/Note
   label to the string, then prints it to stderr.  More advanced
   programs can use their own printers; mysqld for instance uses
   its own error log facilities which prepend an ISO 8601 / RFC 3339
@@ -464,13 +477,13 @@ void my_message_local_stderr(enum loglevel ll,
   @param ...     parameters to go with that format string
 */
 
-void my_message_local(enum loglevel ll, const char *format, ...)
+void mysys_message_local(enum loglevel ll, const char *format, ...)
 {
   va_list args;
   DBUG_ENTER("local_print_error");
 
   va_start(args, format);
-  (*local_message_hook)(ll, format, args);
+  (*sys_local_message_hook)(ll, format, args);
   va_end(args);
 
   DBUG_VOID_RETURN;

@@ -1,26 +1,30 @@
-/*
-  Copyright (c) 2007, 2014, Oracle and/or its affiliates. All rights reserved.
-
-  The MySQL Connector/ODBC is licensed under the terms of the GPLv2
-  <http://www.gnu.org/licenses/old-licenses/gpl-2.0.html>, like most
-  MySQL Connectors. There are special exceptions to the terms and
-  conditions of the GPLv2 as it is applied to this software, see the
-  FLOSS License Exception
-  <http://www.mysql.com/about/legal/licensing/foss-exception.html>.
-  
-  This program is free software; you can redistribute it and/or modify
-  it under the terms of the GNU General Public License as published
-  by the Free Software Foundation; version 2 of the License.
-  
-  This program is distributed in the hope that it will be useful, but
-  WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-  or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
-  for more details.
-  
-  You should have received a copy of the GNU General Public License along
-  with this program; if not, write to the Free Software Foundation, Inc.,
-  51 Franklin St, Fifth Floor, Boston, MA 02110-1301  USA
-*/
+// Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved. 
+// 
+// This program is free software; you can redistribute it and/or modify 
+// it under the terms of the GNU General Public License, version 2.0, as 
+// published by the Free Software Foundation. 
+// 
+// This program is also distributed with certain software (including 
+// but not limited to OpenSSL) that is licensed under separate terms, 
+// as designated in a particular file or component or in included license 
+// documentation. The authors of MySQL hereby grant you an 
+// additional permission to link the program and your derivative works 
+// with the separately licensed software that they have included with 
+// MySQL. 
+// 
+// Without limiting anything contained in the foregoing, this file, 
+// which is part of <MySQL Product>, is also subject to the 
+// Universal FOSS Exception, version 1.0, a copy of which can be found at 
+// http://oss.oracle.com/licenses/universal-foss-exception. 
+// 
+// This program is distributed in the hope that it will be useful, but 
+// WITHOUT ANY WARRANTY; without even the implied warranty of 
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+// See the GNU General Public License, version 2.0, for more details. 
+// 
+// You should have received a copy of the GNU General Public License 
+// along with this program; if not, write to the Free Software Foundation, Inc., 
+// 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA 
 
 
 #include <time.h>
@@ -83,11 +87,11 @@ DECLARE_TEST(my_ts)
   ok_stmt(hstmt, SQLFetchScroll(hstmt, SQL_FETCH_ABSOLUTE, 1));
 
   ok_stmt(hstmt, SQLGetData(hstmt, 1, SQL_C_CHAR, szTs, sizeof(szTs), &len));
-  
-  is_str(szTs, is_fraction_capable ? "2002-01-07 10:20:49.060000" : 
+
+  is_str(szTs, is_fraction_capable ? "2002-01-07 10:20:49.060000" :
                                      "2002-01-07 10:20:49", len);
 
-  printf("# row1 using SQL_C_CHAR: %s (%ld)\n", szTs, len);
+  printf("# row1 using SQL_C_CHAR: %s (%ld)\n", szTs, (long)len);
 
   ok_stmt(hstmt, SQLFetchScroll(hstmt, SQL_FETCH_ABSOLUTE, 1));
 
@@ -102,14 +106,14 @@ DECLARE_TEST(my_ts)
 
   printf("# row1 using SQL_C_TIMESTAMP: %d-%d-%d %d:%d:%d.%d (%ld)\n",
          ts.year, ts.month,ts.day, ts.hour, ts.minute, ts.second, ts.fraction,
-         len);
+         (long)len);
 
   ok_stmt(hstmt, SQLFetchScroll(hstmt, SQL_FETCH_ABSOLUTE, 2));
 
   ok_stmt(hstmt, SQLGetData(hstmt, 1, SQL_C_CHAR, szTs, sizeof(szTs), &len));
   is_str(szTs, is_fraction_capable ? "2002-01-07 19:47:59.123456" :
                                       "2002-01-07 19:47:59", len);
-  printf("# row2 using SQL_C_CHAR: %s(%ld)\n", szTs, len);
+  printf("# row2 using SQL_C_CHAR: %s(%ld)\n", szTs, (long)len);
 
   ok_stmt(hstmt, SQLFetchScroll(hstmt, SQL_FETCH_ABSOLUTE, 2));
 
@@ -124,7 +128,7 @@ DECLARE_TEST(my_ts)
 
   printf("# row2 using SQL_C_TIMESTAMP: %d-%d-%d %d:%d:%d.%d (%ld)\n",
          ts.year, ts.month,ts.day, ts.hour, ts.minute, ts.second, ts.fraction,
-         len);
+         (long)len);
 
 
   expect_stmt(hstmt, SQLFetchScroll(hstmt, SQL_FETCH_ABSOLUTE, 3),
@@ -136,7 +140,7 @@ DECLARE_TEST(my_ts)
   ok_sql(hstmt, "DROP TABLE IF EXISTS my_ts");
 
   /* Test of 2-digits year(YYMMDD) format */
-  ok_sql(hstmt, "select \"910825\""); 
+  ok_sql(hstmt, "select \"910825\"");
   ok_stmt(hstmt, SQLFetch(hstmt));
   ok_stmt(hstmt, SQLGetData(hstmt, 1, SQL_C_TIMESTAMP, &ts, sizeof(ts), &len));
 
@@ -159,13 +163,13 @@ DECLARE_TEST(t_tstotime)
   ts.hour   = 18;
   ts.minute = 20;
   ts.second = 45;
-  ts.fraction = is_fraction_capable ? 555000 : 0;   
+  ts.fraction = is_fraction_capable ? 555000 : 0;
 
   memcpy(&ts1, (void*) &ts, sizeof(SQL_TIMESTAMP_STRUCT));
 
   memcpy(&ts2, (void*) &ts1, sizeof(SQL_TIMESTAMP_STRUCT));
 
-  /* 
+  /*
     SQL_TIME cannot have the fractional part
     http://msdn.microsoft.com/en-us/library/ms709385%28v=vs.85%29.aspx
   */
@@ -1039,7 +1043,7 @@ DECLARE_TEST(t_bug60646)
         " ,'1000-01-01 12:00:00.000000001'"                         /*4*/
         " ,time('2011-12-31 23:59:59.999999')"                      /*5*/
         " ,ADDTIME('9999-12-31 23:59:59.999999', '1 1:1:1.000002')" /*6*/
-        ); 
+        );
   ok_stmt(hstmt, SQLFetch(hstmt));
 
   /* Fields 1-4 checking conversions from date as a string
@@ -1318,15 +1322,15 @@ DECLARE_TEST(t_17613161_bookmark)
   expect_stmt(hstmt, SQLFetchScroll(hstmt, SQL_FETCH_NEXT, 0),
               SQL_NO_DATA_FOUND);
 
-  ok_stmt(hstmt, SQLBindCol(hstmt, 0, SQL_C_VARBOOKMARK, bData, 
+  ok_stmt(hstmt, SQLBindCol(hstmt, 0, SQL_C_VARBOOKMARK, bData,
                             sizeof(bData[0]), NULL));
-  ok_stmt(hstmt, SQLBindCol(hstmt, 1, SQL_C_TYPE_TIME, tm, 
+  ok_stmt(hstmt, SQLBindCol(hstmt, 1, SQL_C_TYPE_TIME, tm,
                             sizeof(tm[0]), NULL));
 
   expect_stmt(hstmt, SQLBulkOperations(hstmt, SQL_ADD), SQL_ERROR);
   is_num(check_sqlstate(hstmt, "22008"), OK);
 
-  ok_stmt(hstmt, SQLBindCol(hstmt, 1, SQL_C_INTERVAL_HOUR_TO_SECOND, h2s, 
+  ok_stmt(hstmt, SQLBindCol(hstmt, 1, SQL_C_INTERVAL_HOUR_TO_SECOND, h2s,
                             sizeof(h2s[0]), NULL));
   ok_stmt(hstmt, SQLBulkOperations(hstmt, SQL_ADD));
 
@@ -1340,7 +1344,7 @@ DECLARE_TEST(t_17613161_bookmark)
   is_num(myrowcount(hstmt), 2);
 
   ok_stmt(hstmt, SQLFetchScroll(hstmt, SQL_FETCH_BOOKMARK, 0));
- 
+
   is_num(atol(bData[0]), 1);
   is_num(tm[0].hour, 11);
   is_num(tm[0].minute, 02);

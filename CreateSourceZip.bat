@@ -1,27 +1,32 @@
 @ECHO OFF
 
-REM  Copyright (c) 2006, 2011, Oracle and/or its affiliates. All rights reserved.
+REM Copyright (c) 2006, 2018, Oracle and/or its affiliates. All rights reserved. 
+REM 
+REM This program is free software; you can redistribute it and/or modify 
+REM it under the terms of the GNU General Public License, version 2.0, as 
+REM published by the Free Software Foundation. 
 REM
-REM  The MySQL Connector/ODBC is licensed under the terms of the GPLv2
-REM  <http://www.gnu.org/licenses/old-licenses/gpl-2.0.html>, like most
-REM  MySQL Connectors. There are special exceptions to the terms and
-REM  conditions of the GPLv2 as it is applied to this software, see the
-REM  FLOSS License Exception
-REM  <http://www.mysql.com/about/legal/licensing/foss-exception.html>.
-REM
-REM  This program is free software; you can redistribute it and/or modify
-REM  it under the terms of the GNU General Public License as published
-REM  by the Free Software Foundation; version 2 of the License.
-REM
-REM  This program is distributed in the hope that it will be useful, but
-REM  WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-REM  or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
-REM  for more details.
-REM
-REM  You should have received a copy of the GNU General Public License along
-REM  with this program; if not, write to the Free Software Foundation, Inc.,
-REM  51 Franklin St, Fifth Floor, Boston, MA 02110-1301  USA
-REM
+REM This program is also distributed with certain software (including 
+REM but not limited to OpenSSL) that is licensed under separate terms, 
+REM as designated in a particular file or component or in included license 
+REM documentation. The authors of MySQL hereby grant you an 
+REM additional permission to link the program and your derivative works 
+REM with the separately licensed software that they have included with 
+REM MySQL. 
+REM 
+REM Without limiting anything contained in the foregoing, this file, 
+REM which is part of MySQL Server, is also subject to the 
+REM Universal FOSS Exception, version 1.0, a copy of which can be found at 
+REM http://oss.oracle.com/licenses/universal-foss-exception. 
+REM 
+REM This program is distributed in the hope that it will be useful, but 
+REM WITHOUT ANY WARRANTY; without even the implied warranty of 
+REM MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+REM See the GNU General Public License, version 2.0, for more details. 
+REM 
+REM You should have received a copy of the GNU General Public License 
+REM along with this program; if not, write to the Free Software Foundation, Inc., 
+REM 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA 
 
 REM #########################################################
 REM 
@@ -57,7 +62,6 @@ REM xcopy /E /Y * mysql-connector-odbc-%1-win-src
 REM root
 mkdir mysql-connector-odbc-%1-win-src 
 copy ChangeLog mysql-connector-odbc-%1-win-src\ChangeLog.rtf
-copy COPYING mysql-connector-odbc-%1-win-src\COPYING.rtf
 copy Build.bat mysql-connector-odbc-%1-win-src
 copy Install.bat mysql-connector-odbc-%1-win-src
 copy Uninstall.bat mysql-connector-odbc-%1-win-src
@@ -68,12 +72,8 @@ copy defines.pri mysql-connector-odbc-%1-win-src
 copy mysql.pri mysql-connector-odbc-%1-win-src
 copy odbc.pri mysql-connector-odbc-%1-win-src
 copy root.pro mysql-connector-odbc-%1-win-src
-copy README mysql-connector-odbc-%1-win-src\README.rtf
-copy BUILD mysql-connector-odbc-%1-win-src\BUILD.rtf
-copy BUILD.win mysql-connector-odbc-%1-win-src\BUILD-win.rtf
-copy INSTALL mysql-connector-odbc-%1-win-src\INSTALL.rtf
-copy INSTALL.win mysql-connector-odbc-%1-win-src\INSTALL-win.rtf
-copy Licenses_for_Third-Party_Components.txt mysql-connector-odbc-%1-win-src
+copy README.txt mysql-connector-odbc-%1-win-src\README.rtf
+copy LICENSE.txt mysql-connector-odbc-%1-win-src
 copy resource.h mysql-connector-odbc-%1-win-src
 copy VersionInfo.h mysql-connector-odbc-%1-win-src
 copy mysql.bmp mysql-connector-odbc-%1-win-src

@@ -1,17 +1,30 @@
-/* Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
-
-   This program is free software; you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; version 2 of the License.
-
-   This program is distributed in the hope that it will be useful,
-   but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU General Public License for more details.
-
-   You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301  USA */
+// Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved. 
+// 
+// This program is free software; you can redistribute it and/or modify 
+// it under the terms of the GNU General Public License, version 2.0, as 
+// published by the Free Software Foundation. 
+// 
+// This program is also distributed with certain software (including 
+// but not limited to OpenSSL) that is licensed under separate terms, 
+// as designated in a particular file or component or in included license 
+// documentation. The authors of MySQL hereby grant you an 
+// additional permission to link the program and your derivative works 
+// with the separately licensed software that they have included with 
+// MySQL. 
+// 
+// Without limiting anything contained in the foregoing, this file, 
+// which is part of <MySQL Product>, is also subject to the 
+// Universal FOSS Exception, version 1.0, a copy of which can be found at 
+// http://oss.oracle.com/licenses/universal-foss-exception. 
+// 
+// This program is distributed in the hope that it will be useful, but 
+// WITHOUT ANY WARRANTY; without even the implied warranty of 
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+// See the GNU General Public License, version 2.0, for more details. 
+// 
+// You should have received a copy of the GNU General Public License 
+// along with this program; if not, write to the Free Software Foundation, Inc., 
+// 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA 
 
 /* Not MT-SAFE */
 
@@ -31,7 +44,7 @@
       MyFlags
 
   NOTES
-    No DBUG_ENTER... here to get smaller dbug-startup 
+    No DBUG_ENTER... here to get smaller dbug-startup
 */
 
 void* my_once_alloc(size_t Size, myf MyFlags)
@@ -42,9 +55,9 @@ void* my_once_alloc(size_t Size, myf MyFlags)
   USED_MEM **prev;
 
   Size= ALIGN_SIZE(Size);
-  prev= &my_once_root_block;
+  prev= &mysys_once_root_block;
   max_left=0;
-  for (next=my_once_root_block ; next && next->left < Size ; next= next->next)
+  for (next=mysys_once_root_block ; next && next->left < Size ; next= next->next)
   {
     if (next->left > max_left)
       max_left=next->left;
@@ -53,14 +66,14 @@ void* my_once_alloc(size_t Size, myf MyFlags)
   if (! next)
   {						/* Time to alloc new block */
     get_size= Size+ALIGN_SIZE(sizeof(USED_MEM));
-    if (max_left*4 < my_once_extra && get_size < my_once_extra)
-      get_size=my_once_extra;			/* Normal alloc */
+    if (max_left*4 < mysys_once_extra && get_size < mysys_once_extra)
+      get_size=mysys_once_extra;			/* Normal alloc */
 
     if ((next = (USED_MEM*) malloc(get_size)) == 0)
     {
       set_my_errno(errno);
       if (MyFlags & (MY_FAE+MY_WME))
-	my_error(EE_OUTOFMEMORY, MYF(ME_FATALERROR), get_size);
+	mysys_error(EE_OUTOFMEMORY, MYF(ME_FATALERROR), get_size);
       return((uchar*) 0);
     }
     DBUG_PRINT("test",("my_once_malloc %lu byte malloced", (ulong) get_size));
@@ -109,12 +122,12 @@ void my_once_free(void)
   USED_MEM *next,*old;
   DBUG_ENTER("my_once_free");
 
-  for (next=my_once_root_block ; next ; )
+  for (next=mysys_once_root_block ; next ; )
   {
     old=next; next= next->next ;
     free((uchar*) old);
   }
-  my_once_root_block=0;
+  mysys_once_root_block=0;
 
   DBUG_VOID_RETURN;
 } /* my_once_free */

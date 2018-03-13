@@ -1,26 +1,30 @@
-/*
-  Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
-
-  The MySQL Connector/ODBC is licensed under the terms of the GPLv2
-  <http://www.gnu.org/licenses/old-licenses/gpl-2.0.html>, like most
-  MySQL Connectors. There are special exceptions to the terms and
-  conditions of the GPLv2 as it is applied to this software, see the
-  FLOSS License Exception
-  <http://www.mysql.com/about/legal/licensing/foss-exception.html>.
-  
-  This program is free software; you can redistribute it and/or modify
-  it under the terms of the GNU General Public License as published
-  by the Free Software Foundation; version 2 of the License.
-  
-  This program is distributed in the hope that it will be useful, but
-  WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-  or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
-  for more details.
-  
-  You should have received a copy of the GNU General Public License along
-  with this program; if not, write to the Free Software Foundation, Inc.,
-  51 Franklin St, Fifth Floor, Boston, MA 02110-1301  USA
-*/
+// Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved. 
+// 
+// This program is free software; you can redistribute it and/or modify 
+// it under the terms of the GNU General Public License, version 2.0, as 
+// published by the Free Software Foundation. 
+// 
+// This program is also distributed with certain software (including 
+// but not limited to OpenSSL) that is licensed under separate terms, 
+// as designated in a particular file or component or in included license 
+// documentation. The authors of MySQL hereby grant you an 
+// additional permission to link the program and your derivative works 
+// with the separately licensed software that they have included with 
+// MySQL. 
+// 
+// Without limiting anything contained in the foregoing, this file, 
+// which is part of <MySQL Product>, is also subject to the 
+// Universal FOSS Exception, version 1.0, a copy of which can be found at 
+// http://oss.oracle.com/licenses/universal-foss-exception. 
+// 
+// This program is distributed in the hope that it will be useful, but 
+// WITHOUT ANY WARRANTY; without even the implied warranty of 
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+// See the GNU General Public License, version 2.0, for more details. 
+// 
+// You should have received a copy of the GNU General Public License 
+// along with this program; if not, write to the Free Software Foundation, Inc., 
+// 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA 
 
 /**
   @file odbctap.h
@@ -74,12 +78,9 @@
 /* Get routines for helping with Unicode conversion. */
 #define ODBCTAP
 
-typedef unsigned int UTF32;
-typedef unsigned short UTF16;
-typedef unsigned char UTF8;
-
-#include "../util/unicode_transcode.c"
 #include "mysql_version.h"
+#include "../util/unicode_transcode.h"
+
 
 void printMessage(const char *fmt, ...)
 {
@@ -121,7 +122,7 @@ const char * wstr4output(const wchar_t *wstr)
       break;
     }
   }
-  
+
   return str;
 }
 
@@ -219,7 +220,8 @@ void test_timeout(int signum);
 HANDLE halarm= NULL;
 DWORD WINAPI win32_alarm(LPVOID arg)
 {
-  DWORD timeout= ((DWORD) arg) * 1000;
+  unsigned long long llarg = (unsigned long long)arg;
+  DWORD timeout= ((DWORD) llarg) * 1000;
   while (WaitForSingleObject(halarm, timeout) == WAIT_OBJECT_0);
   test_timeout(0);
   return 0;
@@ -248,8 +250,8 @@ void mem_debug_init()
 #endif
 }
 
-/* 
-  Initialize garbage collector 
+/*
+  Initialize garbage collector
   counter (or position)
 */
 void mem_gc_init()
@@ -669,10 +671,10 @@ static void print_diag(SQLRETURN rc, SQLSMALLINT htype, SQLHANDLE handle,
 
 
 /**
-  Print error and diagnostic information for ODBC INSTALLER API functions 
+  Print error and diagnostic information for ODBC INSTALLER API functions
   that did not return TRUE (1)
 */
-static void print_diag_installer(BOOL is_success, const char *text, 
+static void print_diag_installer(BOOL is_success, const char *text,
                                  const char *file, int line)
 {
   if (!is_success)
@@ -869,7 +871,7 @@ int my_print_non_format_result(SQLHSTMT hstmt)
     SQLLEN      ind_strlen;
 
     rc = SQLNumResultCols(hstmt,&ncol);
-    
+
     mystmt_rows(hstmt,rc,-1);
 
     for (nIndex = 1; nIndex <= ncol; ++nIndex)
@@ -1052,7 +1054,7 @@ const char *my_fetch_str(SQLHSTMT hstmt, SQLCHAR *szData,SQLUSMALLINT icol)
        better/(in more easy way) test the value */
     if (nLen < 0)
     {
-      strcpy(szData, "(Null)"); 
+      strcpy(szData, "(Null)");
     }
     printMessage(" my_fetch_str: %s(%ld)", szData, nLen);
     return((const char *)szData);
@@ -1185,12 +1187,12 @@ int mydrvconnect(SQLHENV *henv, SQLHDBC *hdbc, SQLHSTMT *hstmt, SQLCHAR *connIn)
 }
 
 
-/* Helper function for tests to get (additional) connection 
+/* Helper function for tests to get (additional) connection
    If dsn, uid, pwd or options is null - they defualt to mydsn, myuid, mypwd
    and my_str_options, respectively.
    myoption, mysock and myport values are used. */
 int get_connection(SQLHDBC *hdbc, const SQLCHAR *dsn, const SQLCHAR *uid,
-                   const SQLCHAR *pwd, const SQLCHAR *db, 
+                   const SQLCHAR *pwd, const SQLCHAR *db,
                    const SQLCHAR *options)
 {
   /* Buffers have to be large enough to contain SSL options and long names */
@@ -1275,7 +1277,7 @@ int get_connection(SQLHDBC *hdbc, const SQLCHAR *dsn, const SQLCHAR *uid,
   {
     /* re-build and print the connection string with hidden password */
     printf("# Connection failed with the following Connection string: " \
-           "\n%s;UID=%s;PWD=*******%s%s%s;%s\n", 
+           "\n%s;UID=%s;PWD=*******%s%s%s;%s\n",
            dsn_buf, uid, socket_buf, db_buf, port_buf, options);
     return rc;
   }
@@ -1304,9 +1306,9 @@ int get_connection(SQLHDBC *hdbc, const SQLCHAR *dsn, const SQLCHAR *uid,
 }
 
 
-int alloc_basic_handles_with_opt(SQLHENV *henv, SQLHDBC *hdbc, 
-                                 SQLHSTMT *hstmt,  const SQLCHAR *dsn, 
-                                 const SQLCHAR *uid, const SQLCHAR *pwd, 
+int alloc_basic_handles_with_opt(SQLHENV *henv, SQLHDBC *hdbc,
+                                 SQLHSTMT *hstmt,  const SQLCHAR *dsn,
+                                 const SQLCHAR *uid, const SQLCHAR *pwd,
                                  const SQLCHAR *db, const SQLCHAR *options)
 {
   if (myenable_pooling)
@@ -1343,9 +1345,9 @@ int alloc_basic_handles_with_opt(SQLHENV *henv, SQLHDBC *hdbc,
 
 int alloc_basic_handles(SQLHENV *henv, SQLHDBC *hdbc, SQLHSTMT *hstmt)
 {
-  return alloc_basic_handles_with_opt(henv, hdbc, hstmt, (SQLCHAR *)mydsn, 
+  return alloc_basic_handles_with_opt(henv, hdbc, hstmt, (SQLCHAR *)mydsn,
                                       (SQLCHAR *)myuid, (SQLCHAR *)mypwd,
-                                      (SQLCHAR *)mydb, 
+                                      (SQLCHAR *)mydb,
                                       (SQLCHAR *)my_str_options);
 }
 
@@ -1375,9 +1377,9 @@ int free_basic_handles(SQLHENV *henv,SQLHDBC *hdbc, SQLHSTMT *hstmt)
 }
 
 
-/* 
-  Allocate size bytes and return a pointer 
-  to allocated memory with storing in 
+/*
+  Allocate size bytes and return a pointer
+  to allocated memory with storing in
   garbage collector
 */
 void *gc_alloc(size_t len)
@@ -1385,8 +1387,8 @@ void *gc_alloc(size_t len)
   if (gc_blk.counter >= MAX_MEM_BLOCK_ELEMENTS || len <= 0)
   {
     printf("# GC Memory reached maximum limit counter: %d " \
-        "or length:%d less then equal to 0 in %s on line %d\n", 
-        gc_blk.counter, len, __FILE__, __LINE__); \
+        "or length:%d less then equal to 0 in %s on line %d\n",
+        gc_blk.counter, (int)len, __FILE__, __LINE__); \
     return NULL;
   }
 
@@ -1395,7 +1397,7 @@ void *gc_alloc(size_t len)
 }
 
 
-/* 
+/*
   Free allocated memory collected by
   garbage collector
 */

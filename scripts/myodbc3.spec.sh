@@ -1,17 +1,30 @@
-# Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved. 
+# 
+# This program is free software; you can redistribute it and/or modify 
+# it under the terms of the GNU General Public License, version 2.0, as 
+# published by the Free Software Foundation. 
 #
-# This program is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; version 2 of the License.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301  USA */
+# This program is also distributed with certain software (including 
+# but not limited to OpenSSL) that is licensed under separate terms, 
+# as designated in a particular file or component or in included license 
+# documentation. The authors of MySQL hereby grant you an 
+# additional permission to link the program and your derivative works 
+# with the separately licensed software that they have included with 
+# MySQL. 
+# 
+# Without limiting anything contained in the foregoing, this file, 
+# which is part of MySQL Connector/ODBC, is also subject to the 
+# Universal FOSS Exception, version 1.0, a copy of which can be found at 
+# http://oss.oracle.com/licenses/universal-foss-exception. 
+# 
+# This program is distributed in the hope that it will be useful, but 
+# WITHOUT ANY WARRANTY; without even the implied warranty of 
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+# See the GNU General Public License, version 2.0, for more details. 
+# 
+# You should have received a copy of the GNU General Public License 
+# along with this program; if not, write to the Free Software Foundation, Inc., 
+# 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA 
 
 
 ##############################################################################
@@ -24,11 +37,11 @@
 
 %if 0%{?commercial}
 %global license_type	Commercial
-%global license_files	LICENSE.mysql
+%global license_files	LICENSE.txt
 %global product_suffix	-commercial
 %else
 %global license_type	GPLv2
-%global license_files	COPYING
+%global license_files	LICENSE.txt
 %endif
 
 # Use rpmbuild -ba --define 'shared_mysqlclient 1' ... to build shared
@@ -159,7 +172,7 @@ rm -rf %{buildroot}
 %install
 pushd release
 make DESTDIR=%{buildroot} install VERBOSE=1
-rm -vf  %{buildroot}%{_prefix}/{ChangeLog,README*,LICENSE.*,COPYING,INSTALL*,Licenses_for_Third-Party_Components.txt}
+rm -vf  %{buildroot}%{_prefix}/{ChangeLog,README*,LICENSE*.*}
 mkdir -p %{buildroot}%{_libdir}/mysql-connector-odbc
 mv %{buildroot}%{_prefix}/test %{buildroot}%{_libdir}/mysql-connector-odbc/
 mv bin/dltest                  %{buildroot}%{_libdir}/mysql-connector-odbc/
@@ -173,16 +186,16 @@ popd
 
 %post 
 if [ -x /usr/bin/myodbc-installer ]; then
-    /usr/bin/myodbc-installer -a -d -n "MySQL ODBC @CONNECTOR_BASE_VERSION@ Unicode Driver" -t "DRIVER=%{_libdir}/libmyodbc5w.so"
-    /usr/bin/myodbc-installer -a -d -n "MySQL ODBC @CONNECTOR_BASE_VERSION@ ANSI Driver"    -t "DRIVER=%{_libdir}/libmyodbc5a.so"
+    /usr/bin/myodbc-installer -a -d -n "MySQL ODBC @CONNECTOR_BASE_VERSION@ Unicode Driver" -t "DRIVER=%{_libdir}/libmyodbc8w.so"
+    /usr/bin/myodbc-installer -a -d -n "MySQL ODBC @CONNECTOR_BASE_VERSION@ ANSI Driver"    -t "DRIVER=%{_libdir}/libmyodbc8a.so"
 fi
 
 %if 0%{?odbc_gui}
 %post setup
 /usr/bin/myodbc-installer -r -d -n "MySQL ODBC @CONNECTOR_BASE_VERSION@ Unicode Driver"
 /usr/bin/myodbc-installer -r -d -n "MySQL ODBC @CONNECTOR_BASE_VERSION@ ANSI Driver"
-/usr/bin/myodbc-installer -a -d -n "MySQL ODBC @CONNECTOR_BASE_VERSION@ Unicode Driver" -t "DRIVER=%{_libdir}/libmyodbc5w.so;SETUP=%{_libdir}/libmyodbc5S.so"
-/usr/bin/myodbc-installer -a -d -n "MySQL ODBC @CONNECTOR_BASE_VERSION@ ANSI Driver"    -t "DRIVER=%{_libdir}/libmyodbc5a.so;SETUP=%{_libdir}/libmyodbc5S.so"
+/usr/bin/myodbc-installer -a -d -n "MySQL ODBC @CONNECTOR_BASE_VERSION@ Unicode Driver" -t "DRIVER=%{_libdir}/libmyodbc8w.so;SETUP=%{_libdir}/libmyodbc8S.so"
+/usr/bin/myodbc-installer -a -d -n "MySQL ODBC @CONNECTOR_BASE_VERSION@ ANSI Driver"    -t "DRIVER=%{_libdir}/libmyodbc8a.so;SETUP=%{_libdir}/libmyodbc8S.so"
 %endif
 
 # ----------------------------------------------------------------------
@@ -201,8 +214,8 @@ if [ "$1" = 0 ]; then
     if [ -x %{_bindir}/myodbc-installer ]; then
         %{_bindir}/myodbc-installer -r -d -n "MySQL ODBC @CONNECTOR_BASE_VERSION@ Unicode Driver" > /dev/null 2>&1 || :
         %{_bindir}/myodbc-installer -r -d -n "MySQL ODBC @CONNECTOR_BASE_VERSION@ ANSI Driver"    > /dev/null 2>&1 || :
-        %{_bindir}/myodbc-installer -a -d -n "MySQL ODBC @CONNECTOR_BASE_VERSION@ Unicode Driver" -t "DRIVER=%{_libdir}/libmyodbc5w.so" > /dev/null 2>&1 || :
-        %{_bindir}/myodbc-installer -a -d -n "MySQL ODBC @CONNECTOR_BASE_VERSION@ ANSI Driver"    -t "DRIVER=%{_libdir}/libmyodbc5a.so" > /dev/null 2>&1 || :
+        %{_bindir}/myodbc-installer -a -d -n "MySQL ODBC @CONNECTOR_BASE_VERSION@ Unicode Driver" -t "DRIVER=%{_libdir}/libmyodbc8w.so" > /dev/null 2>&1 || :
+        %{_bindir}/myodbc-installer -a -d -n "MySQL ODBC @CONNECTOR_BASE_VERSION@ ANSI Driver"    -t "DRIVER=%{_libdir}/libmyodbc8a.so" > /dev/null 2>&1 || :
     fi
 fi
 %endif
@@ -216,15 +229,15 @@ fi
 %files
 %defattr(-, root, root, -)
 %{_bindir}/myodbc-installer
-%{_libdir}/libmyodbc5w.so
-%{_libdir}/libmyodbc5a.so
+%{_libdir}/libmyodbc8w.so
+%{_libdir}/libmyodbc8a.so
 %doc %{license_files}
-%doc ChangeLog README README.debug INSTALL Licenses_for_Third-Party_Components.txt
+%doc ChangeLog README.txt LICENSE.txt
 
 %if 0%{?odbc_gui}
 %files setup
 %defattr(-, root, root, -)
-%{_libdir}/libmyodbc5S.so
+%{_libdir}/libmyodbc8S.so
 %endif
 
 %files test

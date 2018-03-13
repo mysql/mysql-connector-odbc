@@ -1,40 +1,79 @@
-/*
-  Copyright (c) 2006, 2011, Oracle and/or its affiliates. All rights reserved.
-
-  The MySQL Connector/ODBC is licensed under the terms of the GPLv2
-  <http://www.gnu.org/licenses/old-licenses/gpl-2.0.html>, like most
-  MySQL Connectors. There are special exceptions to the terms and
-  conditions of the GPLv2 as it is applied to this software, see the
-  FLOSS License Exception
-  <http://www.mysql.com/about/legal/licensing/foss-exception.html>.
-
-  This program is free software; you can redistribute it and/or modify
-  it under the terms of the GNU General Public License as published
-  by the Free Software Foundation; version 2 of the License.
-
-  This program is distributed in the hope that it will be useful, but
-  WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-  or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
-  for more details.
-
-  You should have received a copy of the GNU General Public License along
-  with this program; if not, write to the Free Software Foundation, Inc.,
-  51 Franklin St, Fifth Floor, Boston, MA 02110-1301  USA
-*/
+// Copyright (c) 2009, 2016, Oracle and/or its affiliates. All rights reserved. 
+// 
+// This program is free software; you can redistribute it and/or modify 
+// it under the terms of the GNU General Public License, version 2.0, as 
+// published by the Free Software Foundation. 
+// 
+// This program is also distributed with certain software (including 
+// but not limited to OpenSSL) that is licensed under separate terms, 
+// as designated in a particular file or component or in included license 
+// documentation. The authors of MySQL hereby grant you an 
+// additional permission to link the program and your derivative works 
+// with the separately licensed software that they have included with 
+// MySQL. 
+// 
+// Without limiting anything contained in the foregoing, this file, 
+// which is part of MySQL Connector/ODBC, is also subject to the 
+// Universal FOSS Exception, version 1.0, a copy of which can be found at 
+// http://oss.oracle.com/licenses/universal-foss-exception. 
+// 
+// This program is distributed in the hope that it will be useful, but 
+// WITHOUT ANY WARRANTY; without even the implied warranty of 
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+// See the GNU General Public License, version 2.0, for more details. 
+// 
+// You should have received a copy of the GNU General Public License 
+// along with this program; if not, write to the Free Software Foundation, Inc., 
+// 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA 
 
 #ifndef MYODBC_MYSQL_H
 #define MYODBC_MYSQL_H
 
 #define DONT_DEFINE_VOID
 
-#if MYSQLCLIENT_STATIC_LINKING
+#if (MYSQLCLIENT_STATIC_LINKING)
+#if (MYSQL8)
+#define WIN32_LEAN_AND_MEAN
+#include <my_config.h>
+#include <my_sys.h>
+#include <mysql.h>
+#include <mysqld_error.h>
+#include <my_alloc.h>
+#include <mysql/service_mysql_alloc.h>
+#include <m_ctype.h>
+#include <my_io.h>
 
+#define my_bool bool
+#define mysys_end my_end
+
+#ifndef TRUE
+#define TRUE 1
+#endif
+
+#ifndef FALSE
+#define FALSE 0
+#endif
+
+#ifdef _WIN32
+typedef DWORD thread_local_key_t;
+typedef CRITICAL_SECTION native_mutex_t;
+typedef int native_mutexattr_t;
+
+#else
+typedef pthread_key_t thread_local_key_t;
+//typedef pthread_mutex_t native_mutex_t;
+//typedef pthread_mutexattr_t native_mutexattr_t;
+#endif
+
+
+#else // MYSQL8
 #include <my_global.h>
 #include <mysql.h>
 #include <my_sys.h>
 #include <my_list.h>
 #include <m_string.h>
 #include <mysqld_error.h>
+#endif // MYSQL8
 
 #else
 
@@ -43,6 +82,7 @@
 #include <mysql.h>
 #include "include/sys_main.h"
 #include <mysqld_error.h>
+#define myodbc_qsort my_qsort
 
 #endif
 
@@ -57,7 +97,6 @@ extern "C"
 #if MYSQL_VERSION_ID < MIN_MYSQL_VERSION
 # error "Connector/ODBC requires v4.1 (or later) of the MySQL client library"
 #endif
-
 
 #ifdef MYSQLCLIENT_STATIC_LINKING
 
@@ -87,9 +126,10 @@ extern "C"
 #define myodbc_mutex_trylock native_mutex_trylock
 #define myodbc_mutex_init native_mutex_init
 #define myodbc_mutex_destroy native_mutex_destroy
-#define sort_dynamic(A,cmp) my_qsort((A)->buffer, (A)->elements, (A)->size_of_element, (cmp))
+#define sort_dynamic(A,cmp) myodbc_qsort((A)->buffer, (A)->elements, (A)->size_of_element, (cmp))
 #define push_dynamic(A,B) insert_dynamic((A),(B))
-#define myodbc_snprintf my_snprintf
+
+#define myodbc_snprintf snprintf
 
   static my_bool inline myodbc_allocate_dynamic(DYNAMIC_ARRAY *array, uint max_elements)
   {
@@ -118,11 +158,11 @@ extern "C"
       if (!(new_ptr = (uchar*)myodbc_realloc(array->buffer, size*
         array->size_of_element,
         MYF(MY_WME | MY_ALLOW_ZERO_PTR))))
-        return TRUE;
+        return 1;
       array->buffer = new_ptr;
       array->max_element = size;
     }
-    return FALSE;
+    return 0;
   }
 
   static void inline delete_dynamic_element(DYNAMIC_ARRAY *array, uint idx)
