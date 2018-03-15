@@ -1,3 +1,13 @@
+8.0.11
+
+  Security Notes:
+  Functionality added or changed:
+  * Make sure ODBC works with new 8.0 auth. mechanism. (WL #11659)
+  * Prepare ODBC 8.0 Source tree. (WL #11099)
+  Bugs fixed:
+
+  Built using MySQL 8.0.11
+
 5.3.10
 
   Security Notes:
