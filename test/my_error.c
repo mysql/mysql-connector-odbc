@@ -824,9 +824,7 @@ BEGIN_TESTS
   ADD_TEST(t_odbc2_error)
 #endif
   ADD_TEST(t_odbc3_error)
-  /* Run twice to test the driver's handling of switching  */
 #ifndef USE_IODBC
-  ADD_TEST(t_odbc2_error)
   // ADD_TEST(t_odbc3_80) TODO: Fix
 #endif
 #endif

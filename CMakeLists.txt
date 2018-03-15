@@ -437,7 +437,7 @@ ENDIF()
 ##############################################################################
 
 # Some stuff for building RPMs, that is not using CPack
-# RPMs doesn't allow "-" in version, so we use like "5.3.0_alpha"
+# RPMs doesn't allow "-" in version, so we use like "x.x.0_alpha"
 STRING(REPLACE "-" "_" CONNECTOR_NODASH_VERSION "${CONNECTOR_VERSION}")
 IF(UNIX)
   EXECUTE_PROCESS(COMMAND "date" "+%Y" OUTPUT_VARIABLE CURRENT_YEAR OUTPUT_STRIP_TRAILING_WHITESPACE)

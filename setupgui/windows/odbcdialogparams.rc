@@ -70,7 +70,7 @@ BEGIN
         BEGIN
             VALUE "Comments", "provides setup library functionality\0"
             VALUE "CompanyName", "Oracle Corporation\0"
-            VALUE "FileDescription", "MySQL ODBC 5.3 Driver Setup Library\0"
+            VALUE "FileDescription", "MySQL ODBC 8.0 Driver Setup Library\0"
             VALUE "FileVersion", MYODBC_STRFILEVER
             VALUE "InternalName", "myodbc8S\0"
             VALUE "LegalCopyright", "Copyright (c) 1995, 2018, Oracle and/or its affiliates.\0"
