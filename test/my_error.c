@@ -111,8 +111,6 @@ DECLARE_TEST(t_odbc2_error)
 
   ok_sql(hstmt1, "DROP TABLE IF EXISTS t_error");
 
-  ok_con(hdbc1, SQLDisconnect(hdbc1));
-
   free_basic_handles(&henv1, &hdbc1, &hstmt1);
 
   return OK;
