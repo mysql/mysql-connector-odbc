@@ -217,4 +217,32 @@ IF(MYSQL8)
           PATTERN "plugin" EXCLUDE
           PATTERN ${_lib_to_find})
   ENDFOREACH()
+
+  IF(WIN32)
+  macro(INSTALL_VS_REDIST)
+    set(_runtime_libraries
+      msvcp140
+      ucrtbase
+      vcruntime140
+    )
+    foreach(_lib ${_runtime_libraries})
+      set(_lib_path "C:/Windows/System32/${_lib}.dll")
+      set(_lib_d_path "C:/Windows/System32/${_lib}d.dll")
+      foreach(_library_path ${_lib_path} ${_lib_d_path})
+        if(EXISTS "${_library_path}")
+          message(STATUS "Install \"${_library_path}\" to \"${LIB_SUBDIR}\"")
+          install(FILES "${_library_path}"
+                  DESTINATION "${LIB_SUBDIR}")
+        else()
+          message(FATAL_ERROR "\"${_library_path}\" not found")
+        endif()
+      endforeach()
+    endforeach()
+  endmacro()
+
+  if(EXTRA_NAME_SUFFIX STREQUAL "-commercial")
+    INSTALL_VS_REDIST()
+  endif()
+  ENDIF(WIN32)
+
 ENDIF(MYSQL8)

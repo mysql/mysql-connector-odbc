@@ -80,6 +80,21 @@
         IncludeMinimum="no" />
     </Upgrade>
 
+    <!-- Visual Studio Redistributable Check -->
+    <?if $(var.license) = "commercial"?>
+    <?else?>
+       <Property Id="VS14REDIST">
+          <RegistrySearch Id="FindRedistVS14"
+             Root="HKLM"
+             Key="SOFTWARE\Microsoft\DevDiv\vc\Servicing\14.0\RuntimeMinimum"
+             Name="Version"
+             Type="raw" />
+       </Property>
+       <Condition Message="This application requires Visual Studio 2015 Redistributable. Please install the Redistributable then run this installer again.">
+          Installed OR VS14REDIST
+       </Condition>
+    <?endif?>
+
     <!-- *****************************************************************************************
       CAB file
     -->
@@ -129,6 +144,9 @@
       <ComponentRef Id="setup" />
       <ComponentRef Id="installer" />
       <ComponentRef Id="ssl" />
+      <?if $(var.license) = "commercial"?>
+        <ComponentRef Id="vcruntime" />
+      <?endif ?>
     <?if $(var.odbc_64bit) = 1 ?>
     </Feature>
     <?else ?>

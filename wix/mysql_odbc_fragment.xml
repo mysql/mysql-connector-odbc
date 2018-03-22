@@ -89,6 +89,13 @@
               <File Id="libeay32.dll" Name="libeay32.dll" KeyPath="yes" DiskId="1" Source="x64\libeay32.dll" />
               <File Id="ssleay32.dll" Name="ssleay32.dll" DiskId="1" Source="x64\ssleay32.dll" />
             </Component>
+            <?if $(var.license) = "commercial"?>
+              <Component Id="vcruntime" Guid="3F25443E-B761-40DC-989D-9F050AB89A81" SharedDllRefCount="yes" Win64="yes">
+                <File Id="msvcp140.dll" Name="msvcp140.dll" KeyPath="yes" DiskId="1" Source="x64\msvcp140.dll" />
+                <File Id="ucrtbase.dll" Name="ucrtbase.dll" DiskId="1" Source="x64\ucrtbase.dll" />
+                <File Id="vcruntime140.dll" Name="vcruntime140.dll" DiskId="1" Source="x64\vcruntime140.dll" />
+              </Component>
+            <?endif ?>
           <?else ?>
             <Component Id="lib" Guid="FED572C6-4778-4C54-A713-8D67D4758043" SharedDllRefCount="yes">
               <File Id="myodbca.lib" Name="myodbc8a.lib" KeyPath="yes" DiskId="1" Source="x86\myodbc8a.lib" />

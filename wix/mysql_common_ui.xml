@@ -29,6 +29,7 @@
 -->
 
 <Include>
+
   <Property Id="InstallPath2" Value="dummy" />
   <UI>
     <DialogRef Id="LicenseAgreementDlg" />
