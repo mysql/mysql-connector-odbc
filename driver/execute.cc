@@ -445,6 +445,11 @@ static
 BOOL bind_param(MYSQL_BIND *bind, const char *value, unsigned long length,
                 enum enum_field_types buffer_type)
 {
+  if (bind->buffer == (void*)value)
+  {
+    return FALSE;
+  }
+  
   if (allocate_param_buffer(bind, length))
   {
     return TRUE;

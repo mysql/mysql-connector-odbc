@@ -420,7 +420,11 @@ SQLRETURN prepare(STMT *stmt, char * query, SQLINTEGER query_length)
 
       free_internal_result_buffers(stmt);
       /* make sure we free the result from the previous time */
-      mysql_free_result(stmt->result);
+      if (stmt->result)
+      {
+        mysql_free_result(stmt->result);
+        stmt->result = NULL;
+      }
 
       /* Getting result metadata */
       if ((stmt->result= mysql_stmt_result_metadata(stmt->ssps)))

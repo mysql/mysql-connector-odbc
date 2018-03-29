@@ -1,30 +1,30 @@
-// Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved. 
-// 
-// This program is free software; you can redistribute it and/or modify 
-// it under the terms of the GNU General Public License, version 2.0, as 
-// published by the Free Software Foundation. 
-// 
-// This program is also distributed with certain software (including 
-// but not limited to OpenSSL) that is licensed under separate terms, 
-// as designated in a particular file or component or in included license 
-// documentation. The authors of MySQL hereby grant you an 
-// additional permission to link the program and your derivative works 
-// with the separately licensed software that they have included with 
-// MySQL. 
-// 
-// Without limiting anything contained in the foregoing, this file, 
-// which is part of MySQL Connector/ODBC, is also subject to the 
-// Universal FOSS Exception, version 1.0, a copy of which can be found at 
-// http://oss.oracle.com/licenses/universal-foss-exception. 
-// 
-// This program is distributed in the hope that it will be useful, but 
-// WITHOUT ANY WARRANTY; without even the implied warranty of 
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-// See the GNU General Public License, version 2.0, for more details. 
-// 
-// You should have received a copy of the GNU General Public License 
-// along with this program; if not, write to the Free Software Foundation, Inc., 
-// 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA 
+// Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+//
+// This program is free software; you can redistribute it and/or modify
+// it under the terms of the GNU General Public License, version 2.0, as
+// published by the Free Software Foundation.
+//
+// This program is also distributed with certain software (including
+// but not limited to OpenSSL) that is licensed under separate terms,
+// as designated in a particular file or component or in included license
+// documentation. The authors of MySQL hereby grant you an
+// additional permission to link the program and your derivative works
+// with the separately licensed software that they have included with
+// MySQL.
+//
+// Without limiting anything contained in the foregoing, this file,
+// which is part of MySQL Connector/ODBC, is also subject to the
+// Universal FOSS Exception, version 1.0, a copy of which can be found at
+// http://oss.oracle.com/licenses/universal-foss-exception.
+//
+// This program is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+// See the GNU General Public License, version 2.0, for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program; if not, write to the Free Software Foundation, Inc.,
+// 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 
 /**
   @file   catalog_no_i_s.c
@@ -616,6 +616,7 @@ list_table_priv_no_i_s(SQLHSTMT hstmt,
     myodbc_mutex_unlock(&stmt->dbc->lock);
 
     /* Allocate max buffers, to avoid reallocation */
+    x_free(stmt->result_array);
     stmt->result_array= (char**) myodbc_malloc(sizeof(char*)* SQLTABLES_PRIV_FIELDS *
       (ulong)stmt->result->row_count *
       MY_MAX_TABPRIV_COUNT,
@@ -769,6 +770,7 @@ list_column_priv_no_i_s(SQLHSTMT hstmt,
   }
   myodbc_mutex_unlock(&stmt->dbc->lock);
 
+  x_free(stmt->result_array);
   stmt->result_array= (char **)myodbc_malloc(sizeof(char *) *
     SQLCOLUMNS_PRIV_FIELDS *
     (ulong) stmt->result->row_count *
@@ -1437,6 +1439,7 @@ SQLRETURN foreign_keys_no_i_s(SQLHSTMT hstmt,
   delete_dynamic(&records);
   mysql_free_result(local_res);
 
+  x_free(stmt->result_array);
   /* Copy only the elements that contain fk names */
   stmt->result_array= (MYSQL_ROW)myodbc_memdup((char *)tempdata,
                                            sizeof(char *) *
@@ -1464,7 +1467,10 @@ empty_set:
   mysql_free_result(local_res);
   free_internal_result_buffers(stmt);
   if (stmt->result)
+  {
     mysql_free_result(stmt->result);
+    stmt->result = NULL;
+  }
 
   return create_empty_fake_resultset(stmt, SQLFORE_KEYS_values,
                                      sizeof(SQLFORE_KEYS_values),
@@ -1481,7 +1487,10 @@ free_and_return:
 
   free_internal_result_buffers(stmt);
   if (stmt->result)
+  {
     mysql_free_result(stmt->result);
+    stmt->result = NULL;
+  }
 
   if (local_res)
     mysql_free_result(local_res);
@@ -1542,6 +1551,8 @@ primary_keys_no_i_s(SQLHSTMT hstmt,
       return rc;
     }
     myodbc_mutex_unlock(&stmt->dbc->lock);
+
+    x_free(stmt->result_array);
     stmt->result_array= (char**) myodbc_malloc(sizeof(char*)*SQLPRIM_KEYS_FIELDS*
                                             (ulong) stmt->result->row_count,
                                             MYF(MY_ZEROFILL));
@@ -2025,6 +2036,7 @@ procedure_columns_no_i_s(SQLHSTMT hstmt,
   }
 
   stmt->result= proc_list_res;
+  x_free(stmt->result_array);
   stmt->result_array= (MYSQL_ROW) myodbc_malloc(sizeof(char*) * SQLPROCEDURECOLUMNS_FIELDS *
                                             (return_params_num ? return_params_num : total_params_num),
                                             MYF(MY_ZEROFILL));
@@ -2160,6 +2172,7 @@ special_columns_no_i_s(SQLHSTMT hstmt, SQLUSMALLINT fColType,
 
     if ( fColType == SQL_ROWVER )
     {
+        x_free(stmt->result_array);
         /* Find possible timestamp */
         if ( !(stmt->result_array= (char**) myodbc_malloc(sizeof(char*)*SQLSPECIALCOLUMNS_FIELDS*
                                                       result->field_count, MYF(MY_ZEROFILL))) )
@@ -2242,6 +2255,8 @@ special_columns_no_i_s(SQLHSTMT hstmt, SQLUSMALLINT fColType,
             break;
         }
     }
+
+    x_free(stmt->result_array);
     if ( !(stmt->result_array= (char**) myodbc_malloc(sizeof(char*)*SQLSPECIALCOLUMNS_FIELDS*
                                                   result->field_count, MYF(MY_ZEROFILL))) )
     {
@@ -2632,7 +2647,11 @@ tables_no_i_s(SQLHSTMT hstmt,
           if (!row_count)
           {
             free_internal_result_buffers(stmt);
-            mysql_free_result(stmt->result);
+            if (stmt->result)
+            {
+              mysql_free_result(stmt->result);
+              stmt->result = NULL;
+            }
             is_info_schema= 0;
             continue;
           }
