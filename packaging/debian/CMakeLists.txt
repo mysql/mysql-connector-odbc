@@ -30,7 +30,7 @@
 # the source, and at the same time do some modifications to these
 # files
 
-cmake_minimum_required(VERSION 2.8.5)
+cmake_minimum_required(VERSION 2.8.12)
 project(MySQL_Connector_ODBC_Deb_Init NONE)
 
 # ----------------------------------------------------------------------
@@ -40,18 +40,28 @@ project(MySQL_Connector_ODBC_Deb_Init NONE)
 
 include(../../version.cmake)
 
-set(YEAR      2018)  # FIXME automate somehow
+string(TIMESTAMP YEAR "%Y")
+if(NOT YEAR)
+  message(FATAL_ERROR "Could not determine what year it is")
+endif()
+
 set(PRODUCT   "MySQL Connector/ODBC ${CONNECTOR_BASE_VERSION}")
 
 if(NOT DEBIAN_REVISION)
   set(DEBIAN_REVISION 1)
 endif()
 
-set(LIC_FILE "LICENSE.txt")
+# Distinguish between community and non-community builds, with the
+# default being a community build. This does not impact the feature
+# set that will be compiled in; it's merely provided as a hint to
+# custom packaging steps.
+option(COMMUNITY_BUILD "Set to true if this is a community build" ON) 
 
-if(EXTRA_NAME_SUFFIX STREQ "commercial")
+if(NOT COMMUNITY_BUILD)
+  set(PRODUCT_SUFFIX "-commercial")
   set(VERSION "${CONNECTOR_VERSION}+commercial-${DEBIAN_REVISION}")
 else()
+  set(PRODUCT_SUFFIX "")
   set(VERSION "${CONNECTOR_VERSION}-${DEBIAN_REVISION}")
 endif()
 
@@ -114,6 +124,7 @@ file(
 
 set(in_files
   changelog
+  control
   copyright
   rules
   mysql-connector-odbc-setup.install
@@ -122,9 +133,10 @@ set(in_files
 )
 
 foreach(_in_file ${in_files})
+  string(REPLACE "odbc" "odbc${PRODUCT_SUFFIX}" _out_file "${_in_file}")
   configure_file(
     ${CMAKE_SOURCE_DIR}/${_in_file}.in
-    ${DEST_DIR}/${_in_file}
+    ${DEST_DIR}/${_out_file}
     @ONLY
   )
 endforeach()

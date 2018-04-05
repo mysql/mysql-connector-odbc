@@ -1,4 +1,4 @@
-Source: mysql-connector-odbc
+Source: mysql-connector-odbc@PRODUCT_SUFFIX@
 Section: libs
 Priority: optional
 Maintainer: Oracle MySQL Product Engineering Team <mysql-build@oss.oracle.com>
@@ -11,7 +11,7 @@ Homepage: http://dev.mysql.com/downloads/connector/odbc/
 Vcs-Bzr: nosmart+http://bzr.debian.org/bzr/users/vorlon/myodbc/trunk/
 Vcs-Browser: http://anonscm.debian.org/loggerhead/users/vorlon/myodbc/trunk/
 
-Package: mysql-connector-odbc
+Package: mysql-connector-odbc@PRODUCT_SUFFIX@
 Section: libs
 Architecture: any
 Multi-Arch: same
@@ -26,7 +26,7 @@ Description: MySQL ODBC driver
  understood by a variety of database tools that cannot talk to MySQL
  databases directly.
 
-Package: mysql-connector-odbc-test
+Package: mysql-connector-odbc-test@PRODUCT_SUFFIX@
 Section: libs
 Architecture: any
 Multi-Arch: same
@@ -37,7 +37,7 @@ Description: MySQL ODBC driver test files
  This package installs a tool "dltest" and some executables to
  test the MySQL ODBC driver.
 
-Package: mysql-connector-odbc-setup
+Package: mysql-connector-odbc-setup@PRODUCT_SUFFIX@
 Section: libs
 Architecture: any
 Multi-Arch: same
