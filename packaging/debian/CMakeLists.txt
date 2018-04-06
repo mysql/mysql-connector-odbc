@@ -59,9 +59,11 @@ option(COMMUNITY_BUILD "Set to true if this is a community build" ON)
 
 if(NOT COMMUNITY_BUILD)
   set(PRODUCT_SUFFIX "-commercial")
+  set(NOT_PRODUCT_SUFFIX "")
   set(VERSION "${CONNECTOR_VERSION}+commercial-${DEBIAN_REVISION}")
 else()
   set(PRODUCT_SUFFIX "")
+  set(NOT_PRODUCT_SUFFIX "-commercial")
   set(VERSION "${CONNECTOR_VERSION}-${DEBIAN_REVISION}")
 endif()
 
