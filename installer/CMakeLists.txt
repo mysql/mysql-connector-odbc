@@ -73,10 +73,10 @@ ENDIF(WIN32)
 
 if(APPLE)
   set_property(TARGET myodbc-installer PROPERTY BUILD_WITH_INSTALL_RPATH ON)
-  set_property(TARGET myodbc-installer APPEND PROPERTY INSTALL_RPATH "@loader_path")
+  set_property(TARGET myodbc-installer APPEND PROPERTY INSTALL_RPATH "@loader_path/../lib")
 elseif(NOT WIN32)
   set_property(TARGET myodbc-installer PROPERTY BUILD_WITH_INSTALL_RPATH ON)
-  set_property(TARGET myodbc-installer APPEND PROPERTY INSTALL_RPATH "$ORIGIN")
+  set_property(TARGET myodbc-installer APPEND PROPERTY INSTALL_RPATH "$ORIGIN/../lib")
 endif()
 
 mangle_osx_rpaths(myodbc-installer)
