@@ -418,6 +418,8 @@ allocate_buffer_for_field(const MYSQL_FIELD * const field, BOOL outparams)
       /* We will get length with fetch and then fetch column */
       if (field->length > 0 && field->length < 1025)
         result.size= field->length + 1;
+      else
+        result.size= 128; // allocate a small buffer, maybe it is enough
       break;
 
     case MYSQL_TYPE_DECIMAL:
