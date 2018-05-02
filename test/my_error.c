@@ -816,12 +816,11 @@ DECLARE_TEST(t_bug25671389)
 BEGIN_TESTS
 #ifndef NO_DRIVERMANAGER
 #ifndef USE_IODBC
-  ADD_TEST(t_odbc2_error)
+  // This test will be re-enabled upon merging with 8.0 sources
+  // ADD_TEST(t_odbc2_error) 
 #endif
   ADD_TEST(t_odbc3_error)
-  /* Run twice to test the driver's handling of switching  */
 #ifndef USE_IODBC
-  ADD_TEST(t_odbc2_error)
   // ADD_TEST(t_odbc3_80) TODO: Fix
 #endif
 #endif
