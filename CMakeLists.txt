@@ -35,6 +35,9 @@ if(COMMAND cmake_policy)
 	cmake_policy(SET CMP0003 NEW)
 endif(COMMAND cmake_policy)
 
+cmake_policy(SET CMP0022 NEW)
+# cmake_policy(SET CMP0026 OLD)
+
 
 #------- compatibility with older cmake versions ------
 
@@ -180,6 +183,8 @@ ENDMACRO()
 
 INCLUDE(configure.cmake)
 
+#-------------- Coverage --------------------
+INCLUDE(${CMAKE_SOURCE_DIR}/cmake/gcov.cmake)
 #-------------- find  mysql --------------------
 INCLUDE(${CMAKE_SOURCE_DIR}/cmake/FindMySQL.cmake)
 #-----------------------------------------------------
