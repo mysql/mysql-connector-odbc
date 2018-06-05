@@ -1,3 +1,12 @@
+8.0.12
+
+  Security Notes:
+  Functionality added or changed:
+  * Improve coverage for ODBC code (WL #11994)
+  Bugs fixed:
+
+  Built using MySQL 8.0.12
+
 8.0.11
 
   Security Notes:
