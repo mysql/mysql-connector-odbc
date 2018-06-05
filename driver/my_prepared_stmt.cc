@@ -1,30 +1,30 @@
-// Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved. 
-// 
-// This program is free software; you can redistribute it and/or modify 
-// it under the terms of the GNU General Public License, version 2.0, as 
-// published by the Free Software Foundation. 
-// 
-// This program is also distributed with certain software (including 
-// but not limited to OpenSSL) that is licensed under separate terms, 
-// as designated in a particular file or component or in included license 
-// documentation. The authors of MySQL hereby grant you an 
-// additional permission to link the program and your derivative works 
-// with the separately licensed software that they have included with 
-// MySQL. 
-// 
-// Without limiting anything contained in the foregoing, this file, 
-// which is part of <MySQL Product>, is also subject to the 
-// Universal FOSS Exception, version 1.0, a copy of which can be found at 
-// http://oss.oracle.com/licenses/universal-foss-exception. 
-// 
-// This program is distributed in the hope that it will be useful, but 
-// WITHOUT ANY WARRANTY; without even the implied warranty of 
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-// See the GNU General Public License, version 2.0, for more details. 
-// 
-// You should have received a copy of the GNU General Public License 
-// along with this program; if not, write to the Free Software Foundation, Inc., 
-// 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA 
+// Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+//
+// This program is free software; you can redistribute it and/or modify
+// it under the terms of the GNU General Public License, version 2.0, as
+// published by the Free Software Foundation.
+//
+// This program is also distributed with certain software (including
+// but not limited to OpenSSL) that is licensed under separate terms,
+// as designated in a particular file or component or in included license
+// documentation. The authors of MySQL hereby grant you an
+// additional permission to link the program and your derivative works
+// with the separately licensed software that they have included with
+// MySQL.
+//
+// Without limiting anything contained in the foregoing, this file,
+// which is part of <MySQL Product>, is also subject to the
+// Universal FOSS Exception, version 1.0, a copy of which can be found at
+// http://oss.oracle.com/licenses/universal-foss-exception.
+//
+// This program is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+// See the GNU General Public License, version 2.0, for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program; if not, write to the Free Software Foundation, Inc.,
+// 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 
 /**
   @file  ssps.c
@@ -419,7 +419,11 @@ allocate_buffer_for_field(const MYSQL_FIELD * const field, BOOL outparams)
       if (field->length > 0 && field->length < 1025)
         result.size= field->length + 1;
       else
-        result.size= 128; // allocate a small buffer, maybe it is enough
+      {
+        // This is to keep mysqlclient library happy.
+        // The buffer will be reallocated later.
+        result.size= 1;
+      }
       break;
 
     case MYSQL_TYPE_DECIMAL:
@@ -483,6 +487,23 @@ static MYSQL_ROW fetch_varlength_columns(STMT *stmt, MYSQL_ROW columns)
 
   for (i= 0; i < num_fields; ++i)
   {
+    // The allocated buffer for these types was set to 1 byte
+    // to keep mysqlclient asserts happy
+    if (stmt->result_bind[i].buffer_length == 1 &&
+        stmt->result_bind[i].buffer &&
+        (
+          stmt->result_bind[i].buffer_type == MYSQL_TYPE_MEDIUM_BLOB ||
+          stmt->result_bind[i].buffer_type == MYSQL_TYPE_LONG_BLOB ||
+          stmt->result_bind[i].buffer_type == MYSQL_TYPE_BLOB ||
+          stmt->result_bind[i].buffer_type == MYSQL_TYPE_STRING ||
+          stmt->result_bind[i].buffer_type == MYSQL_TYPE_VAR_STRING
+        )
+      )
+    {
+      x_free(stmt->result_bind[i].buffer);
+      stmt->result_bind[i].buffer_length = 0;
+    }
+
     if (i == stream_column)
     {
       /* Skipping this column */

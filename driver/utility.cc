@@ -1,30 +1,30 @@
-// Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved. 
-// 
-// This program is free software; you can redistribute it and/or modify 
-// it under the terms of the GNU General Public License, version 2.0, as 
-// published by the Free Software Foundation. 
-// 
-// This program is also distributed with certain software (including 
-// but not limited to OpenSSL) that is licensed under separate terms, 
-// as designated in a particular file or component or in included license 
-// documentation. The authors of MySQL hereby grant you an 
-// additional permission to link the program and your derivative works 
-// with the separately licensed software that they have included with 
-// MySQL. 
-// 
-// Without limiting anything contained in the foregoing, this file, 
-// which is part of <MySQL Product>, is also subject to the 
-// Universal FOSS Exception, version 1.0, a copy of which can be found at 
-// http://oss.oracle.com/licenses/universal-foss-exception. 
-// 
-// This program is distributed in the hope that it will be useful, but 
-// WITHOUT ANY WARRANTY; without even the implied warranty of 
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-// See the GNU General Public License, version 2.0, for more details. 
-// 
-// You should have received a copy of the GNU General Public License 
-// along with this program; if not, write to the Free Software Foundation, Inc., 
-// 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA 
+// Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+//
+// This program is free software; you can redistribute it and/or modify
+// it under the terms of the GNU General Public License, version 2.0, as
+// published by the Free Software Foundation.
+//
+// This program is also distributed with certain software (including
+// but not limited to OpenSSL) that is licensed under separate terms,
+// as designated in a particular file or component or in included license
+// documentation. The authors of MySQL hereby grant you an
+// additional permission to link the program and your derivative works
+// with the separately licensed software that they have included with
+// MySQL.
+//
+// Without limiting anything contained in the foregoing, this file,
+// which is part of <MySQL Product>, is also subject to the
+// Universal FOSS Exception, version 1.0, a copy of which can be found at
+// http://oss.oracle.com/licenses/universal-foss-exception.
+//
+// This program is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+// See the GNU General Public License, version 2.0, for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program; if not, write to the Free Software Foundation, Inc.,
+// 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 
 /**
   @file  utility.c
@@ -398,43 +398,6 @@ char *dupp_str(char *from,int length)
 
 
 /*
-  @type    : myodbc internal
-  @purpose : copies the string data to rgbValue buffer. If rgbValue
-  is NULL, then returns warning with full length, else
-  copies the cbValueMax length from 'src' and returns it.
-*/
-
-SQLRETURN copy_str_data(SQLSMALLINT HandleType, SQLHANDLE Handle,
-                        SQLCHAR *rgbValue,
-                        SQLSMALLINT cbValueMax,
-                        SQLSMALLINT *pcbValue, char *src)
-{
-    SQLSMALLINT dummy;
-
-    if ( !pcbValue )
-        pcbValue= &dummy;
-
-    if ( cbValueMax == SQL_NTS )
-        cbValueMax= *pcbValue= strlen(src);
-
-    else if ( cbValueMax < 0 )
-        return set_handle_error(HandleType,Handle,MYERR_S1090,NULL,0);
-    else
-    {
-        cbValueMax= cbValueMax ? cbValueMax - 1 : 0;
-        *pcbValue= strlen(src);
-    }
-
-    if ( rgbValue )
-        strmake((char*) rgbValue, src, cbValueMax);
-
-    if ( myodbc_min(*pcbValue , cbValueMax) != *pcbValue )
-        return SQL_SUCCESS_WITH_INFO;
-    return SQL_SUCCESS;
-}
-
-
-/*
   Copy a field to a byte string.
 
   @param[in]     stmt         Pointer to statement
@@ -480,10 +443,10 @@ copy_binary_result(STMT *stmt,
 
   copy_bytes= myodbc_min((unsigned long)result_bytes, src_bytes);
 
-  if (result)
+  if (result && stmt->stmt_options.retrieve_data)
     memcpy(result, src, copy_bytes);
 
-  if (avail_bytes)
+  if (avail_bytes && stmt->stmt_options.retrieve_data)
     *avail_bytes= src_bytes;
 
   stmt->getdata.source+= copy_bytes;
@@ -561,7 +524,7 @@ copy_ansi_result(STMT *stmt,
     rc= copy_binary_result(stmt, result, result_bytes, avail_bytes,
                            field, src, src_bytes);
 
-    if (SQL_SUCCEEDED(rc) && result)
+    if (SQL_SUCCEEDED(rc) && result && stmt->stmt_options.retrieve_data)
       result[myodbc_min(*avail_bytes, result_bytes)]= '\0';
 
     return rc;
@@ -574,7 +537,9 @@ copy_ansi_result(STMT *stmt,
   */
   if (result == result_end)
   {
-    *result= '\0';
+    if (stmt->stmt_options.retrieve_data)
+      *result= '\0';
+
     result= 0;
   }
 
@@ -604,7 +569,10 @@ copy_ansi_result(STMT *stmt,
     int new_bytes= myodbc_min(stmt->getdata.latest_bytes -
                               stmt->getdata.latest_used,
                               result_end - result);
-    memcpy(result, stmt->getdata.latest + stmt->getdata.latest_used, new_bytes);
+    if (stmt->stmt_options.retrieve_data)
+      memcpy(result, stmt->getdata.latest + stmt->getdata.latest_used,
+             new_bytes);
+
     if (new_bytes + stmt->getdata.latest_used == stmt->getdata.latest_bytes)
       stmt->getdata.latest_bytes= 0;
 
@@ -612,7 +580,8 @@ copy_ansi_result(STMT *stmt,
 
     if (result == result_end)
     {
-      *result= '\0';
+      if (stmt->stmt_options.retrieve_data)
+        *result= '\0';
       result= NULL;
     }
 
@@ -652,8 +621,16 @@ convert_to_out:
      We always convert into a temporary buffer, so we can properly handle
      characters that are going to get split across requests.
     */
-    to_cnvres= (*wc_mb)(to_cs, wc, result ? result : dummy,
-                        (result ? result_end : dummy + sizeof(dummy)));
+    if (stmt->stmt_options.retrieve_data)
+    {
+      to_cnvres= (*wc_mb)(to_cs, wc, result ? result : dummy,
+                          (result ? result_end : dummy + sizeof(dummy)));
+    }
+    else
+    {
+      // If not copying data then pretend all went as planned
+      to_cnvres= 1;
+    }
 
     if (to_cnvres > 0)
     {
@@ -672,7 +649,10 @@ convert_to_out:
           stmt->getdata.source+= cnvres;
           break;
         }
-        *result= '\0';
+
+        if (stmt->stmt_options.retrieve_data)
+          *result= '\0';
+
         result= NULL;
       }
       else if (!result)
@@ -695,7 +675,10 @@ convert_to_out:
                                             result_end - result);
       memcpy(result, stmt->getdata.latest, stmt->getdata.latest_used);
       result+= stmt->getdata.latest_used;
-      *result= '\0';
+
+      if (stmt->stmt_options.retrieve_data)
+        *result= '\0';
+
       result= NULL;
 
       used_chars+= 1;
@@ -716,7 +699,7 @@ convert_to_out:
                             "to result character set.", 0);
   }
 
-  if (result)
+  if (result && stmt->stmt_options.retrieve_data)
     *result= 0;
 
   if (result_bytes && stmt->getdata.dst_bytes == (ulong)~0L)
@@ -725,7 +708,7 @@ convert_to_out:
     stmt->getdata.dst_offset= 0;
   }
 
-  if (avail_bytes)
+  if (avail_bytes && stmt->stmt_options.retrieve_data)
   {
     if (stmt->getdata.dst_bytes != (ulong)~0L)
       *avail_bytes= stmt->getdata.dst_bytes - stmt->getdata.dst_offset;
@@ -817,12 +800,14 @@ copy_wchar_result(STMT *stmt,
   /* We may have a leftover char from the last call. */
   if (stmt->getdata.latest_bytes)
   {
-    memcpy(result, stmt->getdata.latest, sizeof(SQLWCHAR));
+    if (stmt->stmt_options.retrieve_data)
+      memcpy(result, stmt->getdata.latest, sizeof(SQLWCHAR));
     ++result;
 
     if (result == result_end)
     {
-      *result= 0;
+      if (stmt->stmt_options.retrieve_data)
+        *result= 0;
       result= NULL;
     }
 
@@ -841,6 +826,7 @@ copy_wchar_result(STMT *stmt,
     int to_cnvres;
 
     int cnvres= (*mb_wc)(from_cs, &wc, (uchar *)src, (uchar *)src_end);
+
     if (cnvres == MY_CS_ILSEQ)
     {
       ++error_count;
@@ -887,18 +873,27 @@ convert_to_out:
         chars= utf32toutf16(u32, (UTF16 *)out);
 
         if (result)
-          *result++= out[0];
+        {
+          if (stmt->stmt_options.retrieve_data)
+            *result= out[0];
+          result++;
+        }
 
         used_chars+= chars;
 
         if (chars > 1 && result && result != result_end)
-          *result++= out[1];
+        {
+          if (stmt->stmt_options.retrieve_data)
+            *result= out[1];
+          result++;
+        }
         else if (chars > 1 && result)
         {
           *((SQLWCHAR *)stmt->getdata.latest)= out[1];
           stmt->getdata.latest_bytes= 2;
           stmt->getdata.latest_used= 0;
-          *result= 0;
+          if (stmt->stmt_options.retrieve_data)
+            *result= 0;
           result= NULL;
 
           if (stmt->getdata.dst_bytes != (ulong)~0L)
@@ -916,7 +911,8 @@ convert_to_out:
 
       if (result && result == result_end)
       {
-        *result= 0;
+        if (stmt->stmt_options.retrieve_data)
+          *result= 0;
         result= NULL;
       }
     }
@@ -932,7 +928,7 @@ convert_to_out:
                             "to result character set.", 0);
   }
 
-  if (result)
+  if (result && stmt->stmt_options.retrieve_data)
     *result= 0;
 
   if (result_len && stmt->getdata.dst_bytes == (ulong)~0L)
@@ -941,7 +937,7 @@ convert_to_out:
     stmt->getdata.dst_offset= 0;
   }
 
-  if (avail_bytes)
+  if (avail_bytes && stmt->stmt_options.retrieve_data)
   {
     if (result_len)
       *avail_bytes= stmt->getdata.dst_bytes - stmt->getdata.dst_offset;
@@ -1008,9 +1004,9 @@ SQLRETURN copy_binhex_result(STMT *stmt,
     length= cbValueMax ? (ulong)(cbValueMax-1)/2 : 0;
     length= myodbc_min(src_length,length);
     (*offset)+= length;     /* Fix for next call */
-    if ( pcbValue )
+    if (pcbValue && stmt->stmt_options.retrieve_data)
         *pcbValue= src_length*2;
-    if ( dst )  /* Bind allows null pointers */
+    if ( dst && stmt->stmt_options.retrieve_data )  /* Bind allows null pointers */
     {
         ulong i;
         for ( i= 0 ; i < length ; ++i )

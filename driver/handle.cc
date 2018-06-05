@@ -252,6 +252,8 @@ SQLRETURN SQL_API my_SQLAllocConnect(SQLHENV henv, SQLHDBC *phdbc)
       at the connect stage
     */
     dbc->stmt_options.query_timeout= (SQLULEN)-1;
+    dbc->stmt_options.bookmark_insert= FALSE;
+    dbc->stmt_options.retrieve_data= TRUE;
     dbc->login_timeout= 0;
     dbc->last_query_time= (time_t) time((time_t*) 0);
     dbc->txn_isolation= DEFAULT_TXN_ISOLATION;

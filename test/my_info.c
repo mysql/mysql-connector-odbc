@@ -1,33 +1,285 @@
-// Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved. 
-// 
-// This program is free software; you can redistribute it and/or modify 
-// it under the terms of the GNU General Public License, version 2.0, as 
-// published by the Free Software Foundation. 
-// 
-// This program is also distributed with certain software (including 
-// but not limited to OpenSSL) that is licensed under separate terms, 
-// as designated in a particular file or component or in included license 
-// documentation. The authors of MySQL hereby grant you an 
-// additional permission to link the program and your derivative works 
-// with the separately licensed software that they have included with 
-// MySQL. 
-// 
-// Without limiting anything contained in the foregoing, this file, 
-// which is part of <MySQL Product>, is also subject to the 
-// Universal FOSS Exception, version 1.0, a copy of which can be found at 
-// http://oss.oracle.com/licenses/universal-foss-exception. 
-// 
-// This program is distributed in the hope that it will be useful, but 
-// WITHOUT ANY WARRANTY; without even the implied warranty of 
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-// See the GNU General Public License, version 2.0, for more details. 
-// 
-// You should have received a copy of the GNU General Public License 
-// along with this program; if not, write to the Free Software Foundation, Inc., 
-// 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA 
+// Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+//
+// This program is free software; you can redistribute it and/or modify
+// it under the terms of the GNU General Public License, version 2.0, as
+// published by the Free Software Foundation.
+//
+// This program is also distributed with certain software (including
+// but not limited to OpenSSL) that is licensed under separate terms,
+// as designated in a particular file or component or in included license
+// documentation. The authors of MySQL hereby grant you an
+// additional permission to link the program and your derivative works
+// with the separately licensed software that they have included with
+// MySQL.
+//
+// Without limiting anything contained in the foregoing, this file,
+// which is part of <MySQL Product>, is also subject to the
+// Universal FOSS Exception, version 1.0, a copy of which can be found at
+// http://oss.oracle.com/licenses/universal-foss-exception.
+//
+// This program is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+// See the GNU General Public License, version 2.0, for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program; if not, write to the Free Software Foundation, Inc.,
+// 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 
 #include "odbctap.h"
 
+DECLARE_TEST(t_get_all_info)
+{
+  SQLUSMALLINT opt[] = {
+                        SQL_ACTIVE_ENVIRONMENTS,
+                        SQL_AGGREGATE_FUNCTIONS,
+                        SQL_ALTER_DOMAIN,
+                        SQL_ALTER_TABLE,
+#ifndef USE_IODBC
+                        SQL_ASYNC_DBC_FUNCTIONS,
+#endif
+                        SQL_ASYNC_MODE,
+                        SQL_BATCH_ROW_COUNT,
+                        SQL_BATCH_SUPPORT,
+                        SQL_BOOKMARK_PERSISTENCE,
+                        SQL_CATALOG_LOCATION,
+                        SQL_CATALOG_NAME,
+                        SQL_CATALOG_NAME_SEPARATOR,
+                        SQL_CATALOG_TERM,
+                        SQL_CATALOG_USAGE,
+                        SQL_COLLATION_SEQ,
+                        SQL_COLUMN_ALIAS,
+                        SQL_CONCAT_NULL_BEHAVIOR,
+                        SQL_CONVERT_BINARY,
+                        SQL_CONVERT_FUNCTIONS,
+                        SQL_CORRELATION_NAME,
+                        SQL_CREATE_ASSERTION,
+                        SQL_CREATE_TABLE,
+                        SQL_CREATE_TRANSLATION,
+                        SQL_CREATE_VIEW,
+                        SQL_CURSOR_SENSITIVITY,
+                        SQL_DATA_SOURCE_NAME,
+                        SQL_DATA_SOURCE_READ_ONLY,
+                        SQL_DATETIME_LITERALS,
+                        SQL_DBMS_NAME,
+                        SQL_DDL_INDEX,
+                        SQL_DEFAULT_TXN_ISOLATION,
+                        SQL_DESCRIBE_PARAMETER,
+                        SQL_DRIVER_VER,
+                        SQL_DROP_ASSERTION,
+                        SQL_DROP_TABLE,
+                        SQL_DROP_VIEW,
+                        SQL_DYNAMIC_CURSOR_ATTRIBUTES1,
+                        SQL_DYNAMIC_CURSOR_ATTRIBUTES2,
+                        SQL_EXPRESSIONS_IN_ORDERBY,
+                        SQL_FILE_USAGE,
+                        SQL_FORWARD_ONLY_CURSOR_ATTRIBUTES1,
+                        SQL_FORWARD_ONLY_CURSOR_ATTRIBUTES2,
+                        SQL_GETDATA_EXTENSIONS,
+                        SQL_GROUP_BY,
+                        SQL_IDENTIFIER_CASE,
+                        SQL_IDENTIFIER_QUOTE_CHAR,
+                        SQL_INDEX_KEYWORDS,
+                        SQL_INFO_SCHEMA_VIEWS,
+                        SQL_INSERT_STATEMENT,
+                        SQL_INTEGRITY,
+                        SQL_KEYSET_CURSOR_ATTRIBUTES1,
+                        SQL_LIKE_ESCAPE_CLAUSE,
+                        SQL_MAX_ASYNC_CONCURRENT_STATEMENTS,
+                        SQL_MAX_BINARY_LITERAL_LEN,
+                        SQL_MAX_CATALOG_NAME_LEN,
+                        SQL_MAX_CHAR_LITERAL_LEN,
+                        SQL_MAX_COLUMN_NAME_LEN,
+                        SQL_MAX_COLUMNS_IN_GROUP_BY,
+                        SQL_MAX_COLUMNS_IN_INDEX,
+                        SQL_MAX_COLUMNS_IN_ORDER_BY,
+                        SQL_MAX_COLUMNS_IN_SELECT,
+                        SQL_MAX_COLUMNS_IN_TABLE,
+                        SQL_MAX_CONCURRENT_ACTIVITIES,
+                        SQL_MAX_CURSOR_NAME_LEN,
+                        SQL_MAX_DRIVER_CONNECTIONS,
+                        SQL_MAX_IDENTIFIER_LEN,
+                        SQL_MAX_INDEX_SIZE,
+                        SQL_MAX_PROCEDURE_NAME_LEN,
+                        SQL_MAX_ROW_SIZE,
+                        SQL_MAX_ROW_SIZE_INCLUDES_LONG,
+                        SQL_MAX_SCHEMA_NAME_LEN,
+                        SQL_MAX_STATEMENT_LEN,
+                        SQL_MAX_TABLE_NAME_LEN,
+                        SQL_MAX_TABLES_IN_SELECT,
+                        SQL_MAX_USER_NAME_LEN,
+                        SQL_MULT_RESULT_SETS,
+                        SQL_MULTIPLE_ACTIVE_TXN,
+                        SQL_NEED_LONG_DATA_LEN,
+                        SQL_NON_NULLABLE_COLUMNS,
+                        SQL_NULL_COLLATION,
+                        SQL_NUMERIC_FUNCTIONS,
+                        SQL_ODBC_API_CONFORMANCE,
+                        SQL_ODBC_INTERFACE_CONFORMANCE,
+                        SQL_ODBC_SQL_CONFORMANCE,
+                        SQL_OJ_CAPABILITIES,
+                        SQL_ORDER_BY_COLUMNS_IN_SELECT,
+                        SQL_PARAM_ARRAY_ROW_COUNTS,
+                        SQL_PARAM_ARRAY_SELECTS,
+                        SQL_PROCEDURE_TERM,
+                        SQL_PROCEDURES,
+                        SQL_POS_OPERATIONS,
+                        SQL_QUOTED_IDENTIFIER_CASE,
+                        SQL_ROW_UPDATES,
+                        SQL_SCHEMA_TERM,
+                        SQL_SCHEMA_USAGE,
+                        SQL_SCROLL_OPTIONS,
+                        SQL_SEARCH_PATTERN_ESCAPE,
+                        SQL_SERVER_NAME,
+                        SQL_SPECIAL_CHARACTERS,
+                        SQL_SQL_CONFORMANCE,
+                        SQL_SQL92_DATETIME_FUNCTIONS,
+                        SQL_SQL92_FOREIGN_KEY_DELETE_RULE,
+                        SQL_SQL92_GRANT,
+                        SQL_SQL92_NUMERIC_VALUE_FUNCTIONS,
+                        SQL_SQL92_PREDICATES,
+                        SQL_SQL92_RELATIONAL_JOIN_OPERATORS,
+                        SQL_SQL92_REVOKE,
+                        SQL_SQL92_ROW_VALUE_CONSTRUCTOR,
+                        SQL_SQL92_STRING_FUNCTIONS,
+                        SQL_SQL92_VALUE_EXPRESSIONS,
+                        SQL_STANDARD_CLI_CONFORMANCE,
+                        SQL_STATIC_CURSOR_ATTRIBUTES1,
+                        SQL_STATIC_CURSOR_ATTRIBUTES2,
+                        SQL_STRING_FUNCTIONS,
+                        SQL_SUBQUERIES,
+                        SQL_SYSTEM_FUNCTIONS,
+                        SQL_TABLE_TERM,
+                        SQL_TIMEDATE_ADD_INTERVALS,
+                        SQL_TIMEDATE_FUNCTIONS,
+                        SQL_TXN_CAPABLE,
+                        SQL_TXN_ISOLATION_OPTION,
+                        SQL_UNION,
+                        SQL_USER_NAME,
+                        SQL_XOPEN_CLI_YEAR,
+                        SQL_ACCESSIBLE_PROCEDURES,
+                        SQL_LOCK_TYPES,
+                        SQL_OUTER_JOINS,
+                        SQL_POSITIONED_STATEMENTS,
+                        SQL_SCROLL_CONCURRENCY,
+                        SQL_STATIC_SENSITIVITY,
+                        SQL_FETCH_DIRECTION,
+                        SQL_ODBC_SAG_CLI_CONFORMANCE
+                      };
+
+    SQLUSMALLINT con_opt[] = {
+      SQL_ATTR_CURSOR_SENSITIVITY,
+      SQL_ATTR_MAX_LENGTH,
+      SQL_ATTR_MAX_ROWS,
+      SQL_ATTR_RETRIEVE_DATA,
+      SQL_ATTR_SIMULATE_CURSOR,
+      SQL_ATTR_FETCH_BOOKMARK_PTR,
+      SQL_ATTR_ASYNC_ENABLE,
+      SQL_ATTR_CONCURRENCY,
+      SQL_KEYSET_SIZE,
+      SQL_NOSCAN,
+      SQL_ATTR_USE_BOOKMARKS,
+      SQL_ATTR_AUTOCOMMIT
+    };
+
+    SQLUSMALLINT stmt_opt[] =
+    {
+      SQL_ATTR_CURSOR_SCROLLABLE,
+      SQL_ATTR_AUTO_IPD,
+      SQL_ATTR_PARAM_BIND_OFFSET_PTR,
+      SQL_ATTR_PARAM_BIND_TYPE,
+      SQL_ATTR_PARAM_OPERATION_PTR,
+      SQL_ATTR_PARAM_STATUS_PTR,
+      SQL_ATTR_PARAMS_PROCESSED_PTR,
+      SQL_ATTR_PARAMSET_SIZE,
+      SQL_ATTR_ROW_ARRAY_SIZE,
+      SQL_ATTR_ROW_BIND_OFFSET_PTR,
+      SQL_ATTR_ROW_BIND_TYPE,
+      SQL_ATTR_ROW_NUMBER,
+      SQL_ATTR_ROW_OPERATION_PTR,
+      SQL_ATTR_ROW_STATUS_PTR,
+      SQL_ATTR_ROWS_FETCHED_PTR,
+      SQL_ATTR_SIMULATE_CURSOR,
+
+    };
+
+    int i= 0;
+    char buf[512], conn[4096] = { 0 };
+    SQLUSMALLINT pf_exists = 0;
+    SQLHDBC hdbc1;
+    SQLHSTMT hstmt1;
+
+    sprintf((char *)conn, "DSN=%s;UID=%s;PASSWORD=%s",
+            mydsn, myuid, mypwd);
+    ok_env(henv, SQLAllocHandle(SQL_HANDLE_DBC, henv, &hdbc1));
+    ok_con(hdbc1, SQLDriverConnect(hdbc1, NULL, conn, (SQLSMALLINT)strlen(conn), NULL, 0,
+                                   NULL, SQL_DRIVER_NOPROMPT));
+    ok_con(hdbc1, SQLAllocHandle(SQL_HANDLE_STMT, hdbc1, &hstmt1));
+
+    printf("** SQLGetInfo START\n");
+    for (i= 0; i < sizeof(opt) / sizeof(SQLUSMALLINT); ++i)
+    {
+      SQLSMALLINT str_len_ptr= 0;
+      SQLGetInfo(hdbc1, opt[i], buf, sizeof(buf), &str_len_ptr);
+      printf("** SQLGetInfo [%d]\n", (int)opt[i]);
+    }
+
+    printf("** SQLGetConnectAttr START\n");
+    for (i = 0; i < sizeof(con_opt) / sizeof(SQLUSMALLINT); ++i)
+    {
+      SQLSMALLINT str_len_ptr = 0;
+      memset(buf, 0, sizeof(buf));
+
+      SQLSetConnectAttr(hstmt1, con_opt[i], buf, 512);
+      printf("** SQLSetConnectAttr [%d]\n", (int)con_opt[i]);
+      SQLGetConnectAttr(hstmt1, con_opt[i], buf, 512, &str_len_ptr);
+      printf("** SQLGetConnectAttr [%d]\n", (int)con_opt[i]);
+    }
+
+    printf("** SQLGetStmtAttr START\n");
+    for (i = 0; i < sizeof(stmt_opt) / sizeof(SQLUSMALLINT); ++i)
+    {
+      SQLINTEGER str_len_ptr = 0;
+      SQLULEN data1 = 0;
+      SQLUINTEGER data2 = 0;
+      SQLPOINTER p = 0;
+      size_t size = 0;
+      SQLPOINTER p2 = 0;
+
+      memset(buf, 0, sizeof(buf));
+      if (stmt_opt[i] == SQL_ATTR_PARAM_BIND_OFFSET_PTR ||
+          stmt_opt[i] == SQL_ATTR_PARAM_OPERATION_PTR ||
+          stmt_opt[i] == SQL_ATTR_PARAM_STATUS_PTR ||
+          stmt_opt[i] == SQL_ATTR_PARAMS_PROCESSED_PTR ||
+          stmt_opt[i] == SQL_ATTR_ROW_BIND_OFFSET_PTR ||
+          stmt_opt[i] == SQL_ATTR_ROW_OPERATION_PTR ||
+          stmt_opt[i] == SQL_ATTR_ROW_STATUS_PTR ||
+          stmt_opt[i] == SQL_ATTR_ROWS_FETCHED_PTR ||
+          stmt_opt[i] == SQL_ATTR_APP_ROW_DESC ||
+          stmt_opt[i] == SQL_ATTR_IMP_ROW_DESC ||
+          stmt_opt[i] == SQL_ATTR_APP_PARAM_DESC ||
+          stmt_opt[i] == SQL_ATTR_IMP_PARAM_DESC )
+      {
+        p = (SQLPOINTER)&p2;
+        size = sizeof(p2);
+      }
+      else
+      {
+        p = (SQLPOINTER)&data2;
+        size = sizeof(data2);
+      }
+
+      SQLSetStmtAttr(hstmt1, stmt_opt[i], p, size);
+      printf("** SQLSetStmtAttr [%d]\n", (int)stmt_opt[i]);
+      SQLGetStmtAttr(hstmt1, stmt_opt[i], p, size, &str_len_ptr);
+      printf("** SQLGetStmtAttr [%d]\n", (int)stmt_opt[i]);
+    }
+
+    printf("** Freeing Handles!\n", (int)con_opt[i]);
+    free_basic_handles(NULL, &hdbc1, &hstmt1);
+    printf("**Finished Freeing Handles!\n", (int)con_opt[i]);
+    return OK;
+}
 
 DECLARE_TEST(t_gettypeinfo)
 {
@@ -207,7 +459,7 @@ DECLARE_TEST(t_bug31055)
 
 
 /*
-   Bug 3780, reading or setting ADODB.Connection.DefaultDatabase 
+   Bug 3780, reading or setting ADODB.Connection.DefaultDatabase
    is not supported
 */
 DECLARE_TEST(t_bug3780)
@@ -220,8 +472,8 @@ DECLARE_TEST(t_bug3780)
   /* The connection string must not include DATABASE. */
   is(OK == alloc_basic_handles_with_opt(&henv1, &hdbc1, &hstmt1, USE_DRIVER,
                                         NULL, NULL, "", NULL));
-  
-  ok_con(hdbc1, SQLGetInfo(hdbc1, SQL_DATABASE_NAME, rgbValue, 
+
+  ok_con(hdbc1, SQLGetInfo(hdbc1, SQL_DATABASE_NAME, rgbValue,
                            MAX_NAME_LEN, &pcbInfo));
 
   is_num(pcbInfo, 4);
@@ -275,7 +527,7 @@ DECLARE_TEST(t_bug30626)
 {
   DECLARE_BASIC_HANDLES(henv1, hdbc1, hstmt1);
   SQLCHAR conn[512];
-  
+
   /* odbc 3 */
   ok_stmt(hstmt, SQLGetTypeInfo(hstmt, SQL_TYPE_TIMESTAMP));
   is_num(myresult(hstmt), 2);
@@ -311,7 +563,7 @@ DECLARE_TEST(t_bug30626)
   ok_con(hdbc1, SQLDriverConnect(hdbc1, NULL, conn, (SQLSMALLINT)strlen(conn), NULL, 0,
 				 NULL, SQL_DRIVER_NOPROMPT));
   ok_con(hdbc1, SQLAllocHandle(SQL_HANDLE_STMT, hdbc1, &hstmt1));
-  
+
   ok_stmt(hstmt1, SQLGetTypeInfo(hstmt1, SQL_TIMESTAMP));
   is_num(myresult(hstmt1), 2);
   ok_stmt(hstmt1, SQLFreeStmt(hstmt1, SQL_CLOSE));
@@ -336,8 +588,8 @@ DECLARE_TEST(t_bug43855)
   SQLUINTEGER convFlags;
   SQLSMALLINT pcbInfo;
 
-  /* 
-    TODO: add other convert checks, we are only interested in CHAR now 
+  /*
+    TODO: add other convert checks, we are only interested in CHAR now
   */
   ok_con(hdbc, SQLGetInfo(hdbc, SQL_CONVERT_CHAR, &convFlags,
                           sizeof(convFlags), &pcbInfo));
@@ -400,7 +652,7 @@ DECLARE_TEST(t_bug46910)
 
 /*
   Bug#11749093: SQLDESCRIBECOL RETURNS EXCESSIVLY LONG COLUMN NAMES
-  Maximum size of column length returned by SQLDescribeCol should be 
+  Maximum size of column length returned by SQLDescribeCol should be
   same as what SQLGetInfo() for SQL_MAX_COLUMN_NAME_LEN returns.
 */
 DECLARE_TEST(t_bug11749093)
@@ -409,7 +661,7 @@ DECLARE_TEST(t_bug11749093)
   SQLSMALLINT colNameLen;
   SQLSMALLINT maxColLen;
 
-  ok_stmt(hstmt, SQLExecDirect(hstmt, 
+  ok_stmt(hstmt, SQLExecDirect(hstmt,
               "SELECT 1234567890+2234567890+3234567890"
               "+4234567890+5234567890+6234567890+7234567890+"
               "+8234567890+9234567890+1034567890+1234567890+"
@@ -477,10 +729,10 @@ DECLARE_TEST(t_getkeywordinfo)
 }
 
 
-/* 
-  WL 7991 Implement SQL_ATTR_QUERY_TIMEOUT statement attribute 
+/*
+  WL 7991 Implement SQL_ATTR_QUERY_TIMEOUT statement attribute
 
-  TODO: Fix bug 19157465 ODBC Driver returns HY000 SQL status 
+  TODO: Fix bug 19157465 ODBC Driver returns HY000 SQL status
         instead of HYT00 on query timeout
 */
 DECLARE_TEST(t_query_timeout)
@@ -539,6 +791,7 @@ DECLARE_TEST(t_query_timeout)
 
 BEGIN_TESTS
   /* Query timeout should go first */
+  ADD_TEST(t_get_all_info)
   ADD_TEST(t_query_timeout)
   ADD_TEST(sqlgetinfo)
   ADD_TEST(t_gettypeinfo)

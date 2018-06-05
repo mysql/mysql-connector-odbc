@@ -1,30 +1,30 @@
-// Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved. 
-// 
-// This program is free software; you can redistribute it and/or modify 
-// it under the terms of the GNU General Public License, version 2.0, as 
-// published by the Free Software Foundation. 
-// 
-// This program is also distributed with certain software (including 
-// but not limited to OpenSSL) that is licensed under separate terms, 
-// as designated in a particular file or component or in included license 
-// documentation. The authors of MySQL hereby grant you an 
-// additional permission to link the program and your derivative works 
-// with the separately licensed software that they have included with 
-// MySQL. 
-// 
-// Without limiting anything contained in the foregoing, this file, 
-// which is part of MySQL Connector/ODBC, is also subject to the 
-// Universal FOSS Exception, version 1.0, a copy of which can be found at 
-// http://oss.oracle.com/licenses/universal-foss-exception. 
-// 
-// This program is distributed in the hope that it will be useful, but 
-// WITHOUT ANY WARRANTY; without even the implied warranty of 
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-// See the GNU General Public License, version 2.0, for more details. 
-// 
-// You should have received a copy of the GNU General Public License 
-// along with this program; if not, write to the Free Software Foundation, Inc., 
-// 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA 
+// Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+//
+// This program is free software; you can redistribute it and/or modify
+// it under the terms of the GNU General Public License, version 2.0, as
+// published by the Free Software Foundation.
+//
+// This program is also distributed with certain software (including
+// but not limited to OpenSSL) that is licensed under separate terms,
+// as designated in a particular file or component or in included license
+// documentation. The authors of MySQL hereby grant you an
+// additional permission to link the program and your derivative works
+// with the separately licensed software that they have included with
+// MySQL.
+//
+// Without limiting anything contained in the foregoing, this file,
+// which is part of MySQL Connector/ODBC, is also subject to the
+// Universal FOSS Exception, version 1.0, a copy of which can be found at
+// http://oss.oracle.com/licenses/universal-foss-exception.
+//
+// This program is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+// See the GNU General Public License, version 2.0, for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program; if not, write to the Free Software Foundation, Inc.,
+// 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 
 /**
   @file  error.c
@@ -151,21 +151,6 @@ void myodbc_sqlstate3_init(void)
     myodbc_stpmov(myodbc3_errors[MYERR_42S12].sqlstate,"42S12");
     myodbc_stpmov(myodbc3_errors[MYERR_42S21].sqlstate,"42S21");
     myodbc_stpmov(myodbc3_errors[MYERR_42S22].sqlstate,"42S22");
-}
-
-
-/*
-  @type    : myodbc3 internal
-  @purpose : copies error from one handle to other
-*/
-
-SQLRETURN copy_stmt_error(STMT *dst,STMT *src)
-{
-    myodbc_stpmov(dst->error.sqlstate,src->error.sqlstate);
-    myodbc_stpmov(dst->error.message, src->error.message);
-    dst->error.native_error= src->error.native_error;
-    dst->error.retcode= src->error.retcode;
-    return(SQL_SUCCESS);
 }
 
 
@@ -612,7 +597,7 @@ MySQLGetDiagField(SQLSMALLINT handle_type, SQLHANDLE handle, SQLSMALLINT record,
       ds= dbc->ds;
     else
       *char_value= (SQLCHAR *)"";
-    
+
     if (ds)
       *char_value= (SQLCHAR *)ds->name8;
     return SQL_SUCCESS;
@@ -652,7 +637,7 @@ MySQLGetDiagField(SQLSMALLINT handle_type, SQLHANDLE handle, SQLSMALLINT record,
 
     if (ds)
       *char_value= (SQLCHAR *)ds->server8;
-    
+
     return SQL_SUCCESS;
   }
 

@@ -1,30 +1,30 @@
-// Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved. 
-// 
-// This program is free software; you can redistribute it and/or modify 
-// it under the terms of the GNU General Public License, version 2.0, as 
-// published by the Free Software Foundation. 
-// 
-// This program is also distributed with certain software (including 
-// but not limited to OpenSSL) that is licensed under separate terms, 
-// as designated in a particular file or component or in included license 
-// documentation. The authors of MySQL hereby grant you an 
-// additional permission to link the program and your derivative works 
-// with the separately licensed software that they have included with 
-// MySQL. 
-// 
-// Without limiting anything contained in the foregoing, this file, 
-// which is part of MySQL Connector/ODBC, is also subject to the 
-// Universal FOSS Exception, version 1.0, a copy of which can be found at 
-// http://oss.oracle.com/licenses/universal-foss-exception. 
-// 
-// This program is distributed in the hope that it will be useful, but 
-// WITHOUT ANY WARRANTY; without even the implied warranty of 
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-// See the GNU General Public License, version 2.0, for more details. 
-// 
-// You should have received a copy of the GNU General Public License 
-// along with this program; if not, write to the Free Software Foundation, Inc., 
-// 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA 
+// Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+//
+// This program is free software; you can redistribute it and/or modify
+// it under the terms of the GNU General Public License, version 2.0, as
+// published by the Free Software Foundation.
+//
+// This program is also distributed with certain software (including
+// but not limited to OpenSSL) that is licensed under separate terms,
+// as designated in a particular file or component or in included license
+// documentation. The authors of MySQL hereby grant you an
+// additional permission to link the program and your derivative works
+// with the separately licensed software that they have included with
+// MySQL.
+//
+// Without limiting anything contained in the foregoing, this file,
+// which is part of MySQL Connector/ODBC, is also subject to the
+// Universal FOSS Exception, version 1.0, a copy of which can be found at
+// http://oss.oracle.com/licenses/universal-foss-exception.
+//
+// This program is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+// See the GNU General Public License, version 2.0, for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program; if not, write to the Free Software Foundation, Inc.,
+// 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 
 /**
   @file  ansi.c
@@ -90,20 +90,8 @@ SQLColAttributeImpl(SQLHSTMT hstmt, SQLUSMALLINT column,
 
   if (value)
   {
-    my_bool free_value= FALSE;
     SQLCHAR *old_value= value;
-    if (stmt->dbc->ansi_charset_info->number !=
-        stmt->dbc->cxn_charset_info->number)
-    {
-      value= sqlchar_as_sqlchar(stmt->dbc->ansi_charset_info,
-                                stmt->dbc->cxn_charset_info,
-                                value, &len, &errors);
-      if (free_value)
-        x_free(old_value);
-      free_value= TRUE;
-    }
-    else
-      len= strlen((char *)value);
+    len= strlen((char *)value);
 
     /* We set the error only when the result is intented to be returned */
     if ((char_attr || num_attr) && len > char_attr_max - 1)
@@ -115,8 +103,6 @@ SQLColAttributeImpl(SQLHSTMT hstmt, SQLUSMALLINT column,
     if (char_attr_len)
       *char_attr_len= (SQLSMALLINT)len;
 
-    if (free_value)
-      x_free(value);
   }
 
   return rc;
@@ -148,53 +134,8 @@ SQLColumnPrivileges(SQLHSTMT hstmt,
 
   dbc= ((STMT *)hstmt)->dbc;
 
-  if (dbc->ansi_charset_info->number != dbc->cxn_charset_info->number)
-  {
-    SQLINTEGER len= SQL_NTS;
-    uint errors= 0;
-
-    if (catalog)
-    {
-      catalog= sqlchar_as_sqlchar(dbc->ansi_charset_info, dbc->cxn_charset_info,
-                                  catalog, &len, &errors);
-      catalog_len= (SQLSMALLINT)len;
-      len= SQL_NTS;
-    }
-
-    if (schema)
-    {
-      schema= sqlchar_as_sqlchar(dbc->ansi_charset_info, dbc->cxn_charset_info,
-                                 schema, &len, &errors);
-      schema_len= (SQLSMALLINT)len;
-      len= SQL_NTS;
-    }
-
-    if (table)
-    {
-      table= sqlchar_as_sqlchar(dbc->ansi_charset_info, dbc->cxn_charset_info,
-                                table, &len, &errors);
-      table_len= (SQLSMALLINT)len;
-      len= SQL_NTS;
-    }
-
-    if (column)
-    {
-      column= sqlchar_as_sqlchar(dbc->ansi_charset_info, dbc->cxn_charset_info,
-                                 column, &len, &errors);
-      column_len= (SQLSMALLINT)len;
-    }
-  }
-
   rc= MySQLColumnPrivileges(hstmt, catalog, catalog_len, schema, schema_len,
                             table, table_len, column, column_len);
-
-  if (dbc->ansi_charset_info->number != dbc->cxn_charset_info->number)
-  {
-    x_free(catalog);
-    x_free(schema);
-    x_free(table);
-    x_free(column);
-  }
 
   return rc;
 }
@@ -213,54 +154,8 @@ SQLColumns(SQLHSTMT hstmt, SQLCHAR *catalog, SQLSMALLINT catalog_len,
 
   dbc= ((STMT *)hstmt)->dbc;
 
-  if (dbc->ansi_charset_info->number != dbc->cxn_charset_info->number)
-  {
-    SQLINTEGER len= SQL_NTS;
-    uint errors= 0;
-
-    if (catalog)
-    {
-      catalog= sqlchar_as_sqlchar(dbc->ansi_charset_info, dbc->cxn_charset_info,
-                                  catalog, &len, &errors);
-      catalog_len= (SQLSMALLINT)len;
-      len= SQL_NTS;
-    }
-
-    if (schema)
-    {
-      schema= sqlchar_as_sqlchar(dbc->ansi_charset_info, dbc->cxn_charset_info,
-                                 schema, &len, &errors);
-      schema_len= (SQLSMALLINT)len;
-      len= SQL_NTS;
-    }
-
-    if (table)
-    {
-      table= sqlchar_as_sqlchar(dbc->ansi_charset_info, dbc->cxn_charset_info,
-                                table, &len, &errors);
-      table_len= (SQLSMALLINT)len;
-      len= SQL_NTS;
-    }
-
-    if (column)
-    {
-      column= sqlchar_as_sqlchar(dbc->ansi_charset_info, dbc->cxn_charset_info,
-                                 column, &len, &errors);
-      column_len= (SQLSMALLINT)len;
-      len= SQL_NTS;
-    }
-  }
-
   rc= MySQLColumns(hstmt, catalog, catalog_len, schema, schema_len,
                    table, table_len, column, column_len);
-
-  if (dbc->ansi_charset_info->number != dbc->cxn_charset_info->number)
-  {
-    x_free(catalog);
-    x_free(schema);
-    x_free(table);
-    x_free(column);
-  }
 
   return rc;
 }
@@ -324,18 +219,7 @@ SQLDescribeCol(SQLHSTMT hstmt, SQLUSMALLINT column,
   if (value)
   {
     SQLCHAR *old_value= value;
-    if (stmt->dbc->ansi_charset_info->number !=
-        stmt->dbc->cxn_charset_info->number)
-    {
-      value= sqlchar_as_sqlchar(stmt->dbc->cxn_charset_info,
-                                stmt->dbc->ansi_charset_info,
-                                value, &len, &errors);
-      if (free_value)
-        x_free(old_value);
-      free_value= TRUE;
-    }
-    else
-      len= strlen((char *)value);
+    len= strlen((char *)value);
 
     /* We set the error only when the result is intented to be returned */
     if (name && len > name_max - 1)
@@ -456,8 +340,8 @@ SQLRETURN SQL_API
 SQLExecDirect(SQLHSTMT hstmt, SQLCHAR *str, SQLINTEGER str_len)
 {
   int error;
-  
-  CHECK_HANDLE(hstmt);  
+
+  CHECK_HANDLE(hstmt);
 
   if ((error= SQLPrepareImpl(hstmt, str, str_len)))
     return error;
@@ -483,80 +367,10 @@ SQLForeignKeys(SQLHSTMT hstmt,
 
   dbc= ((STMT *)hstmt)->dbc;
 
-  if (dbc->ansi_charset_info->number != dbc->cxn_charset_info->number)
-  {
-    SQLINTEGER len= SQL_NTS;
-    uint errors= 0;
-
-    if (pk_catalog)
-    {
-      pk_catalog= sqlchar_as_sqlchar(dbc->ansi_charset_info,
-                                     dbc->cxn_charset_info,
-                                     pk_catalog, &len, &errors);
-      pk_catalog_len= (SQLSMALLINT)len;
-      len= SQL_NTS;
-    }
-
-    if (pk_schema)
-    {
-      pk_schema= sqlchar_as_sqlchar(dbc->ansi_charset_info,
-                                    dbc->cxn_charset_info,
-                                    pk_schema, &len, &errors);
-      pk_schema_len= (SQLSMALLINT)len;
-      len= SQL_NTS;
-    }
-
-    if (pk_table)
-    {
-      pk_table= sqlchar_as_sqlchar(dbc->ansi_charset_info,
-                                   dbc->cxn_charset_info,
-                                   pk_table, &len, &errors);
-      pk_table_len= (SQLSMALLINT)len;
-      len= SQL_NTS;
-    }
-
-    if (fk_catalog)
-    {
-      fk_catalog= sqlchar_as_sqlchar(dbc->ansi_charset_info,
-                                     dbc->cxn_charset_info,
-                                     fk_catalog, &len, &errors);
-      fk_catalog_len= (SQLSMALLINT)len;
-      len= SQL_NTS;
-    }
-
-    if (fk_schema)
-    {
-      fk_schema= sqlchar_as_sqlchar(dbc->ansi_charset_info,
-                                    dbc->cxn_charset_info,
-                                    fk_schema, &len, &errors);
-      fk_schema_len= (SQLSMALLINT)len;
-      len= SQL_NTS;
-    }
-
-    if (fk_table)
-    {
-      fk_table= sqlchar_as_sqlchar(dbc->ansi_charset_info,
-                                   dbc->cxn_charset_info,
-                                   fk_table, &len, &errors);
-      fk_table_len= (SQLSMALLINT)len;
-      len= SQL_NTS;
-    }
-  }
-
   rc= MySQLForeignKeys(hstmt, pk_catalog, pk_catalog_len,
                        pk_schema, pk_schema_len, pk_table, pk_table_len,
                        fk_catalog, fk_catalog_len, fk_schema, fk_schema_len,
                        fk_table, fk_table_len);
-
-  if (dbc->ansi_charset_info->number != dbc->cxn_charset_info->number)
-  {
-    x_free(pk_catalog);
-    x_free(pk_schema);
-    x_free(pk_table);
-    x_free(fk_catalog);
-    x_free(fk_schema);
-    x_free(fk_table);
-  }
 
   return rc;
 }
@@ -580,8 +394,8 @@ SQLGetConnectAttrImpl(SQLHDBC hdbc, SQLINTEGER attribute, SQLPOINTER value,
   SQLCHAR *char_value= NULL;
   SQLRETURN rc= 0;
 
-  /* 
-    for numeric attributes value_max can be 0, so we must check for 
+  /*
+    for numeric attributes value_max can be 0, so we must check for
     the valid output buffer to prevent crashes
   */
   if (value)
@@ -589,29 +403,14 @@ SQLGetConnectAttrImpl(SQLHDBC hdbc, SQLINTEGER attribute, SQLPOINTER value,
 
   if (char_value)
   {
-    SQLSMALLINT free_value= FALSE;
     SQLINTEGER len= SQL_NTS;
     uint errors;
 
-    /* 
-      When SQLGetConnectAttr is called before connecting
-      dbc->ansi_charset_info and dbc->cxn_charset_info will be NULL,
-      so we can just copy the char_value as is.
-    */
-    if (dbc->ansi_charset_info && dbc->cxn_charset_info &&
-        dbc->ansi_charset_info->number != dbc->cxn_charset_info->number)
-    {
-      char_value= sqlchar_as_sqlchar(dbc->cxn_charset_info,
-                                     dbc->ansi_charset_info,
-                                     char_value, &len, &errors);
-      free_value= TRUE;
-    }
-    else
-      len= strlen((char *)char_value);
+    len= strlen((char *)char_value);
 
-    /* 
+    /*
       This check is inside the statement, which does not
-      execute if output buffer is NULL 
+      execute if output buffer is NULL
       see: "if (char_value)"
     */
     if (len > value_max - 1)
@@ -623,8 +422,6 @@ SQLGetConnectAttrImpl(SQLHDBC hdbc, SQLINTEGER attribute, SQLPOINTER value,
     if (value_len)
       *value_len= len;
 
-    if (free_value)
-      x_free(char_value);
   }
 
   return rc;
@@ -648,7 +445,6 @@ SQLGetCursorName(SQLHSTMT hstmt, SQLCHAR *cursor, SQLSMALLINT cursor_max,
 {
   STMT *stmt= (STMT *)hstmt;
   SQLCHAR *name;
-  my_bool free_name= FALSE;
   SQLINTEGER len;
   uint errors;
 
@@ -658,29 +454,14 @@ SQLGetCursorName(SQLHSTMT hstmt, SQLCHAR *cursor, SQLSMALLINT cursor_max,
   if (cursor_max < 0)
     return set_error(stmt, MYERR_S1090, NULL, 0);
 
-  if (stmt->dbc->ansi_charset_info->number ==
-      stmt->dbc->cxn_charset_info->number)
-  {
-    name= MySQLGetCursorName(hstmt);
-    len= strlen((char *)name);
-  }
-  else
-  {
-    name= sqlchar_as_sqlchar(stmt->dbc->cxn_charset_info,
-                             stmt->dbc->ansi_charset_info,
-                             MySQLGetCursorName(hstmt),
-                             &len, &errors);
-    free_name= TRUE;
-  }
+  name= MySQLGetCursorName(hstmt);
+  len= strlen((char *)name);
 
   if (cursor && cursor_max > 1)
     strmake((char *)cursor, (char *)name, cursor_max - 1);
 
   if (cursor_len)
     *cursor_len= (SQLSMALLINT)len;
-
-  if (free_name)
-    x_free(name);
 
   /* We set the error only when the result is intented to be returned */
   if (cursor && len > cursor_max - 1)
@@ -724,18 +505,8 @@ SQLGetDiagField(SQLSMALLINT handle_type, SQLHANDLE handle,
 
   if (value)
   {
-    SQLINTEGER free_value= FALSE;
     uint errors;
-    if (dbc && dbc->ansi_charset_info &&
-        dbc->ansi_charset_info->number != dbc->cxn_charset_info->number)
-    {
-      value= sqlchar_as_sqlchar(dbc->cxn_charset_info,
-                                    dbc->ansi_charset_info,
-                                    value, &len, &errors);
-      free_value= TRUE;
-    }
-    else
-      len= strlen((char *)value);
+    len= strlen((char *)value);
 
     /* We set the error only when the result is intented to be returned */
     if (info && len > info_max - 1)
@@ -747,8 +518,6 @@ SQLGetDiagField(SQLSMALLINT handle_type, SQLHANDLE handle,
     if (info && info_max > 1)
       strmake((char *)info, (char *)value, info_max - 1);
 
-    if (free_value)
-      x_free(value);
   }
 
   return rc;
@@ -778,7 +547,6 @@ SQLGetDiagRecImpl(SQLSMALLINT handle_type, SQLHANDLE handle,
   DBC *dbc;
   SQLCHAR *msg_value= NULL, *sqlstate_value= NULL;
   SQLINTEGER len= SQL_NTS;
-  SQLSMALLINT free_value= FALSE;
   uint errors;
 
   if (handle == NULL)
@@ -814,18 +582,9 @@ SQLGetDiagRecImpl(SQLSMALLINT handle_type, SQLHANDLE handle,
 
   if (msg_value)
   {
-    if (dbc && dbc->ansi_charset_info && dbc->cxn_charset_info &&
-        dbc->ansi_charset_info->number != dbc->cxn_charset_info->number)
-    {
-      msg_value= sqlchar_as_sqlchar(dbc->cxn_charset_info,
-                                    dbc->ansi_charset_info,
-                                    msg_value, &len, &errors);
-      free_value= TRUE;
-    }
-    else
-      len= strlen((char *)msg_value);
+    len= strlen((char *)msg_value);
 
-    /* 
+    /*
       We set the error only when the result is intented to be returned
       and message_max is greaater than 0
     */
@@ -837,30 +596,12 @@ SQLGetDiagRecImpl(SQLSMALLINT handle_type, SQLHANDLE handle,
 
     if (message && message_max > 1)
       strmake((char *)message, (char *)msg_value, message_max - 1);
-
-    if (free_value)
-      x_free(msg_value);
   }
 
   if (sqlstate && sqlstate_value)
   {
-    if (dbc && dbc->ansi_charset_info && dbc->cxn_charset_info &&
-        dbc->ansi_charset_info->number != dbc->cxn_charset_info->number)
-    {
-      len= SQL_NTS;
-      sqlstate_value= sqlchar_as_sqlchar(dbc->cxn_charset_info,
-                                         dbc->ansi_charset_info,
-                                         sqlstate_value, &len, &errors);
-      free_value= TRUE;
-    }
-    else
-      free_value= FALSE;
-
     strmake((char *)sqlstate,
             sqlstate_value ? (char *)sqlstate_value : "00000", 5);
-
-    if (free_value)
-      x_free(sqlstate_value);
   }
 
   return rc;
@@ -874,7 +615,6 @@ SQLGetInfo(SQLHDBC hdbc, SQLUSMALLINT type, SQLPOINTER value,
   DBC *dbc= (DBC *)hdbc;
   SQLCHAR *char_value= NULL;
   SQLINTEGER len= SQL_NTS;
-  SQLSMALLINT free_value= FALSE;
   uint errors;
 
   SQLRETURN rc;
@@ -885,18 +625,9 @@ SQLGetInfo(SQLHDBC hdbc, SQLUSMALLINT type, SQLPOINTER value,
 
   if (char_value)
   {
-    if (dbc->ansi_charset_info && dbc->cxn_charset_info
-      && dbc->ansi_charset_info->number != dbc->cxn_charset_info->number)
-    {
-      char_value= sqlchar_as_sqlchar(dbc->cxn_charset_info,
-                                     dbc->ansi_charset_info,
-                                     char_value, &len, &errors);
-      free_value= TRUE;
-    }
-    else
-      len= strlen((char *)char_value);
+    len= strlen((char *)char_value);
 
-    /* 
+    /*
       MSSQL implementation does not return the truncation warning if the
       value is not NULL and value_max is 0
      */
@@ -909,8 +640,6 @@ SQLGetInfo(SQLHDBC hdbc, SQLUSMALLINT type, SQLPOINTER value,
     if (value_len)
       *value_len= (SQLSMALLINT)len;
 
-    if (free_value)
-      x_free(char_value);
   }
 
   return rc;
@@ -994,32 +723,7 @@ SQLPrepareImpl(SQLHSTMT hstmt, SQLCHAR *str, SQLINTEGER str_len)
     we can pass it straight through. Otherwise it needs to be converted to
     the connection character set (probably utf-8).
   */
-  if (stmt->dbc->ansi_charset_info->number ==
-      stmt->dbc->cxn_charset_info->number)
-    return MySQLPrepare(hstmt, str, str_len, FALSE);
-  else
-  {
-    uint errors= 0;
-
-    str= sqlchar_as_sqlchar(stmt->dbc->ansi_charset_info,
-                            stmt->dbc->cxn_charset_info,
-                            str, &str_len, &errors);
-
-    if (!str && str_len == -1)
-    {
-      set_mem_error(&stmt->dbc->mysql);
-      return handle_connection_error(stmt);
-    }
-
-    /* Character conversion problems are not tolerated. */
-    if (errors)
-    {
-      x_free(str);
-      return set_stmt_error(stmt, "22018", NULL, 0);
-    }
-
-    return MySQLPrepare(hstmt, str, str_len, TRUE);
-  }
+  return MySQLPrepare(hstmt, str, str_len, FALSE);
 }
 
 
@@ -1036,45 +740,8 @@ SQLPrimaryKeys(SQLHSTMT hstmt,
 
   dbc= ((STMT *)hstmt)->dbc;
 
-  if (dbc->ansi_charset_info->number != dbc->cxn_charset_info->number)
-  {
-    SQLINTEGER len= SQL_NTS;
-    uint errors= 0;
-
-    if (catalog)
-    {
-      catalog= sqlchar_as_sqlchar(dbc->ansi_charset_info, dbc->cxn_charset_info,
-                                  catalog, &len, &errors);
-      catalog_len= (SQLSMALLINT)len;
-      len= SQL_NTS;
-    }
-
-    if (schema)
-    {
-      schema= sqlchar_as_sqlchar(dbc->ansi_charset_info, dbc->cxn_charset_info,
-                                 schema, &len, &errors);
-      schema_len= (SQLSMALLINT)len;
-      len= SQL_NTS;
-    }
-
-    if (table)
-    {
-      table= sqlchar_as_sqlchar(dbc->ansi_charset_info, dbc->cxn_charset_info,
-                                table, &len, &errors);
-      table_len= (SQLSMALLINT)len;
-      len= SQL_NTS;
-    }
-  }
-
   rc= MySQLPrimaryKeys(hstmt, catalog, catalog_len, schema, schema_len,
                        table, table_len);
-
-  if (dbc->ansi_charset_info->number != dbc->cxn_charset_info->number)
-  {
-    x_free(catalog);
-    x_free(schema);
-    x_free(table);
-  }
 
   return rc;
 }
@@ -1094,53 +761,9 @@ SQLProcedureColumns(SQLHSTMT hstmt,
 
   dbc= ((STMT *)hstmt)->dbc;
 
-  if (dbc->ansi_charset_info->number != dbc->cxn_charset_info->number)
-  {
-    SQLINTEGER len= SQL_NTS;
-    uint errors= 0;
-
-    if (catalog)
-    {
-      catalog= sqlchar_as_sqlchar(dbc->ansi_charset_info, dbc->cxn_charset_info,
-                                  catalog, &len, &errors);
-      catalog_len= (SQLSMALLINT)len;
-      len= SQL_NTS;
-    }
-
-    if (schema)
-    {
-      schema= sqlchar_as_sqlchar(dbc->ansi_charset_info, dbc->cxn_charset_info,
-                                 schema, &len, &errors);
-      schema_len= (SQLSMALLINT)len;
-      len= SQL_NTS;
-    }
-
-    if (proc)
-    {
-      proc= sqlchar_as_sqlchar(dbc->ansi_charset_info, dbc->cxn_charset_info,
-                               proc, &len, &errors);
-      proc_len= (SQLSMALLINT)len;
-      len= SQL_NTS;
-    }
-
-    if (column)
-    {
-      column= sqlchar_as_sqlchar(dbc->ansi_charset_info, dbc->cxn_charset_info,
-                                 column, &len, &errors);
-      column_len= (SQLSMALLINT)len;
-    }
-  }
-
   rc= MySQLProcedureColumns(hstmt, catalog, catalog_len,
                             schema, schema_len, proc, proc_len,
                             column, column_len);
-
-  if (dbc->ansi_charset_info->number != dbc->cxn_charset_info->number)
-  {
-    x_free(catalog);
-    x_free(schema);
-    x_free(proc);
-  }
 
   return rc;
 }
@@ -1159,45 +782,8 @@ SQLProcedures(SQLHSTMT hstmt,
 
   dbc= ((STMT *)hstmt)->dbc;
 
-  if (dbc->ansi_charset_info->number != dbc->cxn_charset_info->number)
-  {
-    SQLINTEGER len= SQL_NTS;
-    uint errors= 0;
-
-    if (catalog)
-    {
-      catalog= sqlchar_as_sqlchar(dbc->ansi_charset_info, dbc->cxn_charset_info,
-                                  catalog, &len, &errors);
-      catalog_len= (SQLSMALLINT)len;
-      len= SQL_NTS;
-    }
-
-    if (schema)
-    {
-      schema= sqlchar_as_sqlchar(dbc->ansi_charset_info, dbc->cxn_charset_info,
-                                 schema, &len, &errors);
-      schema_len= (SQLSMALLINT)len;
-      len= SQL_NTS;
-    }
-
-    if (proc)
-    {
-      proc= sqlchar_as_sqlchar(dbc->ansi_charset_info, dbc->cxn_charset_info,
-                                proc, &len, &errors);
-      proc_len= (SQLSMALLINT)len;
-      len= SQL_NTS;
-    }
-  }
-
   rc= MySQLProcedures(hstmt, catalog, catalog_len, schema, schema_len,
                       proc, proc_len);
-
-  if (dbc->ansi_charset_info->number != dbc->cxn_charset_info->number)
-  {
-    x_free(catalog);
-    x_free(schema);
-    x_free(proc);
-  }
 
   return rc;
 }
@@ -1219,32 +805,7 @@ SQLSetConnectAttrImpl(SQLHDBC hdbc, SQLINTEGER attribute,
 {
   SQLRETURN rc;
   DBC *dbc= (DBC *)hdbc;
-  my_bool free_value= FALSE;
-
-  if (dbc->ansi_charset_info &&
-      dbc->ansi_charset_info->number != dbc->cxn_charset_info->number)
-  {
-    /* SQL_ATTR_CURRENT_CATALOG is the only string attribute we support. */
-    if (attribute == SQL_ATTR_CURRENT_CATALOG)
-    {
-      uint errors= 0;
-      value= sqlchar_as_sqlchar(dbc->ansi_charset_info, dbc->cxn_charset_info,
-                                (SQLCHAR*)value, &value_len, &errors);
-      if (!value && value_len == -1)
-      {
-        set_mem_error(&dbc->mysql);
-        return set_conn_error(dbc, MYERR_S1001, mysql_error(&dbc->mysql),
-                              mysql_errno(&dbc->mysql));
-      }
-      free_value= TRUE;
-    }
-  }
-
   rc= MySQLSetConnectAttr(hdbc, attribute, value, value_len);
-
-  if (free_value)
-    x_free(value);
-
   return rc;
 }
 
@@ -1271,31 +832,7 @@ SQLSetCursorName(SQLHSTMT hstmt, SQLCHAR *name, SQLSMALLINT name_len)
   uint errors= 0;
 
   CHECK_HANDLE(hstmt);
-
-  if (stmt->dbc->ansi_charset_info->number ==
-      stmt->dbc->cxn_charset_info->number)
-    return MySQLSetCursorName(hstmt, name, name_len);
-
-  name= sqlchar_as_sqlchar(stmt->dbc->ansi_charset_info,
-                           stmt->dbc->cxn_charset_info,
-                           name, &len, &errors);
-
-  if (!name && len == -1)
-  {
-    set_mem_error(&stmt->dbc->mysql);
-    return handle_connection_error(stmt);
-  }
-
-  /* Character conversion problems are not tolerated. */
-  if (errors)
-  {
-    x_free(name);
-    return set_stmt_error(stmt, "HY000",
-                          "Cursor name included characters that could not "
-                          "be converted to connection character set", 0);
-  }
-
-  return MySQLSetCursorName(hstmt, name, (SQLSMALLINT)len);
+  return MySQLSetCursorName(hstmt, name, name_len);
 }
 
 
@@ -1324,45 +861,8 @@ SQLSpecialColumns(SQLHSTMT hstmt, SQLUSMALLINT type,
 
   dbc= ((STMT *)hstmt)->dbc;
 
-  if (dbc->ansi_charset_info->number != dbc->cxn_charset_info->number)
-  {
-    SQLINTEGER len= SQL_NTS;
-    uint errors= 0;
-
-    if (catalog)
-    {
-      catalog= sqlchar_as_sqlchar(dbc->ansi_charset_info, dbc->cxn_charset_info,
-                                  catalog, &len, &errors);
-      catalog_len= (SQLSMALLINT)len;
-      len= SQL_NTS;
-    }
-
-    if (schema)
-    {
-      schema= sqlchar_as_sqlchar(dbc->ansi_charset_info, dbc->cxn_charset_info,
-                                 schema, &len, &errors);
-      schema_len= (SQLSMALLINT)len;
-      len= SQL_NTS;
-    }
-
-    if (table)
-    {
-      table= sqlchar_as_sqlchar(dbc->ansi_charset_info, dbc->cxn_charset_info,
-                                table, &len, &errors);
-      table_len= (SQLSMALLINT)len;
-      len= SQL_NTS;
-    }
-  }
-
   rc= MySQLSpecialColumns(hstmt, type, catalog, catalog_len, schema, schema_len,
                           table, table_len, scope, nullable);
-
-  if (dbc->ansi_charset_info->number != dbc->cxn_charset_info->number)
-  {
-    x_free(catalog);
-    x_free(schema);
-    x_free(table);
-  }
 
   return rc;
 }
@@ -1381,47 +881,8 @@ SQLStatistics(SQLHSTMT hstmt,
   CHECK_HANDLE(hstmt);
 
   dbc= ((STMT *)hstmt)->dbc;
-
-  if (dbc->ansi_charset_info->number != dbc->cxn_charset_info->number)
-  {
-    SQLINTEGER len= SQL_NTS;
-    uint errors= 0;
-
-    if (catalog)
-    {
-      catalog= sqlchar_as_sqlchar(dbc->ansi_charset_info, dbc->cxn_charset_info,
-                                  catalog, &len, &errors);
-      catalog_len= (SQLSMALLINT)len;
-      len= SQL_NTS;
-    }
-
-    if (schema)
-    {
-      schema= sqlchar_as_sqlchar(dbc->ansi_charset_info, dbc->cxn_charset_info,
-                                 schema, &len, &errors);
-      schema_len= (SQLSMALLINT)len;
-      len= SQL_NTS;
-    }
-
-    if (table)
-    {
-      table= sqlchar_as_sqlchar(dbc->ansi_charset_info, dbc->cxn_charset_info,
-                                table, &len, &errors);
-      table_len= (SQLSMALLINT)len;
-      len= SQL_NTS;
-    }
-  }
-
   rc= MySQLStatistics(hstmt, catalog, catalog_len, schema, schema_len,
                       table, table_len, unique, accuracy);
-
-  if (dbc->ansi_charset_info->number != dbc->cxn_charset_info->number)
-  {
-    x_free(catalog);
-    x_free(schema);
-    x_free(table);
-  }
-
   return rc;
 }
 
@@ -1439,45 +900,8 @@ SQLTablePrivileges(SQLHSTMT hstmt,
 
   dbc= ((STMT *)hstmt)->dbc;
 
-  if (dbc->ansi_charset_info->number != dbc->cxn_charset_info->number)
-  {
-    SQLINTEGER len= SQL_NTS;
-    uint errors= 0;
-
-    if (catalog)
-    {
-      catalog= sqlchar_as_sqlchar(dbc->ansi_charset_info, dbc->cxn_charset_info,
-                                  catalog, &len, &errors);
-      catalog_len= (SQLSMALLINT)len;
-      len= SQL_NTS;
-    }
-
-    if (schema)
-    {
-      schema= sqlchar_as_sqlchar(dbc->ansi_charset_info, dbc->cxn_charset_info,
-                                 schema, &len, &errors);
-      schema_len= (SQLSMALLINT)len;
-      len= SQL_NTS;
-    }
-
-    if (table)
-    {
-      table= sqlchar_as_sqlchar(dbc->ansi_charset_info, dbc->cxn_charset_info,
-                                table, &len, &errors);
-      table_len= (SQLSMALLINT)len;
-      len= SQL_NTS;
-    }
-  }
-
   rc= MySQLTablePrivileges(hstmt, catalog, catalog_len, schema, schema_len,
                            table, table_len);
-
-  if (dbc->ansi_charset_info->number != dbc->cxn_charset_info->number)
-  {
-    x_free(catalog);
-    x_free(schema);
-    x_free(table);
-  }
 
   return rc;
 }
@@ -1497,63 +921,8 @@ SQLTables(SQLHSTMT hstmt,
 
   dbc= ((STMT *)hstmt)->dbc;
 
-  if (dbc->ansi_charset_info->number != dbc->cxn_charset_info->number)
-  {
-    SQLINTEGER len= SQL_NTS;
-    uint errors= 0;
-
-    if (catalog)
-    {
-      catalog= sqlchar_as_sqlchar(dbc->ansi_charset_info, dbc->cxn_charset_info,
-                                  catalog, &len, &errors);
-      if (!len)
-        catalog= (SQLCHAR*)"";
-      catalog_len= (SQLSMALLINT)len;
-      len= SQL_NTS;
-    }
-
-    if (schema)
-    {
-      schema= sqlchar_as_sqlchar(dbc->ansi_charset_info, dbc->cxn_charset_info,
-                                 schema, &len, &errors);
-      if (!len)
-        schema= (SQLCHAR*)"";
-      schema_len= (SQLSMALLINT)len;
-      len= SQL_NTS;
-    }
-
-    if (table)
-    {
-      table= sqlchar_as_sqlchar(dbc->ansi_charset_info, dbc->cxn_charset_info,
-                                table, &len, &errors);
-      if (!len)
-        table= (SQLCHAR*)"";
-      table_len= (SQLSMALLINT)len;
-      len= SQL_NTS;
-    }
-
-    if (type)
-    {
-      type= sqlchar_as_sqlchar(dbc->ansi_charset_info, dbc->cxn_charset_info,
-                                 type, &len, &errors);
-      type_len= (SQLSMALLINT)len;
-      len= SQL_NTS;
-    }
-  }
-
   rc= MySQLTables(hstmt, catalog, catalog_len, schema, schema_len,
                   table, table_len, type, type_len);
-
-  if (dbc->ansi_charset_info->number != dbc->cxn_charset_info->number)
-  {
-    if (catalog_len)
-      x_free(catalog);
-    if (schema_len)
-      x_free(schema);
-    if (table_len)
-      x_free(table);
-    x_free(type);
-  }
 
   return rc;
 }

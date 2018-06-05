@@ -1,30 +1,30 @@
-// Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved. 
-// 
-// This program is free software; you can redistribute it and/or modify 
-// it under the terms of the GNU General Public License, version 2.0, as 
-// published by the Free Software Foundation. 
-// 
-// This program is also distributed with certain software (including 
-// but not limited to OpenSSL) that is licensed under separate terms, 
-// as designated in a particular file or component or in included license 
-// documentation. The authors of MySQL hereby grant you an 
-// additional permission to link the program and your derivative works 
-// with the separately licensed software that they have included with 
-// MySQL. 
-// 
-// Without limiting anything contained in the foregoing, this file, 
-// which is part of <MySQL Product>, is also subject to the 
-// Universal FOSS Exception, version 1.0, a copy of which can be found at 
-// http://oss.oracle.com/licenses/universal-foss-exception. 
-// 
-// This program is distributed in the hope that it will be useful, but 
-// WITHOUT ANY WARRANTY; without even the implied warranty of 
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-// See the GNU General Public License, version 2.0, for more details. 
-// 
-// You should have received a copy of the GNU General Public License 
-// along with this program; if not, write to the Free Software Foundation, Inc., 
-// 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA 
+// Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+//
+// This program is free software; you can redistribute it and/or modify
+// it under the terms of the GNU General Public License, version 2.0, as
+// published by the Free Software Foundation.
+//
+// This program is also distributed with certain software (including
+// but not limited to OpenSSL) that is licensed under separate terms,
+// as designated in a particular file or component or in included license
+// documentation. The authors of MySQL hereby grant you an
+// additional permission to link the program and your derivative works
+// with the separately licensed software that they have included with
+// MySQL.
+//
+// Without limiting anything contained in the foregoing, this file,
+// which is part of <MySQL Product>, is also subject to the
+// Universal FOSS Exception, version 1.0, a copy of which can be found at
+// http://oss.oracle.com/licenses/universal-foss-exception.
+//
+// This program is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+// See the GNU General Public License, version 2.0, for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program; if not, write to the Free Software Foundation, Inc.,
+// 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 
 /**
   @file  results.c
@@ -253,14 +253,17 @@ sql_get_bookmark_data(STMT *stmt, SQLSMALLINT fCType, uint column_number,
 
   case SQL_C_WCHAR:
     {
-      int ret;
-      ret= utf8_as_sqlwchar((SQLWCHAR *)rgbValue,
-                      (SQLINTEGER)(cbValueMax / sizeof(SQLWCHAR)),
-                      (SQLCHAR *)value, length);
-      if (!ret)
+      if(stmt->stmt_options.retrieve_data)
       {
-        set_stmt_error(stmt, "01004", NULL, 0);
-        return SQL_SUCCESS_WITH_INFO;
+        int ret;
+        ret= utf8_as_sqlwchar((SQLWCHAR *)rgbValue,
+                        (SQLINTEGER)(cbValueMax / sizeof(SQLWCHAR)),
+                        (SQLCHAR *)value, length);
+        if (!ret)
+        {
+          set_stmt_error(stmt, "01004", NULL, 0);
+          return SQL_SUCCESS_WITH_INFO;
+        }
       }
 
       if (pcbValue)
@@ -270,14 +273,14 @@ sql_get_bookmark_data(STMT *stmt, SQLSMALLINT fCType, uint column_number,
 
   case SQL_C_TINYINT:
   case SQL_C_STINYINT:
-    if (rgbValue)
+    if (rgbValue && stmt->stmt_options.retrieve_data)
       *((SQLSCHAR *)rgbValue)= (SQLSCHAR) get_int(stmt, column_number,
                                                   value, length);
     *pcbValue= 1;
     break;
 
   case SQL_C_UTINYINT:
-    if (rgbValue)
+    if (rgbValue && stmt->stmt_options.retrieve_data)
       *((SQLCHAR *)rgbValue)= (SQLCHAR)(unsigned int)
                               get_int(stmt, column_number, value, length);
     *pcbValue= 1;
@@ -285,14 +288,14 @@ sql_get_bookmark_data(STMT *stmt, SQLSMALLINT fCType, uint column_number,
 
   case SQL_C_SHORT:
   case SQL_C_SSHORT:
-    if (rgbValue)
+    if (rgbValue && stmt->stmt_options.retrieve_data)
       *((SQLSMALLINT *)rgbValue)= (SQLSMALLINT) get_int(stmt, column_number,
                                                         value, length);
     *pcbValue= sizeof(SQLSMALLINT);
     break;
 
   case SQL_C_USHORT:
-    if (rgbValue)
+    if (rgbValue && stmt->stmt_options.retrieve_data)
       *((SQLUSMALLINT *)rgbValue)= (SQLUSMALLINT)(uint)
                               get_int64(stmt, column_number, value, length);
     *pcbValue= sizeof(SQLUSMALLINT);
@@ -300,7 +303,7 @@ sql_get_bookmark_data(STMT *stmt, SQLSMALLINT fCType, uint column_number,
 
   case SQL_C_LONG:
   case SQL_C_SLONG:
-    if (rgbValue)
+    if (rgbValue && stmt->stmt_options.retrieve_data)
     {
       if (length >= 10 && value[4] == '-' && value[7] == '-' &&
            (!value[10] || value[10] == ' '))
@@ -317,21 +320,21 @@ sql_get_bookmark_data(STMT *stmt, SQLSMALLINT fCType, uint column_number,
     break;
 
   case SQL_C_ULONG:
-    if (rgbValue)
+    if (rgbValue && stmt->stmt_options.retrieve_data)
       *((SQLUINTEGER *)rgbValue)= (SQLUINTEGER) get_int64(stmt, column_number,
                                                           value, length);
     *pcbValue= sizeof(SQLUINTEGER);
     break;
 
   case SQL_C_FLOAT:
-    if (rgbValue)
+    if (rgbValue && stmt->stmt_options.retrieve_data)
       *((float *)rgbValue)= (float) get_double(stmt, column_number,
                                                value, length);
     *pcbValue= sizeof(float);
     break;
 
   case SQL_C_DOUBLE:
-    if (rgbValue)
+    if (rgbValue && stmt->stmt_options.retrieve_data)
       *((double *)rgbValue)= (double) get_double(stmt, column_number,
                                                  value, length);
     *pcbValue= sizeof(double);
@@ -339,7 +342,7 @@ sql_get_bookmark_data(STMT *stmt, SQLSMALLINT fCType, uint column_number,
 
   case SQL_C_SBIGINT:
     /** @todo This is not right. SQLBIGINT is not always longlong. */
-    if (rgbValue)
+    if (rgbValue && stmt->stmt_options.retrieve_data)
       *((longlong *)rgbValue)= (longlong) get_int64(stmt, column_number,
                                                     value, length);
     *pcbValue= sizeof(longlong);
@@ -347,7 +350,7 @@ sql_get_bookmark_data(STMT *stmt, SQLSMALLINT fCType, uint column_number,
 
   case SQL_C_UBIGINT:
     /** @todo This is not right. SQLUBIGINT is not always ulonglong.  */
-    if (rgbValue)
+    if (rgbValue && stmt->stmt_options.retrieve_data)
         *((ulonglong *)rgbValue)= (ulonglong) get_int64(stmt, column_number,
                                                         value, length);
     *pcbValue= sizeof(ulonglong);
@@ -529,7 +532,7 @@ sql_get_data(STMT *stmt, SQLSMALLINT fCType, uint column_number,
         {
           char *tmp= get_string(stmt, column_number, value, &length, as_string);
           return copy_ansi_result(stmt,(SQLCHAR*)rgbValue, cbValueMax, pcbValue,
-                          field, tmp,length);
+                                  field, tmp,length);
         }
       }
 

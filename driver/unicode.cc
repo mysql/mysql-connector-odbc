@@ -1,30 +1,30 @@
-// Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved. 
-// 
-// This program is free software; you can redistribute it and/or modify 
-// it under the terms of the GNU General Public License, version 2.0, as 
-// published by the Free Software Foundation. 
-// 
-// This program is also distributed with certain software (including 
-// but not limited to OpenSSL) that is licensed under separate terms, 
-// as designated in a particular file or component or in included license 
-// documentation. The authors of MySQL hereby grant you an 
-// additional permission to link the program and your derivative works 
-// with the separately licensed software that they have included with 
-// MySQL. 
-// 
-// Without limiting anything contained in the foregoing, this file, 
-// which is part of <MySQL Product>, is also subject to the 
-// Universal FOSS Exception, version 1.0, a copy of which can be found at 
-// http://oss.oracle.com/licenses/universal-foss-exception. 
-// 
-// This program is distributed in the hope that it will be useful, but 
-// WITHOUT ANY WARRANTY; without even the implied warranty of 
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-// See the GNU General Public License, version 2.0, for more details. 
-// 
-// You should have received a copy of the GNU General Public License 
-// along with this program; if not, write to the Free Software Foundation, Inc., 
-// 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA 
+// Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+//
+// This program is free software; you can redistribute it and/or modify
+// it under the terms of the GNU General Public License, version 2.0, as
+// published by the Free Software Foundation.
+//
+// This program is also distributed with certain software (including
+// but not limited to OpenSSL) that is licensed under separate terms,
+// as designated in a particular file or component or in included license
+// documentation. The authors of MySQL hereby grant you an
+// additional permission to link the program and your derivative works
+// with the separately licensed software that they have included with
+// MySQL.
+//
+// Without limiting anything contained in the foregoing, this file,
+// which is part of <MySQL Product>, is also subject to the
+// Universal FOSS Exception, version 1.0, a copy of which can be found at
+// http://oss.oracle.com/licenses/universal-foss-exception.
+//
+// This program is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+// See the GNU General Public License, version 2.0, for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program; if not, write to the Free Software Foundation, Inc.,
+// 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 
 /**
   @file  unicode.c
@@ -453,9 +453,9 @@ SQLGetConnectAttrWImpl(SQLHDBC hdbc, SQLINTEGER attribute, SQLPOINTER value,
   SQLCHAR *char_value= NULL;
 
   SQLRETURN rc= 0;
-  
-  /* 
-    for numeric attributes value_max can be 0, so we must check for 
+
+  /*
+    for numeric attributes value_max can be 0, so we must check for
     the valid output buffer to prevent crashes
   */
   if (value)
@@ -468,7 +468,7 @@ SQLGetConnectAttrWImpl(SQLHDBC hdbc, SQLINTEGER attribute, SQLPOINTER value,
     uint errors;
     CHARSET_INFO *result_charset_info= dbc->cxn_charset_info;
 
-    /* 
+    /*
       When SQLGetConnectAttr is called before connecting the connection
       is not established yet and its charset is unknown. We assume UTF8
       as the most suitable charset for the string result.
@@ -485,9 +485,9 @@ SQLGetConnectAttrWImpl(SQLHDBC hdbc, SQLINTEGER attribute, SQLPOINTER value,
     /* value_max is in bytes, we want it in chars. */
     value_max/= sizeof(SQLWCHAR);
 
-    /* 
+    /*
       This check is inside the statement, which does not
-      execute if output buffer is NULL 
+      execute if output buffer is NULL
       see: "if (char_value)"
     */
     if (len > value_max - 1)
@@ -690,7 +690,7 @@ SQLGetDiagRecWImpl(SQLSMALLINT handle_type, SQLHANDLE handle,
                                           default_charset_info,
                                           msg_value, &len, &errors);
 
-    /* 
+    /*
       We set the error only when the result is intented to be returned
       and message_max is greaater than 0
     */
@@ -766,7 +766,7 @@ SQLGetInfoW(SQLHDBC hdbc, SQLUSMALLINT type, SQLPOINTER value,
     /* value_max is in bytes, we want it in chars. */
     value_max/= sizeof(SQLWCHAR);
 
-    /* 
+    /*
       MSSQL implementation does not return the truncation warning if the
       value is not NULL and value_max is 0
      */
@@ -940,7 +940,7 @@ SQLProcedureColumnsW(SQLHSTMT hstmt,
   column8= sqlwchar_as_sqlchar(dbc->cxn_charset_info, column, &len, &errors);
   column_len= (SQLSMALLINT)len;
 
-  rc= MySQLProcedureColumns(hstmt, catalog8, catalog_len, schema8, schema_len, 
+  rc= MySQLProcedureColumns(hstmt, catalog8, catalog_len, schema8, schema_len,
                                proc8, proc_len, column8, column_len);
 
   x_free(catalog8);
