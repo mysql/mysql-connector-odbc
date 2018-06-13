@@ -1,30 +1,30 @@
-// Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved. 
-// 
-// This program is free software; you can redistribute it and/or modify 
-// it under the terms of the GNU General Public License, version 2.0, as 
-// published by the Free Software Foundation. 
-// 
-// This program is also distributed with certain software (including 
-// but not limited to OpenSSL) that is licensed under separate terms, 
-// as designated in a particular file or component or in included license 
-// documentation. The authors of MySQL hereby grant you an 
-// additional permission to link the program and your derivative works 
-// with the separately licensed software that they have included with 
-// MySQL. 
-// 
-// Without limiting anything contained in the foregoing, this file, 
-// which is part of <MySQL Product>, is also subject to the 
-// Universal FOSS Exception, version 1.0, a copy of which can be found at 
-// http://oss.oracle.com/licenses/universal-foss-exception. 
-// 
-// This program is distributed in the hope that it will be useful, but 
-// WITHOUT ANY WARRANTY; without even the implied warranty of 
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-// See the GNU General Public License, version 2.0, for more details. 
-// 
-// You should have received a copy of the GNU General Public License 
-// along with this program; if not, write to the Free Software Foundation, Inc., 
-// 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA 
+// Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+//
+// This program is free software; you can redistribute it and/or modify
+// it under the terms of the GNU General Public License, version 2.0, as
+// published by the Free Software Foundation.
+//
+// This program is also distributed with certain software (including
+// but not limited to OpenSSL) that is licensed under separate terms,
+// as designated in a particular file or component or in included license
+// documentation. The authors of MySQL hereby grant you an
+// additional permission to link the program and your derivative works
+// with the separately licensed software that they have included with
+// MySQL.
+//
+// Without limiting anything contained in the foregoing, this file,
+// which is part of <MySQL Product>, is also subject to the
+// Universal FOSS Exception, version 1.0, a copy of which can be found at
+// http://oss.oracle.com/licenses/universal-foss-exception.
+//
+// This program is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+// See the GNU General Public License, version 2.0, for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program; if not, write to the Free Software Foundation, Inc.,
+// 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 
 #include "odbctap.h"
 
@@ -421,13 +421,13 @@ DECLARE_TEST(paramarray_by_row)
 
   memcpy(dataBinding[0].bData, "\x01\x80\x00\x80\x00", 5);
   dataBinding[0].intField= 1;
- 
+
   memcpy(dataBinding[1].bData, "\x02\x80\x00\x80", 4);
   dataBinding[1].intField= 0;
- 
+
   memcpy(dataBinding[2].bData, "\x03\x80\x00", 3);
   dataBinding[2].intField= 223322;
- 
+
   for (i= 0; i < ROWS_TO_INSERT; ++i)
   {
     strcpy(dataBinding[i].strField, str[i]);
@@ -684,7 +684,7 @@ DECLARE_TEST(paramarray_ignore_paramset)
 
   /* ... and that inserted was less than SQL_ATTR_PARAMSET_SIZE rows */
   is( rowsInserted < ROWS_TO_INSERT);
-  
+
   /* Clean-up */
   ok_stmt(hstmt, SQLFreeStmt(hstmt, SQL_CLOSE));
   ok_stmt(hstmt, SQLExecDirect(hstmt, "DROP TABLE IF EXISTS bug48310", SQL_NTS));
@@ -913,7 +913,7 @@ DECLARE_TEST(t_bug59772)
     ok_stmt(hstmt, SQLExecDirect(hstmt, (SQLCHAR *)buf_kill, SQL_NTS));
 
     rc= SQLExecute(hstmt2);
-    
+
     /* The result should be SQL_ERROR */
     if (rc != SQL_ERROR)
       overall_result= FAIL;
@@ -921,7 +921,7 @@ DECLARE_TEST(t_bug59772)
     for (i= 0; i < paramsProcessed; ++i)
 
       /* We expect error statuses for all parameters */
-      if ( paramStatusArray[i] != ((i + 1 < ROWS_TO_INSERT) ? 
+      if ( paramStatusArray[i] != ((i + 1 < ROWS_TO_INSERT) ?
             SQL_PARAM_DIAG_UNAVAILABLE : SQL_PARAM_ERROR) )
       {
         printMessage("Parameter #%u status isn't successful(0x%X)", i+1, paramStatusArray[i]);
@@ -971,7 +971,7 @@ DECLARE_TEST(t_odbcoutparams)
 
   is_num(par[1], 1300);
   is_num(par[2], 300);
-  
+
   /* Only 1 row always - we still can get them as a result */
   ok_stmt(hstmt, SQLFetch(hstmt));
   is_num(my_fetch_int(hstmt, 1), 1300);
@@ -1021,7 +1021,7 @@ DECLARE_TEST(t_odbcoutparams)
                 "  SET p_in = 300, p_out := 'This is OUT param', p_inout = 200; "
                 "  SELECT p_inout, p_in, substring(p_out, 9);"
                 "END");
-  
+
   ok_stmt(hstmt, SQLBindParameter(hstmt, 1, SQL_PARAM_OUTPUT, SQL_C_CHAR, SQL_VARCHAR, 0,
       0, str, sizeof(str)/sizeof(SQLCHAR), NULL));
   ok_stmt(hstmt, SQLBindParameter(hstmt, 2, SQL_PARAM_INPUT, SQL_C_LONG, SQL_INTEGER, 0,
@@ -1033,7 +1033,7 @@ DECLARE_TEST(t_odbcoutparams)
   /* rs-1 */
   ok_stmt(hstmt, SQLNumResultCols(hstmt,&ncol));
   is_num(ncol, 3);
-  
+
   ok_stmt(hstmt, SQLFetch(hstmt));
   is_num(my_fetch_int(hstmt, 1), 200);
   is_num(my_fetch_int(hstmt, 2), 300);
@@ -1084,7 +1084,7 @@ DECLARE_TEST(t_bug14501952)
   ok_stmt(hstmt, SQLGetData(hstmt, 1, SQL_C_BINARY, buff, sizeof(buff),
                             &len));
   is_str(buff, blobValue, 27);
-  
+
   ok_stmt(hstmt, SQLFreeStmt(hstmt, SQL_CLOSE));
 
   ok_sql(hstmt, "DROP PROCEDURE bug14501952");
@@ -1133,7 +1133,7 @@ DECLARE_TEST(t_bug14563386)
   ok_stmt(hstmt, SQLGetData(hstmt, 2, SQL_C_BINARY, buff, sizeof(buff),
                             &len));
   is_str(buff, binValue, 16);
-  
+
   ok_stmt(hstmt, SQLFreeStmt(hstmt, SQL_CLOSE));
 
   ok_sql(hstmt, "DROP PROCEDURE b14563386");
@@ -1166,7 +1166,7 @@ DECLARE_TEST(t_bug14551229)
   ok_stmt(hstmt, SQLFetch(hstmt));
   ok_stmt(hstmt, SQLGetData(hstmt, 1, SQL_C_SLONG, &value, 0, 0));
   is_num(value, -1);
-  
+
   ok_stmt(hstmt, SQLFreeStmt(hstmt, SQL_CLOSE));
 
   ok_sql(hstmt, "DROP PROCEDURE b14551229");
@@ -1209,7 +1209,7 @@ DECLARE_TEST(t_bug14560916)
   is_str(param, "\2A", 2);
 
   ok_stmt(hstmt, SQLFreeStmt(hstmt, SQL_CLOSE));
-  
+
 
   ok_sql(hstmt, "CALL b14560916(?)");
 
@@ -1274,7 +1274,7 @@ DECLARE_TEST(t_bug14586094)
   ok_stmt(hstmt, SQLGetData(hstmt, 2, SQL_C_CHAR, buff, sizeof(buff),
                             &len));
   is_str(buff, vcValue, 9);
-  
+
   ok_stmt(hstmt, SQLFreeStmt(hstmt, SQL_CLOSE));
 
   ok_sql(hstmt, "DROP PROCEDURE b14586094");
@@ -1312,7 +1312,7 @@ DECLARE_TEST(t_longtextoutparam)
   ok_stmt(hstmt, SQLGetData(hstmt, 1, SQL_C_CHAR, buff, sizeof(buff),
                             &len));
   is_str(buff, blobValue, 32);
-  
+
   ok_stmt(hstmt, SQLFreeStmt(hstmt, SQL_CLOSE));
 
   ok_sql(hstmt, "DROP PROCEDURE t_longtextoutparam");
@@ -1321,20 +1321,20 @@ DECLARE_TEST(t_longtextoutparam)
 }
 
 
-/* 
+/*
   Bug# 16613308/53891 ODBC driver not parsing comments correctly
 */
 DECLARE_TEST(t_bug53891)
 {
   int c1= 2;
-  
+
   DECLARE_BASIC_HANDLES(henv1, hdbc1, hstmt1);
 
   /* Connect with SSPS enabled */
-  alloc_basic_handles_with_opt(&henv1, &hdbc1, &hstmt1, NULL, NULL, NULL, 
+  alloc_basic_handles_with_opt(&henv1, &hdbc1, &hstmt1, NULL, NULL, NULL,
                                NULL, "NO_SSPS=0");
   /* Try a simple query without parameters */
-  ok_stmt(hstmt1, SQLPrepare(hstmt1, 
+  ok_stmt(hstmt1, SQLPrepare(hstmt1,
                              "/* a question mark ? must be ignored */"\
                              " SELECT 1", SQL_NTS));
 
@@ -1345,7 +1345,7 @@ DECLARE_TEST(t_bug53891)
   ok_stmt(hstmt1, SQLFreeStmt(hstmt1, SQL_CLOSE));
 
   /* Try a query with parameters */
-  ok_stmt(hstmt1, SQLPrepare(hstmt1, 
+  ok_stmt(hstmt1, SQLPrepare(hstmt1,
                              "/* a question mark ? must be ignored */"\
                              " SELECT ?", SQL_NTS));
 
@@ -1358,10 +1358,10 @@ DECLARE_TEST(t_bug53891)
   free_basic_handles(&henv1, &hdbc1, &hstmt1);
 
   /* Connect with SSPS disabled */
-  alloc_basic_handles_with_opt(&henv1, &hdbc1, &hstmt1, NULL, NULL, NULL, 
+  alloc_basic_handles_with_opt(&henv1, &hdbc1, &hstmt1, NULL, NULL, NULL,
                                NULL, "NO_SSPS=1");
   /* Try a simple query without parameters */
-  ok_stmt(hstmt1, SQLPrepare(hstmt1, 
+  ok_stmt(hstmt1, SQLPrepare(hstmt1,
                              "/* a question mark ? must be ignored */"\
                              " SELECT 1", SQL_NTS));
 
@@ -1372,7 +1372,7 @@ DECLARE_TEST(t_bug53891)
   ok_stmt(hstmt1, SQLFreeStmt(hstmt1, SQL_CLOSE));
 
   /* Try a query with parameters */
-  ok_stmt(hstmt1, SQLPrepare(hstmt1, 
+  ok_stmt(hstmt1, SQLPrepare(hstmt1,
                              "/* a question mark ? must be ignored */"\
                              " SELECT ?", SQL_NTS));
 
@@ -1384,7 +1384,7 @@ DECLARE_TEST(t_bug53891)
   ok_stmt(hstmt1, SQLFreeStmt(hstmt1, SQL_CLOSE));
 
   /* Try a simple query without parameters */
-  ok_stmt(hstmt1, SQLPrepare(hstmt1, 
+  ok_stmt(hstmt1, SQLPrepare(hstmt1,
                              "SELECT 1 -- a question mark ? must be ignored " _MY_NEWLINE
                              " + 1", SQL_NTS));
   ok_stmt(hstmt1, SQLExecute(hstmt1));
@@ -1393,7 +1393,7 @@ DECLARE_TEST(t_bug53891)
   ok_stmt(hstmt1, SQLFreeStmt(hstmt1, SQL_CLOSE));
 
   /* Try a simple query without parameters */
-  ok_stmt(hstmt1, SQLPrepare(hstmt1, 
+  ok_stmt(hstmt1, SQLPrepare(hstmt1,
                              "SELECT 1 # a question mark ? must be ignored " _MY_NEWLINE
                              " + 2", SQL_NTS));
   ok_stmt(hstmt1, SQLExecute(hstmt1));
@@ -1542,7 +1542,7 @@ DECLARE_TEST(t_odbc_inoutstream_params)
 
   expect_stmt(hstmt, SQLParamData(hstmt, &token), SQL_NEED_DATA);
   is_num((SQLLEN)token, 2);
-  
+
   ok_stmt(hstmt, SQLPutData(hstmt, " ", 1));
   for (c= 'b'; c < 'z'; ++c)
   {
@@ -1649,7 +1649,7 @@ DECLARE_TEST(t_inoutstream17842966)
 
   expect_stmt(hstmt, SQLParamData(hstmt, &token), SQL_NEED_DATA);
   is_num((SQLLEN)token, 1);
-  
+
   ok_stmt(hstmt, SQLPutData(hstmt, " ", 1));
   for (c= 'b'; c < 'z'; ++c)
   {
@@ -1703,7 +1703,64 @@ DECLARE_TEST(t_inoutstream17842966)
 
 #endif /* #ifndef USE_IODBC */
 
+DECLARE_TEST(t_bug28175772)
+{
+  char sql_create_proc[256] = { 0 };
+  char sql_drop_proc[100] = { 0 };
+  char sql_select[100] = { 0 };
+  SQLLEN iSize = SQL_NTS, iSize1 = SQL_NTS;
+  char blobValue[200] = { 0 }, binValue[200] = { 0 }, expcValue[200] = { 0 };
+  SQLCHAR       SqlState[6], Msg[SQL_MAX_MESSAGE_LENGTH];
+  SQLINTEGER    NativeError;
+  SQLSMALLINT   i, MsgLen;
+
+  // connection strings
+  strcpy(blobValue, "test data");
+  strcpy(binValue, "test data");
+  strcpy(expcValue, "test databar");
+
+  sprintf(sql_create_proc, "%s", "CREATE PROCEDURE inoutproc (INOUT param1 "\
+          "LONGBLOB, INOUT param2 LONG VARBINARY)"\
+          " BEGIN"\
+          " SET param1 := CONCAT(param1, 'bar'); "\
+          " SET param2 := CONCAT(param2, 'bar'); "\
+          " END; ");
+  sprintf(sql_drop_proc, "%s", "DROP PROCEDURE if exists inoutproc");
+  sprintf(sql_select, "%s", "call inoutproc(?, ?)");
+  //drop proc if already exists
+  ok_stmt(hstmt, SQLExecDirect(hstmt, (SQLCHAR*)sql_drop_proc, SQL_NTS));
+  //create proc
+  ok_stmt(hstmt, SQLExecDirect(hstmt, (SQLCHAR*)sql_create_proc, SQL_NTS));
+  //prepare the call statement
+  ok_stmt(hstmt, SQLPrepare(hstmt, (SQLCHAR*)sql_select, SQL_NTS));
+  //bind the call statement 1
+  ok_stmt(hstmt, SQLBindParameter(hstmt, 1, SQL_PARAM_INPUT_OUTPUT, SQL_C_BINARY,
+                                  SQL_LONGVARBINARY, 0, 0, blobValue, 200, &iSize));
+  //bind the call statement 1
+  ok_stmt(hstmt, SQLBindParameter(hstmt, 2, SQL_PARAM_INPUT_OUTPUT, SQL_C_BINARY,
+                                  SQL_LONGVARBINARY, 0, 0, binValue, 200, &iSize1));
+  // execute
+  ok_stmt(hstmt, SQLExecute(hstmt));
+
+  if (memcmp(binValue, expcValue, 12) != 0)
+  {
+    printf("OuT parameter does not match : Retrieved Value : %s\n",
+           binValue);
+    return FAIL;
+  }
+  if (memcmp(blobValue, expcValue, 12) != 0)
+  {
+    printf("OuT parameter does not match : Retrieved Value : %s\n",
+           blobValue);
+    return FAIL;
+  }
+
+  return OK;
+}
+
+
 BEGIN_TESTS
+  ADD_TEST(t_bug28175772)
   ADD_TEST(my_init_table)
 #ifndef USE_IODBC
   ADD_TEST(my_param_insert)

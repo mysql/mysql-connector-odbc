@@ -447,7 +447,6 @@ int         ssps_get_result       (STMT *stmt);
 void        ssps_close            (STMT *stmt);
 SQLRETURN   ssps_fetch_chunk      (STMT *stmt, char *dest, unsigned long dest_bytes,
                                   unsigned long *avail_bytes);
-int         ssps_bind_result      (STMT *stmt);
 void        free_result_bind      (STMT *stmt);
 BOOL        ssps_0buffers_truncated_only(STMT *stmt);
 long long   ssps_get_int64        (STMT *stmt, ulong column_number, char *value,

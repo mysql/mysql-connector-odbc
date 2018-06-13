@@ -107,7 +107,7 @@ BOOL ssps_get_out_params(STMT *stmt)
 
     free_result_bind(stmt);
     /* Thus function interface has to be changed */
-    if (ssps_bind_result(stmt) == 0)
+    if (stmt->ssps_bind_result() == 0)
     {
       values= fetch_row(stmt);
 
@@ -362,9 +362,33 @@ SQLRETURN ssps_fetch_chunk(STMT *stmt, char *dest, unsigned long dest_bytes, uns
 
 /* The structure and following allocation function are borrowed from c/c++ and adopted */
 typedef struct tagBST
-{  char * buffer;
-  size_t size;
+{
+  char * buffer = NULL;
+  size_t size = 0;
   enum enum_field_types type;
+
+  tagBST(char *b, size_t s, enum enum_field_types t) :
+    buffer(b), size(s), type(t)
+  {}
+
+  /*
+    To bind blob parameters the fake 1 byte allocation has to be made
+    otherwise libmysqlclient throws the assertion.
+    This will be reallocated later.
+  */
+  bool is_fake_blob_alloc()
+  {
+    return (type == MYSQL_TYPE_BLOB ||
+            type == MYSQL_TYPE_TINY_BLOB ||
+            type == MYSQL_TYPE_MEDIUM_BLOB ||
+            type == MYSQL_TYPE_LONG_BLOB) &&
+            size == 1;
+  }
+
+  bool is_null_alloc()
+  {
+    return (type != MYSQL_TYPE_NULL && buffer == NULL);
+  }
 } st_buffer_size_type;
 
 
@@ -372,7 +396,7 @@ typedef struct tagBST
 static st_buffer_size_type
 allocate_buffer_for_field(const MYSQL_FIELD * const field, BOOL outparams)
 {
-  st_buffer_size_type result= {NULL, 0, field->type};
+  st_buffer_size_type result(NULL, 0, field->type);
 
   switch (field->type)
   {
@@ -501,6 +525,8 @@ static MYSQL_ROW fetch_varlength_columns(STMT *stmt, MYSQL_ROW columns)
       )
     {
       x_free(stmt->result_bind[i].buffer);
+      stmt->result_bind[i].buffer = NULL;
+      stmt->array[i] = NULL;
       stmt->result_bind[i].buffer_length = 0;
     }
 
@@ -536,9 +562,9 @@ static MYSQL_ROW fetch_varlength_columns(STMT *stmt, MYSQL_ROW columns)
 }
 
 
-int ssps_bind_result(STMT *stmt)
+int STMT::ssps_bind_result()
 {
-  const unsigned int  num_fields= field_count(stmt);
+  const unsigned int  num_fields= field_count(this);
   unsigned int        i;
 
   if (num_fields == 0)
@@ -546,26 +572,26 @@ int ssps_bind_result(STMT *stmt)
     return 0;
   }
 
-  if (stmt->result_bind)
+  if (result_bind)
   {
     /* We have fields requiring to read real length first */
-    if (stmt->fix_fields != NULL)
+    if (fix_fields != NULL)
     {
       for (i=0; i < num_fields; ++i)
       {
         /* length marks such fields */
-        if (stmt->lengths[i] > 0)
+        if (lengths[i] > 0)
         {
-          if (stmt->result_bind[i].buffer == stmt->array[i])
+          if (result_bind[i].buffer == array[i])
           {
             /* make sure we do not free it twice */
-            stmt->array[i]= NULL;
-            stmt->lengths[i]= 0;
+            array[i]= NULL;
+            lengths[i]= 0;
           }
           /* Resetting buffer and buffer_length for those fields */
-          x_free(stmt->result_bind[i].buffer);
-          stmt->result_bind[i].buffer       = 0;
-          stmt->result_bind[i].buffer_length= 0;
+          x_free(result_bind[i].buffer);
+          result_bind[i].buffer       = 0;
+          result_bind[i].buffer_length= 0;
         }
       }
     }
@@ -580,44 +606,44 @@ int ssps_bind_result(STMT *stmt)
                                       MYF(MY_ZEROFILL));
 
     /*TODO care about memory allocation errors */
-    stmt->result_bind=  (MYSQL_BIND*)myodbc_malloc(sizeof(MYSQL_BIND)*num_fields,
-                                              MYF(MY_ZEROFILL));
-    stmt->array=        (MYSQL_ROW)myodbc_malloc(sizeof(char*)*num_fields,
-                                              MYF(MY_ZEROFILL));
+    result_bind=  (MYSQL_BIND*)myodbc_malloc(sizeof(MYSQL_BIND)*num_fields,
+                                             MYF(MY_ZEROFILL));
+    array=        (MYSQL_ROW)myodbc_malloc(sizeof(char*)*num_fields,
+                                             MYF(MY_ZEROFILL));
 
     for (i= 0; i < num_fields; ++i)
     {
-      MYSQL_FIELD    *field= mysql_fetch_field_direct(stmt->result, i);
+      MYSQL_FIELD    *field= mysql_fetch_field_direct(result, i);
       st_buffer_size_type p= allocate_buffer_for_field(field,
-                                                      IS_PS_OUT_PARAMS(stmt));
+                                                      IS_PS_OUT_PARAMS(this));
 
-      stmt->result_bind[i].buffer_type  = p.type;
-      stmt->result_bind[i].buffer       = p.buffer;
-      stmt->result_bind[i].buffer_length= (unsigned long)p.size;
-      stmt->result_bind[i].length       = &len[i];
-      stmt->result_bind[i].is_null      = &is_null[i];
-      stmt->result_bind[i].error        = &err[i];
-      stmt->result_bind[i].is_unsigned  = (field->flags & UNSIGNED_FLAG)? 1: 0;
+      result_bind[i].buffer_type  = p.type;
+      result_bind[i].buffer       = p.buffer;
+      result_bind[i].buffer_length= (unsigned long)p.size;
+      result_bind[i].length       = &len[i];
+      result_bind[i].is_null      = &is_null[i];
+      result_bind[i].error        = &err[i];
+      result_bind[i].is_unsigned  = (field->flags & UNSIGNED_FLAG)? 1: 0;
 
-      stmt->array[i]= p.buffer;
+      array[i]= p.buffer;
 
-      /* Marking that there are columns that will require buffer (re) allocating
+      /*
+        Marking that there are columns that will require buffer (re) allocating
        */
-      if (  stmt->result_bind[i].buffer       == 0
-        &&  stmt->result_bind[i].buffer_type  != MYSQL_TYPE_NULL)
+      if ( p.is_null_alloc() || p.is_fake_blob_alloc())
       {
-        stmt->fix_fields= fetch_varlength_columns;
+        fix_fields= fetch_varlength_columns;
 
         /* Need to alloc it only once*/
-        if (stmt->lengths == NULL)
+        if (lengths == NULL)
         {
-          stmt->lengths= (unsigned long*)myodbc_malloc(sizeof(unsigned long)*num_fields, MYF(MY_ZEROFILL));
+          lengths= (unsigned long*)myodbc_malloc(sizeof(unsigned long)*num_fields, MYF(MY_ZEROFILL));
         }
         /* Buffer of initial length? */
       }
     }
 
-    return mysql_stmt_bind_result(stmt->ssps, stmt->result_bind);
+    return mysql_stmt_bind_result(ssps, result_bind);
   }
 
   return 0;

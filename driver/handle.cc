@@ -472,28 +472,16 @@ SQLRETURN SQL_API my_SQLAllocStmt(SQLHDBC hdbc,SQLHSTMT *phstmt)
 #ifndef _UNIX_
   HGLOBAL  hstmt;
 #endif
-  STMT  *stmt;
+  STMT  *stmt = NULL;
   DBC   *dbc= (DBC*) hdbc;
 
   /* In fact it should be awaken when DM checks whether connection is alive before taking it from pool.
     Keeping the check here to stay on the safe side */
   WAKEUP_CONN_IF_NEEDED(dbc);
 
-#ifndef _UNIX_
-  hstmt= GlobalAlloc(GMEM_MOVEABLE | GMEM_ZEROINIT, sizeof(STMT));
-  if (!hstmt || (*phstmt= (SQLHSTMT)GlobalLock(hstmt)) == SQL_NULL_HSTMT)
-  {
-    *phstmt= SQL_NULL_HSTMT;
-    GlobalFree(hstmt);
-  }
-#else
-  *phstmt= (SQLHSTMT) myodbc_malloc(sizeof (STMT), MYF(MY_ZEROFILL | MY_WME));
-#endif /* IS UNIX */
-  if (*phstmt == SQL_NULL_HSTMT)
-    goto error;
-
-  stmt= (STMT *) *phstmt;
+  stmt = new STMT();
   stmt->dbc= dbc;
+  *phstmt = (SQLHSTMT*)stmt;
 
   myodbc_mutex_lock(&stmt->dbc->lock);
   dbc->statements= list_add(dbc->statements,&stmt->list);
@@ -756,12 +744,7 @@ SQLRETURN SQL_API my_SQLFreeStmtExtended(SQLHSTMT hstmt,SQLUSMALLINT fOption,
     myodbc_mutex_lock(&stmt->dbc->lock);
     stmt->dbc->statements= list_delete(stmt->dbc->statements,&stmt->list);
     myodbc_mutex_unlock(&stmt->dbc->lock);
-#ifndef _UNIX_
-    GlobalUnlock(GlobalHandle ((HGLOBAL) hstmt));
-    GlobalFree(GlobalHandle((HGLOBAL) hstmt));
-#else
-    x_free(hstmt);
-#endif /* _UNIX_*/
+    delete stmt;
     return SQL_SUCCESS;
 }
 
