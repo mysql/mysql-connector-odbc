@@ -1,32 +1,58 @@
-// Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved. 
-// 
-// This program is free software; you can redistribute it and/or modify 
-// it under the terms of the GNU General Public License, version 2.0, as 
-// published by the Free Software Foundation. 
-// 
-// This program is also distributed with certain software (including 
-// but not limited to OpenSSL) that is licensed under separate terms, 
-// as designated in a particular file or component or in included license 
-// documentation. The authors of MySQL hereby grant you an 
-// additional permission to link the program and your derivative works 
-// with the separately licensed software that they have included with 
-// MySQL. 
-// 
-// Without limiting anything contained in the foregoing, this file, 
-// which is part of <MySQL Product>, is also subject to the 
-// Universal FOSS Exception, version 1.0, a copy of which can be found at 
-// http://oss.oracle.com/licenses/universal-foss-exception. 
-// 
-// This program is distributed in the hope that it will be useful, but 
-// WITHOUT ANY WARRANTY; without even the implied warranty of 
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-// See the GNU General Public License, version 2.0, for more details. 
-// 
-// You should have received a copy of the GNU General Public License 
-// along with this program; if not, write to the Free Software Foundation, Inc., 
-// 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA 
+// Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+//
+// This program is free software; you can redistribute it and/or modify
+// it under the terms of the GNU General Public License, version 2.0, as
+// published by the Free Software Foundation.
+//
+// This program is also distributed with certain software (including
+// but not limited to OpenSSL) that is licensed under separate terms,
+// as designated in a particular file or component or in included license
+// documentation. The authors of MySQL hereby grant you an
+// additional permission to link the program and your derivative works
+// with the separately licensed software that they have included with
+// MySQL.
+//
+// Without limiting anything contained in the foregoing, this file,
+// which is part of <MySQL Product>, is also subject to the
+// Universal FOSS Exception, version 1.0, a copy of which can be found at
+// http://oss.oracle.com/licenses/universal-foss-exception.
+//
+// This program is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+// See the GNU General Public License, version 2.0, for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program; if not, write to the Free Software Foundation, Inc.,
+// 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 
 #include "odbctap.h"
+
+DECLARE_TEST(t_text_types)
+{
+  char buf[1024] = {0};
+  SQLSMALLINT out_len = 0;
+  int i = 0;
+
+  ok_sql(hstmt, "DROP TABLE IF EXISTS t_text_types");
+  ok_sql(hstmt, "CREATE TABLE t_text_types (col1 integer, "
+                "col2 text, col3 longtext, col4 mediumtext, "
+                "col5 tinytext)");
+
+  ok_stmt(hstmt, SQLFreeStmt(hstmt, SQL_CLOSE));
+
+  ok_sql(hstmt, "SELECT * FROM t_text_types");
+  for (i = 1; i < 6; i++)
+  {
+    ok_stmt(hstmt, SQLColAttribute(hstmt, i, SQL_DESC_NAME, buf, sizeof(buf),
+                                   &out_len, NULL));
+    printf("[COL: %s]", buf);
+    ok_stmt(hstmt, SQLColAttribute(hstmt, i, SQL_DESC_TYPE_NAME, buf, sizeof(buf),
+                                   &out_len, NULL));
+    printf("[TYPE NAME: %s]\n", buf);
+  }
+  return OK;
+}
 
 
 DECLARE_TEST(t_longlong1)
@@ -1223,6 +1249,7 @@ DECLARE_TEST(t_bug69545)
 
 
 BEGIN_TESTS
+  ADD_TEST(t_text_types)
   ADD_TEST(t_longlong1)
   ADD_TEST(t_decimal)
   ADD_TEST(t_bigint)

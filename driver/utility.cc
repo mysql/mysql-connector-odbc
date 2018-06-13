@@ -1197,8 +1197,22 @@ SQLSMALLINT get_sql_data_type(STMT *stmt, MYSQL_FIELD *field, char *buff)
 
   case MYSQL_TYPE_BLOB:
     if (buff)
-      (void)myodbc_stpmov(buff, field_is_binary ? "blob" : "text");
-
+    {
+      switch(field->length)
+      {
+        case 255:
+          (void)myodbc_stpmov(buff, field_is_binary ? "tinyblob" : "tinytext");
+          break;
+        case 16777215:
+          (void)myodbc_stpmov(buff, field_is_binary ? "mediumblob" : "mediumtext");
+          break;
+        case 4294967295UL:
+          (void)myodbc_stpmov(buff, field_is_binary ? "longblob" : "longtext");
+          break;
+        default:
+          (void)myodbc_stpmov(buff, field_is_binary ? "blob" : "text");
+      }
+    }
     return field_is_binary ? SQL_LONGVARBINARY :
       (stmt->dbc->unicode && field->charsetnr != stmt->dbc->ansi_charset_info->number ?
        SQL_WLONGVARCHAR : SQL_LONGVARCHAR);
