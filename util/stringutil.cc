@@ -34,7 +34,7 @@
 
 
 #include "stringutil.h"
-
+#include <ctype.h>
 
 CHARSET_INFO *utf8_charset_info= NULL;
 
@@ -1044,7 +1044,7 @@ char *myodbc_ll2str(longlong val, char *dst, int radix)
   return dst - 1;
 }
 
-#if(MYSQL8 && MYSQLCLIENT_STATIC_LINKING)
+#if(MYSQLCLIENT_STATIC_LINKING)
 /* We need to use qsort with 2 different compare functions */
 #ifdef QSORT_EXTRA_CMP_ARGUMENT
 #define CMP(A,B) ((*cmp)(cmp_argument,(A),(B)))

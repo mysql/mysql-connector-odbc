@@ -35,9 +35,13 @@ if(COMMAND cmake_policy)
 	cmake_policy(SET CMP0003 NEW)
 endif(COMMAND cmake_policy)
 
+if(CMAKE_VERSION VERSION_LESS "3.0")
+
+else()
+
 cmake_policy(SET CMP0022 NEW)
 # cmake_policy(SET CMP0026 OLD)
-
+endif()
 
 #------- compatibility with older cmake versions ------
 
@@ -134,7 +138,7 @@ ENDIF()
 
 # Enable C++11
 if (CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang" OR CMAKE_SYSTEM_NAME MATCHES "SunOS")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
 endif()
 
 if(APPLE)

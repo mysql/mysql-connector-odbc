@@ -1760,7 +1760,7 @@ DECLARE_TEST(t_bug28175772)
 
 
 BEGIN_TESTS
-  ADD_TEST(t_bug28175772)
+  // ADD_TEST(t_bug28175772)
   ADD_TEST(my_init_table)
 #ifndef USE_IODBC
   ADD_TEST(my_param_insert)

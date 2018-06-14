@@ -1,24 +1,15 @@
-8.0.12
+5.3.11
 
   Security Notes:
   * Fix issues found by Fortify (WL #11829)
   Functionality added or changed:
   * Improve coverage for ODBC code (WL #11994)
+  * Make sure ODBC works with new 8.0 auth. mechanism. (WL #11659)
   Bugs fixed:
   * SQLColAttribute/SQL_DESC_TYPE_NAME text instead of longtext for
     longtext col (Bug# 11761407/53900)
 
-  Built using MySQL 8.0.12
-
-8.0.11
-
-  Security Notes:
-  Functionality added or changed:
-  * Make sure ODBC works with new 8.0 auth. mechanism. (WL #11659)
-  * Prepare ODBC 8.0 Source tree. (WL #11099)
-  Bugs fixed:
-
-  Built using MySQL 8.0.11
+  Built using MySQL 5.7.23
 
 5.3.10
 

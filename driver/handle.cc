@@ -638,13 +638,22 @@ SQLRETURN SQL_API my_SQLFreeStmtExtended(SQLHSTMT hstmt,SQLUSMALLINT fOption,
     }
     else
     {
-      if(stmt->result && stmt->result->field_alloc
+#if MYSQL_VERSION_ID >= 50722 && MYSQL_VERSION_ID < 80000
+      if (stmt->result != NULL
+#else
+      if((stmt->result != NULL) && (stmt->result->field_alloc != NULL)
 #if (!MYSQLCLIENT_STATIC_LINKING || !MYSQL8)
-         && stmt->result->field_alloc->pre_alloc
+         && (stmt->result->field_alloc.pre_alloc != NULL )
+#endif
+
 #endif
          )
       {
+#if (MYSQL8)
         free_root(stmt->result->field_alloc, MYF(0));
+#else
+        free_root(&stmt->result->field_alloc, MYF(0));
+#endif
       }
 
       x_free(stmt->result);

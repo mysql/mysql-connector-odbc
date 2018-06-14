@@ -26,9 +26,9 @@
 # along with this program; if not, write to the Free Software Foundation, Inc., 
 # 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA 
 
-SET(CONNECTOR_MAJOR "8")
-SET(CONNECTOR_MINOR "0")
-SET(CONNECTOR_PATCH "12")
+SET(CONNECTOR_MAJOR "5")
+SET(CONNECTOR_MINOR "3")
+SET(CONNECTOR_PATCH "11")
 SET(CONNECTOR_LEVEL "")
 SET(CONNECTOR_QUALITY "GA")
 

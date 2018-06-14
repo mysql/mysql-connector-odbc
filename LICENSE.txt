@@ -1,6 +1,6 @@
 Licensing Information User Manual
 
-MySQL Connector/ODBC 8.0
+MySQL Connector/ODBC 5.3
      __________________________________________________________________
 
 Introduction
