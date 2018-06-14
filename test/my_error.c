@@ -1,28 +1,75 @@
-/*
-  Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
-
-  The MySQL Connector/ODBC is licensed under the terms of the GPLv2
-  <http://www.gnu.org/licenses/old-licenses/gpl-2.0.html>, like most
-  MySQL Connectors. There are special exceptions to the terms and
-  conditions of the GPLv2 as it is applied to this software, see the
-  FLOSS License Exception
-  <http://www.mysql.com/about/legal/licensing/foss-exception.html>.
-  
-  This program is free software; you can redistribute it and/or modify
-  it under the terms of the GNU General Public License as published
-  by the Free Software Foundation; version 2 of the License.
-  
-  This program is distributed in the hope that it will be useful, but
-  WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-  or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
-  for more details.
-  
-  You should have received a copy of the GNU General Public License along
-  with this program; if not, write to the Free Software Foundation, Inc.,
-  51 Franklin St, Fifth Floor, Boston, MA 02110-1301  USA
-*/
+// Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+//
+// This program is free software; you can redistribute it and/or modify
+// it under the terms of the GNU General Public License, version 2.0, as
+// published by the Free Software Foundation.
+//
+// This program is also distributed with certain software (including
+// but not limited to OpenSSL) that is licensed under separate terms,
+// as designated in a particular file or component or in included license
+// documentation. The authors of MySQL hereby grant you an
+// additional permission to link the program and your derivative works
+// with the separately licensed software that they have included with
+// MySQL.
+//
+// Without limiting anything contained in the foregoing, this file,
+// which is part of <MySQL Product>, is also subject to the
+// Universal FOSS Exception, version 1.0, a copy of which can be found at
+// http://oss.oracle.com/licenses/universal-foss-exception.
+//
+// This program is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+// See the GNU General Public License, version 2.0, for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program; if not, write to the Free Software Foundation, Inc.,
+// 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 
 #include "odbctap.h"
+
+DECLARE_TEST(t_get_diag_all)
+{
+  SQLCHAR buf[1024];
+  SQLSMALLINT str_len_ptr = 0;
+  SQLLEN data1 = 0;
+  SQLINTEGER data2 = 0;
+  SQLRETURN data3 = 0;
+
+  expect_sql(hstmt, "This is an invalid Query! (odbc test)", SQL_ERROR);
+  printf("** Start SQLGetDiagField!\n");
+
+  SQLGetDiagField(SQL_HANDLE_STMT, hstmt, 1, SQL_DIAG_CURSOR_ROW_COUNT, &data1,
+                  sizeof(data1), &str_len_ptr);
+  SQLGetDiagField(SQL_HANDLE_STMT, hstmt, 1, SQL_DIAG_DYNAMIC_FUNCTION, buf,
+                  sizeof(buf), &str_len_ptr);
+  SQLGetDiagField(SQL_HANDLE_STMT, hstmt, 1, SQL_DIAG_DYNAMIC_FUNCTION_CODE, &data2,
+                  sizeof(data2), &str_len_ptr);
+  SQLGetDiagField(SQL_HANDLE_STMT, hstmt, 1, SQL_DIAG_NUMBER, &data2,
+                  sizeof(data2), &str_len_ptr);
+  SQLGetDiagField(SQL_HANDLE_STMT, hstmt, 1, SQL_DIAG_RETURNCODE, &data3,
+                  sizeof(data3), &str_len_ptr);
+  SQLGetDiagField(SQL_HANDLE_STMT, hstmt, 1, SQL_DIAG_ROW_COUNT, &data1,
+                  sizeof(data1), &str_len_ptr);
+  SQLGetDiagField(SQL_HANDLE_STMT, hstmt, 1, SQL_DIAG_CLASS_ORIGIN, buf,
+                  sizeof(buf), &str_len_ptr);
+  SQLGetDiagField(SQL_HANDLE_STMT, hstmt, 1, SQL_DIAG_COLUMN_NUMBER, &data2,
+                  sizeof(data2), &str_len_ptr);
+  SQLGetDiagField(SQL_HANDLE_STMT, hstmt, 1, SQL_DIAG_CONNECTION_NAME, buf,
+                  sizeof(buf), &str_len_ptr);
+  SQLGetDiagField(SQL_HANDLE_STMT, hstmt, 1, SQL_DIAG_MESSAGE_TEXT, buf,
+                  sizeof(buf), &str_len_ptr);
+  SQLGetDiagField(SQL_HANDLE_STMT, hstmt, 1, SQL_DIAG_ROW_NUMBER, &data1,
+                  sizeof(data1), &str_len_ptr);
+  SQLGetDiagField(SQL_HANDLE_STMT, hstmt, 1, SQL_DIAG_SERVER_NAME, buf,
+                  sizeof(buf), &str_len_ptr);
+  SQLGetDiagField(SQL_HANDLE_STMT, hstmt, 1, SQL_DIAG_SQLSTATE, buf,
+                  sizeof(buf), &str_len_ptr);
+  SQLGetDiagField(SQL_HANDLE_STMT, hstmt, 1, SQL_DIAG_SUBCLASS_ORIGIN, buf,
+                  sizeof(buf), &str_len_ptr);
+
+  return OK;
+}
 
 
 DECLARE_TEST(t_odbc3_error)
@@ -106,8 +153,6 @@ DECLARE_TEST(t_odbc2_error)
   ok_stmt(hstmt1, SQLFreeStmt(hstmt1, SQL_CLOSE));
 
   ok_sql(hstmt1, "DROP TABLE IF EXISTS t_error");
-
-  ok_con(hdbc1, SQLDisconnect(hdbc1));
 
   free_basic_handles(&henv1, &hdbc1, &hstmt1);
 
@@ -369,7 +414,7 @@ DECLARE_TEST(getdata_need_nullind)
   SQLINTEGER i;
   ok_sql(hstmt, "select 1 as i , null as j ");
   ok_stmt(hstmt, SQLFetch(hstmt));
-  
+
   /* that that nullind ptr is ok when data isn't null */
   ok_stmt(hstmt, SQLGetData(hstmt, 1, SQL_C_LONG, &i, 0, NULL));
 
@@ -465,7 +510,7 @@ DECLARE_TEST(t_bug13542600)
 DECLARE_TEST(t_bug14285620)
 {
   SQLSMALLINT data_type, dec_digits, nullable, cblen;
-  SQLUINTEGER info, col_size; 
+  SQLUINTEGER info, col_size;
   SQLINTEGER timeout= 20, cbilen;
   SQLCHAR szData[255]={0};
 
@@ -473,16 +518,16 @@ DECLARE_TEST(t_bug14285620)
   expect_dbc(hdbc, SQLGetConnectAttr(hdbc, SQL_ATTR_LOGIN_TIMEOUT, NULL, 0, NULL), SQL_SUCCESS);
   expect_dbc(hdbc, SQLGetConnectAttr(hdbc, SQL_ATTR_LOGIN_TIMEOUT, &timeout, 0, NULL), SQL_SUCCESS);
   is_num(timeout, 0);
-  
+
   /* Character attribute */
-  /* 
+  /*
     In this particular case MSSQL always returns SQL_SUCCESS_WITH_INFO
     apparently because the driver manager always provides the buffer even
     when the client application passes NULL
   */
 #ifdef _WIN32
-  /* 
-    This check is only relevant to Windows Driver Manager 
+  /*
+    This check is only relevant to Windows Driver Manager
   */
   expect_dbc(hdbc, SQLGetConnectAttr(hdbc, SQL_ATTR_CURRENT_CATALOG, NULL, 0, NULL), SQL_SUCCESS_WITH_INFO);
 #endif
@@ -491,10 +536,10 @@ DECLARE_TEST(t_bug14285620)
   /*
   MSDN Says about the last parameter &cblen for SQLGetInfo,
   functions:
-  
-     If InfoValuePtr is NULL, StringLengthPtr will still return the 
-     total number of bytes (excluding the null-termination character 
-     for character data) available to return in the buffer pointed 
+
+     If InfoValuePtr is NULL, StringLengthPtr will still return the
+     total number of bytes (excluding the null-termination character
+     for character data) available to return in the buffer pointed
      to by InfoValuePtr.
 
      http://msdn.microsoft.com/en-us/library/ms710297%28v=vs.85%29
@@ -504,14 +549,14 @@ DECLARE_TEST(t_bug14285620)
   expect_dbc(hdbc, SQLGetInfo(hdbc, SQL_AGGREGATE_FUNCTIONS, &info, 0, &cblen), SQL_SUCCESS);
   is_num(cblen, 4);
 
-  is_num(info, (SQL_AF_ALL | SQL_AF_AVG | SQL_AF_COUNT | SQL_AF_DISTINCT | 
+  is_num(info, (SQL_AF_ALL | SQL_AF_AVG | SQL_AF_COUNT | SQL_AF_DISTINCT |
              SQL_AF_MAX | SQL_AF_MIN | SQL_AF_SUM));
 
   /* Get database name for further checks */
   expect_dbc(hdbc, SQLGetInfo(hdbc, SQL_DATABASE_NAME, szData, sizeof(szData), NULL), SQL_SUCCESS);
   expect_dbc(hdbc, SQLGetInfo(hdbc, SQL_DATABASE_NAME, NULL, 0, &cblen), SQL_SUCCESS);
 
-#ifdef _WIN32  
+#ifdef _WIN32
   /* Windows uses unicode driver by default */
   is_num(cblen, strlen(szData)*sizeof(SQLWCHAR));
 #else
@@ -523,7 +568,7 @@ DECLARE_TEST(t_bug14285620)
   /* Get the native string for further checks */
   expect_dbc(hdbc, SQLNativeSql(hdbc, "SELECT 10", SQL_NTS, szData, sizeof(szData), NULL), SQL_SUCCESS);
   expect_dbc(hdbc, SQLNativeSql(hdbc, "SELECT 10", SQL_NTS, NULL, 0, &cbilen), SQL_SUCCESS);
-  
+
   /* Do like MSSQL, which does calculate as char_count*sizeof(SQLWCHAR) */
   is_num(cbilen, strlen(szData));
 
@@ -532,7 +577,7 @@ DECLARE_TEST(t_bug14285620)
   /* Get the cursor name for further checks */
   expect_stmt(hstmt, SQLGetCursorName(hstmt, szData, sizeof(szData), NULL), SQL_SUCCESS);
   expect_stmt(hstmt, SQLGetCursorName(hstmt, NULL, 0, &cblen), SQL_SUCCESS);
-  
+
   /* Do like MSSQL, which does calculate as char_count*sizeof(SQLWCHAR) */
   is_num(cblen, strlen(szData));
 
@@ -587,7 +632,7 @@ DECLARE_TEST(t_bug49466)
   SQLSMALLINT len;
 
   is(OK == alloc_basic_handles_with_opt(&henv1, &hdbc1, &hstmt1, NULL,
-                                        NULL, NULL, NULL, 
+                                        NULL, NULL, NULL,
                                         "OPTION=67108864"));//;NO_SSPS=1"));
 
   ok_stmt(hstmt1, SQLExecDirect(hstmt1, "SELECT 100; CALL t_bug49466proc()", SQL_NTS));
@@ -619,15 +664,16 @@ DECLARE_TEST(t_passwordexpire)
   }
 
   ok_sql(hstmt, "DROP TABLE IF EXISTS t_password_expire");
-  SQLExecDirect(hstmt, (SQLCHAR *)"DROP USER t_pwd_expire", SQL_NTS);
+  SQLExecDirect(hstmt, (SQLCHAR *)"DROP USER IF EXISTS t_pwd_expire", SQL_NTS);
 
-  ok_sql(hstmt, "GRANT ALL ON *.* TO  t_pwd_expire IDENTIFIED BY 'foo'");
+  ok_sql(hstmt, "CREATE USER t_pwd_expire IDENTIFIED BY 'foo'");
+  ok_sql(hstmt, "GRANT ALL ON *.* TO t_pwd_expire");
   ok_sql(hstmt, "ALTER USER t_pwd_expire PASSWORD EXPIRE");
 
   ok_env(henv, SQLAllocConnect(henv, &hdbc1));
 
   /* Expecting error without OPT_CAN_HANDLE_EXPIRED_PASSWORDS */
-  expect_dbc(hdbc1, get_connection(&hdbc1, NULL, "t_pwd_expire", "foo", 
+  expect_dbc(hdbc1, get_connection(&hdbc1, NULL, "t_pwd_expire", "foo",
              NULL, NULL), SQL_ERROR);
 
   {
@@ -654,7 +700,7 @@ DECLARE_TEST(t_passwordexpire)
   /*strcat((char *)conn_in, ";INITSTMT={set password= password('bar')}");*/
   ok_con(hdbc1, SQLAllocStmt(hdbc1, &hstmt1));
 
-  ok_sql(hstmt1, "SET PASSWORD= password('bar')");
+  ok_sql(hstmt1, "SET PASSWORD='bar'");
 
   /* Just to verify that we got normal connection */
   ok_sql(hstmt1, "select 1");
@@ -688,7 +734,7 @@ DECLARE_TEST(t_cleartext_password)
 {
   SQLHDBC hdbc1;
   SQLCHAR sql_state[6];
-  SQLINTEGER  err_code= 0;                              
+  SQLINTEGER  err_code= 0;
   SQLCHAR     err_msg[SQL_MAX_MESSAGE_LENGTH]= {0};
   SQLSMALLINT err_len= 0;
   unsigned int major1= 0, minor1= 0, build1= 0;
@@ -700,18 +746,18 @@ DECLARE_TEST(t_cleartext_password)
 
   SQLExecDirect(hstmt, (SQLCHAR *)"DROP USER 't_ct_user'@'%'", SQL_NTS);
 
-  if (!SQL_SUCCEEDED(SQLExecDirect(hstmt, 
+  if (!SQL_SUCCEEDED(SQLExecDirect(hstmt,
             "GRANT ALL ON *.* TO "
             "'t_ct_user'@'%' IDENTIFIED WITH "
-            "'authentication_pam'", SQL_NTS))) 
+            "'authentication_pam'", SQL_NTS)))
   {
     skip("The authentication_pam plugin not loaded");
   }
 
   ok_env(henv, SQLAllocConnect(henv, &hdbc1));
 
-  /* 
-    Expecting error CR_AUTH_PLUGIN_CANNOT_LOAD_ERROR 
+  /*
+    Expecting error CR_AUTH_PLUGIN_CANNOT_LOAD_ERROR
     without option ENABLE_CLEARTEXT_PLUGIN
   */
   if(!SQL_SUCCEEDED(get_connection(&hdbc1, mydsn, "t_ct_user", "t_ct_pass",
@@ -722,13 +768,13 @@ DECLARE_TEST(t_cleartext_password)
 
     printMessage("%s %d %s", sql_state, err_code, err_msg);
     if ((strncmp(sql_state, "08004", 5) != 0 || err_code != 2059))
-    {                                                                               
+    {
       return FAIL;
     }
-  }  
+  }
 
-  /* 
-    Expecting error other then CR_AUTH_PLUGIN_CANNOT_LOAD_ERROR 
+  /*
+    Expecting error other then CR_AUTH_PLUGIN_CANNOT_LOAD_ERROR
     as option ENABLE_CLEARTEXT_PLUGIN is used
   */
   if(!SQL_SUCCEEDED(get_connection(&hdbc1, mydsn, "t_ct_user", "t_ct_pass",
@@ -739,7 +785,7 @@ DECLARE_TEST(t_cleartext_password)
     printMessage("%s %d %s", sql_state, err_code, err_msg);
 
     if ((strncmp(sql_state, "08004", 5) == 0 && err_code == 2059))
-    {                                                                               
+    {
       return FAIL;
     }
   }
@@ -799,7 +845,7 @@ DECLARE_TEST(t_bug25671389)
 
   /* Now check that the connection killed returns the right SQLSTATE */
   expect_sql(hstmt2, "SELECT connection_id()", SQL_ERROR);
-  
+
   rc = SQLGetDiagRec(SQL_HANDLE_STMT, hstmt2, 1, sqlState, &nError, eMsg, sizeof(eMsg), &msgLen);
   /* Check that the error has been properly reported */
   is(rc == SQL_SUCCESS);
@@ -814,6 +860,7 @@ DECLARE_TEST(t_bug25671389)
 
 
 BEGIN_TESTS
+  ADD_TEST(t_get_diag_all)
 #ifndef NO_DRIVERMANAGER
 #ifndef USE_IODBC
   // This test will be re-enabled upon merging with 8.0 sources

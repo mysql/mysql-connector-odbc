@@ -1,26 +1,30 @@
-/*
-  Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
-
-  The MySQL Connector/ODBC is licensed under the terms of the GPLv2
-  <http://www.gnu.org/licenses/old-licenses/gpl-2.0.html>, like most
-  MySQL Connectors. There are special exceptions to the terms and
-  conditions of the GPLv2 as it is applied to this software, see the
-  FLOSS License Exception
-  <http://www.mysql.com/about/legal/licensing/foss-exception.html>.
-  
-  This program is free software; you can redistribute it and/or modify
-  it under the terms of the GNU General Public License as published
-  by the Free Software Foundation; version 2 of the License.
-  
-  This program is distributed in the hope that it will be useful, but
-  WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-  or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
-  for more details.
-  
-  You should have received a copy of the GNU General Public License along
-  with this program; if not, write to the Free Software Foundation, Inc.,
-  51 Franklin St, Fifth Floor, Boston, MA 02110-1301  USA
-*/
+// Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved. 
+// 
+// This program is free software; you can redistribute it and/or modify 
+// it under the terms of the GNU General Public License, version 2.0, as 
+// published by the Free Software Foundation. 
+// 
+// This program is also distributed with certain software (including 
+// but not limited to OpenSSL) that is licensed under separate terms, 
+// as designated in a particular file or component or in included license 
+// documentation. The authors of MySQL hereby grant you an 
+// additional permission to link the program and your derivative works 
+// with the separately licensed software that they have included with 
+// MySQL. 
+// 
+// Without limiting anything contained in the foregoing, this file, 
+// which is part of <MySQL Product>, is also subject to the 
+// Universal FOSS Exception, version 1.0, a copy of which can be found at 
+// http://oss.oracle.com/licenses/universal-foss-exception. 
+// 
+// This program is distributed in the hope that it will be useful, but 
+// WITHOUT ANY WARRANTY; without even the implied warranty of 
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+// See the GNU General Public License, version 2.0, for more details. 
+// 
+// You should have received a copy of the GNU General Public License 
+// along with this program; if not, write to the Free Software Foundation, Inc., 
+// 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA 
 
 #include "odbctap.h"
 #include "../VersionInfo.h"
@@ -641,31 +645,31 @@ DECLARE_TEST(t_text_fetch)
     rc = SQLFetch(hstmt);
     while (rc == SQL_SUCCESS || rc == SQL_SUCCESS_WITH_INFO)
     {
-       printf("# row '%ld' (lengths:", row_count);
+       printf("# row '%ld' (lengths:", (long)row_count);
        rc = SQLGetData(hstmt,1,SQL_C_CHAR,(char *)data,TEST_ODBC_TEXT_LEN,&length);
        mystmt(hstmt,rc);
-       printf("%ld", length);
+       printf("%ld", (long)length);
        myassert(length == 255);
 
        rc = SQLGetData(hstmt,2,SQL_C_CHAR,(char *)data,TEST_ODBC_TEXT_LEN,&length);
        mystmt(hstmt,rc);
-       printf(",%ld", length);
+       printf(",%ld", (long)length);
        myassert(length == TEST_ODBC_TEXT_LEN/2);
 
        rc = SQLGetData(hstmt,3,SQL_C_CHAR,(char *)data,TEST_ODBC_TEXT_LEN,&length);
        mystmt(hstmt,rc);
-       printf(",%ld", length);
+       printf(",%ld", (long)length);
        myassert(length == (SQLINTEGER)(TEST_ODBC_TEXT_LEN/1.5));
 
        rc = SQLGetData(hstmt,4,SQL_C_CHAR,(char *)data,TEST_ODBC_TEXT_LEN,&length);
        mystmt(hstmt,rc);
-       printf(",%ld)\n", length);
+       printf(",%ld)\n", (long)length);
        myassert(length == TEST_ODBC_TEXT_LEN-1);
        row_count++;
 
        rc = SQLFetch(hstmt);
     }
-    printMessage("total rows: %ld", row_count);
+    printMessage("total rows: %ld", (long)row_count);
     myassert(row_count == i);
 
     SQLFreeStmt(hstmt, SQL_UNBIND);
@@ -716,9 +720,18 @@ DECLARE_TEST(t_bug9781)
 
   ok_sql(hstmt, "DROP TABLE IF EXISTS t_bug9781");
   ok_sql(hstmt, "CREATE TABLE t_bug9781 (g GEOMETRY)");
-  ok_sql(hstmt, "INSERT INTO t_bug9781 VALUES (GeomFromText('POINT(0 0)'))");
 
-  ok_sql(hstmt, "SELECT AsBinary(g) FROM t_bug9781");
+  if (mysql_min_version(hdbc, "8.0", 3))
+  {
+    ok_sql(hstmt, "INSERT INTO t_bug9781 VALUES (St_GeomFromText('POINT(0 0)'))");
+    ok_sql(hstmt, "SELECT St_AsBinary(g) FROM t_bug9781");
+
+  }
+  else
+  {
+    ok_sql(hstmt, "INSERT INTO t_bug9781 VALUES (GeomFromText('POINT(0 0)'))");
+    ok_sql(hstmt, "SELECT AsBinary(g) FROM t_bug9781");
+  }
 
   ok_stmt(hstmt, SQLDescribeCol(hstmt, 1, column_name, sizeof(column_name),
                                 &name_length, &data_type, &column_size,
@@ -771,8 +784,8 @@ DECLARE_TEST(t_bug10562)
 }
 
 
-/* 
-  Bug#11746572: TEXT FIELDS WITH BINARY COLLATIONS 
+/*
+  Bug#11746572: TEXT FIELDS WITH BINARY COLLATIONS
   Test for text field with latin1_bin and latin1_swedish_ci collation
   Output of text column should contain same input value and not hexadecimal
   value of input.
@@ -785,9 +798,9 @@ DECLARE_TEST(t_bug_11746572)
 
   ok_sql(hstmt, "DROP TABLE if exists bug_11746572");
 
-  /* 
-    create table 'bug_11746572' with blob column and text columns 
-    with collation latin1_bin and latin1_swedish_ci.  
+  /*
+    create table 'bug_11746572' with blob column and text columns
+    with collation latin1_bin and latin1_swedish_ci.
   */
   ok_sql(hstmt,"CREATE TABLE bug_11746572( blob_field BLOB ,"
     "  text_bin TEXT CHARACTER SET latin1 COLLATE latin1_bin,"
@@ -801,9 +814,9 @@ DECLARE_TEST(t_bug_11746572)
 
   ok_stmt(hstmt, SQLFetch(hstmt));
 
-  /* 
-    Verify inserted data is changed to hexadecimal value for blob field 
-    and remains unchanged for text field for both binary and non-binary 
+  /*
+    Verify inserted data is changed to hexadecimal value for blob field
+    and remains unchanged for text field for both binary and non-binary
     collation.
   */
   ok_stmt(hstmt, SQLGetData(hstmt, 1, SQL_C_CHAR, szData, MAX_ROW_DATA_LEN,NULL));
@@ -815,16 +828,16 @@ DECLARE_TEST(t_bug_11746572)
   ok_stmt(hstmt, SQLGetData(hstmt, 3, SQL_C_CHAR, szData, MAX_ROW_DATA_LEN,NULL));
   is_str(szData, "text", 4);
 
-  ok_stmt(hstmt, SQLDescribeCol(hstmt, 1, ColName, MAX_NAME_LEN, 
+  ok_stmt(hstmt, SQLDescribeCol(hstmt, 1, ColName, MAX_NAME_LEN,
                         NULL, &SqlType, NULL, NULL, NULL));
   is_num(SqlType, SQL_LONGVARBINARY);
 
-  ok_stmt(hstmt, SQLDescribeCol(hstmt, 2, ColName, MAX_NAME_LEN, 
+  ok_stmt(hstmt, SQLDescribeCol(hstmt, 2, ColName, MAX_NAME_LEN,
                         NULL, &SqlType, NULL, NULL, NULL));
 
   is_num(SqlType, unicode_driver ? SQL_WLONGVARCHAR : SQL_LONGVARCHAR);
 
-  ok_stmt(hstmt, SQLDescribeCol(hstmt, 3, ColName, MAX_NAME_LEN, 
+  ok_stmt(hstmt, SQLDescribeCol(hstmt, 3, ColName, MAX_NAME_LEN,
                         NULL, &SqlType, NULL, NULL, NULL));
   is_num(SqlType, SQL_LONGVARCHAR);
 

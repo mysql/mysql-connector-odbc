@@ -1,26 +1,30 @@
-/*
-  Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
-
-  The MySQL Connector/ODBC is licensed under the terms of the GPLv2
-  <http://www.gnu.org/licenses/old-licenses/gpl-2.0.html>, like most
-  MySQL Connectors. There are special exceptions to the terms and
-  conditions of the GPLv2 as it is applied to this software, see the
-  FLOSS License Exception
-  <http://www.mysql.com/about/legal/licensing/foss-exception.html>.
-  
-  This program is free software; you can redistribute it and/or modify
-  it under the terms of the GNU General Public License as published
-  by the Free Software Foundation; version 2 of the License.
-  
-  This program is distributed in the hope that it will be useful, but
-  WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-  or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
-  for more details.
-  
-  You should have received a copy of the GNU General Public License along
-  with this program; if not, write to the Free Software Foundation, Inc.,
-  51 Franklin St, Fifth Floor, Boston, MA 02110-1301  USA
-*/
+// Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+//
+// This program is free software; you can redistribute it and/or modify
+// it under the terms of the GNU General Public License, version 2.0, as
+// published by the Free Software Foundation.
+//
+// This program is also distributed with certain software (including
+// but not limited to OpenSSL) that is licensed under separate terms,
+// as designated in a particular file or component or in included license
+// documentation. The authors of MySQL hereby grant you an
+// additional permission to link the program and your derivative works
+// with the separately licensed software that they have included with
+// MySQL.
+//
+// Without limiting anything contained in the foregoing, this file,
+// which is part of <MySQL Product>, is also subject to the
+// Universal FOSS Exception, version 1.0, a copy of which can be found at
+// http://oss.oracle.com/licenses/universal-foss-exception.
+//
+// This program is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+// See the GNU General Public License, version 2.0, for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program; if not, write to the Free Software Foundation, Inc.,
+// 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 
 #include "odbctap.h"
 
@@ -327,11 +331,11 @@ DECLARE_TEST(t_bulk_insert_bookmark)
 
   ok_stmt(hstmt, SQLFetchScroll(hstmt, SQL_FETCH_NEXT, 0));
 
-  ok_stmt(hstmt, SQLBindCol(hstmt, 0, SQL_C_VARBOOKMARK, bData, 
+  ok_stmt(hstmt, SQLBindCol(hstmt, 0, SQL_C_VARBOOKMARK, bData,
                             sizeof(bData[0]), NULL));
 
   ok_stmt(hstmt, SQLBindCol(hstmt, 1, SQL_C_LONG, id, 0, NULL));
-  ok_stmt(hstmt, SQLBindCol(hstmt, 2, SQL_C_CHAR, name, 
+  ok_stmt(hstmt, SQLBindCol(hstmt, 2, SQL_C_CHAR, name,
                             sizeof(name[0]), NULL));
 
   for (i= 0; i < MAX_BM_INS_COUNT; i++)
@@ -343,13 +347,13 @@ DECLARE_TEST(t_bulk_insert_bookmark)
   }
 
   /*
-    If an application binds column 0 before it calls SQLBulkOperations with an 
-    Operation argument of SQL_ADD, the driver will update the bound column 0 
+    If an application binds column 0 before it calls SQLBulkOperations with an
+    Operation argument of SQL_ADD, the driver will update the bound column 0
     buffers with the bookmark values for the newly inserted row.
   */
   ok_stmt(hstmt, SQLBulkOperations(hstmt, SQL_ADD));
   ok_stmt(hstmt, SQLFetchScroll(hstmt, SQL_FETCH_BOOKMARK, 0));
-  
+
   for (i= 0; i < MAX_BM_INS_COUNT; i++)
   {
     is_num(atol(bData[i]), i + 1);
@@ -373,7 +377,7 @@ DECLARE_TEST(t_bulk_insert_bookmark)
     {
       length= sprintf((char *)buff, "Varchar%d", i + 1);
       is_str(name[i], buff, length);
-    }  
+    }
   }
 
   ok_stmt(hstmt, SQLFreeStmt(hstmt, SQL_CLOSE));
@@ -391,7 +395,7 @@ DECLARE_TEST(t_bookmark_update)
 {
   SQLLEN len= 0;
   SQLUSMALLINT rowStatus[4];
-  SQLUINTEGER numRowsFetched;
+  SQLULEN numRowsFetched;
   SQLINTEGER nData[4], i;
   SQLCHAR szData[4][16];
   SQLCHAR bData[4][10];
@@ -421,7 +425,7 @@ DECLARE_TEST(t_bookmark_update)
   ok_stmt(hstmt, SQLSetStmtOption(hstmt, SQL_ROWSET_SIZE, 4));
 
   ok_sql(hstmt, "select * from t_bookmark order by 1");
-  ok_stmt(hstmt, SQLBindCol(hstmt, 0, SQL_C_VARBOOKMARK, bData, 
+  ok_stmt(hstmt, SQLBindCol(hstmt, 0, SQL_C_VARBOOKMARK, bData,
 	                        sizeof(bData[0]), NULL));
   ok_stmt(hstmt, SQLBindCol(hstmt, 1, SQL_C_LONG, nData, 0, NULL));
   ok_stmt(hstmt, SQLBindCol(hstmt, 2, SQL_C_CHAR, szData, sizeof(szData[0]),
@@ -477,7 +481,7 @@ DECLARE_TEST(t_bookmark_delete)
 {
   SQLLEN len= 0;
   SQLUSMALLINT rowStatus[4];
-  SQLUINTEGER numRowsFetched;
+  SQLULEN numRowsFetched;
   SQLINTEGER nData[4];
   SQLCHAR szData[4][16];
   SQLCHAR bData[4][10];
@@ -506,7 +510,7 @@ DECLARE_TEST(t_bookmark_delete)
   ok_stmt(hstmt, SQLSetStmtOption(hstmt, SQL_ROWSET_SIZE, 4));
 
   ok_sql(hstmt, "select * from t_bookmark order by 1");
-  ok_stmt(hstmt, SQLBindCol(hstmt, 0, SQL_C_VARBOOKMARK, bData, 
+  ok_stmt(hstmt, SQLBindCol(hstmt, 0, SQL_C_VARBOOKMARK, bData,
 	                        sizeof(bData[0]), NULL));
   ok_stmt(hstmt, SQLBindCol(hstmt, 1, SQL_C_LONG, nData, 0, NULL));
   ok_stmt(hstmt, SQLBindCol(hstmt, 2, SQL_C_CHAR, szData, sizeof(szData[0]),
@@ -542,7 +546,7 @@ DECLARE_TEST(t_bookmark_delete)
   memset(nData, 0, sizeof(nData));
   memset(szData, 'x', sizeof(szData));
   ok_stmt(hstmt, SQLSetStmtOption(hstmt, SQL_ROWSET_SIZE, 4));
-  expect_stmt(hstmt, SQLBulkOperations(hstmt, SQL_FETCH_BY_BOOKMARK), 
+  expect_stmt(hstmt, SQLBulkOperations(hstmt, SQL_FETCH_BY_BOOKMARK),
               SQL_SUCCESS_WITH_INFO);
 
   is_num(nData[0], 3);
@@ -607,8 +611,8 @@ BEGIN_TESTS
   ADD_TEST(t_bulk_insert_indicator)
   ADD_TEST(t_bulk_insert_rows)
   ADD_TEST(t_bulk_insert_bookmark)
-  // ADD_TEST(t_bookmark_update) TODO: Fix
-  // ADD_TEST(t_bookmark_delete) TODO: Fix
+  ADD_TEST(t_bookmark_update)
+  ADD_TEST(t_bookmark_delete)
   // ADD_TEST(t_bug17714290) TODO: Fix
 END_TESTS
 

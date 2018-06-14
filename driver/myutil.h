@@ -1,26 +1,30 @@
-/*
-  Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
-
-  The MySQL Connector/ODBC is licensed under the terms of the GPLv2
-  <http://www.gnu.org/licenses/old-licenses/gpl-2.0.html>, like most
-  MySQL Connectors. There are special exceptions to the terms and
-  conditions of the GPLv2 as it is applied to this software, see the
-  FLOSS License Exception
-  <http://www.mysql.com/about/legal/licensing/foss-exception.html>.
-  
-  This program is free software; you can redistribute it and/or modify
-  it under the terms of the GNU General Public License as published
-  by the Free Software Foundation; version 2 of the License.
-  
-  This program is distributed in the hope that it will be useful, but
-  WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-  or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
-  for more details.
-  
-  You should have received a copy of the GNU General Public License along
-  with this program; if not, write to the Free Software Foundation, Inc.,
-  51 Franklin St, Fifth Floor, Boston, MA 02110-1301  USA
-*/
+// Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+//
+// This program is free software; you can redistribute it and/or modify
+// it under the terms of the GNU General Public License, version 2.0, as
+// published by the Free Software Foundation.
+//
+// This program is also distributed with certain software (including
+// but not limited to OpenSSL) that is licensed under separate terms,
+// as designated in a particular file or component or in included license
+// documentation. The authors of MySQL hereby grant you an
+// additional permission to link the program and your derivative works
+// with the separately licensed software that they have included with
+// MySQL.
+//
+// Without limiting anything contained in the foregoing, this file,
+// which is part of <MySQL Product>, is also subject to the
+// Universal FOSS Exception, version 1.0, a copy of which can be found at
+// http://oss.oracle.com/licenses/universal-foss-exception.
+//
+// This program is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+// See the GNU General Public License, version 2.0, for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program; if not, write to the Free Software Foundation, Inc.,
+// 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 
 /***************************************************************************
  * MYUTIL.H								   *
@@ -230,19 +234,18 @@ SQLRETURN SQL_API my_SQLExtendedFetch(SQLHSTMT hstmt, SQLUSMALLINT fFetchType,
 				      SQLLEN irow, SQLULEN *pcrow,
 				      SQLUSMALLINT *rgfRowStatus, my_bool upd_status);
 SQLRETURN SQL_API myodbc_single_fetch( SQLHSTMT hstmt, SQLUSMALLINT fFetchType,
-              SQLLEN irow, SQLULEN *pcrow, 
+              SQLLEN irow, SQLULEN *pcrow,
               SQLUSMALLINT *rgfRowStatus, my_bool upd_status);
-SQLRETURN SQL_API sql_get_data(STMT *stmt, SQLSMALLINT fCType, 
-              uint column_number, SQLPOINTER rgbValue, 
+SQLRETURN SQL_API sql_get_data(STMT *stmt, SQLSMALLINT fCType,
+              uint column_number, SQLPOINTER rgbValue,
               SQLLEN cbValueMax, SQLLEN *pcbValue,
               char *value, ulong length, DESCREC *arrec);
-SQLRETURN SQL_API sql_get_bookmark_data(STMT *stmt, SQLSMALLINT fCType, 
-              uint column_number, SQLPOINTER rgbValue, 
+SQLRETURN SQL_API sql_get_bookmark_data(STMT *stmt, SQLSMALLINT fCType,
+              uint column_number, SQLPOINTER rgbValue,
               SQLLEN cbValueMax, SQLLEN *pcbValue,
               char *value, ulong length, DESCREC *arrec);
 SQLRETURN SQL_API my_SQLSetPos(SQLHSTMT hstmt, SQLSETPOSIROW irow,
                                SQLUSMALLINT fOption, SQLUSMALLINT fLock);
-SQLRETURN copy_stmt_error       (STMT *src, STMT *dst);
 int       unireg_to_c_datatype  (MYSQL_FIELD *field);
 int       default_c_type        (int sql_data_type);
 ulong     bind_length           (int sql_data_type,ulong length);
@@ -286,7 +289,7 @@ int     myodbc_strcasecmp         (const char *s, const char *t);
 int     myodbc_casecmp            (const char *s, const char *t, uint len);
 my_bool reget_current_catalog     (DBC *dbc);
 
-ulong   myodbc_escape_string      (MYSQL *mysql, char *to, ulong to_length,
+ulong   myodbc_escape_string      (STMT *stmt, char *to, ulong to_length,
                                   const char *from, ulong length, int escape_id);
 
 DESCREC*  desc_get_rec            (DESC *desc, int recnum, my_bool expand);
@@ -331,18 +334,18 @@ enum enum_field_types map_sql2mysql_type(SQLSMALLINT sql_type);
 
 /* proc_* functions - used to parse prcedures headers in SQLProcedureColumns */
 char *      proc_param_tokenize   (char *str, int *params_num);
-SQLCHAR *   proc_get_param_type   (SQLCHAR *proc, int len, SQLSMALLINT *ptype);
-SQLCHAR*    proc_get_param_name   (SQLCHAR *proc, int len, SQLCHAR *cname);
-SQLCHAR*    proc_get_param_dbtype (SQLCHAR *proc, int len, SQLCHAR *ptype);
+char *      proc_get_param_type   (char *proc, int len, SQLSMALLINT *ptype);
+char *    proc_get_param_name   (char *proc, int len, char *cname);
+char *      proc_get_param_dbtype (char *proc, int len, char *ptype);
 SQLUINTEGER proc_get_param_size   (SQLCHAR *ptype, int len, int sql_type_index,
                                   SQLSMALLINT *dec);
 SQLLEN      proc_get_param_octet_len  (STMT *stmt, int sql_type_index,
                                       SQLULEN col_size, SQLSMALLINT decimal_digits,
                                       unsigned int flags, char * str_buff);
-SQLLEN      proc_get_param_col_len    (STMT *stmt, int sql_type_index, SQLULEN col_size, 
+SQLLEN      proc_get_param_col_len    (STMT *stmt, int sql_type_index, SQLULEN col_size,
                                       SQLSMALLINT decimal_digits, unsigned int flags,
                                       char * str_buff);
-int         proc_get_param_sql_type_index (SQLCHAR *ptype, int len);
+int         proc_get_param_sql_type_index (const char*ptype, int len);
 SQLTypeMap *proc_get_param_map_by_index   (int index);
 char *      proc_param_next_token         (char *str, char *str_end);
 
@@ -368,7 +371,8 @@ int           got_out_parameters  (STMT *stmt);
 const char    get_identifier_quote(STMT *stmt);
 SQLULEN get_query_timeout(STMT *stmt);
 SQLRETURN set_query_timeout(STMT *stmt, SQLULEN new_value);
-int get_session_variable(STMT *stmt, const char *var, char *result);
+int get_session_variable(STMT *stmt, const char *var, char *result,
+                         size_t buf_len);
 
 /* handle.c*/
 BOOL          allocate_param_bind     (DYNAMIC_ARRAY **param_bind, uint elements);
@@ -443,7 +447,6 @@ int         ssps_get_result       (STMT *stmt);
 void        ssps_close            (STMT *stmt);
 SQLRETURN   ssps_fetch_chunk      (STMT *stmt, char *dest, unsigned long dest_bytes,
                                   unsigned long *avail_bytes);
-int         ssps_bind_result      (STMT *stmt);
 void        free_result_bind      (STMT *stmt);
 BOOL        ssps_0buffers_truncated_only(STMT *stmt);
 long long   ssps_get_int64        (STMT *stmt, ulong column_number, char *value,
@@ -527,11 +530,11 @@ void free_connection_stmts(DBC *dbc);
 #define CHECK_DBC_OUTPUT(e, d) if(d == NULL) return set_env_error((ENV *)e, MYERR_S1009, NULL, 0)
 
 #define CHECK_STMT_OUTPUT(d, s) if(s == NULL) return set_conn_error((DBC *)d, MYERR_S1009, NULL, 0)
- 
+
 #define CHECK_DESC_OUTPUT(d, s) CHECK_STMT_OUTPUT(d, s)
 
 #define CHECK_DATA_OUTPUT(s, d) if(d == NULL) return set_error((STMT *)s, MYERR_S1000, "Invalid output buffer", 0)
- 
+
 #define IF_NOT_NULL(v, x) if (v != NULL) x
 
 #endif /* __MYUTIL_H__ */

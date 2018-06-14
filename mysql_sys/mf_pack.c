@@ -1,18 +1,30 @@
-/* Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
-
-   This program is free software; you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; version 2 of the License.
-
-   This program is distributed in the hope that it will be useful,
-   but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU General Public License for more details.
-
-   You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-*/
+// Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved. 
+// 
+// This program is free software; you can redistribute it and/or modify 
+// it under the terms of the GNU General Public License, version 2.0, as 
+// published by the Free Software Foundation. 
+// 
+// This program is also distributed with certain software (including 
+// but not limited to OpenSSL) that is licensed under separate terms, 
+// as designated in a particular file or component or in included license 
+// documentation. The authors of MySQL hereby grant you an 
+// additional permission to link the program and your derivative works 
+// with the separately licensed software that they have included with 
+// MySQL. 
+// 
+// Without limiting anything contained in the foregoing, this file, 
+// which is part of MySQL Connector/ODBC, is also subject to the 
+// Universal FOSS Exception, version 1.0, a copy of which can be found at 
+// http://oss.oracle.com/licenses/universal-foss-exception. 
+// 
+// This program is distributed in the hope that it will be useful, but 
+// WITHOUT ANY WARRANTY; without even the implied warranty of 
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+// See the GNU General Public License, version 2.0, for more details. 
+// 
+// You should have received a copy of the GNU General Public License 
+// along with this program; if not, write to the Free Software Foundation, Inc., 
+// 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA 
 
 #include "mysys_priv.h"
 #include "my_sys.h"
@@ -59,15 +71,15 @@ void pack_dirname(char * to, const char *from)
   if ((d_length= cleanup_dirname(to,to)) != 0)
   {
     length=0;
-    if (home_dir)
+    if (sys_home_dir)
     {
-      length= strlen(home_dir);
-      if (home_dir[length-1] == FN_LIBCHAR)
+      length= strlen(sys_home_dir);
+      if (sys_home_dir[length-1] == FN_LIBCHAR)
 	length--;				/* Don't test last '/' */
     }
     if (length > 1 && length < d_length)
     {						/* test if /xx/yy -> ~/yy */
-      if (memcmp(to,home_dir,length) == 0 && to[length] == FN_LIBCHAR)
+      if (memcmp(to,sys_home_dir,length) == 0 && to[length] == FN_LIBCHAR)
       {
 	to[0]=FN_HOMELIB;			/* Filename begins with ~ */
 	(void) my_stpmov(to+1,to+length);
@@ -77,7 +89,7 @@ void pack_dirname(char * to, const char *from)
     {						/* Test if cwd is ~/... */
       if (length > 1 && length < buff_length)
       {
-	if (memcmp(buff,home_dir,length) == 0 && buff[length] == FN_LIBCHAR)
+	if (memcmp(buff,sys_home_dir,length) == 0 && buff[length] == FN_LIBCHAR)
 	{
 	  buff[0]=FN_HOMELIB;
 	  (void) my_stpmov(buff+1,buff+length);
@@ -115,7 +127,7 @@ void pack_dirname(char * to, const char *from)
   "/~/" removes all before ~
   //" is same as "/", except on Win32 at start of a file
   "/./" is removed
-  Unpacks home_dir if "~/.." used
+  Unpacks sys_home_dir if "~/.." used
   Unpacks current dir if if "./.." used
 
   RETURN
@@ -171,23 +183,23 @@ size_t cleanup_dirname(char *to, const char *from)
 	  pos--;
 	  if (*pos == FN_HOMELIB && (pos == start || pos[-1] == FN_LIBCHAR))
 	  {
-	    if (!home_dir)
+	    if (!sys_home_dir)
 	    {
 	      pos+=length+1;			/* Don't unpack ~/.. */
 	      continue;
 	    }
-	    pos=my_stpcpy(buff,home_dir)-1;	/* Unpacks ~/.. */
+	    pos=my_stpcpy(buff,sys_home_dir)-1;	/* Unpacks ~/.. */
 	    if (*pos == FN_LIBCHAR)
 	      pos--;				/* home ended with '/' */
 	  }
 	  if (*pos == FN_CURLIB && (pos == start || pos[-1] == FN_LIBCHAR))
 	  {
-	    if (my_getwd(curr_dir,FN_REFLEN,MYF(0)))
+	    if (my_getwd(sys_curr_dir,FN_REFLEN,MYF(0)))
 	    {
 	      pos+=length+1;			/* Don't unpack ./.. */
 	      continue;
 	    }
-	    pos=my_stpcpy(buff,curr_dir)-1;	/* Unpacks ./.. */
+	    pos=my_stpcpy(buff,sys_curr_dir)-1;	/* Unpacks ./.. */
 	    if (*pos == FN_LIBCHAR)
 	      pos--;				/* home ended with '/' */
 	  }
@@ -284,7 +296,7 @@ size_t normalize_dirname(char *to, const char *from)
 
   @details
   - Uses normalize_dirname()
-  - Expands ~/... to home_dir/...
+  - Expands ~/... to sys_home_dir/...
   - Changes a UNIX filename to system filename (replaces / with \ on windows)
 
   @returns
@@ -324,7 +336,7 @@ size_t unpack_dirname(char * to, const char *from)
 static char * expand_tilde(char **path)
 {
   if (path[0][0] == FN_LIBCHAR)
-    return home_dir;			/* ~/ expanded to home */
+    return sys_home_dir;			/* ~/ expanded to home */
 #ifdef HAVE_GETPWNAM
   {
     char *str,save;

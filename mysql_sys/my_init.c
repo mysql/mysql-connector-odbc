@@ -1,17 +1,30 @@
-/* Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
-
-   This program is free software; you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; version 2 of the License.
-
-   This program is distributed in the hope that it will be useful,
-   but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU General Public License for more details.
-
-   You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301  USA */
+// Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved. 
+// 
+// This program is free software; you can redistribute it and/or modify 
+// it under the terms of the GNU General Public License, version 2.0, as 
+// published by the Free Software Foundation. 
+// 
+// This program is also distributed with certain software (including 
+// but not limited to OpenSSL) that is licensed under separate terms, 
+// as designated in a particular file or component or in included license 
+// documentation. The authors of MySQL hereby grant you an 
+// additional permission to link the program and your derivative works 
+// with the separately licensed software that they have included with 
+// MySQL. 
+// 
+// Without limiting anything contained in the foregoing, this file, 
+// which is part of <MySQL Product>, is also subject to the 
+// Universal FOSS Exception, version 1.0, a copy of which can be found at 
+// http://oss.oracle.com/licenses/universal-foss-exception. 
+// 
+// This program is distributed in the hope that it will be useful, but 
+// WITHOUT ANY WARRANTY; without even the implied warranty of 
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+// See the GNU General Public License, version 2.0, for more details. 
+// 
+// You should have received a copy of the GNU General Public License 
+// along with this program; if not, write to the Free Software Foundation, Inc., 
+// 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA 
 
 #include "mysys_priv.h"
 #include "my_sys.h"
@@ -30,15 +43,15 @@
 #include <crtdbg.h>
 /* WSAStartup needs winsock library*/
 #pragma comment(lib, "ws2_32")
-my_bool have_tcpip=0;
+my_bool sys_have_tcpip=0;
 #endif
 
 #define SCALE_SEC       100
 #define SCALE_USEC      10000
 
-my_bool my_init_done= FALSE;
-ulong  my_thread_stack_size= 65536;
-MYSQL_FILE *mysql_stdin= NULL;
+my_bool mysys_init_done= FALSE;
+ulong  mysys_thread_stack_size= 65536;
+MYSQL_FILE *mysys_stdin= NULL;
 static MYSQL_FILE instrumented_stdin;
 
 
@@ -85,26 +98,26 @@ int set_crt_report_leaks()
 */
 my_bool my_sys_init()
 {
-  if (my_init_done)
+  if (mysys_init_done)
     return FALSE;
 
-  my_init_done= TRUE;
+  mysys_init_done= TRUE;
 
 #if defined(MY_MSCRT_DEBUG)
   set_crt_report_leaks();
 #endif
 
-  my_umask= 0640;                       /* Default umask for new files */
-  my_umask_dir= 0750;                   /* Default umask for new directories */
+  mysys_umask= 0640;                       /* Default umask for new files */
+  mysys_umask_dir= 0750;                   /* Default umask for new directories */
 
   instrumented_stdin.m_file= stdin;
   instrumented_stdin.m_psi= NULL;       /* not yet instrumented */
-  mysql_stdin= & instrumented_stdin;
+  mysys_stdin= & instrumented_stdin;
 
   if (my_thread_global_init())
     return TRUE;
 
-  if (my_thread_init())
+  if (mysys_thread_init())
     return TRUE;
 
   return FALSE;
@@ -113,7 +126,7 @@ my_bool my_sys_init()
 
 	/* End my_sys */
 
-void my_end(int infoflag)
+void mysys_end(int infoflag)
 {
   /*
     We do not use DBUG_ENTER here, as after cleanup DBUG is no longer
@@ -122,18 +135,18 @@ void my_end(int infoflag)
 
   FILE *info_file= (DBUG_FILE ? DBUG_FILE : stderr);
 
-  if (!my_init_done)
+  if (!mysys_init_done)
     return;
 
   if ((infoflag & MY_CHECK_ERROR) || (info_file != stderr))
 
   {					/* Test if some file is left open */
-    if (my_file_opened | my_stream_opened)
+    if (mysys_file_opened | mysys_stream_opened)
     {
       char ebuff[512];
       my_snprintf(ebuff, sizeof(ebuff), EE(EE_OPEN_WARNING),
-                  my_file_opened, my_stream_opened);
-      my_message_stderr(EE_OPEN_WARNING, ebuff, MYF(0));
+                  mysys_file_opened, mysys_stream_opened);
+      mysys_message_stderr(EE_OPEN_WARNING, ebuff, MYF(0));
       DBUG_PRINT("error", ("%s", ebuff));
       my_print_open_files();
     }
@@ -184,11 +197,11 @@ Voluntary context switches %ld, Involuntary context switches %ld\n",
   my_thread_global_end();
 
 #ifdef _WIN32
-  if (have_tcpip)
+  if (sys_have_tcpip)
     WSACleanup();
 #endif /* _WIN32 */
 
-  my_init_done= FALSE;
+  mysys_init_done= FALSE;
 } /* my_end */
 
 
@@ -253,7 +266,7 @@ static void win_init_time()
 
 #endif /* _WIN32 */
 
-PSI_stage_info stage_waiting_for_table_level_lock=
+PSI_stage_info sys_stage_waiting_for_table_level_lock=
 {0, "Waiting for table level lock", 0};
 
 #ifdef HAVE_PSI_INTERFACE
@@ -319,7 +332,7 @@ static PSI_file_info all_mysys_files[]=
 
 PSI_stage_info *all_mysys_stages[]=
 {
-  & stage_waiting_for_table_level_lock
+  &sys_stage_waiting_for_table_level_lock
 };
 
 static PSI_memory_info all_mysys_memory[]=
@@ -345,7 +358,7 @@ static PSI_memory_info all_mysys_memory[]=
   { &key_memory_my_compress_alloc, "my_compress_alloc", 0},
   { &key_memory_pack_frm, "pack_frm", 0},
   { &key_memory_my_err_head, "my_err_head", 0},
-  { &key_memory_my_file_info, "my_file_info", 0},
+  { &key_memory_my_file_info, "mysys_file_info", 0},
   { &key_memory_MY_DIR, "MY_DIR", 0},
   { &key_memory_MY_STAT, "MY_STAT", 0},
   { &key_memory_QUEUE, "QUEUE", 0},
@@ -353,7 +366,7 @@ static PSI_memory_info all_mysys_memory[]=
   { &key_memory_TREE, "TREE", 0}
 };
 
-void my_init_mysys_psi_keys()
+void mysys_init_mysys_psi_keys()
 {
   const char* category= "mysys";
   int count;

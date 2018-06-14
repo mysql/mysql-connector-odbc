@@ -1,17 +1,30 @@
-/* Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
-
-   This program is free software; you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; version 2 of the License.
-
-   This program is distributed in the hope that it will be useful,
-   but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU General Public License for more details.
-
-   You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301  USA */
+// Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved. 
+// 
+// This program is free software; you can redistribute it and/or modify 
+// it under the terms of the GNU General Public License, version 2.0, as 
+// published by the Free Software Foundation. 
+// 
+// This program is also distributed with certain software (including 
+// but not limited to OpenSSL) that is licensed under separate terms, 
+// as designated in a particular file or component or in included license 
+// documentation. The authors of MySQL hereby grant you an 
+// additional permission to link the program and your derivative works 
+// with the separately licensed software that they have included with 
+// MySQL. 
+// 
+// Without limiting anything contained in the foregoing, this file, 
+// which is part of <MySQL Product>, is also subject to the 
+// Universal FOSS Exception, version 1.0, a copy of which can be found at 
+// http://oss.oracle.com/licenses/universal-foss-exception. 
+// 
+// This program is distributed in the hope that it will be useful, but 
+// WITHOUT ANY WARRANTY; without even the implied warranty of 
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+// See the GNU General Public License, version 2.0, for more details. 
+// 
+// You should have received a copy of the GNU General Public License 
+// along with this program; if not, write to the Free Software Foundation, Inc., 
+// 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA 
 
 #ifndef MYSYS_PRIV_INCLUDED
 #define MYSYS_PRIV_INCLUDED
@@ -42,7 +55,7 @@ extern PSI_cond_key key_IO_CACHE_SHARE_cond,
 
 #endif /* HAVE_PSI_INTERFACE */
 
-extern PSI_stage_info stage_waiting_for_table_level_lock;
+extern PSI_stage_info sys_stage_waiting_for_table_level_lock;
 
 extern mysql_mutex_t THR_LOCK_malloc, THR_LOCK_open, THR_LOCK_keycache;
 extern mysql_mutex_t THR_LOCK_lock, THR_LOCK_net;
@@ -109,9 +122,9 @@ extern File     my_win_open(const char *path, int oflag);
 extern int      my_win_close(File fd);
 extern size_t   my_win_read(File fd, uchar *buffer, size_t  count);
 extern size_t   my_win_write(File fd, const uchar *buffer, size_t count);
-extern size_t   my_win_pread(File fd, uchar *buffer, size_t count, 
+extern size_t   my_win_pread(File fd, uchar *buffer, size_t count,
                              my_off_t offset);
-extern size_t   my_win_pwrite(File fd, const uchar *buffer, size_t count, 
+extern size_t   my_win_pwrite(File fd, const uchar *buffer, size_t count,
                               my_off_t offset);
 extern my_off_t my_win_lseek(File fd, my_off_t pos, int whence);
 extern int      my_win_chsize(File fd,  my_off_t newlength);

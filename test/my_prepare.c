@@ -1,26 +1,30 @@
-/*
-  Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
-
-  The MySQL Connector/ODBC is licensed under the terms of the GPLv2
-  <http://www.gnu.org/licenses/old-licenses/gpl-2.0.html>, like most
-  MySQL Connectors. There are special exceptions to the terms and
-  conditions of the GPLv2 as it is applied to this software, see the
-  FLOSS License Exception
-  <http://www.mysql.com/about/legal/licensing/foss-exception.html>.
-  
-  This program is free software; you can redistribute it and/or modify
-  it under the terms of the GNU General Public License as published
-  by the Free Software Foundation; version 2 of the License.
-  
-  This program is distributed in the hope that it will be useful, but
-  WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-  or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
-  for more details.
-  
-  You should have received a copy of the GNU General Public License along
-  with this program; if not, write to the Free Software Foundation, Inc.,
-  51 Franklin St, Fifth Floor, Boston, MA 02110-1301  USA
-*/
+// Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved. 
+// 
+// This program is free software; you can redistribute it and/or modify 
+// it under the terms of the GNU General Public License, version 2.0, as 
+// published by the Free Software Foundation. 
+// 
+// This program is also distributed with certain software (including 
+// but not limited to OpenSSL) that is licensed under separate terms, 
+// as designated in a particular file or component or in included license 
+// documentation. The authors of MySQL hereby grant you an 
+// additional permission to link the program and your derivative works 
+// with the separately licensed software that they have included with 
+// MySQL. 
+// 
+// Without limiting anything contained in the foregoing, this file, 
+// which is part of <MySQL Product>, is also subject to the 
+// Universal FOSS Exception, version 1.0, a copy of which can be found at 
+// http://oss.oracle.com/licenses/universal-foss-exception. 
+// 
+// This program is distributed in the hope that it will be useful, but 
+// WITHOUT ANY WARRANTY; without even the implied warranty of 
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+// See the GNU General Public License, version 2.0, for more details. 
+// 
+// You should have received a copy of the GNU General Public License 
+// along with this program; if not, write to the Free Software Foundation, Inc., 
+// 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA 
 
 #include "odbctap.h"
 
@@ -118,12 +122,12 @@ DECLARE_TEST(t_prep_buffer_length)
     rc = SQLExecute(hstmt);
     mystmt(hstmt,rc);
 
-    length= 10;    
+    length= 10;
 
     rc = SQLExecute(hstmt);
     mystmt(hstmt,rc);
 
-    length= 9;    
+    length= 9;
 
     rc = SQLExecute(hstmt);
     mystmt(hstmt,rc);
@@ -742,7 +746,7 @@ DECLARE_TEST(t_prepare)
     rc = SQLFetch(hstmt);
     mystmt(hstmt,rc);
 
-    fprintf(stdout," outdata: %d, %s(%ld)\n", nodata,szodata,nlen);
+    fprintf(stdout," outdata: %d, %s(%ld)\n", nodata,szodata,(long)nlen);
     my_assert(nodata == 200);
 
     rc = SQLFetch(hstmt);
@@ -1100,7 +1104,7 @@ DECLARE_TEST(t_bug67340)
     ok_stmt(hstmt, SQLPrepare(hstmt, "INSERT INTO t_bug67340(id, vc) "\
                                      "VALUES (NULL, ?)", SQL_NTS));
     ok_stmt(hstmt, SQLBindParameter(hstmt, 1, SQL_PARAM_INPUT, SQL_C_CHAR,
-                                    SQL_CHAR, 0, 0, data, sizeof(data), 
+                                    SQL_CHAR, 0, 0, data, sizeof(data),
                                     &paramlen));
     ok_stmt(hstmt, SQLExecute(hstmt));
 
@@ -1133,21 +1137,21 @@ DECLARE_TEST(t_bug67702)
 
   SQLLEN paramlen= 0;
 
-  ok_stmt(hstmt, SQLExecDirect(hstmt, "drop table if exists bug67702", 
+  ok_stmt(hstmt, SQLExecDirect(hstmt, "drop table if exists bug67702",
                                       SQL_NTS));
 
   ok_stmt(hstmt, SQLExecDirect(hstmt, "create table bug67702"\
                                       "(id int auto_increment primary key,"\
-                                      "vc varchar(32), yesno bit(1))", 
+                                      "vc varchar(32), yesno bit(1))",
                                       SQL_NTS));
 
   ok_stmt(hstmt, SQLExecDirect(hstmt, "INSERT INTO bug67702(id, vc, yesno)"\
-                                      "VALUES (1, 'abcd', 1)", 
+                                      "VALUES (1, 'abcd', 1)",
                                       SQL_NTS));
 
   /* Set parameter values here to make it clearer where each one goes */
   c1= 0;
-  ok_stmt(hstmt, SQLBindParameter(hstmt, 1, SQL_PARAM_INPUT, SQL_C_BIT, 
+  ok_stmt(hstmt, SQLBindParameter(hstmt, 1, SQL_PARAM_INPUT, SQL_C_BIT,
                                   SQL_BIT, 1, 0, &c1, 0, NULL));
 
   id= 1;
@@ -1172,7 +1176,7 @@ DECLARE_TEST(t_bug67702)
   ok_stmt(hstmt, SQLExecDirect(hstmt, "SELECT `yesno` FROM `bug67702`", SQL_NTS));
   ok_stmt(hstmt, SQLFetch(hstmt));
   is(my_fetch_int(hstmt, 1) == 0);
-  
+
   SQLFreeStmt(hstmt, SQL_CLOSE);
   ok_stmt(hstmt, SQLExecDirect(hstmt, "drop table if exists bug67702", SQL_NTS));
   return OK;
@@ -1190,16 +1194,16 @@ DECLARE_TEST(t_bug68243)
 
   SQLLEN paramlen= 0;
 
-  ok_stmt(hstmt, SQLExecDirect(hstmt, "drop table if exists bug68243", 
+  ok_stmt(hstmt, SQLExecDirect(hstmt, "drop table if exists bug68243",
                                       SQL_NTS));
 
   ok_stmt(hstmt, SQLExecDirect(hstmt, "create table bug68243"\
                                       "(id int primary key,"\
-                                      "yesno bit(1))", 
+                                      "yesno bit(1))",
                                       SQL_NTS));
 
   ok_stmt(hstmt, SQLExecDirect(hstmt, "INSERT INTO bug68243(id, yesno)"\
-                                      "VALUES (1, 1)", 
+                                      "VALUES (1, 1)",
                                       SQL_NTS));
 
   is(OK == alloc_basic_handles_with_opt(&henv1, &hdbc1, &hstmt1, NULL,
@@ -1207,7 +1211,7 @@ DECLARE_TEST(t_bug68243)
 
   /* Set parameter values here to make it clearer where each one goes */
   c1= 0;
-  ok_stmt(hstmt1, SQLBindParameter(hstmt1, 1, SQL_PARAM_INPUT, SQL_C_BIT, 
+  ok_stmt(hstmt1, SQLBindParameter(hstmt1, 1, SQL_PARAM_INPUT, SQL_C_BIT,
                                   SQL_BIT, 1, 0, &c1, 0, NULL));
 
   id= 1;
@@ -1220,7 +1224,7 @@ DECLARE_TEST(t_bug68243)
 
   /* The prepared query looks exactly as MS Access does it */
   ok_stmt(hstmt1, SQLExecDirect(hstmt1, "UPDATE `bug68243` SET `yesno`=?  "\
-                                      "WHERE `id` = ? AND `yesno` = ?", 
+                                      "WHERE `id` = ? AND `yesno` = ?",
                                       SQL_NTS));
   SQLFreeStmt(hstmt1, SQL_CLOSE);
 
@@ -1228,7 +1232,7 @@ DECLARE_TEST(t_bug68243)
   ok_stmt(hstmt, SQLExecDirect(hstmt, "SELECT `yesno` FROM `bug68243`", SQL_NTS));
   ok_stmt(hstmt, SQLFetch(hstmt));
   is(my_fetch_int(hstmt, 1) == 0);
-  
+
   SQLFreeStmt(hstmt, SQL_CLOSE);
   ok_stmt(hstmt, SQLExecDirect(hstmt, "drop table if exists bug68243", SQL_NTS));
 
@@ -1244,7 +1248,7 @@ DECLARE_TEST(t_bug68243)
 DECLARE_TEST(t_bug67920)
 {
   ok_stmt(hstmt, SQLPrepare(hstmt, "SELECT 1", SQL_NTS));
-  
+
   expect_stmt(hstmt, SQLMoreResults(hstmt), SQL_NO_DATA);
 
   SQLFreeStmt(hstmt, SQL_CLOSE);
