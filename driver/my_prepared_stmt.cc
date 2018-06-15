@@ -363,9 +363,12 @@ SQLRETURN ssps_fetch_chunk(STMT *stmt, char *dest, unsigned long dest_bytes, uns
 /* The structure and following allocation function are borrowed from c/c++ and adopted */
 typedef struct tagBST
 {
-  char * buffer = NULL;
-  size_t size = 0;
+  char * buffer;
+  size_t size;
   enum enum_field_types type;
+
+  tagBST() : buffer(NULL), size(0)
+  {}
 
   tagBST(char *b, size_t s, enum enum_field_types t) :
     buffer(b), size(s), type(t)

@@ -98,7 +98,7 @@ SQLRETURN myodbc_set_initial_character_set(DBC *dbc, const char *charset)
       }
     }
 
-    charset= "utf8";
+    charset= "utf8mb4";
   }
 
   if (charset && charset[0])
