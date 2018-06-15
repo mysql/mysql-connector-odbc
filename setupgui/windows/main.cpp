@@ -66,7 +66,8 @@ BOOL APIENTRY DllMain( HMODULE hModule,
 	}
     else if ( ul_reason_for_call == DLL_PROCESS_DETACH )
     {
-        mysys_end(0);
+        // Not to be used until libmysqlclient is fixed
+        //mysys_end(0);
         UnregisterClass(className,ghInstance);
     }
 
