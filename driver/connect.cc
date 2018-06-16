@@ -123,7 +123,7 @@ SQLRETURN myodbc_set_initial_character_set(DBC *dbc, const char *charset)
   {
     MY_CHARSET_INFO my_charset;
     mysql_get_character_set_info(&dbc->mysql, &my_charset);
-    dbc->cxn_charset_info= get_charset(my_charset.number, MYF(0));
+    dbc->cxn_charset_info= myodbc_get_charset(my_charset.number, MYF(0));
   }
 
   if (!dbc->unicode)
@@ -294,7 +294,7 @@ SQLRETURN myodbc_do_connect(DBC *dbc, DataSource *ds)
     */
     MY_CHARSET_INFO my_charset;
     mysql_get_character_set_info(&dbc->mysql, &my_charset);
-    dbc->ansi_charset_info= get_charset(my_charset.number, MYF(0));
+    dbc->ansi_charset_info= myodbc_get_charset(my_charset.number, MYF(0));
     /*
       We always use utf8 for the connection, and change it afterwards if needed.
     */
@@ -318,7 +318,7 @@ SQLRETURN myodbc_do_connect(DBC *dbc, DataSource *ds)
 #else
     MY_CHARSET_INFO my_charset;
     mysql_get_character_set_info(&dbc->mysql, &my_charset);
-    dbc->ansi_charset_info= get_charset(my_charset.number, MYF(0));
+    dbc->ansi_charset_info= myodbc_get_charset(my_charset.number, MYF(0));
 #endif
 }
 
