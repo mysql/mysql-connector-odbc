@@ -73,6 +73,8 @@ CHARSET_INFO *myodbc_get_charset(uint cs_number, myf flags)
 {
   if (cs_number > 250 && cs_number < 308)
     cs_number = 45; // set utf8mb4_general_ci
+  else if (cs_number == 76)
+    cs_number = 33; // set utf8_general_ci instead of utf8_tolower_ci
   return get_charset(cs_number, flags);
 }
 
