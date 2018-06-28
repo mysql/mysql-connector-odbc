@@ -8,6 +8,9 @@
   Bugs fixed:
   * SQLColAttribute/SQL_DESC_TYPE_NAME text instead of longtext for
     longtext col (Bug# 11761407/53900)
+  * Connector uses UTF8 charset instead of UTF8MB4 (Bug# 28204756)
+  * SQLMoreResults does not set statement errors correctly
+    (Bug# 11757423/49466)
 
   Built using MySQL 5.7.23
 

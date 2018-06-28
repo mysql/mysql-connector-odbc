@@ -1581,12 +1581,8 @@ SQLRETURN SQL_API SQLMoreResults( SQLHSTMT hStmt )
       case CR_SERVER_LOST:
         nReturn = set_stmt_error( pStmt, "08S01", mysql_error( &pStmt->dbc->mysql ), nRetVal );
         goto exitSQLMoreResults;
-      case CR_COMMANDS_OUT_OF_SYNC:
-      case CR_UNKNOWN_ERROR:
-        nReturn = set_stmt_error( pStmt, "HY000", mysql_error( &pStmt->dbc->mysql ), nRetVal );
-        goto exitSQLMoreResults;
       default:
-        nReturn = set_stmt_error( pStmt, "HY000", "unhandled error from mysql_next_result()", nRetVal );
+        nReturn = set_stmt_error(pStmt, "HY000", mysql_error(&pStmt->dbc->mysql), nRetVal);
         goto exitSQLMoreResults;
     }
   }

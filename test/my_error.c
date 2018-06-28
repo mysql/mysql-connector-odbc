@@ -28,6 +28,26 @@
 
 #include "odbctap.h"
 
+DECLARE_TEST(t_bug_28258500)
+{
+  char err_msg[256] = { 0 };
+  SQLCHAR sql_state[6] = { 0 };
+  SQLINTEGER native_err = 0;
+  SQLSMALLINT msg_len = 0;
+  DECLARE_BASIC_HANDLES(henv1, hdbc1, hstmt1);
+  alloc_basic_handles_with_opt(&henv1, &hdbc1, &hstmt1, NULL, NULL, NULL, NULL,
+                               "MULTI_STATEMENTS=1");
+
+  ok_sql(hstmt1, "SET @Temp=1;CALL NonExistentProc()");
+  expect_stmt(hstmt1, SQLMoreResults(hstmt1), SQL_ERROR);
+  ok_stmt(hstmt1, SQLGetDiagRec(SQL_HANDLE_STMT, hstmt1, 1, sql_state,
+                               &native_err, (SQLCHAR*)err_msg,
+                               sizeof(err_msg), &msg_len ));
+  is(strstr(err_msg, "NonExistentProc") != NULL);
+  free_basic_handles(&henv1, &hdbc1, &hstmt1);
+  return OK;
+}
+
 DECLARE_TEST(t_get_diag_all)
 {
   SQLCHAR buf[1024];
@@ -871,6 +891,7 @@ BEGIN_TESTS
   // ADD_TEST(t_odbc3_80) TODO: Fix
 #endif
 #endif
+  ADD_TEST(t_bug_28258500)
   ADD_TEST(t_diagrec)
   ADD_TEST(t_warning)
   ADD_TEST(t_bug3456)
