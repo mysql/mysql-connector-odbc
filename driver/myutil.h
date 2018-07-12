@@ -131,6 +131,7 @@ typedef char * DYNAMIC_ELEMENT;
   Utility function prototypes that share among files
 */
 
+CHARSET_INFO *myodbc_get_charset(uint cs_number, myf flags);
 SQLRETURN         my_SQLPrepare (SQLHSTMT hstmt, SQLCHAR *szSqlStr, SQLINTEGER cbSqlStr,
                                 my_bool dupe);
 SQLRETURN         my_SQLExecute         (STMT * stmt);

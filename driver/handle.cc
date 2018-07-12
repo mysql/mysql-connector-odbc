@@ -491,6 +491,11 @@ SQLRETURN SQL_API my_SQLAllocStmt(SQLHDBC hdbc,SQLHSTMT *phstmt)
   stmt->state= ST_UNKNOWN;
   stmt->dummy_state= ST_DUMMY_UNKNOWN;
   myodbc_stpmov(stmt->error.sqlstate, "00000");
+
+#if MYSQL_VERSION_ID >= 50723 && MYSQL_VERSION_ID < 80000
+  init_alloc_root(PSI_NOT_INSTRUMENTED, &stmt->alloc_root, 32, 32);
+#endif
+
   init_parsed_query(&stmt->query);
   init_parsed_query(&stmt->orig_query);
 

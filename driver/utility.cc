@@ -65,6 +65,19 @@ SQLRETURN exec_stmt_query(STMT *stmt, const char *query,
   return odbc_stmt(stmt->dbc, query, query_length, req_lock);
 }
 
+/**
+  Get charset by number, make sure it does not exceed the range for
+  client 5.7
+*/
+CHARSET_INFO *myodbc_get_charset(uint cs_number, myf flags)
+{
+  if (cs_number > 250 && cs_number < 308)
+    cs_number = 45; // set utf8mb4_general_ci
+  else if (cs_number == 76)
+    cs_number = 33; // set utf8_general_ci instead of utf8_tolower_ci
+  return get_charset(cs_number, flags);
+}
+
 
 /**
 
@@ -490,7 +503,7 @@ copy_ansi_result(STMT *stmt,
                           stmt->dbc->ds->handle_binary_as_char;
 
   CHARSET_INFO *to_cs= stmt->dbc->ansi_charset_info,
-               *from_cs= get_charset(field->charsetnr && (!convert_binary) ?
+               *from_cs= myodbc_get_charset(field->charsetnr && (!convert_binary) ?
                                      field->charsetnr : UTF8_CHARSET_NUMBER,
                                      MYF(0));
 
@@ -761,7 +774,7 @@ copy_wchar_result(STMT *stmt,
   char *src_end;
   SQLWCHAR *result_end;
   ulong used_chars= 0, error_count= 0;
-  CHARSET_INFO *from_cs= get_charset(field->charsetnr ? field->charsetnr :
+  CHARSET_INFO *from_cs= myodbc_get_charset(field->charsetnr ? field->charsetnr :
                                      UTF8_CHARSET_NUMBER,
                                      MYF(0));
 
@@ -1414,7 +1427,7 @@ SQLULEN get_column_size(STMT *stmt, MYSQL_FIELD *field)
       return length;
     else
     {
-      CHARSET_INFO *charset=  get_charset(field->charsetnr, MYF(0));
+      CHARSET_INFO *charset=  myodbc_get_charset(field->charsetnr, MYF(0));
       return length / (charset ? charset->mbmaxlen : 1);
     }
 
@@ -1585,7 +1598,7 @@ SQLLEN get_transfer_octet_length(STMT *stmt, MYSQL_FIELD *field)
 SQLLEN get_display_size(STMT *stmt __attribute__((unused)),MYSQL_FIELD *field)
 {
   int capint32= stmt->dbc->ds->limit_column_size ? 1 : 0;
-  CHARSET_INFO *charset= get_charset(field->charsetnr, MYF(0));
+  CHARSET_INFO *charset= myodbc_get_charset(field->charsetnr, MYF(0));
   unsigned int mbmaxlen= charset ? charset->mbmaxlen : 1;
 
   switch (field->type) {
