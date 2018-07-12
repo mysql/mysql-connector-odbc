@@ -3,9 +3,11 @@
   Security Notes:
   * Fix issues found by Fortify (WL #11829)
   Functionality added or changed:
-  * Improve coverage for ODBC code (WL #11994)
-  * Make sure ODBC works with new 8.0 auth. mechanism. (WL #11659)
+  * Fixes in ODBC 5.3 from 8.0 code merge (WL #12199)
+  * Make sure ODBC 5.3 works with new 8.0 auth. mechanism. (WL #11962)
   Bugs fixed:
+  * Source character set not supported by client error on SHOW TABLES command
+    (Bug# 28116892/90984)
   * SQLColAttribute/SQL_DESC_TYPE_NAME text instead of longtext for
     longtext col (Bug# 11761407/53900)
   * Connector uses UTF8 charset instead of UTF8MB4 (Bug# 28204756)
