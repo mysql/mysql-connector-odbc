@@ -80,17 +80,44 @@
         IncludeMinimum="no" />
     </Upgrade>
 
-    <!-- Visual Studio Redistributable Check -->
-    <Property Id="VS14REDIST">
-      <RegistrySearch Id="FindRedistVS14"
-          Root="HKLM"
-          Key="SOFTWARE\Microsoft\VisualStudio\14.0\VC\Runtimes\x64"
-          Name="Version"
-          Type="raw" />
-    </Property>
-    <Condition Message="This application requires Visual Studio 2015 Redistributable. Please install the Redistributable then run this installer again.">
-      Installed OR VS14REDIST
-    </Condition>
+    <?if $(var.odbc_64bit) = 1 ?>
+
+      <?if $(var.license) = "commercial"?>
+        <!-- No need to check anything -->
+      <?else?>
+        <!-- Visual Studio Redistributable Check -->
+        <Property Id="VS12REDISTX64">
+          <RegistrySearch Id="FindRedistVS12"
+              Win64="no"
+              Root="HKLM"
+              Key="SOFTWARE\Microsoft\VisualStudio\12.0\VC\Runtimes\x64"
+              Name="Version"
+              Type="raw" />
+        </Property>
+        <Condition Message="This application requires Visual Studio 2013 x64 Redistributable. Please install the Redistributable then run this installer again.">
+          Installed OR VS12REDISTX64
+        </Condition>
+      <?endif?>
+
+    <?else?>
+
+      <?if $(var.license) = "commercial"?>
+        <!-- No need to check anything -->
+      <?else?>
+        <Property Id="VS12REDISTX86">
+          <RegistrySearch Id="FindRedistVS12"
+              Win64="no"
+              Root="HKLM"
+              Key="SOFTWARE\Microsoft\VisualStudio\12.0\VC\Runtimes\x86"
+              Name="Version"
+              Type="raw" />
+        </Property>
+        <Condition Message="This application requires Visual Studio 2013 x86 Redistributable. Please install the Redistributable then run this installer again.">
+          Installed OR VS12REDISTX86
+        </Condition>
+      <?endif?>
+
+    <?endif ?>
 
     <!-- *****************************************************************************************
       CAB file
