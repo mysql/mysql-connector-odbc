@@ -279,7 +279,7 @@ SQLRETURN myodbc_do_connect(DBC *dbc, DataSource *ds)
   }
 #endif
 
-#if MYSQL_VERSION_ID >= 80004
+#if MYSQL_VERSION_ID >= 50723
   if (ds->get_server_public_key)
   {
     /* Get the server public key */

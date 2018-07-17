@@ -13,6 +13,8 @@
   * Connector uses UTF8 charset instead of UTF8MB4 (Bug# 28204756)
   * SQLMoreResults does not set statement errors correctly
     (Bug# 11757423/49466)
+  * Master: Connection fails for cache256 user when GET_SERVER_PUBLIC_KEY=1
+    (Bug# 28359632)
 
   Built using MySQL 5.7.23
 
