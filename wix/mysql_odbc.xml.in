@@ -81,16 +81,42 @@
     </Upgrade>
 
     <!-- Visual Studio Redistributable Check -->
-    <Property Id="VS14REDIST">
-      <RegistrySearch Id="FindRedistVS14"
-          Root="HKLM"
-          Key="SOFTWARE\Microsoft\VisualStudio\14.0\VC\Runtimes\x64"
-          Name="Version"
-          Type="raw" />
-    </Property>
-    <Condition Message="This application requires Visual Studio 2015 Redistributable. Please install the Redistributable then run this installer again.">
-      Installed OR VS14REDIST
-    </Condition>
+    <?if $(var.odbc_64bit) = 1 ?>
+      <Property Id="VS14REDISTX64">
+        <RegistrySearch Id="FindRedistVS14"
+            Root="HKLM"
+            Key="SOFTWARE\Microsoft\VisualStudio\14.0\VC\Runtimes\x64"
+            Name="Version"
+            Type="raw" />
+      </Property>
+      <Property Id="VS14UPGRADE64">
+        <RegistrySearch Id="FindVS14Upgrade64"
+            Root="HKLM"
+            Key="SOFTWARE\Microsoft\Windows\CurrentVersion\Installer\UpgradeCodes\09A86F63C932FD435BC8463B1035EC53"
+            Type="raw" />
+      </Property>
+      <Condition Message="This application requires Visual Studio 2015 x64 Redistributable. Please install the Redistributable then run this installer again.">
+        Installed OR VS14REDISTX64 OR VS14UPGRADE64
+      </Condition>
+    <?else?>
+      <Property Id="VS14REDISTX86">
+        <RegistrySearch Id="FindRedistVS14"
+            Win64="no"
+            Root="HKLM"
+            Key="SOFTWARE\Microsoft\VisualStudio\14.0\VC\Runtimes\x86"
+            Name="Version"
+            Type="raw" />
+      </Property>
+      <Property Id="VS14UPGRADE32">
+        <RegistrySearch Id="FindVS14Upgrade32"
+            Root="HKLM"
+            Key="SOFTWARE\Microsoft\Windows\CurrentVersion\Installer\UpgradeCodes\15E8B87C56C0E773581D82F286F95E50"
+            Type="raw" />
+      </Property>
+      <Condition Message="This application requires Visual Studio 2015 x86 Redistributable. Please install the Redistributable then run this installer again.">
+        Installed OR VS14REDISTX86 OR VS14UPGRADE32
+      </Condition>
+    <?endif?>
 
     <!-- *****************************************************************************************
       CAB file
