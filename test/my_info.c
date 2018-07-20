@@ -281,6 +281,25 @@ DECLARE_TEST(t_get_all_info)
     return OK;
 }
 
+DECLARE_TEST(t_bug28385722)
+{
+  SQLSMALLINT schema_len = 0;
+  SQLUINTEGER schema_usage = 0;
+  SQLSMALLINT val_len = 0;
+
+  ok_con(hdbc, SQLGetInfo(hdbc, SQL_MAX_SCHEMA_NAME_LEN, &schema_len,
+                          sizeof(schema_len), &val_len));
+  is_num(schema_len, 64);
+
+  ok_con(hdbc, SQLGetInfo(hdbc, SQL_SCHEMA_USAGE, &schema_usage,
+                          sizeof(schema_usage), &val_len));
+  is_num(schema_usage, SQL_SU_DML_STATEMENTS | SQL_SU_PROCEDURE_INVOCATION |
+         SQL_SU_TABLE_DEFINITION | SQL_SU_INDEX_DEFINITION |
+         SQL_SU_PRIVILEGE_DEFINITION);
+
+  return OK;
+}
+
 DECLARE_TEST(t_gettypeinfo)
 {
   SQLSMALLINT pccol;
@@ -793,6 +812,7 @@ BEGIN_TESTS
   /* Query timeout should go first */
   ADD_TEST(t_get_all_info)
   ADD_TEST(t_query_timeout)
+  ADD_TEST(t_bug28385722)
   ADD_TEST(sqlgetinfo)
   ADD_TEST(t_gettypeinfo)
   ADD_TEST(t_stmt_attr_status)

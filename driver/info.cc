@@ -588,7 +588,10 @@ MySQLGetInfo(SQLHDBC hdbc, SQLUSMALLINT fInfoType,
     MYINFO_SET_STR("Y");
 
   case SQL_MAX_SCHEMA_NAME_LEN:
-    MYINFO_SET_USHORT(0);
+    if (!dbc->ds->no_catalog)
+      MYINFO_SET_USHORT(64);
+    else
+      MYINFO_SET_USHORT(0);
 
   case SQL_MAX_STATEMENT_LEN:
     MYINFO_SET_ULONG(dbc->net_buffer_len);
@@ -684,7 +687,12 @@ MySQLGetInfo(SQLHDBC hdbc, SQLUSMALLINT fInfoType,
     MYINFO_SET_STR("");
 
   case SQL_SCHEMA_USAGE:
-    MYINFO_SET_ULONG(0);
+    if (!dbc->ds->no_catalog)
+      MYINFO_SET_ULONG(SQL_SU_DML_STATEMENTS | SQL_SU_PROCEDURE_INVOCATION |
+                       SQL_SU_TABLE_DEFINITION | SQL_SU_INDEX_DEFINITION |
+                       SQL_SU_PRIVILEGE_DEFINITION);
+    else
+      MYINFO_SET_ULONG(0);
 
   case SQL_SCROLL_OPTIONS:
     MYINFO_SET_ULONG(SQL_SO_FORWARD_ONLY |
