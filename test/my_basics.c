@@ -1139,7 +1139,6 @@ DECLARE_TEST(t_bug52996)
   }
 
   ok_stmt(hstmt, SQLFreeStmt(hstmt, SQL_CLOSE));
-  ok_con(hdbc1, SQLDisconnect(hdbc1));
 
   free_basic_handles(&henv1, &hdbc1, &hstmt1);
 
