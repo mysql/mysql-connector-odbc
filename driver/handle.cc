@@ -47,6 +47,10 @@
 
 #include "driver.h"
 
+extern void init_alloc_root(PSI_memory_key key,
+                            MEM_ROOT *mem_root, size_t block_size,
+                            size_t pre_alloc_size);
+
 #ifdef _UNIX_
 /* variables for thread counter */
 static myodbc_key_t myodbc_thread_counter_key;

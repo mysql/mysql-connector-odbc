@@ -33,6 +33,7 @@
 
 #include "driver.h"
 #include "errmsg.h"
+#include "mysql/service_mysql_alloc.h"
 #include <ctype.h>
 
 
