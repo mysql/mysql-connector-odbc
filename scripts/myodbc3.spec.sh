@@ -96,12 +96,10 @@ mysql-connector-odbc @CONNECTOR_BASE_VERSION@ is an enhanced version of mysql-co
 The driver comes in 2 flavours - ANSI and Unicode and commonly referred to as
 'MySQL ODBC @CONNECTOR_BASE_VERSION@ ANSI Driver' or 'MySQL ODBC @CONNECTOR_BASE_VERSION@ Unicode Driver' respectively.
 
-The MySQL software has Dual Licensing, which means you can use the
-MySQL software free of charge under the GNU General Public License
-(http://www.gnu.org/licenses/). You can also purchase commercial MySQL
-licenses from %{mysql_vendor} if you do not wish to be bound by the
-terms of the GPL. See the chapter "Licensing and Support" in the
-manual for further info.
+License information can be found in the %{license_files} file. 
+This distribution may include materials developed by third parties.
+For license and attribution notices for these materials, please refer
+to the %{license_files} file.
 
 The MySQL web site (http://www.mysql.com/) provides the latest news
 and information about the MySQL software. Also please see the
@@ -232,7 +230,7 @@ fi
 %{_libdir}/libmyodbc5w.so
 %{_libdir}/libmyodbc5a.so
 %doc %{license_files}
-%doc ChangeLog README.txt LICENSE.txt
+%doc ChangeLog README.txt
 
 %if 0%{?odbc_gui}
 %files setup
