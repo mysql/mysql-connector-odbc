@@ -56,7 +56,7 @@
 Summary:	An ODBC @CONNECTOR_BASE_VERSION@ driver for MySQL - driver package
 Name:		mysql-connector-odbc%{?product_suffix}
 Version:	@CONNECTOR_NODASH_VERSION@
-Release:	1%{?dist}
+Release:	1%{?commercial:.1}%{?dist}
 License:	Copyright (c) 2000, @CURRENT_YEAR@, %{mysql_vendor}. All rights reserved.  Under %{license_type} license as shown in the Description field.
 Source0:	http://cdn.mysql.com/Downloads/Connector-ODBC/@CONNECTOR_BASE_VERSION@/%{name}-@CONNECTOR_VERSION@-src.tar.gz
 URL:		http://www.mysql.com/
