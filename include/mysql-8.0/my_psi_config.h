@@ -1,30 +1,25 @@
-// Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved. 
-// 
-// This program is free software; you can redistribute it and/or modify 
-// it under the terms of the GNU General Public License, version 2.0, as 
-// published by the Free Software Foundation. 
-// 
-// This program is also distributed with certain software (including 
-// but not limited to OpenSSL) that is licensed under separate terms, 
-// as designated in a particular file or component or in included license 
-// documentation. The authors of MySQL hereby grant you an 
-// additional permission to link the program and your derivative works 
-// with the separately licensed software that they have included with 
-// MySQL. 
-// 
-// Without limiting anything contained in the foregoing, this file, 
-// which is part of MySQL Server, is also subject to the 
-// Universal FOSS Exception, version 1.0, a copy of which can be found at 
-// http://oss.oracle.com/licenses/universal-foss-exception. 
-// 
-// This program is distributed in the hope that it will be useful, but 
-// WITHOUT ANY WARRANTY; without even the implied warranty of 
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-// See the GNU General Public License, version 2.0, for more details. 
-// 
-// You should have received a copy of the GNU General Public License 
-// along with this program; if not, write to the Free Software Foundation, Inc., 
-// 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA 
+/*
+   Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+
+   This program is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License, version 2.0,
+   as published by the Free Software Foundation.
+
+   This program is also distributed with certain software (including
+   but not limited to OpenSSL) that is licensed under separate terms,
+   as designated in a particular file or component or in included license
+   documentation.  The authors of MySQL hereby grant you an additional
+   permission to link the program and your derivative works with the
+   separately licensed software that they have included with MySQL.
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License, version 2.0, for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301  USA */
 
 #ifndef MY_PSI_CONFIG_INCLUDED
 #define MY_PSI_CONFIG_INCLUDED
@@ -52,24 +47,25 @@
  when doing special builds with only a subset of the performance schema
  instrumentation, for code analysis / profiling / performance tuning of a
  specific instrumentation alone.
- @sa DISABLE_PSI_RWLOCK
  @sa DISABLE_PSI_COND
+ @sa DISABLE_PSI_DATA_LOCK
+ @sa DISABLE_PSI_ERROR
  @sa DISABLE_PSI_FILE
- @sa DISABLE_PSI_THREAD
- @sa DISABLE_PSI_TABLE
+ @sa DISABLE_PSI_IDLE
+ @sa DISABLE_PSI_MEMORY
+ @sa DISABLE_PSI_METADATA
+ @sa DISABLE_PSI_PS
+ @sa DISABLE_PSI_RWLOCK
+ @sa DISABLE_PSI_SOCKET
+ @sa DISABLE_PSI_SP
  @sa DISABLE_PSI_STAGE
  @sa DISABLE_PSI_STATEMENT
- @sa DISABLE_PSI_SP
- @sa DISABLE_PSI_PS
  @sa DISABLE_PSI_STATEMENT_DIGEST
- @sa DISABLE_PSI_SOCKET
- @sa DISABLE_PSI_MEMORY
- @sa DISABLE_PSI_ERROR
- @sa DISABLE_PSI_IDLE
- @sa DISABLE_PSI_METADATA
+ @sa DISABLE_PSI_SYSTEM
+ @sa DISABLE_PSI_TABLE
+ @sa DISABLE_PSI_THREAD
  @sa DISABLE_PSI_TRANSACTION
- @sa DISABLE_PSI_DATA_LOCK
-*/
+ */
 
 #ifndef DISABLE_PSI_MUTEX
 #define HAVE_PSI_MUTEX_INTERFACE
@@ -247,6 +243,16 @@
 #ifndef DISABLE_PSI_DATA_LOCK
 #define HAVE_PSI_DATA_LOCK_INTERFACE
 #endif /* DISABLE_PSI_DATA_LOCK */
+
+/**
+  @def DISABLE_PSI_SYSTEM
+  Compiling option to disable the system instrumentation.
+  @sa DISABLE_PSI_MUTEX
+*/
+
+#ifndef DISABLE_PSI_SYSTEM
+#define HAVE_PSI_SYSTEM_INTERFACE
+#endif /* DISABLE_PSI_SYSTEM */
 
 #endif /* HAVE_PSI_INTERFACE */
 

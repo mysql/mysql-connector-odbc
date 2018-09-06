@@ -1,30 +1,24 @@
-// Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved. 
-// 
-// This program is free software; you can redistribute it and/or modify 
-// it under the terms of the GNU General Public License, version 2.0, as 
-// published by the Free Software Foundation. 
-// 
-// This program is also distributed with certain software (including 
-// but not limited to OpenSSL) that is licensed under separate terms, 
-// as designated in a particular file or component or in included license 
-// documentation. The authors of MySQL hereby grant you an 
-// additional permission to link the program and your derivative works 
-// with the separately licensed software that they have included with 
-// MySQL. 
-// 
-// Without limiting anything contained in the foregoing, this file, 
-// which is part of MySQL Server, is also subject to the 
-// Universal FOSS Exception, version 1.0, a copy of which can be found at 
-// http://oss.oracle.com/licenses/universal-foss-exception. 
-// 
-// This program is distributed in the hope that it will be useful, but 
-// WITHOUT ANY WARRANTY; without even the implied warranty of 
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-// See the GNU General Public License, version 2.0, for more details. 
-// 
-// You should have received a copy of the GNU General Public License 
-// along with this program; if not, write to the Free Software Foundation, Inc., 
-// 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA 
+/* Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+
+   This program is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License, version 2.0,
+   as published by the Free Software Foundation.
+
+   This program is also distributed with certain software (including
+   but not limited to OpenSSL) that is licensed under separate terms,
+   as designated in a particular file or component or in included license
+   documentation.  The authors of MySQL hereby grant you an additional
+   permission to link the program and your derivative works with the
+   separately licensed software that they have included with MySQL.
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License, version 2.0, for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301  USA */
 
 /**
   This defines built-in functions for use by logging services.
@@ -689,11 +683,14 @@ extern SERVICE_TYPE(log_builtins_string) * log_bs;
 
 #ifndef DISABLE_ERROR_LOGGING
 
+#if defined(LOG_COMPONENT_TAG)
+
 #define LogErr(severity, ecode, ...) \
   LogEvent()                         \
       .prio(severity)                \
       .errcode(ecode)                \
       .subsys(LOG_SUBSYSTEM_TAG)     \
+      .component(LOG_COMPONENT_TAG)  \
       .source_line(__LINE__)         \
       .source_file(MY_BASENAME)      \
       .function(__FUNCTION__)        \
@@ -704,31 +701,48 @@ extern SERVICE_TYPE(log_builtins_string) * log_bs;
       .prio(severity)                                                \
       .errcode(ecode)                                                \
       .subsys(LOG_SUBSYSTEM_TAG)                                     \
+      .component("plugin:" LOG_COMPONENT_TAG)                        \
       .source_line(__LINE__)                                         \
       .source_file(MY_BASENAME)                                      \
       .function(__FUNCTION__)                                        \
-      .lookup_quoted(ecode, "Plugin " LOG_SUBSYSTEM_TAG " reported", \
+      .lookup_quoted(ecode, "Plugin " LOG_COMPONENT_TAG " reported", \
                      ##__VA_ARGS__)
 
-#define LogPluginErrV(severity, ecode, vl) \
-  LogEvent()                               \
-      .prio(severity)                      \
-      .errcode(ecode)                      \
-      .subsys(LOG_SUBSYSTEM_TAG)           \
-      .source_line(__LINE__)               \
-      .source_file(MY_BASENAME)            \
-      .function(__FUNCTION__)              \
-      .lookup_quotedv(ecode, "Plugin " LOG_SUBSYSTEM_TAG " reported", vl)
+#define LogPluginErrV(severity, ecode, vl)    \
+  LogEvent()                                  \
+      .prio(severity)                         \
+      .errcode(ecode)                         \
+      .subsys(LOG_SUBSYSTEM_TAG)              \
+      .component("plugin:" LOG_COMPONENT_TAG) \
+      .source_line(__LINE__)                  \
+      .source_file(MY_BASENAME)               \
+      .function(__FUNCTION__)                 \
+      .lookup_quotedv(ecode, "Plugin " LOG_COMPONENT_TAG " reported", vl)
 
 #define LogPluginErrMsg(severity, ecode, ...) \
   LogEvent()                                  \
       .prio(severity)                         \
       .errcode(ecode)                         \
       .subsys(LOG_SUBSYSTEM_TAG)              \
+      .component("plugin:" LOG_COMPONENT_TAG) \
       .source_line(__LINE__)                  \
       .source_file(MY_BASENAME)               \
       .function(__FUNCTION__)                 \
-      .message_quoted("Plugin " LOG_SUBSYSTEM_TAG " reported", ##__VA_ARGS__)
+      .message_quoted("Plugin " LOG_COMPONENT_TAG " reported", ##__VA_ARGS__)
+
+#else
+
+#define LogErr(severity, ecode, ...) \
+  LogEvent()                         \
+      .prio(severity)                \
+      .errcode(ecode)                \
+      .subsys(LOG_SUBSYSTEM_TAG)     \
+      .source_line(__LINE__)         \
+      .source_file(MY_BASENAME)      \
+      .function(__FUNCTION__)        \
+      .lookup(ecode, ##__VA_ARGS__)
+
+#endif
 
 #else
 
@@ -739,6 +753,7 @@ inline void dummy_log_message(longlong severity MY_ATTRIBUTE((unused)),
 
 #define LogErr(severity, ecode, ...) \
   dummy_log_message(severity, ecode, ##__VA_ARGS__)
+
 #define LogPluginErr(severity, ecode, ...) \
   dummy_log_message(severity, ecode, ##__VA_ARGS__)
 #define LogPluginErrV(severity, ecode, ...) \
@@ -943,14 +958,15 @@ class LogEvent {
 
   /**
     Which subsystem in the source was the problem detected in?
-    ("rpl" etc.)
+    ("Repl"/"InnoDB"/"Server")
 
     @param  val  the subsystem. NTBS.
 
     @retval      the LogEvent, for easy fluent-style chaining.
   */
   LogEvent &subsys(const char *val) {
-    log_set_cstring(log_line_item_set(this->ll, LOG_ITEM_SRV_SUBSYS), val);
+    if (val != nullptr)
+      log_set_cstring(log_line_item_set(this->ll, LOG_ITEM_SRV_SUBSYS), val);
     return *this;
   }
 
@@ -964,7 +980,8 @@ class LogEvent {
     @retval      the LogEvent, for easy fluent-style chaining.
   */
   LogEvent &component(const char *val) {
-    log_set_cstring(log_line_item_set(this->ll, LOG_ITEM_SRV_COMPONENT), val);
+    if (val != nullptr)
+      log_set_cstring(log_line_item_set(this->ll, LOG_ITEM_SRV_COMPONENT), val);
     return *this;
   }
 
@@ -1109,6 +1126,24 @@ class LogEvent {
   */
   LogEvent &verbatim(const char *msg_arg) {
     log_set_cstring(log_line_item_set(this->ll, LOG_ITEM_LOG_MESSAGE), msg_arg);
+    return *this;
+  }
+
+  /**
+    Fill in a format string by substituting the % with the given
+    arguments, then add the result as the event's message.
+    This should be used very sparingly; use registered messages
+    and their error codes wherever possible!
+
+    @param  fmt  message (treated as a printf-style format-string,
+                 so % substitution will happen)
+    @param  ap   valist to satisfy any % in the message
+
+    @retval      the LogEvent, for easy fluent-style chaining.
+  */
+  LogEvent &messagev(const char *fmt, va_list ap)
+      MY_ATTRIBUTE((format(printf, 2, 0))) {
+    set_message(fmt, ap);
     return *this;
   }
 

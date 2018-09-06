@@ -1,30 +1,24 @@
-// Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved. 
-// 
-// This program is free software; you can redistribute it and/or modify 
-// it under the terms of the GNU General Public License, version 2.0, as 
-// published by the Free Software Foundation. 
-// 
-// This program is also distributed with certain software (including 
-// but not limited to OpenSSL) that is licensed under separate terms, 
-// as designated in a particular file or component or in included license 
-// documentation. The authors of MySQL hereby grant you an 
-// additional permission to link the program and your derivative works 
-// with the separately licensed software that they have included with 
-// MySQL. 
-// 
-// Without limiting anything contained in the foregoing, this file, 
-// which is part of MySQL Server, is also subject to the 
-// Universal FOSS Exception, version 1.0, a copy of which can be found at 
-// http://oss.oracle.com/licenses/universal-foss-exception. 
-// 
-// This program is distributed in the hope that it will be useful, but 
-// WITHOUT ANY WARRANTY; without even the implied warranty of 
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-// See the GNU General Public License, version 2.0, for more details. 
-// 
-// You should have received a copy of the GNU General Public License 
-// along with this program; if not, write to the Free Software Foundation, Inc., 
-// 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA 
+/* Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License, version 2.0,
+as published by the Free Software Foundation.
+
+This program is also distributed with certain software (including
+but not limited to OpenSSL) that is licensed under separate terms,
+as designated in a particular file or component or in included license
+documentation.  The authors of MySQL hereby grant you an additional
+permission to link the program and your derivative works with the
+separately licensed software that they have included with MySQL.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License, version 2.0, for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301  USA */
 
 #ifndef COMPONENT_IMPLEMENTATION_H
 #define COMPONENT_IMPLEMENTATION_H
@@ -180,9 +174,7 @@
 /**
   A macro to end the last declaration of a Component.
 */
-#define END_DECLARE_COMPONENT() \
-  }                             \
-  ;
+#define END_DECLARE_COMPONENT() }
 
 /**
   Creates a service implementation list that are provided by specified
@@ -203,17 +195,18 @@
   @param service A Service name for which the Service Implementation will be
     added.
 */
-#define PROVIDES_SERVICE(component, service) \
-  {#service "." #component,                  \
-   (void *)&SERVICE_IMPLEMENTATION(component, service)},
+#define PROVIDES_SERVICE(component, service)                \
+  {                                                         \
+    #service "." #component,                                \
+        (void *)&SERVICE_IMPLEMENTATION(component, service) \
+  }
 
 /**
   A macro to end the last declaration started with the BEGIN_COMPONENT_PROVIDES.
 */
 #define END_COMPONENT_PROVIDES() \
   { NULL, NULL }                 \
-  }                              \
-  ;
+  }
 
 /**
   A macro to specify requirements of the component. Creates a placeholder for
@@ -225,7 +218,7 @@
 #define BEGIN_COMPONENT_REQUIRES(name)                                    \
   REQUIRES_SERVICE_PLACEHOLDER(registry);                                 \
   static struct mysql_service_placeholder_ref_t __##name##_requires[] = { \
-      REQUIRES_SERVICE(registry)
+      REQUIRES_SERVICE(registry),
 
 /**
   Creates a definition for placeholder, in which the specified required service
@@ -244,15 +237,15 @@
 
   @param service A referenced Service name.
 */
-#define REQUIRES_SERVICE(service) {#service, (void **)&mysql_service_##service},
+#define REQUIRES_SERVICE(service) \
+  { #service, (void **)&mysql_service_##service }
 
 /**
   A macro to end the last declaration started with the BEGIN_COMPONENT_REQUIRES.
 */
 #define END_COMPONENT_REQUIRES() \
   { NULL, NULL }                 \
-  }                              \
-  ;
+  }
 
 /**
   A macro to specify metadata of the component. Creates a list of metadata.
@@ -270,15 +263,15 @@
   @param key A string name of the metadata to add.
   @param value A string value of the metadata to add.
 */
-#define METADATA(key, value) {key, value},
+#define METADATA(key, value) \
+  { key, value }
 
 /**
   A macro to end the last declaration started with the BEGIN_COMPONENT_METADATA.
 */
 #define END_COMPONENT_METADATA() \
   { NULL, NULL }                 \
-  }                              \
-  ;
+  }
 
 /* On Windows, exports from DLL need to be declared.
   Also, plug-in needs to be declared as extern "C" because MSVC

@@ -1,30 +1,24 @@
-// Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved. 
-// 
-// This program is free software; you can redistribute it and/or modify 
-// it under the terms of the GNU General Public License, version 2.0, as 
-// published by the Free Software Foundation. 
-// 
-// This program is also distributed with certain software (including 
-// but not limited to OpenSSL) that is licensed under separate terms, 
-// as designated in a particular file or component or in included license 
-// documentation. The authors of MySQL hereby grant you an 
-// additional permission to link the program and your derivative works 
-// with the separately licensed software that they have included with 
-// MySQL. 
-// 
-// Without limiting anything contained in the foregoing, this file, 
-// which is part of MySQL Server, is also subject to the 
-// Universal FOSS Exception, version 1.0, a copy of which can be found at 
-// http://oss.oracle.com/licenses/universal-foss-exception. 
-// 
-// This program is distributed in the hope that it will be useful, but 
-// WITHOUT ANY WARRANTY; without even the implied warranty of 
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-// See the GNU General Public License, version 2.0, for more details. 
-// 
-// You should have received a copy of the GNU General Public License 
-// along with this program; if not, write to the Free Software Foundation, Inc., 
-// 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA 
+/* Copyright (c) 2016, 2018 Oracle and/or its affiliates. All rights reserved.
+
+   This program is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License, version 2.0,
+   as published by the Free Software Foundation.
+
+   This program is also distributed with certain software (including
+   but not limited to OpenSSL) that is licensed under separate terms,
+   as designated in a particular file or component or in included license
+   documentation.  The authors of MySQL hereby grant you an additional
+   permission to link the program and your derivative works with the
+   separately licensed software that they have included with MySQL.
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License, version 2.0, for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301  USA */
 
 #ifndef MF_WCOMP_INCLUDED
 #define MF_WCOMP_INCLUDED
@@ -59,7 +53,9 @@ const char wild_many = '%';
   used in new code.
 
   @param str input which should be matched against pattern
+  @param strlen length of str in bytes
   @param wildstr pattern with wildcards
+  @param wildlen length of wildstr in bytes
 
   @param str_is_pattern if true the input string is considered to be a
   pattern, meaning that escape sequences in the input are processed as
@@ -70,8 +66,9 @@ const char wild_many = '%';
 
   @return 0 if match, 1 otherwise
 */
-int wild_compare_full(const char *str, const char *wildstr, bool str_is_pattern,
-                      char w_prefix, char w_one, char w_many);
+int wild_compare_full(const char *str, int strlen, const char *wildstr,
+                      int wildlen, bool str_is_pattern, char w_prefix,
+                      char w_one, char w_many);
 
 /**
   Performs wildcard matching, aka globbing, on the input string with
@@ -82,7 +79,9 @@ int wild_compare_full(const char *str, const char *wildstr, bool str_is_pattern,
   used in new code.
 
   @param str input which should be matched against pattern
+  @param strlen length of str in bytes
   @param wildstr pattern with wildcards
+  @param wildlen length of wildstr in bytes
 
   @param str_is_pattern if true the input string is considered to be a
   pattern, meaning that escape sequences in the input are processed as
@@ -90,6 +89,7 @@ int wild_compare_full(const char *str, const char *wildstr, bool str_is_pattern,
 
   @return 0 if match, 1 otherwise
  */
-int wild_compare(const char *str, const char *wildstr, bool str_is_pattern);
+int wild_compare(const char *str, int strlen, const char *wildstr, int wildlen,
+                 bool str_is_pattern);
 
 #endif /* !MF_WCOMP_INCLUDED */

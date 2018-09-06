@@ -241,6 +241,8 @@ const char *mysql_errno_to_sqlstate(unsigned int mysql_errno);
 bool my_thread_init(void);
 void my_thread_end(void);
 unsigned long net_field_length(unsigned char **packet);
+unsigned long net_field_length_checked(unsigned char **packet,
+                                       unsigned long max_length);
 unsigned long long net_field_length_ll(unsigned char **packet);
 unsigned char *net_store_length(unsigned char *pkg, unsigned long long length);
 unsigned int net_length_size(unsigned long long num);
@@ -387,8 +389,8 @@ enum mysql_option {
   MYSQL_OPT_NET_BUFFER_LENGTH,
   MYSQL_OPT_TLS_VERSION,
   MYSQL_OPT_SSL_MODE,
-  MYSQL_OPT_RETRY_COUNT,
   MYSQL_OPT_GET_SERVER_PUBLIC_KEY,
+  MYSQL_OPT_RETRY_COUNT,
   MYSQL_OPT_OPTIONAL_RESULTSET_METADATA,
   MYSQL_OPT_SSL_FIPS_MODE
 };
