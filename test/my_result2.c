@@ -787,7 +787,8 @@ DECLARE_TEST(t_bug17386788)
 DECLARE_TEST(t_outparams)
 {
   SQLSMALLINT ncol, i;
-  SQLINTEGER par[3]= {10, 20, 30}, val, len;
+  SQLINTEGER par[3]= {10, 20, 30}, val;
+  SQLLEN len = 0;
 
   ok_sql(hstmt, "DROP PROCEDURE IF EXISTS p_outparams");
   ok_sql(hstmt, "CREATE PROCEDURE p_outparams("
