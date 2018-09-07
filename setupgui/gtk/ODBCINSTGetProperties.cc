@@ -1,33 +1,33 @@
-// Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved. 
-// 
-// This program is free software; you can redistribute it and/or modify 
-// it under the terms of the GNU General Public License, version 2.0, as 
-// published by the Free Software Foundation. 
-// 
-// This program is also distributed with certain software (including 
-// but not limited to OpenSSL) that is licensed under separate terms, 
-// as designated in a particular file or component or in included license 
-// documentation. The authors of MySQL hereby grant you an 
-// additional permission to link the program and your derivative works 
-// with the separately licensed software that they have included with 
-// MySQL. 
-// 
-// Without limiting anything contained in the foregoing, this file, 
-// which is part of MySQL Connector/ODBC, is also subject to the 
-// Universal FOSS Exception, version 1.0, a copy of which can be found at 
-// http://oss.oracle.com/licenses/universal-foss-exception. 
-// 
-// This program is distributed in the hope that it will be useful, but 
-// WITHOUT ANY WARRANTY; without even the implied warranty of 
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-// See the GNU General Public License, version 2.0, for more details. 
-// 
-// You should have received a copy of the GNU General Public License 
-// along with this program; if not, write to the Free Software Foundation, Inc., 
-// 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA 
+// Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+//
+// This program is free software; you can redistribute it and/or modify
+// it under the terms of the GNU General Public License, version 2.0, as
+// published by the Free Software Foundation.
+//
+// This program is also distributed with certain software (including
+// but not limited to OpenSSL) that is licensed under separate terms,
+// as designated in a particular file or component or in included license
+// documentation. The authors of MySQL hereby grant you an
+// additional permission to link the program and your derivative works
+// with the separately licensed software that they have included with
+// MySQL.
+//
+// Without limiting anything contained in the foregoing, this file,
+// which is part of MySQL Connector/ODBC, is also subject to the
+// Universal FOSS Exception, version 1.0, a copy of which can be found at
+// http://oss.oracle.com/licenses/universal-foss-exception.
+//
+// This program is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+// See the GNU General Public License, version 2.0, for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program; if not, write to the Free Software Foundation, Inc.,
+// 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 
 #ifdef UNICODE
-/* 
+/*
  Unicode must be disabled, otherwise we will have lots of compiler errors
  about conflicting declarations in odbcinstext.h and odbcinst.h
 */
@@ -59,7 +59,6 @@ static const char *MYODBC_OPTIONS[][3] = {
   {"BIG_PACKETS",       "C", "Allow big result set"},
   {"NO_PROMPT",         "C", "Don't prompt when connecting"},
   {"DYNAMIC_CURSOR",    "C", "Enable Dynamic Cursors"},
-  {"NO_SCHEMA",         "C", "Ignore schema in column specifications"},
   {"NO_DEFAULT_CURSOR", "C", "Disable driver-provided cursor support"},
   {"NO_LOCALE",         "C", "Don't use setlocale()"},
   {"PAD_SPACE",         "C", "Pad CHAR to full length with space"},
@@ -100,17 +99,17 @@ int ODBCINSTGetProperties(HODBCINSTPROPERTY propertyList)
     /* Allocate next element */
     propertyList->pNext= (HODBCINSTPROPERTY)malloc(sizeof(ODBCINSTPROPERTY));
     propertyList= propertyList->pNext;
-    
+
     /* Reset everything to zero */
     memset(propertyList, 0, sizeof(ODBCINSTPROPERTY));
-    
+
     /* copy the option name */
-    strncpy( propertyList->szName, MYODBC_OPTIONS[i][0], 
+    strncpy( propertyList->szName, MYODBC_OPTIONS[i][0],
              strlen(MYODBC_OPTIONS[i][0]));
-             
+
     /* We make the value always empty by default */
     propertyList->szValue[0]= '\0';
-    
+
     switch(MYODBC_OPTIONS[i][1][0])
     {
       /* COMBOBOX */
@@ -119,14 +118,14 @@ int ODBCINSTGetProperties(HODBCINSTPROPERTY propertyList)
 
         /* Prepare data for the combobox */
         propertyList->aPromptData= (char**)malloc(sizeof(paramsOnOff));
-        memcpy(propertyList->aPromptData, paramsOnOff, sizeof(paramsOnOff)); 
+        memcpy(propertyList->aPromptData, paramsOnOff, sizeof(paramsOnOff));
       break;
 
       /* FILE NAME */
       case 'F':
         propertyList->nPromptType= ODBCINST_PROMPTTYPE_FILENAME;
       break;
-      
+
       /* TEXTBOX */
       case 'T':
       default:
@@ -135,8 +134,8 @@ int ODBCINSTGetProperties(HODBCINSTPROPERTY propertyList)
 
     /* Finally, set the help text */
     propertyList->pszHelp= strdup(MYODBC_OPTIONS[i][2]);
-    
+
   }while (MYODBC_OPTIONS[++i][0]);
-    
+
   return 1;
 }

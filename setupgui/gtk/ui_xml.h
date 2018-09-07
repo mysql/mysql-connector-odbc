@@ -1,30 +1,30 @@
-// Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved. 
-// 
-// This program is free software; you can redistribute it and/or modify 
-// it under the terms of the GNU General Public License, version 2.0, as 
-// published by the Free Software Foundation. 
-// 
-// This program is also distributed with certain software (including 
-// but not limited to OpenSSL) that is licensed under separate terms, 
-// as designated in a particular file or component or in included license 
-// documentation. The authors of MySQL hereby grant you an 
-// additional permission to link the program and your derivative works 
-// with the separately licensed software that they have included with 
-// MySQL. 
-// 
-// Without limiting anything contained in the foregoing, this file, 
-// which is part of MySQL Connector/ODBC, is also subject to the 
-// Universal FOSS Exception, version 1.0, a copy of which can be found at 
-// http://oss.oracle.com/licenses/universal-foss-exception. 
-// 
-// This program is distributed in the hope that it will be useful, but 
-// WITHOUT ANY WARRANTY; without even the implied warranty of 
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-// See the GNU General Public License, version 2.0, for more details. 
-// 
-// You should have received a copy of the GNU General Public License 
-// along with this program; if not, write to the Free Software Foundation, Inc., 
-// 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA 
+// Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+//
+// This program is free software; you can redistribute it and/or modify
+// it under the terms of the GNU General Public License, version 2.0, as
+// published by the Free Software Foundation.
+//
+// This program is also distributed with certain software (including
+// but not limited to OpenSSL) that is licensed under separate terms,
+// as designated in a particular file or component or in included license
+// documentation. The authors of MySQL hereby grant you an
+// additional permission to link the program and your derivative works
+// with the separately licensed software that they have included with
+// MySQL.
+//
+// Without limiting anything contained in the foregoing, this file,
+// which is part of MySQL Connector/ODBC, is also subject to the
+// Universal FOSS Exception, version 1.0, a copy of which can be found at
+// http://oss.oracle.com/licenses/universal-foss-exception.
+//
+// This program is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+// See the GNU General Public License, version 2.0, for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program; if not, write to the Free Software Foundation, Inc.,
+// 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 
 static char *ui_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" \
 "<interface>\n" \
@@ -574,20 +574,6 @@ static char *ui_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" \
 "                          </packing>\n" \
 "                        </child>\n" \
 "                        <child>\n" \
-"                          <object class=\"GtkCheckButton\" id=\"disable_ssl_default\">\n" \
-"                            <property name=\"label\" translatable=\"yes\">Disable default SSL</property>\n" \
-"                            <property name=\"visible\">True</property>\n" \
-"                            <property name=\"can_focus\">True</property>\n" \
-"                            <property name=\"receives_default\">False</property>\n" \
-"                            <property name=\"use_action_appearance\">False</property>\n" \
-"                            <property name=\"draw_indicator\">True</property>\n" \
-"                          </object>\n" \
-"                          <packing>\n" \
-"                            <property name=\"left_attach\">1</property>\n" \
-"                            <property name=\"top_attach\">2</property>\n" \
-"                          </packing>\n" \
-"                        </child>\n" \
-"                        <child>\n" \
 "                          <object class=\"GtkCheckButton\" id=\"get_server_public_key\">\n" \
 "                            <property name=\"label\" translatable=\"yes\">Get Server Public Key</property>\n" \
 "                            <property name=\"visible\">True</property>\n" \
@@ -598,7 +584,7 @@ static char *ui_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" \
 "                          </object>\n" \
 "                          <packing>\n" \
 "                            <property name=\"left_attach\">1</property>\n" \
-"                            <property name=\"top_attach\">3</property>\n" \
+"                            <property name=\"top_attach\">2</property>\n" \
 "                          </packing>\n" \
 "                        </child>\n" \
 "                      </object>\n" \
@@ -827,24 +813,6 @@ static char *ui_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" \
 "                        <property name=\"expand\">True</property>\n" \
 "                        <property name=\"fill\">True</property>\n" \
 "                        <property name=\"position\">1</property>\n" \
-"                      </packing>\n" \
-"                    </child>\n" \
-"                    <child>\n" \
-"                      <object class=\"GtkCheckButton\" id=\"ignore_N_in_name_table\">\n" \
-"                        <property name=\"label\" translatable=\"yes\">Ignore schema in column specifications</property>\n" \
-"                        <property name=\"visible\">True</property>\n" \
-"                        <property name=\"can_focus\">True</property>\n" \
-"                        <property name=\"receives_default\">False</property>\n" \
-"                        <property name=\"has_tooltip\">True</property>\n" \
-"                        <property name=\"tooltip_text\" translatable=\"yes\">Ignore use of database name in db_name.tbl_name.col_name.</property>\n" \
-"                        <property name=\"use_action_appearance\">False</property>\n" \
-"                        <property name=\"use_underline\">True</property>\n" \
-"                        <property name=\"draw_indicator\">True</property>\n" \
-"                      </object>\n" \
-"                      <packing>\n" \
-"                        <property name=\"expand\">True</property>\n" \
-"                        <property name=\"fill\">True</property>\n" \
-"                        <property name=\"position\">2</property>\n" \
 "                      </packing>\n" \
 "                    </child>\n" \
 "                    <child>\n" \

@@ -1,30 +1,30 @@
-// Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved. 
-// 
-// This program is free software; you can redistribute it and/or modify 
-// it under the terms of the GNU General Public License, version 2.0, as 
-// published by the Free Software Foundation. 
-// 
-// This program is also distributed with certain software (including 
-// but not limited to OpenSSL) that is licensed under separate terms, 
-// as designated in a particular file or component or in included license 
-// documentation. The authors of MySQL hereby grant you an 
-// additional permission to link the program and your derivative works 
-// with the separately licensed software that they have included with 
-// MySQL. 
-// 
-// Without limiting anything contained in the foregoing, this file, 
-// which is part of <MySQL Product>, is also subject to the 
-// Universal FOSS Exception, version 1.0, a copy of which can be found at 
-// http://oss.oracle.com/licenses/universal-foss-exception. 
-// 
-// This program is distributed in the hope that it will be useful, but 
-// WITHOUT ANY WARRANTY; without even the implied warranty of 
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-// See the GNU General Public License, version 2.0, for more details. 
-// 
-// You should have received a copy of the GNU General Public License 
-// along with this program; if not, write to the Free Software Foundation, Inc., 
-// 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA 
+// Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+//
+// This program is free software; you can redistribute it and/or modify
+// it under the terms of the GNU General Public License, version 2.0, as
+// published by the Free Software Foundation.
+//
+// This program is also distributed with certain software (including
+// but not limited to OpenSSL) that is licensed under separate terms,
+// as designated in a particular file or component or in included license
+// documentation. The authors of MySQL hereby grant you an
+// additional permission to link the program and your derivative works
+// with the separately licensed software that they have included with
+// MySQL.
+//
+// Without limiting anything contained in the foregoing, this file,
+// which is part of <MySQL Product>, is also subject to the
+// Universal FOSS Exception, version 1.0, a copy of which can be found at
+// http://oss.oracle.com/licenses/universal-foss-exception.
+//
+// This program is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+// See the GNU General Public License, version 2.0, for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program; if not, write to the Free Software Foundation, Inc.,
+// 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 
 /*
  * Installer wrapper implementations.
@@ -120,8 +120,6 @@ static SQLWCHAR W_NO_PROMPT[]=
   {'N','O','_','P','R','O','M','P','T',0};
 static SQLWCHAR W_DYNAMIC_CURSOR[]=
   {'D','Y','N','A','M','I','C','_','C','U','R','S','O','R',0};
-static SQLWCHAR W_NO_SCHEMA[]=
-  {'N','O','_','S','C','H','E','M','A',0};
 static SQLWCHAR W_NO_DEFAULT_CURSOR[]=
   {'N','O','_','D','E','F','A','U','L','T','_','C','U','R','S','O','R',0};
 static SQLWCHAR W_NO_LOCALE[]=
@@ -184,10 +182,6 @@ static SQLWCHAR W_PLUGIN_DIR[]=
   {'P','L','U','G','I','N','_','D','I','R',0};
 static SQLWCHAR W_DEFAULT_AUTH[]=
   {'D','E','F','A','U','L','T','_','A','U','T', 'H',0};
-static SQLWCHAR W_DISABLE_SSL_DEFAULT[] =
-{ 'D', 'I', 'S', 'A', 'B', 'L', 'E', '_', 'S', 'S', 'L', '_', 'D', 'E', 'F', 'A', 'U', 'L', 'T', 0 };
-static SQLWCHAR W_SSL_ENFORCE[] =
-{ 'S', 'S', 'L', '_', 'E', 'N', 'F', 'O', 'R', 'C', 'E', 0 };
 static SQLWCHAR W_NO_TLS_1[] =
 { 'N', 'O', '_', 'T', 'L', 'S', '_', '1', '_', '0', 0 };
 static SQLWCHAR W_NO_TLS_1_1[] =
@@ -217,7 +211,7 @@ SQLWCHAR *dsnparams[]= {W_DSN, W_DRIVER, W_DESCRIPTION, W_SERVER,
                         W_SSLCERT, W_SSLCA, W_SSLCAPATH, W_SSLCIPHER,
                         W_SSLVERIFY, W_READTIMEOUT, W_WRITETIMEOUT,
                         W_FOUND_ROWS, W_BIG_PACKETS, W_NO_PROMPT,
-                        W_DYNAMIC_CURSOR, W_NO_SCHEMA, W_NO_DEFAULT_CURSOR,
+                        W_DYNAMIC_CURSOR, W_NO_DEFAULT_CURSOR,
                         W_NO_LOCALE, W_PAD_SPACE, W_FULL_COLUMN_NAMES,
                         W_COMPRESSED_PROTO, W_IGNORE_SPACE, W_NAMED_PIPE,
                         W_NO_BIGINT, W_NO_CATALOG, W_USE_MYCNF, W_SAFE,
@@ -230,7 +224,6 @@ SQLWCHAR *dsnparams[]= {W_DSN, W_DRIVER, W_DESCRIPTION, W_SERVER,
                         W_CAN_HANDLE_EXP_PWD, W_ENABLE_CLEARTEXT_PLUGIN,
                         W_GET_SERVER_PUBLIC_KEY,
                         W_SAVEFILE, W_RSAKEY, W_PLUGIN_DIR, W_DEFAULT_AUTH,
-                        W_DISABLE_SSL_DEFAULT, W_SSL_ENFORCE,
                         W_NO_TLS_1, W_NO_TLS_1_1, W_NO_TLS_1_2,
                         W_SSLMODE, W_NO_DATE_OVERFLOW};
 static const
@@ -828,8 +821,6 @@ void ds_map_param(DataSource *ds, const SQLWCHAR *param,
     *booldest= &ds->dont_prompt_upon_connect;
   else if (!sqlwcharcasecmp(W_DYNAMIC_CURSOR, param))
     *booldest= &ds->dynamic_cursor;
-  else if (!sqlwcharcasecmp(W_NO_SCHEMA, param))
-    *booldest= &ds->ignore_N_in_name_table;
   else if (!sqlwcharcasecmp(W_NO_DEFAULT_CURSOR, param))
     *booldest= &ds->user_manager_cursor;
   else if (!sqlwcharcasecmp(W_NO_LOCALE, param))
@@ -890,10 +881,6 @@ void ds_map_param(DataSource *ds, const SQLWCHAR *param,
     *strdest= &ds->plugin_dir;
   else if (!sqlwcharcasecmp(W_DEFAULT_AUTH, param))
     *strdest= &ds->default_auth;
-  else if (!sqlwcharcasecmp(W_DISABLE_SSL_DEFAULT, param))
-    *booldest = &ds->disable_ssl_default;
-  else if (!sqlwcharcasecmp(W_SSL_ENFORCE, param))
-    *booldest = &ds->ssl_enforce;
   else if (!sqlwcharcasecmp(W_NO_TLS_1, param))
     *booldest = &ds->no_tls_1;
   else if (!sqlwcharcasecmp(W_NO_TLS_1_1, param))
@@ -1360,7 +1347,6 @@ int ds_add(DataSource *ds)
   if (ds_add_intprop(ds->name, W_BIG_PACKETS, ds->allow_big_results)) goto error;
   if (ds_add_intprop(ds->name, W_NO_PROMPT, ds->dont_prompt_upon_connect)) goto error;
   if (ds_add_intprop(ds->name, W_DYNAMIC_CURSOR, ds->dynamic_cursor)) goto error;
-  if (ds_add_intprop(ds->name, W_NO_SCHEMA, ds->ignore_N_in_name_table)) goto error;
   if (ds_add_intprop(ds->name, W_NO_DEFAULT_CURSOR, ds->user_manager_cursor)) goto error;
   if (ds_add_intprop(ds->name, W_NO_LOCALE, ds->dont_use_set_locale)) goto error;
   if (ds_add_intprop(ds->name, W_PAD_SPACE, ds->pad_char_to_full_length)) goto error;
@@ -1391,8 +1377,6 @@ int ds_add(DataSource *ds)
   if (ds_add_intprop(ds->name, W_GET_SERVER_PUBLIC_KEY, ds->get_server_public_key)) goto error;
   if (ds_add_strprop(ds->name, W_PLUGIN_DIR  , ds->plugin_dir  )) goto error;
   if (ds_add_strprop(ds->name, W_DEFAULT_AUTH, ds->default_auth)) goto error;
-  if (ds_add_intprop(ds->name, W_DISABLE_SSL_DEFAULT, ds->disable_ssl_default)) goto error;
-  if (ds_add_intprop(ds->name, W_SSL_ENFORCE, ds->ssl_enforce)) goto error;
   if (ds_add_intprop(ds->name, W_NO_TLS_1, ds->no_tls_1)) goto error;
   if (ds_add_intprop(ds->name, W_NO_TLS_1_1, ds->no_tls_1_1)) goto error;
   if (ds_add_intprop(ds->name, W_NO_TLS_1_2, ds->no_tls_1_2)) goto error;
@@ -1465,7 +1449,6 @@ void ds_set_options(DataSource *ds, ulong options)
   ds->allow_big_results=                    (options & FLAG_BIG_PACKETS) > 0;
   ds->dont_prompt_upon_connect=             (options & FLAG_NO_PROMPT) > 0;
   ds->dynamic_cursor=                       (options & FLAG_DYNAMIC_CURSOR) > 0;
-  ds->ignore_N_in_name_table=               (options & FLAG_NO_SCHEMA) > 0;
   ds->user_manager_cursor=                  (options & FLAG_NO_DEFAULT_CURSOR) > 0;
   ds->dont_use_set_locale=                  (options & FLAG_NO_LOCALE) > 0;
   ds->pad_char_to_full_length=              (options & FLAG_PAD_SPACE) > 0;
@@ -1508,8 +1491,6 @@ ulong ds_get_options(DataSource *ds)
     options|= FLAG_NO_PROMPT;
   if (ds->dynamic_cursor)
     options|= FLAG_DYNAMIC_CURSOR;
-  if (ds->ignore_N_in_name_table)
-    options|= FLAG_NO_SCHEMA;
   if (ds->user_manager_cursor)
     options|= FLAG_NO_DEFAULT_CURSOR;
   if (ds->dont_use_set_locale)

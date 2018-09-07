@@ -1,30 +1,30 @@
-// Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved. 
-// 
-// This program is free software; you can redistribute it and/or modify 
-// it under the terms of the GNU General Public License, version 2.0, as 
-// published by the Free Software Foundation. 
-// 
-// This program is also distributed with certain software (including 
-// but not limited to OpenSSL) that is licensed under separate terms, 
-// as designated in a particular file or component or in included license 
-// documentation. The authors of MySQL hereby grant you an 
-// additional permission to link the program and your derivative works 
-// with the separately licensed software that they have included with 
-// MySQL. 
-// 
-// Without limiting anything contained in the foregoing, this file, 
-// which is part of <MySQL Product>, is also subject to the 
-// Universal FOSS Exception, version 1.0, a copy of which can be found at 
-// http://oss.oracle.com/licenses/universal-foss-exception. 
-// 
-// This program is distributed in the hope that it will be useful, but 
-// WITHOUT ANY WARRANTY; without even the implied warranty of 
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-// See the GNU General Public License, version 2.0, for more details. 
-// 
-// You should have received a copy of the GNU General Public License 
-// along with this program; if not, write to the Free Software Foundation, Inc., 
-// 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA 
+// Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+//
+// This program is free software; you can redistribute it and/or modify
+// it under the terms of the GNU General Public License, version 2.0, as
+// published by the Free Software Foundation.
+//
+// This program is also distributed with certain software (including
+// but not limited to OpenSSL) that is licensed under separate terms,
+// as designated in a particular file or component or in included license
+// documentation. The authors of MySQL hereby grant you an
+// additional permission to link the program and your derivative works
+// with the separately licensed software that they have included with
+// MySQL.
+//
+// Without limiting anything contained in the foregoing, this file,
+// which is part of <MySQL Product>, is also subject to the
+// Universal FOSS Exception, version 1.0, a copy of which can be found at
+// http://oss.oracle.com/licenses/universal-foss-exception.
+//
+// This program is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+// See the GNU General Public License, version 2.0, for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program; if not, write to the Free Software Foundation, Inc.,
+// 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 
 /*
  * Function prototypes and structures for installer-wrapper functionality.
@@ -133,7 +133,6 @@ typedef struct {
   /*  */
   BOOL dont_prompt_upon_connect;
   BOOL dynamic_cursor;
-  BOOL ignore_N_in_name_table;
   BOOL user_manager_cursor;
   BOOL dont_use_set_locale;
   BOOL pad_char_to_full_length;
@@ -159,8 +158,6 @@ typedef struct {
   unsigned int sslverify;
   unsigned int cursor_prefetch_number;
   BOOL no_ssps;
-  BOOL disable_ssl_default;
-  BOOL ssl_enforce;
 
   BOOL no_tls_1;
   BOOL no_tls_1_1;
@@ -210,7 +207,6 @@ extern const SQLWCHAR W_INVALID_ATTR_STR[];
 #define FLAG_BIG_PACKETS	8   /* Allow BIG packets. */
 #define FLAG_NO_PROMPT		16  /* Don't prompt on connection */
 #define FLAG_DYNAMIC_CURSOR	32  /* Enables the dynamic cursor */
-#define FLAG_NO_SCHEMA		64  /* Ignore the schema defination */
 #define FLAG_NO_DEFAULT_CURSOR	128 /* No default cursor */
 #define FLAG_NO_LOCALE		256  /* No locale specification */
 #define FLAG_PAD_SPACE		512  /* Pad CHAR:s with space to max length */
