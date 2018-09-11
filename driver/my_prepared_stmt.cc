@@ -446,7 +446,7 @@ allocate_buffer_for_field(const MYSQL_FIELD * const field, BOOL outparams)
       {
         // This is to keep mysqlclient library happy.
         // The buffer will be reallocated later.
-        result.size= 1;
+        result.size= 1024;
       }
       break;
 
@@ -513,22 +513,22 @@ static MYSQL_ROW fetch_varlength_columns(STMT *stmt, MYSQL_ROW columns)
   {
     // The allocated buffer for these types was set to 1 byte
     // to keep mysqlclient asserts happy
-    if (stmt->result_bind[i].buffer_length == 1 &&
-        stmt->result_bind[i].buffer &&
-        (
-          stmt->result_bind[i].buffer_type == MYSQL_TYPE_MEDIUM_BLOB ||
-          stmt->result_bind[i].buffer_type == MYSQL_TYPE_LONG_BLOB ||
-          stmt->result_bind[i].buffer_type == MYSQL_TYPE_BLOB ||
-          stmt->result_bind[i].buffer_type == MYSQL_TYPE_STRING ||
-          stmt->result_bind[i].buffer_type == MYSQL_TYPE_VAR_STRING
-        )
-      )
-    {
-      x_free(stmt->result_bind[i].buffer);
-      stmt->result_bind[i].buffer = NULL;
-      stmt->array[i] = NULL;
-      stmt->result_bind[i].buffer_length = 0;
-    }
+    //if (stmt->result_bind[i].buffer_length == 1 &&
+    //    stmt->result_bind[i].buffer &&
+    //    (
+    //      stmt->result_bind[i].buffer_type == MYSQL_TYPE_MEDIUM_BLOB ||
+    //      stmt->result_bind[i].buffer_type == MYSQL_TYPE_LONG_BLOB ||
+    //      stmt->result_bind[i].buffer_type == MYSQL_TYPE_BLOB ||
+    //      stmt->result_bind[i].buffer_type == MYSQL_TYPE_STRING ||
+    //      stmt->result_bind[i].buffer_type == MYSQL_TYPE_VAR_STRING
+    //    )
+    //  )
+    //{
+    //  x_free(stmt->result_bind[i].buffer);
+    //  stmt->result_bind[i].buffer = NULL;
+    //  stmt->array[i] = NULL;
+    //  stmt->result_bind[i].buffer_length = 0;
+    //}
 
     if (i == stream_column)
     {
