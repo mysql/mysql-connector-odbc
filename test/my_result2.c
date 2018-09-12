@@ -1373,6 +1373,58 @@ DECLARE_TEST(t_prefetch_bug)
     return OK;
 }
 
+/*
+  Bug #28098219: MYSQL ODBC CAUSES WRITE ACCESS VIOLATION WHEN USING RECORDSET.MOVE
+*/
+DECLARE_TEST(t_bug28098219)
+{
+  SQLULEN retrieve = 0;
+  ok_sql(hstmt, "DROP TABLE IF EXISTS t_bug28098219");
+  ok_sql(hstmt, "CREATE TABLE t_bug28098219("\
+                "val VARCHAR(20))");
+  ok_sql(hstmt, "INSERT INTO t_bug28098219 VALUES ('012345')");
+
+  ok_stmt(hstmt, SQLGetStmtAttr(hstmt, SQL_ATTR_RETRIEVE_DATA,
+                                &retrieve, sizeof(retrieve), NULL));
+  is_num(SQL_RD_ON, retrieve);
+
+  ok_stmt(hstmt, SQLSetStmtAttr(hstmt, SQL_ATTR_RETRIEVE_DATA, (SQLPOINTER)SQL_RD_OFF, 0));
+  ok_stmt(hstmt, SQLGetStmtAttr(hstmt, SQL_ATTR_RETRIEVE_DATA,
+                                &retrieve, sizeof(retrieve), NULL));
+  is_num(SQL_RD_OFF, retrieve);
+
+  ok_sql(hstmt, "SELECT * FROM t_bug28098219");
+  while (SQL_SUCCESS == SQLFetch(hstmt))
+  {
+    char buf[128] = "ABCDEF";
+    SQLLEN len = 0;
+    ok_stmt(hstmt, SQLGetData(hstmt, 1, SQL_C_CHAR, buf, sizeof(buf), &len));
+    is_str(buf, "ABCDEF", 6);
+
+  }
+  ok_stmt(hstmt, SQLFreeStmt(hstmt, SQL_CLOSE));
+
+  ok_stmt(hstmt, SQLSetStmtAttr(hstmt, SQL_ATTR_RETRIEVE_DATA, (SQLPOINTER)SQL_RD_ON, 0));
+  ok_stmt(hstmt, SQLGetStmtAttr(hstmt, SQL_ATTR_RETRIEVE_DATA,
+                                &retrieve, sizeof(retrieve), NULL));
+  is_num(SQL_RD_ON, retrieve);
+
+  ok_sql(hstmt, "SELECT * FROM t_bug28098219");
+  while (SQL_SUCCESS == SQLFetch(hstmt))
+  {
+    char buf[128] = "ABCDEF";
+    SQLLEN len = 0;
+    ok_stmt(hstmt, SQLGetData(hstmt, 1, SQL_C_CHAR, buf, sizeof(buf), &len));
+    is_str(buf, "012345", 6);
+
+  }
+  ok_stmt(hstmt, SQLFreeStmt(hstmt, SQL_CLOSE));
+
+  ok_sql(hstmt, "DROP TABLE IF EXISTS t_bug28098219");
+
+  return OK;
+}
+
 BEGIN_TESTS
   ADD_TEST(t_bug32420)
   ADD_TEST(t_bug34575)
@@ -1400,6 +1452,7 @@ BEGIN_TESTS
 #endif
   ADD_TEST(t_bug17311065)
   ADD_TEST(t_prefetch_bug)
+  ADD_TEST(t_bug28098219)
 END_TESTS
 
 

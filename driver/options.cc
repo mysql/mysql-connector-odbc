@@ -111,6 +111,7 @@ static SQLRETURN set_constmt_attr(SQLSMALLINT  HandleType,
             break;
 
         case SQL_ATTR_RETRIEVE_DATA:
+            options->retrieve_data = (ValuePtr != (SQLPOINTER)SQL_RD_OFF);
             break;
 
         case SQL_ATTR_SIMULATE_CURSOR:
@@ -208,7 +209,7 @@ get_constmt_attr(SQLSMALLINT  HandleType,
             break;
 
         case SQL_ATTR_RETRIEVE_DATA:
-            *((SQLUINTEGER *) ValuePtr)= SQL_RD_DEFAULT;
+            *((SQLULEN *) ValuePtr)= (options->retrieve_data ? SQL_RD_ON : SQL_RD_OFF);
             break;
 
         case SQL_ATTR_SIMULATE_CURSOR:
