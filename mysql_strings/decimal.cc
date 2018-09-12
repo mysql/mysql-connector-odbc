@@ -1932,7 +1932,7 @@ static int do_sub(const decimal_t *from1, const decimal_t *from2,
   }
 
   if (to == 0) /* decimal_cmp() */
-    return carry == from1->sign ? 1 : -1;
+    return carry == (int)from1->sign ? 1 : -1;
 
   sanity(to);
 
