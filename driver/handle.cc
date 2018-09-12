@@ -639,7 +639,7 @@ SQLRETURN SQL_API my_SQLFreeStmtExtended(SQLHSTMT hstmt,SQLUSMALLINT fOption,
     else
     {
       if(stmt->result && stmt->result->field_alloc
-#if (!MYSQLCLIENT_STATIC_LINKING || !MYSQL8)
+#if (!MYSQL8)
          && stmt->result->field_alloc->pre_alloc
 #endif
          )

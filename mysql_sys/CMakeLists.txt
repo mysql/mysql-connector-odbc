@@ -27,30 +27,30 @@
 # 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA 
 
 
-SET_PROPERTY(DIRECTORY PROPERTY INCLUDE_DIRECTORIES ${CMAKE_SOURCE_DIR}/include/sys)
+SET_PROPERTY(DIRECTORY PROPERTY INCLUDE_DIRECTORIES ${CMAKE_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/include/mysql-8.0)
 
-SET(SYS_SOURCES array.c charset-def.c charset.c errors.c list.c
-                  mf_dirname.c mf_pack.c mf_qsort.c my_access.c my_alloc.c my_div.c
-                  my_error.c my_fstream.c my_getwd.c my_init.c my_lib.c my_malloc.c my_mess.c
-                  my_once.c my_open.c my_read.c my_static.c my_thread.c my_thr_init.c
-                  psi_noop.c sql_chars.c string.c thr_cond.c thr_mutex.c )
+SET(SYS_SOURCES array.cc charset-def.cc charset.cc errors.cc list.cc
+                  mf_dirname.cc mf_pack.cc my_access.cc my_alloc.cc my_div.cc
+                  my_error.cc my_fstream.cc my_getwd.cc my_init.cc my_lib.cc my_malloc.cc my_mess.cc
+                  my_once.cc my_open.cc my_read.cc my_static.cc my_thread.cc my_thr_init.cc
+                  psi_noop.cc sql_chars.cc my_string.cc thr_cond.cc thr_mutex.cc
+                  my_getsystime.cc)
 
 IF (WIN32)
   LIST(APPEND SYS_SOURCES
-    my_winerr.c
-    my_winfile.c
+    my_winerr.cc
+    my_winfile.cc
   )
 ENDIF()
 
+SET(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 ADD_LIBRARY(mysql_sys ${SYS_SOURCES})
 
-IF(NOT WIN32)
-  SET_TARGET_PROPERTIES(mysql_sys PROPERTIES COMPILE_FLAGS ${CMAKE_SHARED_LIBRARY_C_FLAGS})
+IF(WIN32)
+  ADD_DEFINITIONS(-DWIN32_LEAN_AND_MEAN) 
+  ADD_DEFINITIONS(-DNOMINMAX) 
 ENDIF()
-
-#TARGET_LINK_LIBRARIES(sys dbug strings ${ZLIB_LIBRARY} 
-# ${LIBNSL} ${LIBM} ${LIBRT} ${LIBATOMIC} ${LIBEXECINFO})
 
 # Need explicit pthread for gcc -fsanitize=address
 IF(CMAKE_USE_PTHREADS_INIT AND CMAKE_C_FLAGS MATCHES "-fsanitize=")

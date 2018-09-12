@@ -1,30 +1,24 @@
-// Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved. 
-// 
-// This program is free software; you can redistribute it and/or modify 
-// it under the terms of the GNU General Public License, version 2.0, as 
-// published by the Free Software Foundation. 
-// 
-// This program is also distributed with certain software (including 
-// but not limited to OpenSSL) that is licensed under separate terms, 
-// as designated in a particular file or component or in included license 
-// documentation. The authors of MySQL hereby grant you an 
-// additional permission to link the program and your derivative works 
-// with the separately licensed software that they have included with 
-// MySQL. 
-// 
-// Without limiting anything contained in the foregoing, this file, 
-// which is part of MySQL Server, is also subject to the 
-// Universal FOSS Exception, version 1.0, a copy of which can be found at 
-// http://oss.oracle.com/licenses/universal-foss-exception. 
-// 
-// This program is distributed in the hope that it will be useful, but 
-// WITHOUT ANY WARRANTY; without even the implied warranty of 
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-// See the GNU General Public License, version 2.0, for more details. 
-// 
-// You should have received a copy of the GNU General Public License 
-// along with this program; if not, write to the Free Software Foundation, Inc., 
-// 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA 
+/* Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+
+   This program is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License, version 2.0,
+   as published by the Free Software Foundation.
+
+   This program is also distributed with certain software (including
+   but not limited to OpenSSL) that is licensed under separate terms,
+   as designated in a particular file or component or in included license
+   documentation.  The authors of MySQL hereby grant you an additional
+   permission to link the program and your derivative works with the
+   separately licensed software that they have included with MySQL.
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License, version 2.0, for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301  USA */
 
 #ifndef _my_sys_h
 #define _my_sys_h
@@ -81,6 +75,7 @@ struct PSI_rwlock_bootstrap;
 struct PSI_socket_bootstrap;
 struct PSI_stage_bootstrap;
 struct PSI_statement_bootstrap;
+struct PSI_system_bootstrap;
 struct PSI_table_bootstrap;
 struct PSI_thread_bootstrap;
 struct PSI_transaction_bootstrap;
@@ -145,10 +140,10 @@ struct MEM_ROOT;
 #define ME_FATALERROR 1024 /* Fatal statement error */
 
 /* Bits in last argument to fn_format */
-#define MY_REPLACE_DIR 1       /* replace dir in name with 'dir' */
-#define MY_REPLACE_EXT 2       /* replace extension with 'ext' */
-#define MY_UNPACK_FILENAME 4   /* Unpack name (~ -> home) */
-#define MY_PACK_FILENAME 8     /* Pack name (home -> ~) */
+#define MY_REPLACE_DIR 1     /* replace dir in name with 'dir' */
+#define MY_REPLACE_EXT 2     /* replace extension with 'ext' */
+#define MY_UNPACK_FILENAME 4 /* Unpack name (~ -> home) */
+/* 8 Unused. Previously used for MY_PACK_FILENAME. */
 #define MY_RESOLVE_SYMLINKS 16 /* Resolve all symbolic links */
 #define MY_RETURN_REAL_PATH 32 /* return full path for file */
 #define MY_SAFE_PATH 64        /* Return NULL if too long path */
@@ -709,14 +704,12 @@ extern char *fn_same(char *toname, const char *name, int flag);
 extern char *fn_format(char *to, const char *name, const char *dir,
                        const char *form, uint flag);
 extern size_t strlength(const char *str);
-extern void pack_dirname(char *to, const char *from);
 extern size_t normalize_dirname(char *to, const char *from);
 extern size_t unpack_dirname(char *to, const char *from);
 extern size_t cleanup_dirname(char *to, const char *from);
 extern size_t system_filename(char *to, const char *from);
 extern size_t unpack_filename(char *to, const char *from);
 extern char *intern_filename(char *to, const char *from);
-extern int pack_filename(char *to, const char *name, size_t max_length);
 extern char *my_path(char *to, const char *progname,
                      const char *own_pathname_part);
 extern char *my_load_path(char *to, const char *path,
@@ -943,36 +936,38 @@ int my_win_translate_command_line_args(const CHARSET_INFO *cs, int *ac,
 #ifdef HAVE_PSI_INTERFACE
 void my_init_mysys_psi_keys(void);
 
-extern MYSQL_PLUGIN_IMPORT PSI_thread_bootstrap *psi_thread_hook;
-extern void set_psi_thread_service(void *psi);
+extern MYSQL_PLUGIN_IMPORT PSI_cond_bootstrap *psi_cond_hook;
+extern void set_psi_cond_service(void *psi);
+extern MYSQL_PLUGIN_IMPORT PSI_data_lock_bootstrap *psi_data_lock_hook;
+extern void set_psi_data_lock_service(void *psi);
+extern MYSQL_PLUGIN_IMPORT PSI_error_bootstrap *psi_error_hook;
+extern void set_psi_error_service(void *psi);
+extern MYSQL_PLUGIN_IMPORT PSI_file_bootstrap *psi_file_hook;
+extern void set_psi_file_service(void *psi);
+extern MYSQL_PLUGIN_IMPORT PSI_idle_bootstrap *psi_idle_hook;
+extern void set_psi_idle_service(void *psi);
+extern MYSQL_PLUGIN_IMPORT PSI_mdl_bootstrap *psi_mdl_hook;
+extern void set_psi_mdl_service(void *psi);
+extern MYSQL_PLUGIN_IMPORT PSI_memory_bootstrap *psi_memory_hook;
+extern void set_psi_memory_service(void *psi);
 extern MYSQL_PLUGIN_IMPORT PSI_mutex_bootstrap *psi_mutex_hook;
 extern void set_psi_mutex_service(void *psi);
 extern MYSQL_PLUGIN_IMPORT PSI_rwlock_bootstrap *psi_rwlock_hook;
 extern void set_psi_rwlock_service(void *psi);
-extern MYSQL_PLUGIN_IMPORT PSI_cond_bootstrap *psi_cond_hook;
-extern void set_psi_cond_service(void *psi);
-extern MYSQL_PLUGIN_IMPORT PSI_file_bootstrap *psi_file_hook;
-extern void set_psi_file_service(void *psi);
 extern MYSQL_PLUGIN_IMPORT PSI_socket_bootstrap *psi_socket_hook;
 extern void set_psi_socket_service(void *psi);
-extern MYSQL_PLUGIN_IMPORT PSI_table_bootstrap *psi_table_hook;
-extern void set_psi_table_service(void *psi);
-extern MYSQL_PLUGIN_IMPORT PSI_mdl_bootstrap *psi_mdl_hook;
-extern void set_psi_mdl_service(void *psi);
-extern MYSQL_PLUGIN_IMPORT PSI_idle_bootstrap *psi_idle_hook;
-extern void set_psi_idle_service(void *psi);
 extern MYSQL_PLUGIN_IMPORT PSI_stage_bootstrap *psi_stage_hook;
 extern void set_psi_stage_service(void *psi);
 extern MYSQL_PLUGIN_IMPORT PSI_statement_bootstrap *psi_statement_hook;
 extern void set_psi_statement_service(void *psi);
+extern MYSQL_PLUGIN_IMPORT PSI_system_bootstrap *psi_system_hook;
+extern void set_psi_system_service(void *psi);
+extern MYSQL_PLUGIN_IMPORT PSI_table_bootstrap *psi_table_hook;
+extern void set_psi_table_service(void *psi);
+extern MYSQL_PLUGIN_IMPORT PSI_thread_bootstrap *psi_thread_hook;
+extern void set_psi_thread_service(void *psi);
 extern MYSQL_PLUGIN_IMPORT PSI_transaction_bootstrap *psi_transaction_hook;
 extern void set_psi_transaction_service(void *psi);
-extern MYSQL_PLUGIN_IMPORT PSI_memory_bootstrap *psi_memory_hook;
-extern void set_psi_memory_service(void *psi);
-extern MYSQL_PLUGIN_IMPORT PSI_error_bootstrap *psi_error_hook;
-extern void set_psi_error_service(void *psi);
-extern MYSQL_PLUGIN_IMPORT PSI_data_lock_bootstrap *psi_data_lock_hook;
-extern void set_psi_data_lock_service(void *psi);
 #endif /* HAVE_PSI_INTERFACE */
 
 struct MYSQL_FILE;

@@ -1,39 +1,44 @@
-// Copyright (c) 2009, 2016, Oracle and/or its affiliates. All rights reserved. 
-// 
-// This program is free software; you can redistribute it and/or modify 
-// it under the terms of the GNU General Public License, version 2.0, as 
-// published by the Free Software Foundation. 
-// 
-// This program is also distributed with certain software (including 
-// but not limited to OpenSSL) that is licensed under separate terms, 
-// as designated in a particular file or component or in included license 
-// documentation. The authors of MySQL hereby grant you an 
-// additional permission to link the program and your derivative works 
-// with the separately licensed software that they have included with 
-// MySQL. 
-// 
-// Without limiting anything contained in the foregoing, this file, 
-// which is part of MySQL Connector/ODBC, is also subject to the 
-// Universal FOSS Exception, version 1.0, a copy of which can be found at 
-// http://oss.oracle.com/licenses/universal-foss-exception. 
-// 
-// This program is distributed in the hope that it will be useful, but 
-// WITHOUT ANY WARRANTY; without even the implied warranty of 
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-// See the GNU General Public License, version 2.0, for more details. 
-// 
-// You should have received a copy of the GNU General Public License 
-// along with this program; if not, write to the Free Software Foundation, Inc., 
-// 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA 
+// Copyright (c) 2009, 2016, Oracle and/or its affiliates. All rights reserved.
+//
+// This program is free software; you can redistribute it and/or modify
+// it under the terms of the GNU General Public License, version 2.0, as
+// published by the Free Software Foundation.
+//
+// This program is also distributed with certain software (including
+// but not limited to OpenSSL) that is licensed under separate terms,
+// as designated in a particular file or component or in included license
+// documentation. The authors of MySQL hereby grant you an
+// additional permission to link the program and your derivative works
+// with the separately licensed software that they have included with
+// MySQL.
+//
+// Without limiting anything contained in the foregoing, this file,
+// which is part of MySQL Connector/ODBC, is also subject to the
+// Universal FOSS Exception, version 1.0, a copy of which can be found at
+// http://oss.oracle.com/licenses/universal-foss-exception.
+//
+// This program is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+// See the GNU General Public License, version 2.0, for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program; if not, write to the Free Software Foundation, Inc.,
+// 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 
 #ifndef MYODBC_MYSQL_H
 #define MYODBC_MYSQL_H
 
 #define DONT_DEFINE_VOID
 
-#if (MYSQLCLIENT_STATIC_LINKING)
-#if (MYSQL8)
+#define my_bool bool
+#define mysys_end my_end
+#define TRUE 1
+#define FALSE 0
+
 #define WIN32_LEAN_AND_MEAN
+
+#if (MYSQLCLIENT_STATIC_LINKING)
 #include <my_config.h>
 #include <my_sys.h>
 #include <mysql.h>
@@ -43,47 +48,25 @@
 #include <m_ctype.h>
 #include <my_io.h>
 
-#define my_bool bool
-#define mysys_end my_end
+#else
 
-#ifndef TRUE
-#define TRUE 1
-#endif
+#include "include/mysql-8.0/my_config.h"
+#include "include/mysql-8.0/my_sys.h"
+#include <mysql.h>
+#include <mysqld_error.h>
+#include "include/mysql-8.0/my_alloc.h"
+#include "include/mysql-8.0/mysql/service_mysql_alloc.h"
+#include "include/mysql-8.0/m_ctype.h"
+#include "include/mysql-8.0/my_io.h"
 
-#ifndef FALSE
-#define FALSE 0
 #endif
 
 #ifdef _WIN32
 typedef DWORD thread_local_key_t;
 typedef CRITICAL_SECTION native_mutex_t;
 typedef int native_mutexattr_t;
-
 #else
 typedef pthread_key_t thread_local_key_t;
-//typedef pthread_mutex_t native_mutex_t;
-//typedef pthread_mutexattr_t native_mutexattr_t;
-#endif
-
-
-#else // MYSQL8
-#include <my_global.h>
-#include <mysql.h>
-#include <my_sys.h>
-#include <my_list.h>
-#include <m_string.h>
-#include <mysqld_error.h>
-#endif // MYSQL8
-
-#else
-
-#include "include/sys/my_global.h"
-#include "include/sys/my_thread.h"
-#include <mysql.h>
-#include "include/sys_main.h"
-#include <mysqld_error.h>
-#define myodbc_qsort my_qsort
-
 #endif
 
 #ifdef __cplusplus
@@ -98,22 +81,9 @@ extern "C"
 # error "Connector/ODBC requires v4.1 (or later) of the MySQL client library"
 #endif
 
-#ifdef MYSQLCLIENT_STATIC_LINKING
-
 #define my_sys_init my_init
-#define myodbc_malloc(A,B) my_malloc(PSI_NOT_INSTRUMENTED,A,B)
-#ifndef x_free
 #define x_free(A) { void *tmp= (A); if (tmp) my_free((char *) tmp); }
-#endif
-
-#else
-
-#define myodbc_malloc(A,B) mysys_malloc(A,B)
-#ifndef x_free
-#define x_free(A) { void *tmp= (A); if (tmp) mysys_free((char *) tmp); }
-#endif
-
-#endif
+#define myodbc_malloc(A,B) my_malloc(PSI_NOT_INSTRUMENTED,A,B)
 
 #define myodbc_mutex_t native_mutex_t
 #define myodbc_key_t thread_local_key_t

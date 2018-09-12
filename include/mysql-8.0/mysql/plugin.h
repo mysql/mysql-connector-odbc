@@ -1,30 +1,24 @@
-// Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved. 
-// 
-// This program is free software; you can redistribute it and/or modify 
-// it under the terms of the GNU General Public License, version 2.0, as 
-// published by the Free Software Foundation. 
-// 
-// This program is also distributed with certain software (including 
-// but not limited to OpenSSL) that is licensed under separate terms, 
-// as designated in a particular file or component or in included license 
-// documentation. The authors of MySQL hereby grant you an 
-// additional permission to link the program and your derivative works 
-// with the separately licensed software that they have included with 
-// MySQL. 
-// 
-// Without limiting anything contained in the foregoing, this file, 
-// which is part of MySQL Server, is also subject to the 
-// Universal FOSS Exception, version 1.0, a copy of which can be found at 
-// http://oss.oracle.com/licenses/universal-foss-exception. 
-// 
-// This program is distributed in the hope that it will be useful, but 
-// WITHOUT ANY WARRANTY; without even the implied warranty of 
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-// See the GNU General Public License, version 2.0, for more details. 
-// 
-// You should have received a copy of the GNU General Public License 
-// along with this program; if not, write to the Free Software Foundation, Inc., 
-// 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA 
+/* Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+
+   This program is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License, version 2.0,
+   as published by the Free Software Foundation.
+
+   This program is also distributed with certain software (including
+   but not limited to OpenSSL) that is licensed under separate terms,
+   as designated in a particular file or component or in included license
+   documentation.  The authors of MySQL hereby grant you an additional
+   permission to link the program and your derivative works with the
+   separately licensed software that they have included with MySQL.
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License, version 2.0, for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301  USA */
 
 #ifndef _my_plugin_h
 #define _my_plugin_h
@@ -181,7 +175,7 @@ struct MYSQL_XID {
 #define PLUGIN_VAR_UNSIGNED 0x0080
 #define PLUGIN_VAR_THDLOCAL 0x0100  /* Variable is per-connection */
 #define PLUGIN_VAR_READONLY 0x0200  /* Server variable is read only */
-#define PLUGIN_VAR_NOSYSVAR 0x0400  /* Not a server variable */
+#define PLUGIN_VAR_NOSYSVAR 0x0400  /* Configurable only by cmd-line */
 #define PLUGIN_VAR_NOCMDOPT 0x0800  /* Not a command line option */
 #define PLUGIN_VAR_NOCMDARG 0x1000  /* No argument for cmd line */
 #define PLUGIN_VAR_RQCMDARG 0x0000  /* Argument required for cmd line */
@@ -467,7 +461,7 @@ typedef void (*mysql_var_update_func)(MYSQL_THD thd, SYS_VAR *var,
       blk}
 
 #define MYSQL_THDVAR_BOOL(name, opt, comment, check, update, def)      \
-  DECLARE_MYSQL_THDVAR_BASIC(name, char) = {                           \
+  DECLARE_MYSQL_THDVAR_BASIC(name, bool) = {                           \
       PLUGIN_VAR_BOOL | PLUGIN_VAR_THDLOCAL | ((opt)&PLUGIN_VAR_MASK), \
       #name,                                                           \
       comment,                                                         \
