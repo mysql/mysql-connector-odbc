@@ -119,15 +119,15 @@ typedef struct st_list {
 } LIST;
 #endif
 
+extern void init_alloc_root(PSI_memory_key key, MEM_ROOT *mem_root, size_t block_size,
+                            size_t pre_alloc_size);
 extern void * mysys_malloc(size_t size, myf_t flags);
 extern void mysys_free(void *ptr);
-
 extern void * my_realloc(PSI_memory_key key, void *ptr, size_t size, myf_t flags);
 extern void my_claim(void *ptr);
 extern void * my_memdup(PSI_memory_key key, const void *from, size_t length, myf_t flags);
 extern char * my_strdup(PSI_memory_key key, const char *from, myf_t flags);
 extern char * my_strndup(PSI_memory_key key, const char *from, size_t length, myf_t flags);
-
 extern	char *my_stpmov(char *dst, const char *src);
 extern	char *strxmov(char *dst, const char *src, ...);
 

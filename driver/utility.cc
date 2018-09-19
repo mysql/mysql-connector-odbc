@@ -4272,6 +4272,6 @@ my_bool myodbc_net_realloc(NET *net, size_t length)
 /** Free net packet buffer. */
 void myodbc_net_end(NET *net)
 {
-  my_free(net->buff);
+  x_free(net->buff);
   net->buff=0;
 }

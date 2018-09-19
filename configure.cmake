@@ -406,8 +406,10 @@ FUNCTION(MY_CHECK_TYPE_SIZE type defbase)
 ENDFUNCTION()
 
 # We are only interested in presence for these
+MY_CHECK_TYPE_SIZE("struct timespec"  STRUCT_TIMESPEC)
 MY_CHECK_TYPE_SIZE(ulong ULONG)
 MY_CHECK_TYPE_SIZE(u_int32_t U_INT32_T)
+
 SET(CMAKE_EXTRA_INCLUDE_FILES sys/socket.h)
 MY_CHECK_TYPE_SIZE(socklen_t SOCKLEN_T) # needed for libevent
 
