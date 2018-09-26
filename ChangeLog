@@ -1,3 +1,20 @@
+8.0.13
+
+  Security Notes:
+  Functionality added or changed:
+  * Add support for dynamic libmysql linking to ODBC Driver 8.0 (WL# 12369)
+  * RE: Release ODBC 8.0 on Solaris platform. (WL# 12386)
+  Bugs fixed:
+  * MySQL ODBC causes write access violation when using RECORDSET.MOVE
+    (Bug# 28098219/91060)
+  * ODBC 8.0.12 32-bit, Microsoft Access and Tables with MEDIUMTEXT or
+    LONGTEXT (Bug# 28670725/91856)
+  * Obsolete options in ODBC Driver (Bug# 28407520)
+  * SQLGetInfo() returns zero length for SQL_MAX_SCHEMA_NAME_LEN
+    (Bug# 28385722/91760)    
+
+  Built using MySQL 8.0.13
+
 8.0.12
 
   Security Notes:
