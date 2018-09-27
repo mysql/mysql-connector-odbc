@@ -138,6 +138,7 @@
 #define IDC_CHECK_no_tls_1_2            10060
 #define IDC_EDIT_sslmode               10061
 #define IDC_CHECK_get_server_public_key 10062
+#define IDC_CHECK_enable_local_infile   10063
 #define IDC_BUTTON_TEST                 11014
 #define IDC_BUTTON_HELP                 11015
 #define IDC_STATIC                      -1
