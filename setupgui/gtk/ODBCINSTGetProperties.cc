@@ -87,6 +87,7 @@ static const char *MYODBC_OPTIONS[][3] = {
   {"CAN_HANDLE_EXP_PWD",      "C", "Can Handle Expired Password"},
   {"ENABLE_CLEARTEXT_PLUGIN", "C", "Enable Cleartext Authentication"},
   {"NO_SSPS",                 "C", "Prepare statements on the client"},
+  {"ENABLE_LOCAL_INFILE",     "C", "Enable LOAD DATA LOCAL INFILE statements"},
   {NULL, NULL, NULL}
 };
 

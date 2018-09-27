@@ -198,6 +198,8 @@ static SQLWCHAR W_SSLMODE[] =
 { 'S', 'S', 'L', 'M', 'O', 'D', 'E', 0 };
 static SQLWCHAR W_NO_DATE_OVERFLOW[] =
 { 'N', 'O', '_', 'D', 'A', 'T', 'E', '_', 'O', 'V', 'E', 'R', 'F', 'L', 'O', 'W', 0 };
+static SQLWCHAR W_ENABLE_LOCAL_INFILE[] =
+{ 'E', 'N', 'A', 'B', 'L', 'E', '_', 'L', 'O', 'C', 'A', 'L', '_', 'I', 'N', 'F', 'I', 'L', 'E', 0 };
 
 /* DS_PARAM */
 /* externally used strings */
@@ -902,6 +904,8 @@ void ds_map_param(DataSource *ds, const SQLWCHAR *param,
     *booldest = &ds->no_tls_1_2;
   else if (!sqlwcharcasecmp(W_NO_DATE_OVERFLOW, param))
     *booldest = &ds->no_date_overflow;
+  else if (!sqlwcharcasecmp(W_ENABLE_LOCAL_INFILE, param))
+    *booldest = &ds->enable_local_infile;
 
   /* DS_PARAM */
 }
@@ -1397,6 +1401,7 @@ int ds_add(DataSource *ds)
   if (ds_add_intprop(ds->name, W_NO_TLS_1_1, ds->no_tls_1_1)) goto error;
   if (ds_add_intprop(ds->name, W_NO_TLS_1_2, ds->no_tls_1_2)) goto error;
   if (ds_add_intprop(ds->name, W_NO_DATE_OVERFLOW, ds->no_date_overflow)) goto error;
+  if (ds_add_intprop(ds->name, W_ENABLE_LOCAL_INFILE, ds->enable_local_infile)) goto error;
   /* DS_PARAM */
 
   rc= 0;
