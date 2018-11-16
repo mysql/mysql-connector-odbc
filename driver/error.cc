@@ -176,7 +176,7 @@ SQLRETURN set_dbc_error(DBC *dbc, char *state,
   conversion
 */
 
-SQLRETURN set_stmt_error( STMT       *  stmt,
+SQLRETURN myodbc_set_stmt_error( STMT       *  stmt,
                           const char *  state,
                           const char *  message,
                           uint          errcode )

@@ -1064,6 +1064,12 @@ SQLRETURN SQL_API MySQLGetTypeInfo(SQLHSTMT hstmt, SQLSMALLINT fSqlType)
   x_free(stmt->result_array);
   stmt->result_array = (char **)myodbc_malloc(sizeof(SQL_GET_TYPE_INFO_values),
                                               MYF(MY_FAE | MY_ZEROFILL));
+  if (!stmt->result || !stmt->result_array)
+  {
+    x_free(stmt->result);
+    x_free(stmt->result_array);
+    return set_stmt_error(stmt, "S1001", "Not enough memory", 4001);
+  }
 
   if (fSqlType == SQL_ALL_TYPES)
   {
@@ -1074,6 +1080,7 @@ SQLRETURN SQL_API MySQLGetTypeInfo(SQLHSTMT hstmt, SQLSMALLINT fSqlType)
   }
   else
   {
+    stmt->result->row_count= 0;
     for (i = 0; i < MYSQL_DATA_TYPES; ++i)
     {
       if (atoi(SQL_GET_TYPE_INFO_values[i][1]) == fSqlType ||
@@ -1108,21 +1115,21 @@ void init_getfunctions(void)
   my_int2str(SQL_SMALLINT, sql_smallint, -10, 0);
   my_int2str(SQL_INTEGER, sql_integer, -10, 0);
   my_int2str(SQL_BIGINT, sql_bigint, -10, 0);
-  my_int2str(SQL_DECIMAL, sql_decimal, -10, 0);
-  my_int2str(SQL_NUMERIC, sql_numeric, -10, 0);
-  my_int2str(SQL_REAL, sql_real, -10, 0);
   my_int2str(SQL_FLOAT, sql_float, -10, 0);
+  my_int2str(SQL_REAL, sql_real, -10, 0);
   my_int2str(SQL_DOUBLE, sql_double, -10, 0);
   my_int2str(SQL_CHAR, sql_char, -10, 0);
   my_int2str(SQL_VARCHAR, sql_varchar, -10, 0);
   my_int2str(SQL_LONGVARCHAR, sql_longvarchar, -10, 0);
-  my_int2str(SQL_LONGVARBINARY, sql_longvarbinary, -10, 0);
+  my_int2str(SQL_TYPE_TIMESTAMP, sql_timestamp, -10, 0);
+  my_int2str(SQL_DECIMAL, sql_decimal, -10, 0);
+  my_int2str(SQL_NUMERIC, sql_numeric, -10, 0);
   my_int2str(SQL_VARBINARY, sql_varbinary, -10, 0);
+  my_int2str(SQL_TYPE_TIME, sql_time, -10, 0);
+  my_int2str(SQL_TYPE_DATE, sql_date, -10, 0);
+  my_int2str(SQL_LONGVARBINARY, sql_longvarbinary, -10, 0);
   my_int2str(SQL_BINARY, sql_binary, -10, 0);
   my_int2str(SQL_DATETIME, sql_datetime, -10, 0);
-  my_int2str(SQL_TYPE_TIMESTAMP, sql_timestamp, -10, 0);
-  my_int2str(SQL_TYPE_DATE, sql_date, -10, 0);
-  my_int2str(SQL_TYPE_TIME, sql_time, -10, 0);
 # if (ODBCVER < 0x0300)
   myodbc_sqlstate2_init();
   myodbc_ov2_inited = 1;
