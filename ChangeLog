@@ -1,3 +1,15 @@
+8.0.14
+
+  Security Notes:
+  Functionality added or changed:
+  * New connection option for ODBC driver to enable LOAD DATA LOCAL INFILE
+    (WL# 12394)
+  * Connectors: Expose metadata about source and binaries in unified way
+    (WL# 12373)
+  * Build Con/ODBC with MSVC 2017 (WL# 12640)
+
+  Built using MySQL 8.0.14
+
 8.0.13
 
   Security Notes:
