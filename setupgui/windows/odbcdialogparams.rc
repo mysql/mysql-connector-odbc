@@ -270,6 +270,8 @@ BEGIN
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,117,138,10
     CONTROL         "Disable Date Overflow error", IDC_CHECK_no_date_overflow,
                     "Button", BS_AUTOCHECKBOX | WS_TABSTOP, 12, 132, 138, 10
+    CONTROL         "Enable LOAD DATA LOCAL INFILE statements", IDC_CHECK_enable_local_infile,
+                    "Button", BS_AUTOCHECKBOX | WS_TABSTOP, 12, 147, 150, 10
 END
 
 #ifdef APSTUDIO_INVOKED

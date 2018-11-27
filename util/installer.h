@@ -164,6 +164,7 @@ typedef struct {
   BOOL no_tls_1_2;
 
   BOOL no_date_overflow;
+  BOOL enable_local_infile;
 } DataSource;
 
 /* perhaps that is a good idea to have const ds object with defaults */
