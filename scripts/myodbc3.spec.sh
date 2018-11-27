@@ -172,7 +172,7 @@ rm -rf %{buildroot}
 %install
 pushd release
 make DESTDIR=%{buildroot} install VERBOSE=1
-rm -vf  %{buildroot}%{_prefix}/{ChangeLog,README*,LICENSE*.*}
+rm -vf  %{buildroot}%{_prefix}/{ChangeLog,README*,LICENSE*.*,INFO_SRC,INFO_BIN}
 mkdir -p %{buildroot}%{_libdir}/mysql-connector-odbc
 mv %{buildroot}%{_prefix}/test %{buildroot}%{_libdir}/mysql-connector-odbc/
 mv bin/dltest                  %{buildroot}%{_libdir}/mysql-connector-odbc/
@@ -232,7 +232,7 @@ fi
 %{_libdir}/libmyodbc8w.so
 %{_libdir}/libmyodbc8a.so
 %doc %{license_files}
-%doc ChangeLog README.txt LICENSE.txt
+%doc ChangeLog README.txt LICENSE.txt INFO_SRC INFO_BIN
 
 %if 0%{?odbc_gui}
 %files setup
