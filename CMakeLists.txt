@@ -38,12 +38,26 @@ endif(COMMAND cmake_policy)
 cmake_policy(SET CMP0022 NEW)
 # cmake_policy(SET CMP0026 OLD)
 
-
 #------- compatibility with older cmake versions ------
 
 #message("CMAKE_VERSION: ${CMAKE_VERSION}")
 
 if(CMAKE_VERSION VERSION_LESS "3.0")
+
+SET(BUILDTYPE_DOCSTRING
+ "Choose the type of build, options are: None(CMAKE_CXX_FLAGS or
+ CMAKE_C_FLAGS used) Debug Release RelWithDebInfo MinSizeRel")
+
+#
+# If cmake is invoked with -DCMAKE_BUILD_TYPE,
+# respect user wishes and do not (re)define CMAKE_BUILD_TYPE. Otherwise,
+# use Relwithdebinfo.
+#
+
+#IF(NOT DEFINED CMAKE_BUILD_TYPE)
+#  SET(CMAKE_BUILD_TYPE "Debug" CACHE STRING
+#  ${BUILDTYPE_DOCSTRING} FORCE)
+#ENDIF()
 
 macro(add_compile_options)
   add_definitions(${ARGV})
@@ -494,7 +508,7 @@ cmake/sql.*\\\\.c$
 )
 
 #------------ Installation ---------------------------
-
+INCLUDE(cmake/info_bin.cmake)
 
 INSTALL(FILES LICENSE.txt   DESTINATION .)
 INSTALL(FILES README.txt    DESTINATION .)
