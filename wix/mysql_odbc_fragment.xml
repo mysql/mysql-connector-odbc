@@ -71,6 +71,8 @@
               <File Id="readme" Name="README.txt" DiskId="1" Source="doc\README.txt"/>
               <File Id="changelog" Name="ChangeLog.txt" DiskId="1" Source="doc\ChangeLog.txt"/>
               <File Id="license" Name="LICENSE.txt" DiskId="1" Source="doc\LICENSE.txt" />
+              <File Id="info_bin" Name="INFO_BIN" DiskId="1" Source="doc\INFO_BIN" />
+              <File Id="info_src" Name="INFO_SRC" DiskId="1" Source="doc\INFO_SRC" />
             </Component>
             <Component Id="setup" Guid="3A92E95A-AF9C-4A4F-A36D-E0052405C278" SharedDllRefCount="yes" Win64="yes">
               <File Id="myodbc8S.dll" Name="myodbc8S.dll" KeyPath="yes" DiskId="1" Source="x64\myodbc8S.dll" />
@@ -108,6 +110,8 @@
               <File Id="readme" Name="README.txt" DiskId="1" Source="doc\README.txt"/>
               <File Id="changelog" Name="ChangeLog.txt" DiskId="1" Source="doc\ChangeLog.txt"/>
               <File Id="license" Name="LICENSE.txt" DiskId="1" Source="doc\LICENSE.txt" />
+              <File Id="info_bin" Name="INFO_BIN" DiskId="1" Source="doc\INFO_BIN" />
+              <File Id="info_src" Name="INFO_SRC" DiskId="1" Source="doc\INFO_SRC" />
             </Component>
             <Component Id="setup" Guid="428232BA-9D94-4DB5-87CD-C939D1347664" SharedDllRefCount="yes">
               <File Id="myodbc8S.dll" Name="myodbc8S.dll" KeyPath="yes" DiskId="1" Source="x86\myodbc8S.dll" />

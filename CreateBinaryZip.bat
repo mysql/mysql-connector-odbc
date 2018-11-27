@@ -75,6 +75,9 @@ copy Uninstall.bat mysql-connector-odbc-noinstall-%1-win32
 copy ChangeLog mysql-connector-odbc-noinstall-%1-win32\ChangeLog.rtf
 copy README.txt mysql-connector-odbc-noinstall-%1-win32\README.rtf
 copy LICENSE.txt mysql-connector-odbc-noinstall-%1-win32
+copy INFO_BIN mysql-connector-odbc-noinstall-%1-win32
+copy INFO_SRC mysql-connector-odbc-noinstall-%1-win32
+
 
 ECHO Zipping...
 pkzipc -add -maximum -recurse -path=current mysql-connector-odbc-noinstall-%1-win32.zip mysql-connector-odbc-noinstall-%1-win32\*.*

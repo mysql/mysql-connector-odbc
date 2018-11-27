@@ -74,6 +74,7 @@ copy odbc.pri mysql-connector-odbc-%1-win-src
 copy root.pro mysql-connector-odbc-%1-win-src
 copy README.txt mysql-connector-odbc-%1-win-src\README.rtf
 copy LICENSE.txt mysql-connector-odbc-%1-win-src
+copy INFO_SRC mysql-connector-odbc-%1-win-src
 copy resource.h mysql-connector-odbc-%1-win-src
 copy VersionInfo.h mysql-connector-odbc-%1-win-src
 copy mysql.bmp mysql-connector-odbc-%1-win-src

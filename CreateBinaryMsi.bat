@@ -61,6 +61,8 @@ IF NOT EXIST ..\wix-installer\bin\mysql-connector-odbc-%1-win32\Windows\System32
 copy bin\* ..\wix-installer\bin\mysql-connector-odbc-%1-win32\Windows\System32
 copy lib\* ..\wix-installer\bin\mysql-connector-odbc-%1-win32\Windows\System32
 copy LICENSE.txt ..\wix-installer\bin\mysql-connector-odbc-%1-win32\Windows\System32
+copy INFO_BIN ..\wix-installer\bin\mysql-connector-odbc-%1-win32\Windows\System32
+copy INFO_SRC ..\wix-installer\bin\mysql-connector-odbc-%1-win32\Windows\System32
 
 REM Creating Commercial msi...
 cd ..\wix-installer
