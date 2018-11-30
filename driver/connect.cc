@@ -161,7 +161,7 @@ SQLRETURN myodbc_do_connect(DBC *dbc, DataSource *ds)
   /* Use 'int' and fill all bits to avoid alignment Bug#25920 */
   unsigned int opt_ssl_verify_server_cert = ~0;
   const my_bool on= 1;
-  unsigned int on_int = 1;
+  unsigned int on_int = 1, off_int = 0;
   unsigned long max_long = ~0L;
 
 #ifdef WIN32
@@ -353,6 +353,10 @@ SQLRETURN myodbc_do_connect(DBC *dbc, DataSource *ds)
   if (ds->enable_local_infile)
   {
     mysql_options(mysql, MYSQL_OPT_LOCAL_INFILE, &on_int);
+  }
+  else
+  {
+    mysql_options(mysql, MYSQL_OPT_LOCAL_INFILE, &off_int);
   }
 
 #if MYSQL_VERSION_ID >= 50711
