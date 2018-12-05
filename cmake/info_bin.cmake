@@ -30,7 +30,7 @@
 
 FUNCTION(GENERATE_INFO_BIN)
 
-  IF(DEFINED ENV{PRODUCT_ID} AND $ENV{PRODUCT_ID} MATCHES "source-dist")
+  IF(DEFINED ENV{PRODUCT_ID} AND "$ENV{PRODUCT_ID}" MATCHES "source-dist")
     MESSAGE("Generating INFO_BIN is skipped for the source package")
     RETURN()
   ENDIF()
