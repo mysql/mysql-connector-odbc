@@ -22,7 +22,7 @@ Introduction
    third-party software which may be included in this distribution of
    MySQL Connector/ODBC 5.3.
 
-   Last updated: July 2018.
+   Last updated: January 2019.
 
 Licensing Information
 
@@ -33,7 +33,7 @@ Product License - MySQL Connector/ODBC 5.3
    software is released under version 2 of the GNU General Public License.
    MySQL Connector/ODBC 5.3 is brought to you by the MySQL team at Oracle.
 
-   Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights
+   Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights
    reserved.
 
 Election of GPLv2
