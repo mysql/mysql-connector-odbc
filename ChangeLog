@@ -1,3 +1,19 @@
+5.3.12
+
+  Security Notes:
+  * Support improved Windows named pipes security (WL #12724)
+  Functionality added or changed:
+  * New connection option for ODBC driver 5.3 to enable LOAD DATA LOCAL INFILE
+    (WL #12477)
+  Bugs fixed:
+  * Dynamic linking is broken in MyODBC 5.3.11 (Bug# 28609434/92319)  
+  * Dynamically linked ODBC driver 5.3 crashes in Solaris
+    (Bug# 28761588/92706)
+  * WL#11962 : Crash in SQLBulkOperations when NO_SSPS is set to 0.
+    (Bug# 28289320)
+
+  Built using MySQL 5.7.25
+
 5.3.11
 
   Security Notes:
