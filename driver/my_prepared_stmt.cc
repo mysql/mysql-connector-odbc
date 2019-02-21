@@ -360,6 +360,14 @@ SQLRETURN ssps_fetch_chunk(STMT *stmt, char *dest, unsigned long dest_bytes, uns
 }
 
 
+bool is_varlen_type(enum enum_field_types type)
+{
+  return (type == MYSQL_TYPE_BLOB ||
+          type == MYSQL_TYPE_TINY_BLOB ||
+          type == MYSQL_TYPE_MEDIUM_BLOB ||
+          type == MYSQL_TYPE_LONG_BLOB);
+}
+
 /* The structure and following allocation function are borrowed from c/c++ and adopted */
 typedef struct tagBST
 {
@@ -376,18 +384,9 @@ typedef struct tagBST
     otherwise libmysqlclient throws the assertion.
     This will be reallocated later.
   */
-  bool is_fake_blob_alloc()
+  bool is_varlen_alloc()
   {
-    return (type == MYSQL_TYPE_BLOB ||
-            type == MYSQL_TYPE_TINY_BLOB ||
-            type == MYSQL_TYPE_MEDIUM_BLOB ||
-            type == MYSQL_TYPE_LONG_BLOB) &&
-            size == 1;
-  }
-
-  bool is_null_alloc()
-  {
-    return (type != MYSQL_TYPE_NULL && buffer == NULL);
+    return is_varlen_type(type);
   }
 } st_buffer_size_type;
 
@@ -511,24 +510,6 @@ static MYSQL_ROW fetch_varlength_columns(STMT *stmt, MYSQL_ROW columns)
 
   for (i= 0; i < num_fields; ++i)
   {
-    // The allocated buffer for these types was set to 1 byte
-    // to keep mysqlclient asserts happy
-    //if (stmt->result_bind[i].buffer_length == 1 &&
-    //    stmt->result_bind[i].buffer &&
-    //    (
-    //      stmt->result_bind[i].buffer_type == MYSQL_TYPE_MEDIUM_BLOB ||
-    //      stmt->result_bind[i].buffer_type == MYSQL_TYPE_LONG_BLOB ||
-    //      stmt->result_bind[i].buffer_type == MYSQL_TYPE_BLOB ||
-    //      stmt->result_bind[i].buffer_type == MYSQL_TYPE_STRING ||
-    //      stmt->result_bind[i].buffer_type == MYSQL_TYPE_VAR_STRING
-    //    )
-    //  )
-    //{
-    //  x_free(stmt->result_bind[i].buffer);
-    //  stmt->result_bind[i].buffer = NULL;
-    //  stmt->array[i] = NULL;
-    //  stmt->result_bind[i].buffer_length = 0;
-    //}
 
     if (i == stream_column)
     {
@@ -537,21 +518,19 @@ static MYSQL_ROW fetch_varlength_columns(STMT *stmt, MYSQL_ROW columns)
     }
     else
     {
-      if (stmt->result_bind[i].buffer == NULL)
+      if (is_varlen_type(stmt->result_bind[i].buffer_type) &&
+        stmt->result_bind[i].buffer_length < *stmt->result_bind[i].length)
       {
-        if (stmt->lengths[i] < *stmt->result_bind[i].length)
-        {
-          /* TODO Realloc error proc */
-          stmt->array[i]= (char*)myodbc_realloc(stmt->array[i], *stmt->result_bind[i].length,
-            MYF(MY_ALLOW_ZERO_PTR));
-          stmt->lengths[i]= *stmt->result_bind[i].length;
-        }
-
-        stmt->result_bind[i].buffer= stmt->array[i];
-        stmt->result_bind[i].buffer_length= stmt->lengths[i];
-
-        mysql_stmt_fetch_column(stmt->ssps, &stmt->result_bind[i], i, 0);
+        /* TODO Realloc error proc */
+        stmt->array[i]= (char*)myodbc_realloc(stmt->array[i], *stmt->result_bind[i].length,
+          MYF(MY_ALLOW_ZERO_PTR));
+        stmt->lengths[i]= *stmt->result_bind[i].length;
       }
+
+      stmt->result_bind[i].buffer= stmt->array[i];
+      stmt->result_bind[i].buffer_length= stmt->lengths[i];
+
+      mysql_stmt_fetch_column(stmt->ssps, &stmt->result_bind[i], i, 0);
     }
   }
 
@@ -630,7 +609,7 @@ int STMT::ssps_bind_result()
       /*
         Marking that there are columns that will require buffer (re) allocating
        */
-      if ( p.is_null_alloc() || p.is_fake_blob_alloc())
+      if ( p.is_varlen_alloc())
       {
         fix_fields= fetch_varlength_columns;
 
@@ -665,8 +644,7 @@ BOOL ssps_0buffers_truncated_only(STMT *stmt)
     for (i= 0; i < num_fields; ++i)
     {
       if (*stmt->result_bind[i].error != 0
-        && stmt->result_bind[i].buffer_length > 0
-        && stmt->result_bind[i].buffer != NULL)
+        && stmt->result_bind[i].buffer_length >= (*stmt->result_bind[i].length))
       {
         return FALSE;
       }
