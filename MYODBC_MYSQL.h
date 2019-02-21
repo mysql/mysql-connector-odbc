@@ -47,6 +47,7 @@
 #include <mysql/service_mysql_alloc.h>
 #include <m_ctype.h>
 #include <my_io.h>
+#include <thr_mutex.h>
 
 #else
 

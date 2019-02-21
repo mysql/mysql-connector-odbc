@@ -22,7 +22,9 @@ enum enum_mysql_show_type {
   SHOW_LONG_NOFLUSH,
   SHOW_LONGLONG_STATUS,
   SHOW_LEX_STRING,
-  SHOW_SIGNED_LONG
+  SHOW_SIGNED_INT,
+  SHOW_SIGNED_LONG,
+  SHOW_SIGNED_LONGLONG
 };
 enum enum_mysql_show_scope {
   SHOW_SCOPE_UNDEF,
@@ -107,7 +109,7 @@ void thd_inc_row_count(void * thd);
 int thd_allow_batch(void * thd);
 void thd_mark_transaction_to_rollback(void * thd, int all);
 int mysql_tmpfile(const char *prefix);
-int thd_killed(const void * thd);
+int thd_killed(const void * v_thd);
 void thd_set_kill_status(const void * thd);
 void thd_binlog_pos(const void * thd, const char **file_var,
                     unsigned long long *pos_var);
@@ -128,12 +130,24 @@ struct MYSQL_PLUGIN_VIO_INFO {
   } protocol;
   int socket;
 };
+enum net_async_status {
+  NET_ASYNC_COMPLETE = 0,
+  NET_ASYNC_NOT_READY,
+  NET_ASYNC_ERROR,
+  NET_ASYNC_COMPLETE_WITH_MORE_RESULTS
+};
 typedef struct MYSQL_PLUGIN_VIO {
   int (*read_packet)(struct MYSQL_PLUGIN_VIO *vio, unsigned char **buf);
   int (*write_packet)(struct MYSQL_PLUGIN_VIO *vio, const unsigned char *packet,
                       int packet_len);
   void (*info)(struct MYSQL_PLUGIN_VIO *vio,
                struct MYSQL_PLUGIN_VIO_INFO *info);
+  enum net_async_status (*read_packet_nonblocking)(struct MYSQL_PLUGIN_VIO *vio,
+                                                   unsigned char **buf,
+                                                   int *result);
+  enum net_async_status (*write_packet_nonblocking)(
+      struct MYSQL_PLUGIN_VIO *vio, const unsigned char *pkt, int pkt_len,
+      int *result);
 } MYSQL_PLUGIN_VIO;
 struct MYSQL_SERVER_AUTH_INFO {
   char *user_name;
@@ -145,6 +159,8 @@ struct MYSQL_SERVER_AUTH_INFO {
   int password_used;
   const char *host_or_ip;
   unsigned int host_or_ip_length;
+  const char *additional_auth_string;
+  unsigned long additional_auth_string_length;
 };
 typedef int (*authenticate_user_t)(MYSQL_PLUGIN_VIO *vio,
                                    MYSQL_SERVER_AUTH_INFO *info);

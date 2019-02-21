@@ -1,4 +1,4 @@
-/* Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+/* Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License, version 2.0,
@@ -158,7 +158,7 @@ DECLARE_METHOD(bool, item_numeric_class, (log_item_class c));
 
 /**
   Set an integer value on a log_item.
-  Fails gracefully if not log_item_data is supplied, so it can safely
+  Fails gracefully if no log_item_data is supplied, so it can safely
   wrap log_line_item_set[_with_key]().
 
   @param  lid    log_item_data struct to set the value on
@@ -170,7 +170,7 @@ DECLARE_METHOD(bool, item_numeric_class, (log_item_class c));
 DECLARE_METHOD(bool, item_set_int, (log_item_data * lid, longlong i));
 /**
   Set a floating point value on a log_item.
-  Fails gracefully if not log_item_data is supplied, so it can safely
+  Fails gracefully if no log_item_data is supplied, so it can safely
   wrap log_line_item_set[_with_key]().
 
   @param  lid    log_item_data struct to set the value on
@@ -183,7 +183,7 @@ DECLARE_METHOD(bool, item_set_float, (log_item_data * lid, double f));
 
 /**
   Set a string value on a log_item.
-  Fails gracefully if not log_item_data is supplied, so it can safely
+  Fails gracefully if no log_item_data is supplied, so it can safely
   wrap log_line_item_set[_with_key]().
 
   @param  lid    log_item_data struct to set the value on
@@ -198,7 +198,7 @@ DECLARE_METHOD(bool, item_set_lexstring,
 
 /**
   Set a string value on a log_item.
-  Fails gracefully if not log_item_data is supplied, so it can safely
+  Fails gracefully if no log_item_data is supplied, so it can safely
   wrap log_line_item_set[_with_key]().
 
   @param  lid    log_item_data struct to set the value on
@@ -628,7 +628,6 @@ END_SERVICE_DEFINITION(log_builtins_string)
 */
 BEGIN_SERVICE_DEFINITION(log_builtins_tmp)
 // Are we shutting down yet?  Windows EventLog needs to know.
-DECLARE_METHOD(bool, connection_loop_aborted, (void));
 DECLARE_METHOD(size_t, notify_client,
                (void *thd, uint severity, uint code, char *to, size_t n,
                 const char *format, ...))
@@ -1203,6 +1202,23 @@ class LogEvent {
     va_start(args, errcode);
     set_message_by_errcode(errcode, args);
     va_end(args);
+
+    return *this;
+  }
+
+  /**
+    Find an error message by its MySQL error code. Substitute the % in that
+    message with the given arguments list, then add the result as the event's
+    message.
+
+    @param  errcode  MySQL error code for the message in question,
+                     e.g. ER_STARTUP
+    @param  args     varargs to satisfy any % in the message
+
+    @retval          the LogEvent, for easy fluent-style chaining.
+  */
+  LogEvent &lookupv(longlong errcode, va_list args) {
+    set_message_by_errcode(errcode, args);
 
     return *this;
   }
