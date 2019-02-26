@@ -1,30 +1,30 @@
-// Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved. 
-// 
-// This program is free software; you can redistribute it and/or modify 
-// it under the terms of the GNU General Public License, version 2.0, as 
-// published by the Free Software Foundation. 
-// 
-// This program is also distributed with certain software (including 
-// but not limited to OpenSSL) that is licensed under separate terms, 
-// as designated in a particular file or component or in included license 
-// documentation. The authors of MySQL hereby grant you an 
-// additional permission to link the program and your derivative works 
-// with the separately licensed software that they have included with 
-// MySQL. 
-// 
-// Without limiting anything contained in the foregoing, this file, 
-// which is part of <MySQL Product>, is also subject to the 
-// Universal FOSS Exception, version 1.0, a copy of which can be found at 
-// http://oss.oracle.com/licenses/universal-foss-exception. 
-// 
-// This program is distributed in the hope that it will be useful, but 
-// WITHOUT ANY WARRANTY; without even the implied warranty of 
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-// See the GNU General Public License, version 2.0, for more details. 
-// 
-// You should have received a copy of the GNU General Public License 
-// along with this program; if not, write to the Free Software Foundation, Inc., 
-// 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA 
+// Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+//
+// This program is free software; you can redistribute it and/or modify
+// it under the terms of the GNU General Public License, version 2.0, as
+// published by the Free Software Foundation.
+//
+// This program is also distributed with certain software (including
+// but not limited to OpenSSL) that is licensed under separate terms,
+// as designated in a particular file or component or in included license
+// documentation. The authors of MySQL hereby grant you an
+// additional permission to link the program and your derivative works
+// with the separately licensed software that they have included with
+// MySQL.
+//
+// Without limiting anything contained in the foregoing, this file,
+// which is part of <MySQL Product>, is also subject to the
+// Universal FOSS Exception, version 1.0, a copy of which can be found at
+// http://oss.oracle.com/licenses/universal-foss-exception.
+//
+// This program is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+// See the GNU General Public License, version 2.0, for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program; if not, write to the Free Software Foundation, Inc.,
+// 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 
 #include "odbctap.h"
 #include "../VersionInfo.h"
@@ -848,8 +848,49 @@ DECLARE_TEST(t_bug_11746572)
   return OK;
 }
 
+DECLARE_TEST(t_bug_29282638)
+{
+  SQLCHAR     col1_buf[128];
+  SQLLEN      col1_cb = 0;
+  SQLCHAR     col2_buf[10000];
+  SQLLEN      col2_cb = 0;
+
+  SQLCHAR     *param = (SQLCHAR*)"something";
+
+  ok_sql(hstmt, "DROP TABLE if exists bug_29282638");
+
+  ok_sql(hstmt, "CREATE TABLE bug_29282638(col1 VARCHAR(40), col2 BLOB)");
+
+  ok_sql(hstmt, "insert into bug_29282638 VALUES "
+         "('something', repeat('abc', 1000))");
+
+  ok_stmt(hstmt, SQLPrepare(hstmt, "SELECT * FROM bug_29282638 WHERE col1 = ?", SQL_NTS));
+  ok_stmt(hstmt, SQLBindParameter(hstmt, 1, SQL_PARAM_INPUT, SQL_C_CHAR, SQL_CHAR, 0, 0,
+                                  param, strlen(param), NULL));
+
+  ok_stmt(hstmt, SQLBindCol(hstmt, 1, SQL_C_CHAR, col1_buf, sizeof(col1_buf), &col1_cb));
+  ok_stmt(hstmt, SQLBindCol(hstmt, 2, SQL_C_BINARY, col2_buf, sizeof(col2_buf), &col2_cb));
+
+  ok_stmt(hstmt, SQLExecute(hstmt));
+
+  ok_stmt(hstmt, SQLFetch(hstmt));
+
+  is_str(col1_buf, param, strlen(param));
+  is_num(col1_cb, strlen(param));
+
+  is_str(col2_buf + 2997, "abc", 3);
+  is_num(col2_cb, 3000);
+
+  SQLFetch(hstmt);
+
+  ok_stmt(hstmt, SQLFreeStmt(hstmt, SQL_CLOSE));
+  ok_sql(hstmt, "DROP TABLE if exists bug_29282638");
+
+  return OK;
+}
 
 BEGIN_TESTS
+  ADD_TEST(t_bug_29282638)
   ADD_TEST(t_blob)
   ADD_TEST(t_1piecewrite2)
   ADD_TEST(t_putdata)
