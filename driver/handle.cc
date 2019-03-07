@@ -490,6 +490,8 @@ SQLRETURN SQL_API my_SQLAllocStmt(SQLHDBC hdbc,SQLHSTMT *phstmt)
   stmt->stmt_options= dbc->stmt_options;
   stmt->state= ST_UNKNOWN;
   stmt->dummy_state= ST_DUMMY_UNKNOWN;
+  stmt->ssps= NULL;
+  stmt->setpos_op = 0;
   myodbc_stpmov(stmt->error.sqlstate, "00000");
   init_parsed_query(&stmt->query);
   init_parsed_query(&stmt->orig_query);
@@ -698,6 +700,10 @@ SQLRETURN SQL_API my_SQLFreeStmtExtended(SQLHSTMT hstmt,SQLUSMALLINT fOption,
       x_free(stmt->array);
       stmt->array= 0;
       ssps_close(stmt);
+      if (stmt->ssps != NULL)
+      {
+        free_result_bind(stmt);
+      }
     }
 
     if (fOption == SQL_CLOSE)
@@ -736,7 +742,11 @@ SQLRETURN SQL_API my_SQLFreeStmtExtended(SQLHSTMT hstmt,SQLUSMALLINT fOption,
     desc_free(stmt->ird);
 
     x_free(stmt->cursor.name);
-
+    if (stmt->ssps != NULL)
+    {
+      mysql_stmt_close(stmt->ssps);
+      stmt->ssps = NULL;
+    }
     delete_parsed_query(&stmt->query);
     delete_parsed_query(&stmt->orig_query);
     delete_param_bind(stmt->param_bind);

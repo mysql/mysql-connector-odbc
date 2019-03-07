@@ -503,6 +503,7 @@ typedef struct tagSTMT
   DESC *setpos_apd;
   SQLSETPOSIROW setpos_row;
   SQLUSMALLINT setpos_lock;
+  SQLUSMALLINT setpos_op;
 
   MYSQL_STMT *ssps;
   MYSQL_BIND *result_bind;

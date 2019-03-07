@@ -38,7 +38,7 @@
 
 BOOL ssps_used(STMT *stmt)
 {
-  return stmt->ssps != NULL;
+  return (stmt->ssps != NULL);
 }
 
 

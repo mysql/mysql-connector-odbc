@@ -1,30 +1,30 @@
-// Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved. 
-// 
-// This program is free software; you can redistribute it and/or modify 
-// it under the terms of the GNU General Public License, version 2.0, as 
-// published by the Free Software Foundation. 
-// 
-// This program is also distributed with certain software (including 
-// but not limited to OpenSSL) that is licensed under separate terms, 
-// as designated in a particular file or component or in included license 
-// documentation. The authors of MySQL hereby grant you an 
-// additional permission to link the program and your derivative works 
-// with the separately licensed software that they have included with 
-// MySQL. 
-// 
-// Without limiting anything contained in the foregoing, this file, 
-// which is part of MySQL Connector/ODBC, is also subject to the 
-// Universal FOSS Exception, version 1.0, a copy of which can be found at 
-// http://oss.oracle.com/licenses/universal-foss-exception. 
-// 
-// This program is distributed in the hope that it will be useful, but 
-// WITHOUT ANY WARRANTY; without even the implied warranty of 
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-// See the GNU General Public License, version 2.0, for more details. 
-// 
-// You should have received a copy of the GNU General Public License 
-// along with this program; if not, write to the Free Software Foundation, Inc., 
-// 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA 
+// Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+//
+// This program is free software; you can redistribute it and/or modify
+// it under the terms of the GNU General Public License, version 2.0, as
+// published by the Free Software Foundation.
+//
+// This program is also distributed with certain software (including
+// but not limited to OpenSSL) that is licensed under separate terms,
+// as designated in a particular file or component or in included license
+// documentation. The authors of MySQL hereby grant you an
+// additional permission to link the program and your derivative works
+// with the separately licensed software that they have included with
+// MySQL.
+//
+// Without limiting anything contained in the foregoing, this file,
+// which is part of MySQL Connector/ODBC, is also subject to the
+// Universal FOSS Exception, version 1.0, a copy of which can be found at
+// http://oss.oracle.com/licenses/universal-foss-exception.
+//
+// This program is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+// See the GNU General Public License, version 2.0, for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program; if not, write to the Free Software Foundation, Inc.,
+// 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 
 /**
   @file  cursor.c
@@ -128,7 +128,7 @@ char *check_if_positioned_cursor_exists(STMT *pStmt, STMT **pStmtCursor)
 
   if (cursorName != NULL)
   {
-    
+
     LIST *list_element;
     DBC  *dbc= (DBC *)pStmt->dbc;
     char * wherePos= get_token(&pStmt->query, TOKEN_COUNT(&pStmt->query)- 4);
@@ -300,7 +300,7 @@ void set_current_cursor_data(STMT *stmt, SQLUINTEGER irow)
   long       nrow, row_pos;
   MYSQL_RES  *result= stmt->result;
 
-  
+
   /*
     If irow exists, then position the current row to point
     to the rowsetsize+irow, this is needed for positioned
@@ -672,7 +672,7 @@ static SQLRETURN append_all_fields(STMT *stmt, DYNAMIC_STRING *dynQuery)
   @purpose : build the where clause
 */
 
-static SQLRETURN build_where_clause( STMT * pStmt, 
+static SQLRETURN build_where_clause( STMT * pStmt,
                                      DYNAMIC_STRING * dynQuery,
                                      SQLUSMALLINT     irow )
 {
@@ -753,7 +753,7 @@ static SQLRETURN build_set_clause(STMT *stmt, SQLULEN irow,
         field= mysql_fetch_field_direct(result,ncol);
         arrec= desc_get_rec(stmt->ard, ncol, FALSE);
         irrec= desc_get_rec(stmt->ird, ncol, FALSE);
-        
+
         if (!irrec)
         {
           return SQL_ERROR; // The error info is already set inside desc_get_rec()
@@ -869,9 +869,9 @@ SQLRETURN my_pos_delete(STMT *stmt, STMT *stmtParam,
   @purpose : updates the positioned cursor row
 */
 
-SQLRETURN my_pos_update( STMT *             pStmtCursor, 
+SQLRETURN my_pos_update( STMT *             pStmtCursor,
                          STMT *             pStmt,
-                         SQLUSMALLINT       nRow, 
+                         SQLUSMALLINT       nRow,
                          DYNAMIC_STRING *   dynQuery )
 {
     SQLRETURN   rc;
@@ -969,15 +969,15 @@ static SQLRETURN fetch_bookmark(STMT *stmt)
     data_seek(stmt, (my_ulonglong)rowset_pos);
     if (arrec->data_ptr)
     {
-      TargetValuePtr= ptr_offset_adjust(arrec->data_ptr, 
-                                        stmt->ard->bind_offset_ptr, 
-                                        stmt->ard->bind_type, 
+      TargetValuePtr= ptr_offset_adjust(arrec->data_ptr,
+                                        stmt->ard->bind_offset_ptr,
+                                        stmt->ard->bind_type,
                                         arrec->octet_length, rowset_pos - 1);
     }
 
     curr_bookmark_index= atol((const char*) TargetValuePtr);
 
-    nReturn= myodbc_single_fetch(stmt, SQL_FETCH_ABSOLUTE, 
+    nReturn= myodbc_single_fetch(stmt, SQL_FETCH_ABSOLUTE,
                                 curr_bookmark_index,
                                 stmt->ird->rows_processed_ptr,
                                 stmt->stmt_options.rowStatusPtr_ex ?
@@ -1009,9 +1009,9 @@ static SQLRETURN setpos_delete_bookmark(STMT *stmt, DYNAMIC_STRING *dynQuery)
   SQLPOINTER TargetValuePtr= NULL;
   long curr_bookmark_index= 0;
 
-  /* 
-     we want to work with base table name - 
-     we expect call to fail if more than one base table involved 
+  /*
+     we want to work with base table name -
+     we expect call to fail if more than one base table involved
   */
   if (!(table_name= find_used_table(stmt)))
   {
@@ -1041,9 +1041,9 @@ static SQLRETURN setpos_delete_bookmark(STMT *stmt, DYNAMIC_STRING *dynQuery)
   {
     if (arrec->data_ptr)
     {
-      TargetValuePtr= ptr_offset_adjust(arrec->data_ptr, 
-                                        stmt->ard->bind_offset_ptr, 
-                                        stmt->ard->bind_type, 
+      TargetValuePtr= ptr_offset_adjust(arrec->data_ptr,
+                                        stmt->ard->bind_offset_ptr,
+                                        stmt->ard->bind_type,
                                         arrec->octet_length, rowset_pos);
     }
 
@@ -1196,9 +1196,9 @@ static SQLRETURN setpos_update_bookmark(STMT *stmt, DYNAMIC_STRING *dynQuery)
   {
     if (arrec->data_ptr)
     {
-      TargetValuePtr= ptr_offset_adjust(arrec->data_ptr, 
-                                        stmt->ard->bind_offset_ptr, 
-                                        stmt->ard->bind_type, 
+      TargetValuePtr= ptr_offset_adjust(arrec->data_ptr,
+                                        stmt->ard->bind_offset_ptr,
+                                        stmt->ard->bind_type,
                                         arrec->octet_length, rowset_pos);
     }
 
@@ -1234,7 +1234,7 @@ static SQLRETURN setpos_update_bookmark(STMT *stmt, DYNAMIC_STRING *dynQuery)
       stmt->ird->array_status_ptr[curr_bookmark_index]= SQL_ROW_UPDATED;
     }
 
-    ++rowset_pos; 
+    ++rowset_pos;
   }
 
   global_set_affected_rows(stmt, affected);
@@ -1328,13 +1328,13 @@ static SQLRETURN setpos_update(STMT *stmt, SQLUSMALLINT irow,
             to handle this. see break_insert.
 
     \param  stmt            Viable statement.
-    \param  irow            Position of the row in the rowset on which to perform the operation. 
+    \param  irow            Position of the row in the rowset on which to perform the operation.
                             If RowNumber is 0, the operation applies to every row in the rowset.
-    \param  ext_query       The INSERT statement up to and including the VALUES. So something 
+    \param  ext_query       The INSERT statement up to and including the VALUES. So something
                             like; "INSERT .... VALUES"
-                            
+
     \return SQLRETURN
-    
+
     \retval SQLERROR        Something went wrong.
     \retval SQL_SUCCESS     Success!
 */
@@ -1396,7 +1396,7 @@ static SQLRETURN batch_insert( STMT *stmt, SQLULEN irow, DYNAMIC_STRING *ext_que
                   aprec= desc_get_rec(stmt->setpos_apd, ncol, FALSE);
                 else
                   desc_rec_init_apd(aprec);
-                
+
                 if (arrec)
                 {
                   if (aprec->par.is_dae)
@@ -1530,7 +1530,7 @@ static SQLRETURN batch_insert( STMT *stmt, SQLULEN irow, DYNAMIC_STRING *ext_que
 
           _len= sprintf(_value, "%ld", i + 1);
           res= sql_get_bookmark_data(stmt, arrec->concise_type, (uint)0,
-                                TargetValuePtr, arrec->octet_length, 
+                                TargetValuePtr, arrec->octet_length,
                                 pcbValue, _value, _len, arrec);
 
           if (!SQL_SUCCEEDED(res))
@@ -1571,7 +1571,7 @@ static SQLRETURN setpos_dae_check_and_init(STMT *stmt, SQLSETPOSIROW irow,
 {
   int dae_rec;
   SQLRETURN rc;
-  
+
   /*
     If this statement hasn't already had the dae params set,
     check if there are any and begin the SQLParamData() sequence.
@@ -1583,7 +1583,7 @@ static SQLRETURN setpos_dae_check_and_init(STMT *stmt, SQLSETPOSIROW irow,
       return set_stmt_error(stmt, "HYC00", "Multiple row insert "
                             "with data at execution not supported",
                             0);
-    
+
     /* create APD, and copy ARD to it */
     stmt->setpos_apd= desc_alloc(stmt, SQL_DESC_ALLOC_AUTO,
                                  DESC_APP, DESC_PARAM);
@@ -1592,7 +1592,7 @@ static SQLRETURN setpos_dae_check_and_init(STMT *stmt, SQLSETPOSIROW irow,
                             4001);
     if(rc= stmt_SQLCopyDesc(stmt, stmt->ard, stmt->setpos_apd))
       return rc;
-                  
+
     stmt->current_param= dae_rec;
     stmt->dae_type= dae_type;
     stmt->setpos_row= irow;
@@ -1606,7 +1606,7 @@ static SQLRETURN setpos_dae_check_and_init(STMT *stmt, SQLSETPOSIROW irow,
 
 /*!
     \brief  Shadow function for SQLSetPos.
-    
+
             Sets the cursor position in a rowset and allows an application
             to refresh data in the rowset or to update or delete data in
             the result set.
@@ -1656,7 +1656,7 @@ SQLRETURN SQL_API my_SQLSetPos(SQLHSTMT hstmt, SQLSETPOSIROW irow,
       else if (irow < stmt->current_row)
       {
         /* Same HY109 Invalid cursor position*/
-        return set_error(stmt, MYERR_S1109,NULL, 0); 
+        return set_error(stmt, MYERR_S1109,NULL, 0);
       }
     }
 
@@ -1877,9 +1877,17 @@ SQLCHAR *MySQLGetCursorName(HSTMT hstmt)
 SQLRETURN SQL_API SQLSetPos(SQLHSTMT hstmt, SQLSETPOSIROW irow,
                             SQLUSMALLINT fOption, SQLUSMALLINT fLock)
 {
+    SQLRETURN rc = SQL_SUCCESS;
     CHECK_HANDLE(hstmt);
+    STMT *stmt = (STMT*)hstmt;
 
-    return my_SQLSetPos(hstmt,irow,fOption,fLock);
+    // This operation number has to prevent using SSPS when SQLSetPos()
+    // has to generate its own query different from the current statement.
+    stmt->setpos_op = fOption;
+
+    rc = my_SQLSetPos(hstmt, irow, fOption, fLock);
+    stmt->setpos_op = 0;
+    return rc;
 }
 
 /*

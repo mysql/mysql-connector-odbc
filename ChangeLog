@@ -5,6 +5,7 @@
   Bugs fixed:
   * Prepared statements (server) return no results, client statements work
     (Bug# 29282638/93895)
+  * Memory leak in SQLSetPos with SQL_DELETE (Bug# 29434462)
 
   Built using MySQL 8.0.16
 
