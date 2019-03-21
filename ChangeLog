@@ -1,3 +1,29 @@
+5.3.13
+
+  Security Notes:
+  * Connector/ODBC 5.3.13 Commercial upgrades the linked OpenSSL
+    library to version 1.0.2r which has been publicly reported
+    as not vulnerable to CVE-2019-1559
+    (Bug #29489006, CVE-2019-1559)
+  Functionality added or changed:
+  Bugs fixed:
+  * SQL_NO_DATA when fetching VARCHAR(500) with filter
+    (Bug# 29512548/94545)
+
+  Built using MySQL 5.7.26
+
+
+5.3.12
+
+  Security Notes:
+  Functionality added or changed:
+  * New connection option for ODBC driver to enable LOAD DATA LOCAL INFILE
+  Bugs fixed:
+  * Dynamic linking is broken in MyODBC 5.3.11 (Bug# 28609434/92319)
+  * Crash in SQLBulkOperations when NO_SSPS is set to 0 (Bug #28289320)
+
+  Built using MySQL 5.7.25
+
 5.3.11
 
   Security Notes:
