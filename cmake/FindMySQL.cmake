@@ -598,15 +598,26 @@ elseif(MYSQL_CONFIG_EXECUTABLE)
   ENDIF()
 
 
-  # In case mysql_config returns several paths: libmysqlclient is last
-  LIST(LENGTH MYSQL_LIB_DIR n)
-  IF( ${n} GREATER 1)
-    #copy list of directories
+  LIST(LENGTH MYSQL_LIB_DIR dir_cnt)
+  MESSAGE(STATUS "Libraries paths found: ${n}")
+  IF(${dir_cnt} GREATER 1)
     SET(MYSQL_LIB_DIR_LIST ${MYSQL_LIB_DIR})
+    MESSAGE(STATUS "MYSQL_LIB_DIR_LIST = ${MYSQL_LIB_DIR_LIST}")
 
-    MATH(EXPR ind "${n}-1")
-    LIST(GET MYSQL_LIB_DIR ${ind} MYSQL_LIB_DIR)
+    FOREACH(_path_to_check IN LISTS MYSQL_LIB_DIR)
+      FIND_LIBRARY(_mysql_client_lib_var 
+        NAMES ${_search_libs}
+        PATHS ${_path_to_check}
+        NO_DEFAULT_PATH
+      )
+      IF(_mysql_client_lib_var)
+        MESSAGE(STATUS "CLIENT LIB VAR: ${_mysql_client_lib_var}")
+        unset(_mysql_client_lib_var CACHE)
+        set(MYSQL_LIB_DIR ${_path_to_check})
+      ENDIF()
+    ENDFOREACH(_path_to_check)
   ENDIF()
+
   if(NOT MYSQL_LIB_DIR)
     message(FATAL_ERROR "Could not find the library dir from running "
                         "\"${MYSQL_CONFIG_EXECUTABLE}\"")
@@ -827,6 +838,7 @@ endif()
 # set(CMAKE_CXX_FLAGS_${CMAKEBT}     "${CMAKE_CXX_FLAGS_${CMAKEBT}} ${MYSQL_CXXFLAGS}")
 
 include_directories("${MYSQL_INCLUDE_DIR}")
+
 link_directories("${MYSQL_LIB_DIR}")
 
 MESSAGE(STATUS "MYSQL_LIB_DIR_LIST = ${MYSQL_LIB_DIR_LIST}")
