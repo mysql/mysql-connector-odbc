@@ -116,16 +116,16 @@ inline unsigned long long int my_getsystime() {
    The maximum timespec value used to represent "inifinity" (as when
    requesting an "inifinite" timeout.
  */
-/* constexpr const timespec TIMESPEC_POSINF = {
-    std::numeric_limits<decltype(timespec::tv_sec)>::max(), 999999999};
-*/
+/*constexpr const timespec TIMESPEC_POSINF = {
+    std::numeric_limits<decltype(timespec::tv_sec)>::max(), 999999999};*/
+
 /** Type alias to reduce chance of coversion errors on timeout values. */
 using Timeout_type = std::uint64_t;
 
 /** Value representing "infinite" timeout. */
-/* constexpr const Timeout_type TIMEOUT_INF =
-    std::numeric_limits<Timeout_type>::max() - 1;
-*/
+/*constexpr const Timeout_type TIMEOUT_INF =
+    std::numeric_limits<Timeout_type>::max() - 1;*/
+
 void set_timespec_nsec(struct timespec *abstime, Timeout_type nsec);
 void set_timespec(struct timespec *abstime, Timeout_type sec);
 timespec timespec_now();
