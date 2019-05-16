@@ -65,9 +65,11 @@ extern CHARSET_INFO *utf8_charset_info;
 */
 #define is_utf8_charset(number) \
   (number == 33 || number == 83 || \
-   (number >= 192 && number <= 211) || number == 253 || \
+   (number >= 192 && number <= 215) || number == 253 || \
    number == 45 || number == 46 || \
-   (number >= 224 && number <= 243))
+   number == 76 || \
+   (number >= 224 && number <= 247) || \
+   (number >= 255 && number <= 309))
 
 
 int utf16toutf32(UTF16 *i, UTF32 *u);
