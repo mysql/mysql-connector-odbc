@@ -3,7 +3,9 @@
   Security Notes:
   Functionality added or changed:
   Bugs fixed:
-
+  * myodbc-installer does not show all DSN options (Bug #29753227/95290)
+  * Connector/ODBC bug when retrieving TEXT records using parameterized
+    queries (Bug #28790708/92078)
   Built using MySQL 8.0.17
 
 8.0.16
