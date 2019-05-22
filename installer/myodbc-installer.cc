@@ -505,6 +505,7 @@ int list_datasource_details(DataSource *ds)
   if (ds->sslcipher  ) printf("SSL cipher:          %s\n", ds_get_utf8attr(ds->sslcipher, &ds->sslcipher8));
   if (ds->sslmode   ) printf("SSL Mode:             %s\n", ds_get_utf8attr(ds->sslmode, &ds->sslmode8));
   if (ds->sslverify) printf("Verify SSL cert      yes\n");
+  if (ds->rsakey)    printf("RSA public key       %s\n", ds_get_utf8attr(ds->rsakey, &ds->rsakey8));
   if (ds->port       ) printf("Port:                %d\n", ds->port);
   if (ds->plugin_dir  ) printf("Plugin directory:    %s\n", ds_get_utf8attr(ds->plugin_dir, &ds->plugin_dir8));
   if (ds->default_auth) printf("Default Authentication Library: %s\n", ds_get_utf8attr(ds->default_auth, &ds->default_auth8));
@@ -530,6 +531,7 @@ int list_datasource_details(DataSource *ds)
   if (ds->dont_cache_result) printf("\tNO_CACHE\n");
   if (ds->force_use_of_forward_only_cursors) printf("\tFORWARD_CURSOR\n");
   if (ds->auto_reconnect) printf("\tAUTO_RECONNECT\n");
+  if (ds->clientinteractive) printf("\tINTERACTIVE\n");
   if (ds->auto_increment_null_search) printf("\tAUTO_IS_NULL\n");
   if (ds->zero_date_to_min) printf("\tZERO_DATE_TO_MIN\n");
   if (ds->min_date_to_zero) printf("\tMIN_DATE_TO_ZERO\n");
@@ -537,6 +539,19 @@ int list_datasource_details(DataSource *ds)
   if (ds->limit_column_size) printf("\tCOLUMN_SIZE_S32\n");
   if (ds->handle_binary_as_char) printf("\tNO_BINARY_RESULT\n");
   if (ds->default_bigint_bind_str) printf("\tDFLT_BIGINT_BIND_STR\n");
+  if (ds->no_date_overflow) printf("\tNO_DATE_OVERFLOW\n");
+  if (ds->enable_local_infile) printf("\tENABLE_LOCAL_INFILE\n");
+  if (ds->no_tls_1) printf("\tNO_TLS_1_0\n");
+  if (ds->no_tls_1_1) printf("\tNO_TLS_1_1\n");
+  if (ds->no_tls_1_2) printf("\tNO_TLS_1_2\n");
+  if (ds->no_ssps) printf("\tNO_SSPS\n");
+  if (ds->no_information_schema) printf("\tNO_I_S\n");
+  if (ds->cursor_prefetch_number) printf("\tPREFETCH=%d\n", ds->cursor_prefetch_number);
+  if (ds->readtimeout) printf("\tREADTIMEOUT=%d\n", ds->readtimeout);
+  if (ds->writetimeout) printf("\tWRITETIMEOUT=%d\n", ds->writetimeout);
+  if (ds->can_handle_exp_pwd) printf("\tCAN_HANDLE_EXP_PWD\n");
+  if (ds->enable_cleartext_plugin) printf("\tENABLE_CLEARTEXT_PLUGIN\n");
+  if (ds->get_server_public_key) printf("\tGET_SERVER_PUBLIC_KEY\n");
 
   return 0;
 }
