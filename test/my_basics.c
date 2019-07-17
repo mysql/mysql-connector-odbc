@@ -1084,7 +1084,6 @@ DECLARE_TEST(t_bug52996)
     Use ';' as separator because sprintf doesn't work after '\0'
     The last attribute in the list must end with ';'
   */
-
   sprintf((char*)attrs, "DSN=bug52996dsn;SERVER=%s;USER=%s;PASSWORD=%s;"
                           "DATABASE=%s;FOUND_ROWS=1;",
                           myserver, myuid, mypwd, mydb);

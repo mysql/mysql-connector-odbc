@@ -306,6 +306,8 @@ int main(int argc, char **argv) \
     myserver= (SQLCHAR *)getenv("TEST_SERVER"); \
   if (getenv("TEST_PORT")) \
     myport= atoi(getenv("TEST_PORT")); \
+  if (getenv("MTR_PORT_BASE")) \
+    myport= atoi(getenv("MTR_PORT_BASE")); \
   if (getenv("TEST_ENABLE_POOLING")) \
     myenable_pooling= atoi(getenv("TEST_ENABLE_POOLING")); \
   if (getenv("TEST_DEFAULTAUTH")) \
