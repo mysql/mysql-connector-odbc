@@ -64,7 +64,7 @@
 #include "mysql/components/services/psi_memory_bits.h"
 #include "mysql/components/services/psi_stage_bits.h"
 #include "mysql/psi/psi_base.h"
-//#include "stream_cipher.h"
+//#include "sql/stream_cipher.h"
 
 struct CHARSET_INFO;
 struct MY_CHARSET_LOADER;

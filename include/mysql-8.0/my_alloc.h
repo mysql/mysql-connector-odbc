@@ -335,10 +335,6 @@ static inline void init_alloc_root(PSI_memory_key key, MEM_ROOT *root,
   ::new (root) MEM_ROOT(key, block_size);
 }
 
-static inline void *alloc_root(MEM_ROOT *root, size_t length) {
-  return root->Alloc(length);
-}
-
 void free_root(MEM_ROOT *root, myf flags);
 
 /**

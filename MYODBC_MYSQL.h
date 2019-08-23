@@ -144,6 +144,10 @@ extern "C"
       (array->elements - idx)*array->size_of_element);
   }
 
+  static inline void *alloc_root(MEM_ROOT *root, size_t length) {
+    return root->Alloc(length);
+  }
+
 
 /* Get rid of defines from my_config.h that conflict with our myconf.h */
 #ifdef VERSION
