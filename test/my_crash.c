@@ -1,38 +1,39 @@
-// Copyright (c) 2018, 2014, Oracle and/or its affiliates. All rights reserved. 
-// 
-// This program is free software; you can redistribute it and/or modify 
-// it under the terms of the GNU General Public License, version 2.0, as 
-// published by the Free Software Foundation. 
-// 
-// This program is also distributed with certain software (including 
-// but not limited to OpenSSL) that is licensed under separate terms, 
-// as designated in a particular file or component or in included license 
-// documentation. The authors of MySQL hereby grant you an 
-// additional permission to link the program and your derivative works 
-// with the separately licensed software that they have included with 
-// MySQL. 
-// 
-// Without limiting anything contained in the foregoing, this file, 
-// which is part of <MySQL Product>, is also subject to the 
-// Universal FOSS Exception, version 1.0, a copy of which can be found at 
-// http://oss.oracle.com/licenses/universal-foss-exception. 
-// 
-// This program is distributed in the hope that it will be useful, but 
-// WITHOUT ANY WARRANTY; without even the implied warranty of 
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-// See the GNU General Public License, version 2.0, for more details. 
-// 
-// You should have received a copy of the GNU General Public License 
-// along with this program; if not, write to the Free Software Foundation, Inc., 
-// 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA 
+// Copyright (c) 2018, 2014, Oracle and/or its affiliates. All rights reserved.
+//
+// This program is free software; you can redistribute it and/or modify
+// it under the terms of the GNU General Public License, version 2.0, as
+// published by the Free Software Foundation.
+//
+// This program is also distributed with certain software (including
+// but not limited to OpenSSL) that is licensed under separate terms,
+// as designated in a particular file or component or in included license
+// documentation. The authors of MySQL hereby grant you an
+// additional permission to link the program and your derivative works
+// with the separately licensed software that they have included with
+// MySQL.
+//
+// Without limiting anything contained in the foregoing, this file,
+// which is part of <MySQL Product>, is also subject to the
+// Universal FOSS Exception, version 1.0, a copy of which can be found at
+// http://oss.oracle.com/licenses/universal-foss-exception.
+//
+// This program is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+// See the GNU General Public License, version 2.0, for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program; if not, write to the Free Software Foundation, Inc.,
+// 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 
 #include "odbctap.h"
 #include "../VersionInfo.h"
 
+
 /*
   18641824 SQLFOREIGNKEYS() CRASHING WHEN SQL_MODE='ANSI_QUOTES'
   26388694 SQLForeignKeys() returns empty result with NO_I_S=0
-  
+
   This test case will run with NO_I_S=0 and NO_I_S=1 and test for
   two bugs for each NO_I_S value
 */
@@ -139,7 +140,7 @@ DECLARE_TEST(t_bug19148246)
 
 
 /*
-  Bug #69950 Visual Studio 2010 crashes when reading rows from any 
+  Bug #69950 Visual Studio 2010 crashes when reading rows from any
   table in Server Explorer
 */
 DECLARE_TEST(t_bug69950)
@@ -148,7 +149,7 @@ DECLARE_TEST(t_bug69950)
   ok_sql(hstmt, "DROP TABLE IF EXISTS t_bug69950");
 
   /* Create an EMPTY fake result set */
-  ok_stmt(hstmt, SQLTables(hstmt, mydb, SQL_NTS, NULL, 0, 
+  ok_stmt(hstmt, SQLTables(hstmt, mydb, SQL_NTS, NULL, 0,
                            "t_bug69950", SQL_NTS, "TABLE", SQL_NTS));
 
   expect_stmt(hstmt, SQLFetch(hstmt), SQL_NO_DATA_FOUND);
@@ -203,7 +204,7 @@ DECLARE_TEST(t_bug70642)
 
 /**
   Bug#31067: SEGMENTATION FAULT IN SQLCOLUMNS IF COLUMN/TABLE NAME IS INVALID
-  If column name length is larger then 129 and table name larger then 256 result in 
+  If column name length is larger then 129 and table name larger then 256 result in
   segementation fault.
 */
 DECLARE_TEST(t_bug17358838)
@@ -238,7 +239,7 @@ DECLARE_TEST(t_bug17358838)
 
 
 /**
-  Bug 17587913 Connect crash if the catalog name given to SQLSetConnectAttr 
+  Bug 17587913 Connect crash if the catalog name given to SQLSetConnectAttr
   IS INVALID
 */
 DECLARE_TEST(t_bug17587913)
@@ -256,10 +257,10 @@ DECLARE_TEST(t_bug17587913)
                           "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"\
                           "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"\
                           "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
-  /* 
+  /*
     We are not going to use alloc_basic_handles() for a special purpose:
     SQLSetConnectAttr() is to be called before the connection is made
-  */  
+  */
   ok_env(henv, SQLAllocHandle(SQL_HANDLE_DBC, henv, &hdbc1));
 
   /* getting error here */
@@ -272,7 +273,7 @@ DECLARE_TEST(t_bug17587913)
   SQLGetConnectAttr(hdbc1, SQL_ATTR_CURRENT_CATALOG, str, 100, &len);
 
   /* The driver crashes here on getting connected */
-  SQLConnect(hdbc1, mydsn, SQL_NTS, NULL, SQL_NTS, NULL, SQL_NTS);  
+  SQLConnect(hdbc1, mydsn, SQL_NTS, NULL, SQL_NTS, NULL, SQL_NTS);
   SQLDisconnect(hdbc1);
   SQLFreeConnect(hdbc1);
 
@@ -281,7 +282,7 @@ DECLARE_TEST(t_bug17587913)
 
 
 /**
-  Bug #17857204 SQLFETCH() CRASHING WHEN EXECUTE USING 
+  Bug #17857204 SQLFETCH() CRASHING WHEN EXECUTE USING
   UNIXODBC 2.3.2 VERSION
 */
 DECLARE_TEST(t_bug17857204)
@@ -306,12 +307,12 @@ DECLARE_TEST(t_bug17857204)
                                              "INNER JOIN bug17857204 AS a2 "\
                                              "WHERE a1.id=a2.id and a2.id>=?",
                                              SQL_NTS));
-  ok_stmt(hstmt, SQLBindParameter(hstmt, 1, SQL_PARAM_INPUT, SQL_C_ULONG, 
+  ok_stmt(hstmt, SQLBindParameter(hstmt, 1, SQL_PARAM_INPUT, SQL_C_ULONG,
           SQL_NUMERIC, 4, 0, &uintval, 0,  &len));
 
   ok_stmt(hstmt, SQLExecute(hstmt));
   ok_stmt(hstmt, SQLNumResultCols(hstmt,&col_count));
-  
+
   while (1)
   {
     SQLRETURN rc= 0;
@@ -321,10 +322,10 @@ DECLARE_TEST(t_bug17857204)
     {
       break;
     }
-    
+
     for (i= 1; i <= col_count; i++)
     {
-      ok_stmt(hstmt, SQLGetData(hstmt, i, SQL_C_CHAR, TmpBuff, 
+      ok_stmt(hstmt, SQLGetData(hstmt, i, SQL_C_CHAR, TmpBuff,
                                 sizeof(TmpBuff), &len));
     }
   }
@@ -338,7 +339,7 @@ DECLARE_TEST(t_bug17857204)
 
 
 /**
-  Bug #17854697 SEGMENTATION FAULT IN SQLSPECIALCOLUMNS IF TABLE NAME IS 
+  Bug #17854697 SEGMENTATION FAULT IN SQLSPECIALCOLUMNS IF TABLE NAME IS
   INVALID
 */
 DECLARE_TEST(t_bug17854697)
@@ -370,7 +371,7 @@ DECLARE_TEST(t_bug17854697)
 
   expect_stmt(hstmt, SQLForeignKeys(hstmt, any_name, SQL_NTS, NULL, 0,
                                 any_name, SQL_NTS, any_name, SQL_NTS,
-                                any_name, SQL_NTS, any_name, SQL_NTS), 
+                                any_name, SQL_NTS, any_name, SQL_NTS),
                      SQL_ERROR);
   ok_stmt(hstmt, SQLFreeStmt(hstmt, SQL_CLOSE));
 
@@ -379,7 +380,7 @@ DECLARE_TEST(t_bug17854697)
   ok_stmt(hstmt, SQLFreeStmt(hstmt, SQL_CLOSE));
 
   expect_stmt(hstmt, SQLProcedureColumns(hstmt, any_name, SQL_NTS, NULL, 0,
-                                any_name, SQL_NTS, any_name, SQL_NTS), 
+                                any_name, SQL_NTS, any_name, SQL_NTS),
                      SQL_ERROR);
   ok_stmt(hstmt, SQLFreeStmt(hstmt, SQL_CLOSE));
 
@@ -387,8 +388,8 @@ DECLARE_TEST(t_bug17854697)
                                 any_name, SQL_NTS), SQL_ERROR);
   ok_stmt(hstmt, SQLFreeStmt(hstmt, SQL_CLOSE));
 
-  expect_stmt(hstmt, SQLSpecialColumns(hstmt, SQL_BEST_ROWID, any_name, SQL_NTS, 
-                                NULL, 0, any_name, SQL_NTS, SQL_SCOPE_SESSION, 
+  expect_stmt(hstmt, SQLSpecialColumns(hstmt, SQL_BEST_ROWID, any_name, SQL_NTS,
+                                NULL, 0, any_name, SQL_NTS, SQL_SCOPE_SESSION,
                                 SQL_NULLABLE), SQL_ERROR);
   ok_stmt(hstmt, SQLFreeStmt(hstmt, SQL_CLOSE));
 
@@ -417,7 +418,7 @@ DECLARE_TEST(t_bug17999659)
   ok_env(henv, SQLAllocHandle(SQL_HANDLE_DBC, henv, &hdbc1));
 
   /* getting error here */
-  expect_dbc(hdbc1, get_connection(&hdbc1, NULL, NULL, NULL, NULL, 
+  expect_dbc(hdbc1, get_connection(&hdbc1, NULL, NULL, NULL, NULL,
              "CHARSET=wrongcharset"), SQL_ERROR);
 
   ok_con(hdbc1, SQLFreeConnect(hdbc1));
@@ -425,7 +426,7 @@ DECLARE_TEST(t_bug17999659)
 }
 
 /*
-  Bug #17966018 DRIVER AND MYODBC-INSTALLER CRASH WITH LONG OPTION 
+  Bug #17966018 DRIVER AND MYODBC-INSTALLER CRASH WITH LONG OPTION
   NAMES (>100) AND VALUES (>255)
 */
 DECLARE_TEST(t_bug17966018)
@@ -438,7 +439,7 @@ DECLARE_TEST(t_bug17966018)
   /* This makes a really long SETUP=000000...0;OPTION_0000000000...0=1 */
   sprintf(opt_buff, "OPTION_%0*d=1", 1000, 0);
 
-  result_connect= alloc_basic_handles_with_opt(&henv1, &hdbc1, &hstmt1, NULL, 
+  result_connect= alloc_basic_handles_with_opt(&henv1, &hdbc1, &hstmt1, NULL,
                                                NULL, NULL, NULL, opt_buff);
   is_num(result_connect, FAIL);
 
@@ -469,7 +470,7 @@ DECLARE_TEST(t_bug17841121)
     ok_stmt(hstmt1, SQLBindCol(hstmt1, 1, SQL_C_LONG, &exp_result, 0, NULL));
 
     /* set it to null, getting rid of the expard */
-    ok_stmt(hstmt1, SQLSetStmtAttr(hstmt1, SQL_ATTR_APP_ROW_DESC, 
+    ok_stmt(hstmt1, SQLSetStmtAttr(hstmt1, SQL_ATTR_APP_ROW_DESC,
                                   SQL_NULL_HANDLE, 0));
 
     ok_stmt(hstmt1, SQLExecDirect(hstmt1, (SQLCHAR*)"select 1", SQL_NTS));
@@ -487,7 +488,7 @@ DECLARE_TEST(t_bug17841121)
       /* Lets assign each element its number in the array */
       num[i]= i;
     }
-    
+
     /* this might crash, but no guarantee */
     ok_desc(expard, SQLFreeHandle(SQL_HANDLE_DESC, expard));
 
@@ -559,7 +560,7 @@ DECLARE_TEST(t_bookmark_update_zero_rec)
 }
 
 
-/* 
+/*
   Bug#17085344: SEGMENTATION FAULT IN MYODBC_CASECMP WHEN QUERY IS EMPTY
 */
 DECLARE_TEST(t_bug17085344)
@@ -571,7 +572,7 @@ DECLARE_TEST(t_bug17085344)
 }
 
 
-/* 
+/*
   Bug#18165197: SQLNUMRESULTCOLS() WITH NULL PARAMETER RESULTS IN
   SEGMENTATION FAULT
 */
@@ -613,7 +614,7 @@ DECLARE_TEST(t_bug18325878)
   ok_stmt(hstmt, SQLPrepare(hstmt, (SQLCHAR*)"INSERT INTO t_bug18325878 VALUES (?+1)", SQL_NTS));
 
   ok_stmt(hstmt, SQLBindParameter(hstmt, 1, SQL_PARAM_INPUT, SQL_C_ULONG,
-                                  SQL_NUMERIC, sizeof(SQLUINTEGER), 0, 
+                                  SQL_NUMERIC, sizeof(SQLUINTEGER), 0,
                                   &uintval[0], 0, NULL));
 
   /* Set values for our parameters */
@@ -636,7 +637,7 @@ DECLARE_TEST(t_bug18325878)
 
 
 /**
-  Bug #18286366: SEG FAULT IN SQLFOREIGNKEYS() WHEN NUMBER OF COLUMNS IN 
+  Bug #18286366: SEG FAULT IN SQLFOREIGNKEYS() WHEN NUMBER OF COLUMNS IN
                  THE TABLE IS MORE
 */
 DECLARE_TEST(t_bug18286366)
@@ -645,7 +646,7 @@ DECLARE_TEST(t_bug18286366)
   SQLCHAR buff[2048], tmp_buff[50];
   int i, len= 0;
 
-  is(OK == alloc_basic_handles_with_opt(&henv1, &hdbc1, &hstmt1, NULL, NULL, 
+  is(OK == alloc_basic_handles_with_opt(&henv1, &hdbc1, &hstmt1, NULL, NULL,
                                         NULL, NULL, "NO_I_S=1"));
 
   ok_sql(hstmt, "DROP TABLE IF EXISTS t_bug18286366b, t_bug18286366a");
@@ -662,14 +663,14 @@ DECLARE_TEST(t_bug18286366)
   {
     len+= sprintf(buff + len, "`id%d` INT, "
                               "CONSTRAINT `cons%d` FOREIGN KEY "
-                              "(`id%d`) REFERENCES `t_bug18286366a` (`id%d`),", 
+                              "(`id%d`) REFERENCES `t_bug18286366a` (`id%d`),",
                               i, i, i, i);
   }
   len= sprintf(buff + len - 1, ")");
   ok_stmt(hstmt, SQLExecDirect(hstmt, (SQLCHAR*)buff, SQL_NTS));
 
 
-  ok_stmt(hstmt1, SQLForeignKeys(hstmt1, NULL, 0, NULL, 0, 
+  ok_stmt(hstmt1, SQLForeignKeys(hstmt1, NULL, 0, NULL, 0,
                                 (SQLCHAR *)"t_bug18286366a", SQL_NTS, NULL, 0,
                                 NULL, 0, (SQLCHAR *)"t_bug18286366b", SQL_NTS));
 
@@ -692,7 +693,7 @@ DECLARE_TEST(t_bug18286366)
 
 
 /**
-  Bug #18286366_2: Segmentation fault in SQLForeignKeys() when number of 
+  Bug #18286366_2: Segmentation fault in SQLForeignKeys() when number of
                    columns in the table is more then 64
 */
 #define MAX_18286366_KEYS 50
@@ -702,7 +703,7 @@ DECLARE_TEST(t_bug18286366_2)
   SQLCHAR buff[8192];
   int i, len= 0;
 
-  is(OK == alloc_basic_handles_with_opt(&henv1, &hdbc1, &hstmt1, NULL, NULL, 
+  is(OK == alloc_basic_handles_with_opt(&henv1, &hdbc1, &hstmt1, NULL, NULL,
                                         NULL, NULL, "NO_I_S=1"));
 
   ok_sql(hstmt, "DROP TABLE IF EXISTS t_bug182863662c,  t_bug182863662b, t_bug182863662a");
@@ -719,7 +720,7 @@ DECLARE_TEST(t_bug18286366_2)
   {
     len+= sprintf(buff + len, "`id%d` INT, "
                               "CONSTRAINT `consb%d` FOREIGN KEY "
-                              "(`id%d`) REFERENCES `t_bug182863662a` (`id%d`),", 
+                              "(`id%d`) REFERENCES `t_bug182863662a` (`id%d`),",
                               i, i, i, i);
   }
   len= sprintf(buff + len - 1, ")");
@@ -730,13 +731,13 @@ DECLARE_TEST(t_bug18286366_2)
   {
     len+= sprintf(buff + len, "`id%d` INT, "
                               "CONSTRAINT `consc%d` FOREIGN KEY "
-                              "(`id%d`) REFERENCES `t_bug182863662a` (`id%d`),", 
+                              "(`id%d`) REFERENCES `t_bug182863662a` (`id%d`),",
                               i, i, i, i);
   }
   len= sprintf(buff + len - 1, ")");
   ok_stmt(hstmt, SQLExecDirect(hstmt, (SQLCHAR*)buff, SQL_NTS));
 
-  ok_stmt(hstmt1, SQLForeignKeys(hstmt1, NULL, 0, NULL, 0, 
+  ok_stmt(hstmt1, SQLForeignKeys(hstmt1, NULL, 0, NULL, 0,
                                 (SQLCHAR *)"t_bug182863662a", SQL_NTS, NULL, 0,
                                 NULL, 0, (SQLCHAR *)"", SQL_NTS));
 
@@ -759,7 +760,7 @@ DECLARE_TEST(t_bug18286366_2)
     is_str(my_fetch_str(hstmt1, buff, 8), "id", 2);
     is_str(my_fetch_str(hstmt1, buff, 12), "consc", 5);
   }
-  
+
   ok_stmt(hstmt1, SQLFreeStmt(hstmt1, SQL_CLOSE));
   ok_sql(hstmt, "DROP TABLE IF EXISTS t_bug169207502c, t_bug169207502b, t_bug169207502a");
   free_basic_handles(&henv1, &hdbc1, &hstmt1);
@@ -784,7 +785,7 @@ DECLARE_TEST(t_bug18286118)
   SQLLEN nLen= 0;
   SQLRETURN sqlrc= SQL_SUCCESS;
   int i= 0;
-  is_num(OK, alloc_basic_handles_with_opt(&henv1, &hdbc1, &hstmt1, NULL, 
+  is_num(OK, alloc_basic_handles_with_opt(&henv1, &hdbc1, &hstmt1, NULL,
                                       NULL, NULL, NULL,
                                       (SQLCHAR*)"NO_I_S=1"));
 
@@ -803,10 +804,10 @@ DECLARE_TEST(t_bug18286118)
 
   ok_stmt(hstmt1, SQLForeignKeys(hstmt1, NULL, 0, NULL, 0, (SQLCHAR*)tabname1,
           SQL_NTS, NULL, 0, NULL, 0, (SQLCHAR*)tabname2, SQL_NTS));
-  
+
   ok_stmt(hstmt1, SQLNumResultCols(hstmt1, &col_count));
 
-  while (((sqlrc= SQLFetch(hstmt1)) == SQL_SUCCESS) || 
+  while (((sqlrc= SQLFetch(hstmt1)) == SQL_SUCCESS) ||
          (sqlrc == SQL_SUCCESS_WITH_INFO))
   {
     memset(tmpBuff, 0, sizeof(tmpBuff));
@@ -944,6 +945,16 @@ DECLARE_TEST(t_bug18796005)
   return OK;
 }
 
+DECLARE_TEST(t_mysql_library_end)
+{
+  printf("Freeing the main connection...\n");
+  free_basic_handles(&henv, &hdbc, &hstmt);
+  printf("Reconnecting...\n");
+  is(OK == alloc_basic_handles(&henv, &hdbc, &hstmt));
+  printf("Success!\n");
+  return OK;
+}
+
 
 BEGIN_TESTS
   ADD_TEST(t_bug18641824)
@@ -969,6 +980,7 @@ BEGIN_TESTS
   // ADD_TEST(t_bug18286366_2)  TODO: Fix
   // ADD_TEST(t_setpos_update_no_ssps) TODO: Fix
   ADD_TEST(t_bug18796005)
+  ADD_TEST(t_mysql_library_end)
 END_TESTS
 
 RUN_TESTS

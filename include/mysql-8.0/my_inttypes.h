@@ -72,11 +72,11 @@ typedef unsigned long long uint64;
 // any of them in new code; use [u]int64_t.
 typedef long long int longlong;
 typedef unsigned long long int ulonglong;
-#if defined(_WIN32)
-typedef unsigned __int64 my_ulonglong;
-#else
-typedef unsigned long long my_ulonglong;
-#endif
+// #if defined(_WIN32)
+// typedef unsigned __int64 my_ulonglong;
+// #else
+// typedef unsigned long long my_ulonglong;
+// #endif
 
 #if defined(_WIN32)
 typedef unsigned long long my_off_t;
