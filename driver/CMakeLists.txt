@@ -196,8 +196,8 @@ ENDWHILE(${DRIVER_INDEX} LESS ${DRIVERS_COUNT})
 
 IF(MYSQL8)
   SET(ssl_libs_to_find
-    libcrypto.*
-    libssl.*
+    libcrypto*.*
+    libssl*.*
     libeay32.*
     ssleay32.*
   )
