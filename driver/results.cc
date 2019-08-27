@@ -1432,6 +1432,7 @@ SQLRETURN SQL_API SQLGetData(SQLHSTMT      StatementHandle,
     SQLRETURN result;
     ulong length= 0;
     DESCREC *irrec, *arrec;
+    DECLARE_LOCALE_HANDLE
     /*
       Signed column number required for bookmark column 0,
       which will become -1 when decremented later.
@@ -1497,9 +1498,7 @@ SQLRETURN SQL_API SQLGetData(SQLHSTMT      StatementHandle,
 
     assert(irrec);
 
-    if (!stmt->dbc->ds->dont_use_set_locale)
-      setlocale(LC_NUMERIC, "C");
-
+    C_LOCALE_SET(stmt)
 
     if ((sColNum == -1 && stmt->stmt_options.bookmarks == SQL_UB_VARIABLE))
     {
@@ -1527,8 +1526,7 @@ SQLRETURN SQL_API SQLGetData(SQLHSTMT      StatementHandle,
                           arrec);
     }
 
-    if (!stmt->dbc->ds->dont_use_set_locale)
-        setlocale(LC_NUMERIC,default_locale);
+    DEFAULT_LOCALE_SET(stmt)
 
     return result;
 }
@@ -1881,6 +1879,7 @@ SQLRETURN SQL_API myodbc_single_fetch( SQLHSTMT             hstmt,
     SQLULEN           dummy_pcrow;
     BOOL              disconnected= FALSE;
     long              brow= 0;
+    DECLARE_LOCALE_HANDLE
 
     if ( !stmt->result )
       return set_stmt_error(stmt, "24000", "Fetch without a SELECT", 0);
@@ -2048,10 +2047,7 @@ SQLRETURN SQL_API myodbc_single_fetch( SQLHSTMT             hstmt,
       }
     }
 
-    if (!stmt->dbc->ds->dont_use_set_locale)
-    {
-      setlocale(LC_NUMERIC, "C");
-    }
+    C_LOCALE_SET(stmt)
 
     res= SQL_SUCCESS;
     {
@@ -2168,10 +2164,7 @@ exitSQLSingleFetch:
       stmt->end_of_set= row_seek(stmt, save_position);
     }
 
-    if (!stmt->dbc->ds->dont_use_set_locale)
-    {
-      setlocale(LC_NUMERIC,default_locale);
-    }
+    DEFAULT_LOCALE_SET(stmt)
 
     if (SQL_SUCCEEDED(res)
       && stmt->rows_found_in_set < stmt->ard->array_size)
@@ -2216,6 +2209,7 @@ SQLRETURN SQL_API my_SQLExtendedFetch( SQLHSTMT             hstmt,
     SQLULEN           dummy_pcrow;
     BOOL              disconnected= FALSE;
     long              brow= 0;
+    DECLARE_LOCALE_HANDLE
 
     if ( !stmt->result )
       return set_stmt_error(stmt, "24000", "Fetch without a SELECT", 0);
@@ -2390,10 +2384,7 @@ SQLRETURN SQL_API my_SQLExtendedFetch( SQLHSTMT             hstmt,
       }
     }
 
-    if (!stmt->dbc->ds->dont_use_set_locale)
-    {
-      setlocale(LC_NUMERIC, "C");
-    }
+    C_LOCALE_SET(stmt)
 
     res= SQL_SUCCESS;
     for (i= 0 ; i < rows_to_fetch ; ++i)
@@ -2558,10 +2549,7 @@ SQLRETURN SQL_API my_SQLExtendedFetch( SQLHSTMT             hstmt,
       stmt->end_of_set= row_seek(stmt, save_position);
     }
 
-    if (!stmt->dbc->ds->dont_use_set_locale)
-    {
-      setlocale(LC_NUMERIC,default_locale);
-    }
+    DEFAULT_LOCALE_SET(stmt)
 
     if (SQL_SUCCEEDED(res)
       && stmt->rows_found_in_set < stmt->ard->array_size)

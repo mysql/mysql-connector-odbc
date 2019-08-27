@@ -87,15 +87,20 @@ void myodbc_init(void)
 
   {
     struct lconv *tmp;
+    DECLARE_LOCALE_HANDLE
+
     init_getfunctions();
     default_locale=myodbc_strdup(setlocale(LC_NUMERIC,NullS),MYF(0));
-    setlocale(LC_NUMERIC,"");
+
+    __LOCALE_SET("")
+
     tmp=localeconv();
     decimal_point=myodbc_strdup(tmp->decimal_point,MYF(0));
     decimal_point_length=strlen(decimal_point);
     thousands_sep=myodbc_strdup(tmp->thousands_sep,MYF(0));
     thousands_sep_length=strlen(thousands_sep);
-    setlocale(LC_NUMERIC,default_locale);
+
+    __LOCALE_RESTORE()
 
     utf8_charset_info= get_charset_by_csname("utf8", MYF(MY_CS_PRIMARY),
                                              MYF(0));

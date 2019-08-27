@@ -209,6 +209,63 @@ typedef enum { DESC_HDR, DESC_REC } fld_loc;
 /* data-at-exec handling done for current SQLSetPos() call */
 #define DAE_SETPOS_DONE 10
 
+#define DONT_USE_LOCALE_CHECK(STMT) if (!STMT->dbc->ds->dont_use_set_locale)
+
+#if defined _WIN32
+
+  #define DECLARE_LOCALE_HANDLE int loc;
+
+    #define __LOCALE_SET(LOC) \
+    { \
+      loc = _configthreadlocale(0); \
+      _configthreadlocale(_ENABLE_PER_THREAD_LOCALE); \
+      setlocale(LC_NUMERIC, LOC);  /* force use of '.' as decimal point */ \
+    }
+
+  #define __LOCALE_RESTORE() \
+    { \
+      setlocale(LC_NUMERIC, default_locale); \
+      _configthreadlocale(loc); \
+    }
+
+#elif defined LC_GLOBAL_LOCALE
+  #define DECLARE_LOCALE_HANDLE locale_t nloc;
+
+  #define __LOCALE_SET(LOC) \
+    { \
+      nloc = newlocale(LC_CTYPE_MASK, LOC, (locale_t)0); \
+      uselocale(nloc); \
+    }
+
+  #define __LOCALE_RESTORE() \
+    { \
+      uselocale(LC_GLOBAL_LOCALE); \
+      freelocale(nloc); \
+    }
+#else
+
+  #define DECLARE_LOCALE_HANDLE
+
+  #define __LOCALE_SET(LOC) \
+      { \
+        setlocale(LC_NUMERIC, LOC);  /* force use of '.' as decimal point */ \
+      }
+
+  #define __LOCALE_RESTORE() \
+      { \
+        setlocale(LC_NUMERIC, default_locale); \
+      }
+#endif
+
+#define C_LOCALE_SET(STMT) \
+    DONT_USE_LOCALE_CHECK(STMT) \
+    __LOCALE_SET("C")
+
+#define DEFAULT_LOCALE_SET(STMT) \
+    DONT_USE_LOCALE_CHECK(STMT) \
+    __LOCALE_RESTORE()
+
+
 typedef struct {
   int perms;
   SQLSMALLINT data_type; /* SQL_IS_SMALLINT, etc */
