@@ -92,8 +92,8 @@
                 <File Id="libeay32.dll" Name="libeay32.dll" KeyPath="yes" DiskId="1" Source="x64\libeay32.dll" />
                 <File Id="ssleay32.dll" Name="ssleay32.dll" DiskId="1" Source="x64\ssleay32.dll" />
               <?else ?>
-                <File Id="libcrypto_1_1_x64.dll" Name="libcrypto_1_1_x64.dll" KeyPath="yes" DiskId="1" Source="x64\libcrypto-1_1-x64.dll" />
-                <File Id="libssl_1_1_x64.dll" Name="libssl_1_1_x64.dll" DiskId="1" Source="x64\libssl-1_1-x64.dll" />
+                <File Id="libcrypto_1_1_x64.dll" Name="libcrypto-1_1-x64.dll" KeyPath="yes" DiskId="1" Source="x64\libcrypto-1_1-x64.dll" />
+                <File Id="libssl_1_1_x64.dll" Name="libssl-1_1-x64.dll" DiskId="1" Source="x64\libssl-1_1-x64.dll" />
               <?endif ?>
             </Component>
           <?else ?>
@@ -136,8 +136,8 @@
                 <File Id="libeay32.dll" Name="libeay32.dll" KeyPath="yes" DiskId="1" Source="x86\libeay32.dll" />
                 <File Id="ssleay32.dll" Name="ssleay32.dll" DiskId="1" Source="x86\ssleay32.dll" />
               <?else ?>
-                <File Id="libcrypto_1_1.dll" Name="libcrypto_1_1.dll" KeyPath="yes" DiskId="1" Source="x86\libcrypto-1_1.dll" />
-                <File Id="libssl_1_1.dll" Name="libssl_1_1.dll" DiskId="1" Source="x86\libssl-1_1.dll" />
+                <File Id="libcrypto_1_1.dll" Name="libcrypto-1_1.dll" KeyPath="yes" DiskId="1" Source="x86\libcrypto-1_1.dll" />
+                <File Id="libssl_1_1.dll" Name="libssl-1_1.dll" DiskId="1" Source="x86\libssl-1_1.dll" />
               <?endif ?>
             </Component>
           <?endif ?>
