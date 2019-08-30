@@ -945,16 +945,6 @@ DECLARE_TEST(t_bug18796005)
   return OK;
 }
 
-DECLARE_TEST(t_mysql_library_end)
-{
-  printf("Freeing the main connection...\n");
-  free_basic_handles(&henv, &hdbc, &hstmt);
-  printf("Reconnecting...\n");
-  is(OK == alloc_basic_handles(&henv, &hdbc, &hstmt));
-  printf("Success!\n");
-  return OK;
-}
-
 
 BEGIN_TESTS
   ADD_TEST(t_bug18641824)
@@ -980,7 +970,6 @@ BEGIN_TESTS
   // ADD_TEST(t_bug18286366_2)  TODO: Fix
   // ADD_TEST(t_setpos_update_no_ssps) TODO: Fix
   ADD_TEST(t_bug18796005)
-  ADD_TEST(t_mysql_library_end)
 END_TESTS
 
 RUN_TESTS
