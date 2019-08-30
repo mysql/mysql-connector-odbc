@@ -334,8 +334,6 @@ int main(int argc, char **argv) \
 \
   RUN_TESTS_SIGNAL; \
 \
-  if (alloc_basic_handles(&henv, &hdbc, &hstmt) != OK) \
-    exit(1); \
 \
   for (i= 0; i < num_tests; i++ ) \
   { \
@@ -347,6 +345,8 @@ int main(int argc, char **argv) \
     } \
     else \
     { \
+      if (alloc_basic_handles(&henv, &hdbc, &hstmt) != OK) \
+        exit(1); \
       RUN_TESTS_ALARM; \
       rc= tests[i].func(hdbc, hstmt, henv); \
       printf("%s %d - %s%s %s%s\n", \
@@ -359,17 +359,13 @@ int main(int argc, char **argv) \
       if ((rc == FAIL) && (FAIL != tests[i].expect)) \
         ++failcnt; \
       SKIP_REASON= NULL; /* Reset SKIP_REASON */ \
-      /* Re-allocate statement to reset all its properties. */ \
-      SQLFreeStmt(hstmt, SQL_DROP); \
-      SQLAllocHandle(SQL_HANDLE_STMT, hdbc, &hstmt); \
-      /* Freeing allocated memory */ \
+      (void)free_basic_handles(&henv, &hdbc, &hstmt); \
       mem_gc_flush(); \
     } \
   }
 
 #define RUN_TESTS \
   RUN_TESTS_ONCE \
-  (void)free_basic_handles(&henv, &hdbc, &hstmt); \
   mem_gc_flush(); \
   exit(failcnt); \
 }
@@ -1356,23 +1352,26 @@ int alloc_basic_handles(SQLHENV *henv, SQLHDBC *hdbc, SQLHSTMT *hstmt)
 
 int free_basic_handles(SQLHENV *henv,SQLHDBC *hdbc, SQLHSTMT *hstmt)
 {
-  /* We don't care if this succeeds, the connection may have gone away. */
-  (void)SQLEndTran(SQL_HANDLE_DBC, *hdbc, SQL_COMMIT);
 
   if(hstmt && *hstmt)
   {
     ok_stmt(*hstmt, SQLFreeStmt(*hstmt, SQL_DROP));
+    *hstmt = NULL;
   }
 
   if(hdbc && *hdbc)
   {
+    /* We don't care if this succeeds, the connection may have gone away. */
+    (void)SQLEndTran(SQL_HANDLE_DBC, *hdbc, SQL_COMMIT);
     ok_con(*hdbc, SQLDisconnect(*hdbc));
     ok_con(*hdbc, SQLFreeConnect(*hdbc));
+    *hdbc = NULL;
   }
 
   if(henv && *henv)
   {
     ok_env(*henv, SQLFreeEnv(*henv));
+    *henv = NULL;
   }
 
   return OK;
