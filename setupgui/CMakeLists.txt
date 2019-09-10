@@ -51,7 +51,7 @@ IF (WIN32)
                  windows/TabCtrl.h
                  windows/tooltip.cpp
                  windows/connector_odbc_header.bmp)
-  SET(PLATFORM_LIBS comctl32)
+  SET(PLATFORM_LIBS comctl32 crypt32)
 ELSE (WIN32)
   SET(SETUP_SRCS ${SETUP_SRCS}
                  gtk/odbcdialogparams.cc

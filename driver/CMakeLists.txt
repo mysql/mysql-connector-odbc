@@ -117,10 +117,10 @@ ENDIF()
 
     IF(MYSQL8)
       TARGET_LINK_LIBRARIES(${DRIVER_NAME} myodbc-util
-            ${MYSQL_CLIENT_LIBS} ws2_32 ${ODBCINSTLIB} ${SECURE32_LIB} legacy_stdio_definitions.lib)
+            ${MYSQL_CLIENT_LIBS} ws2_32 crypt32 ${ODBCINSTLIB} ${SECURE32_LIB} legacy_stdio_definitions.lib)
     ELSE(MYSQL8)
       TARGET_LINK_LIBRARIES(${DRIVER_NAME} myodbc-util
-            ${MYSQL_CLIENT_LIBS} ws2_32 ${ODBCINSTLIB} ${SECURE32_LIB})
+            ${MYSQL_CLIENT_LIBS} ws2_32 crypt32 ${ODBCINSTLIB} ${SECURE32_LIB})
     ENDIF(MYSQL8)
 
   ELSE(WIN32)
