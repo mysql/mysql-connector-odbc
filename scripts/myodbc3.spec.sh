@@ -1,4 +1,4 @@
-# Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved. 
+# Copyright (c) 2007, 2019, Oracle and/or its affiliates. All rights reserved.
 # 
 # This program is free software; you can redistribute it and/or modify 
 # it under the terms of the GNU General Public License, version 2.0, as 
@@ -37,11 +37,11 @@
 
 %if 0%{?commercial}
 %global license_type	Commercial
-%global license_files	LICENSE.txt
+%global license_files	LICENSE.txt README.txt
 %global product_suffix	-commercial
 %else
 %global license_type	GPLv2
-%global license_files	LICENSE.txt
+%global license_files	LICENSE.txt README.txt
 %endif
 
 # Use rpmbuild -ba --define 'shared_mysqlclient 1' ... to build shared
@@ -232,15 +232,20 @@ fi
 %{_libdir}/libmyodbc8w.so
 %{_libdir}/libmyodbc8a.so
 %doc %{license_files}
-%doc ChangeLog README.txt LICENSE.txt INFO_SRC INFO_BIN
+%doc ChangeLog INFO_SRC INFO_BIN
 
 %if 0%{?odbc_gui}
 %files setup
 %defattr(-, root, root, -)
+%doc %{license_files}
+%doc INFO_SRC INFO_BIN
 %{_libdir}/libmyodbc8S.so
 %endif
 
 %files test
+%defattr(-, root, root, -)
+%doc %{license_files}
+%doc INFO_SRC INFO_BIN
 %attr(-, root, root)   %{_libdir}/mysql-connector-odbc/test
 %attr(755, root, root) %{_libdir}/mysql-connector-odbc/dltest
 
