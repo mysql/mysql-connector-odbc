@@ -217,7 +217,7 @@ typedef struct {
 } desc_field;
 
 /* descriptor */
-struct tagSTMT;
+struct STMT;
 struct tagDBC;
 typedef struct {
   /* header fields */
@@ -246,7 +246,7 @@ typedef struct {
   DYNAMIC_ARRAY   bookmark;
   DYNAMIC_ARRAY   records;
   MYERROR         error;
-  struct tagSTMT *stmt;
+  STMT *stmt;
 
   /* SQL_DESC_ALLOC_USER-specific */
   struct {
@@ -396,43 +396,61 @@ typedef struct tagDBC
 
 /* Statement states */
 
-enum MY_STATE { ST_UNKNOWN, ST_PREPARED, ST_PRE_EXECUTED, ST_EXECUTED };
-enum MY_DUMMY_STATE { ST_DUMMY_UNKNOWN, ST_DUMMY_PREPARED, ST_DUMMY_EXECUTED };
+enum MY_STATE { ST_UNKNOWN = 0, ST_PREPARED, ST_PRE_EXECUTED, ST_EXECUTED };
+enum MY_DUMMY_STATE { ST_DUMMY_UNKNOWN = 0, ST_DUMMY_PREPARED, ST_DUMMY_EXECUTED };
 
 
-typedef struct limit
+struct MY_LIMIT_CLAUSE
 {
   unsigned long long  offset;
   unsigned int        row_count;
   char                *begin, *end;
+  MY_LIMIT_CLAUSE(unsigned long long offs, unsigned int rc, char* b, char *e) :
+    offset(offs), row_count(rc), begin(b), end(e)
+  {}
 
-} MY_LIMIT_CLAUSE;
+};
 
-typedef struct limit_scroller
+struct MY_LIMIT_SCROLLER
 {
    char               *query, *offset_pos;
    unsigned int       row_count;
    unsigned long long start_offset;
    unsigned long long next_offset, total_rows, query_len;
 
-} MY_LIMIT_SCROLLER;
+   MY_LIMIT_SCROLLER() : query(NULL), offset_pos(NULL), row_count(0),
+                         start_offset(0), next_offset(0), total_rows(0),
+                         query_len(0)
+     {}
+
+};
 
 /* Statement primary key handler for cursors */
-typedef struct pk_column
+struct MY_PK_COLUMN
 {
   char	      name[NAME_LEN+1];
   my_bool     bind_done;
-} MY_PK_COLUMN;
+
+  MY_PK_COLUMN()
+  {
+    name[0] = 0;
+    bind_done = FALSE;
+  }
+};
 
 
 /* Statement cursor handler */
-typedef struct cursor
+struct MYCURSOR
 {
   char        *name;
   uint	       pk_count;
   my_bool      pk_validated;
   MY_PK_COLUMN pkcol[MY_MAX_PK_PARTS];
-} MYCURSOR;
+
+  MYCURSOR() : name(NULL), pk_count(0), pk_validated(FALSE)
+  {}
+
+};
 
 enum OUT_PARAM_STATE
 {
@@ -445,16 +463,51 @@ enum OUT_PARAM_STATE
 
 /* Main statement handler */
 
-typedef struct tagSTMT
+struct tempBuf
+{
+	char *buf;
+	size_t buf_len;
+  size_t cur_pos;
+
+	tempBuf();
+  char* extend_buffer(char *to, size_t len);
+  char* extend_buffer(size_t len);
+
+  char* add_to_buffer(const char *from, size_t len);
+  char* add_to_buffer(char *to, const char *from, size_t len);
+
+	~tempBuf();
+};
+
+
+struct GETDATA{
+  uint column;      /* Which column is being used with SQLGetData() */
+  char *source;     /* Our current position in the source. */
+  uchar latest[7];  /* Latest character to be converted. */
+  int latest_bytes; /* Bytes of data in latest. */
+  int latest_used;  /* Bytes of latest that have been used. */
+  ulong src_offset; /* @todo remove */
+  ulong dst_bytes;  /* Length of data once it is all converted (in chars). */
+  ulong dst_offset; /* Current offset into dest. (ulong)~0L when not set. */
+
+  GETDATA() : column(0), source(NULL), latest_bytes(0),
+              latest_used(0), src_offset(0), dst_bytes(0), dst_offset(0)
+  {
+    memchr(latest, 0, sizeof(latest));
+  }
+};
+
+struct STMT
 {
   DBC               *dbc;
   MYSQL_RES         *result;
   MEM_ROOT          alloc_root;
   my_bool           fake_result;
-  MYSQL_ROW	        array,result_array,current_values;
-  MYSQL_ROW	        (*fix_fields)(struct tagSTMT *stmt,MYSQL_ROW row);
+  MYSQL_ROW	        array, result_array, current_values;
+  MYSQL_ROW	        (*fix_fields)(STMT *stmt,MYSQL_ROW row);
   MYSQL_FIELD	      *fields;
   MYSQL_ROW_OFFSET  end_of_set;
+  tempBuf           temp_buf;
 
   LIST              list;
   MYCURSOR          cursor;
@@ -475,16 +528,8 @@ typedef struct tagSTMT
   long              current_row;
   long              cursor_row;
   char              dae_type; /* data-at-exec type */
-  struct {
-    uint column;      /* Which column is being used with SQLGetData() */
-    char *source;     /* Our current position in the source. */
-    uchar latest[7];  /* Latest character to be converted. */
-    int latest_bytes; /* Bytes of data in latest. */
-    int latest_used;  /* Bytes of latest that have been used. */
-    ulong src_offset; /* @todo remove */
-    ulong dst_bytes;  /* Length of data once it is all converted (in chars). */
-    ulong dst_offset; /* Current offset into dest. (ulong)~0L when not set. */
-  } getdata;
+
+  GETDATA           getdata;
 
   uint		*order, order_count, param_count, current_param, rows_found_in_set;
 
@@ -506,13 +551,28 @@ typedef struct tagSTMT
 
   MYSQL_STMT *ssps;
   MYSQL_BIND *result_bind;
+  MYSQL_BIND *param_place_bind;
 
   MY_LIMIT_SCROLLER scroller;
 
   enum OUT_PARAM_STATE out_params_state;
 
   int ssps_bind_result();
-} STMT;
+
+  STMT() : dbc(NULL), result(NULL), array(NULL), result_array(NULL),
+    current_values(NULL), fields(NULL), end_of_set(NULL), table_name(NULL),
+    param_bind(NULL), lengths(NULL), affected_rows(0),
+    current_row(0), cursor_row(0), dae_type(0),
+    order(NULL), order_count(0), param_count(0), current_param(0),
+    rows_found_in_set(0),
+    state(ST_UNKNOWN), dummy_state(ST_DUMMY_UNKNOWN),
+    ard(NULL), ird(NULL), apd(NULL), ipd(NULL),
+    imp_ard(NULL), imp_apd(NULL), setpos_apd(NULL),
+    setpos_row(0), setpos_lock(0),
+    ssps(NULL), result_bind(NULL), param_place_bind(NULL),
+    out_params_state(OPS_UNKNOWN)
+  { }
+};
 
 
 extern char *default_locale, *decimal_point, *thousands_sep;
@@ -539,6 +599,8 @@ extern myodbc_mutex_t myodbc_lock;
 #ifndef MYSQL_TYPE_BIT
 # define MYSQL_TYPE_BIT 16
 #endif
+
+MY_LIMIT_CLAUSE find_position4limit(CHARSET_INFO* cs, char *query, char * query_end);
 
 #ifdef __cplusplus
 extern "C"

@@ -994,10 +994,6 @@ SQLRETURN SQL_API SQLDisconnect(SQLHDBC hdbc)
     end_query_log(dbc->query_log);
 
   /* free allocated packet buffer */
-  if (dbc->mysql.net.buff)
-  {
-    myodbc_net_end(&dbc->mysql.net);
-  }
 
   x_free(dbc->database);
 

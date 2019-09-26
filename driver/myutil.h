@@ -154,9 +154,8 @@ SQLRETURN my_pos_delete (STMT *stmt,STMT *stmtParam,
 SQLRETURN my_pos_update (STMT *stmt,STMT *stmtParam,
 			                  SQLUSMALLINT irow,DYNAMIC_STRING *dynStr);
 char *    check_if_positioned_cursor_exists (STMT *stmt, STMT **stmtNew);
-SQLRETURN insert_param  (STMT *stmt, uchar *to, DESC *apd,
+SQLRETURN insert_param  (STMT *stmt, uchar *to, MYSQL_BIND *bind, DESC *apd,
                         DESCREC *aprec, DESCREC *iprec, SQLULEN row);
-char *    add_to_buffer (NET *net,char *to,const char *from,ulong length);
 
 void reset_getdata_position   (STMT *stmt);
 
@@ -279,10 +278,8 @@ SQLRETURN SQL_API my_SQLAllocEnv      (SQLHENV * phenv);
 SQLRETURN SQL_API my_SQLAllocConnect  (SQLHENV henv, SQLHDBC *phdbc);
 SQLRETURN SQL_API my_SQLFreeConnect   (SQLHDBC hdbc);
 SQLRETURN SQL_API my_SQLFreeEnv       (SQLHENV henv);
-char *extend_buffer (NET *net,char *to,ulong length);
+
 void myodbc_end();
-my_bool myodbc_net_realloc(NET *net, size_t length);
-void myodbc_net_end(NET *net);
 my_bool set_dynamic_result        (STMT *stmt);
 void    set_current_cursor_data   (STMT *stmt,SQLUINTEGER irow);
 my_bool is_minimum_version        (const char *server_version,const char *version);
@@ -357,10 +354,6 @@ const char *get_fractional_part   (const char * str, int len,
 /* Convert MySQL timestamp to full ANSI timestamp format. */
 char *          complete_timestamp  (const char * value, ulong length, char buff[21]);
 long double     myodbc_strtold             (const char *nptr, char **endptr);
-char *          extend_buffer       (NET *net, char *to, ulong length);
-char *          add_to_buffer       (NET *net,char *to,const char *from,ulong length);
-MY_LIMIT_CLAUSE find_position4limit (CHARSET_INFO* cs, char *query,
-                                    char * query_end);
 BOOL            myodbc_isspace      (CHARSET_INFO* cs, const char * begin, const char *end);
 BOOL            myodbc_isnum        (CHARSET_INFO* cs, const char * begin, const char *end);
 
