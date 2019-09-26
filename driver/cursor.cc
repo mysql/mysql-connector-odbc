@@ -426,7 +426,7 @@ static SQLRETURN update_setpos_status(STMT *stmt, SQLINTEGER irow,
 */
 
 static SQLRETURN copy_rowdata(STMT *stmt, DESCREC *aprec,
-                              DESCREC *iprec, NET **net, SQLCHAR **to)
+                              DESCREC *iprec, SQLCHAR **to)
 {
     SQLRETURN rc;
     SQLCHAR *orig_to= *to;
@@ -434,10 +434,10 @@ static SQLRETURN copy_rowdata(STMT *stmt, DESCREC *aprec,
     SQLUINTEGER length= (*aprec->octet_length_ptr > 0 ?
                          *aprec->octet_length_ptr + 1 : 7);
 
-    if ( !(*to= (SQLCHAR *) extend_buffer(*net,(char*) *to,length)) )
+    if (!(*to = (SQLCHAR *)stmt->temp_buf.extend_buffer((char*)*to, length)))
         return set_error(stmt,MYERR_S1001,NULL,4001);
 
-    rc= insert_param(stmt, (uchar*) to, stmt->apd, aprec, iprec, 0);
+    rc= insert_param(stmt, (uchar*) to, NULL, stmt->apd, aprec, iprec, 0);
     if (!SQL_SUCCEEDED(rc))
         return rc;
 
@@ -445,7 +445,7 @@ static SQLRETURN copy_rowdata(STMT *stmt, DESCREC *aprec,
     while ( (*to > orig_to) && (*((*to) - 1) == (SQLCHAR) 0) ) --(*to);
 
     /* insert "," */
-    if (!(*to= (SQLCHAR *)add_to_buffer(*net, (char *)*to, ",", 1)))
+    if (!(*to= (SQLCHAR *)stmt->temp_buf.add_to_buffer((char *)*to, ",", 1)))
         return set_error(stmt,MYERR_S1001,NULL,4001);
 
     return(SQL_SUCCESS);
@@ -465,8 +465,7 @@ static my_bool insert_field(STMT *stmt, MYSQL_RES *result,
   DESCREC *aprec= &aprec_, *iprec= &iprec_;
   MYSQL_FIELD *field= mysql_fetch_field_direct(result,nSrcCol);
   MYSQL_ROW   row_data;
-  NET         *net=&stmt->dbc->mysql.net;
-  unsigned char *to= net->buff;
+  unsigned char *to= (unsigned char*)stmt->temp_buf.buf;
   SQLLEN      length;
   char as_string[50], *dummy;
 
@@ -495,16 +494,16 @@ static my_bool insert_field(STMT *stmt, MYSQL_RES *result,
     aprec->octet_length_ptr= &length;
     aprec->indicator_ptr= &length;
 
-    if (!SQL_SUCCEEDED(insert_param(stmt, (uchar *) &to, stmt->apd,
+    if (!SQL_SUCCEEDED(insert_param(stmt, (uchar *) &to, NULL, stmt->apd,
                                     aprec, iprec, 0)))
       return 1;
-    if (!(to= (unsigned char *) add_to_buffer(net, (char *) to, " AND ", 5)))
+    if (!(to= (unsigned char *)stmt->temp_buf.add_to_buffer((char *) to, " AND ", 5)))
     {
       return (my_bool)set_error(stmt, MYERR_S1001, NULL, 4001);
     }
 
-    length= (uint) ((char *)to - (char*) net->buff);
-    dynstr_append_mem(dynQuery, (char*) net->buff, length);
+    length= (uint) ((char *)to - (char*) stmt->temp_buf.buf);
+    dynstr_append_mem(dynQuery, (char*)stmt->temp_buf.buf, length);
   }
   else
   {
@@ -733,7 +732,6 @@ static SQLRETURN build_set_clause(STMT *stmt, SQLULEN irow,
     uint          ncol, ignore_count= 0;
     MYSQL_FIELD *field;
     MYSQL_RES   *result= stmt->result;
-    NET         *net=&stmt->dbc->mysql.net;
     DESCREC *arrec, *irrec;
 
     dynstr_append_mem(dynQuery," SET ",5);
@@ -749,7 +747,7 @@ static SQLRETURN build_set_clause(STMT *stmt, SQLULEN irow,
     for ( ncol= 0; ncol < stmt->result->field_count; ++ncol )
     {
         SQLLEN *pcbValue;
-        SQLCHAR *to= net->buff;
+        SQLCHAR *to = (SQLCHAR*)stmt->temp_buf.buf;
         field= mysql_fetch_field_direct(result,ncol);
         arrec= desc_get_rec(stmt->ard, ncol, FALSE);
         irrec= desc_get_rec(stmt->ird, ncol, FALSE);
@@ -823,11 +821,11 @@ static SQLRETURN build_set_clause(STMT *stmt, SQLULEN irow,
         aprec->octet_length_ptr= &length;
         aprec->indicator_ptr= &length;
 
-        if ( copy_rowdata(stmt,aprec,iprec,&net,&to) != SQL_SUCCESS )
+        if ( copy_rowdata(stmt,aprec,iprec,&to) != SQL_SUCCESS )
             return(SQL_ERROR);
 
-        length= (uint) ((char *)to - (char*) net->buff);
-        dynstr_append_mem(dynQuery, (char*) net->buff, length);
+        length = (uint)((char *)to - (char*)stmt->temp_buf.buf);
+        dynstr_append_mem(dynQuery, (char*)stmt->temp_buf.buf, length);
     }
 
     if (ignore_count == result->field_count)
@@ -1345,7 +1343,6 @@ static SQLRETURN batch_insert( STMT *stmt, SQLULEN irow, DYNAMIC_STRING *ext_que
     SQLULEN      insert_count= 1;           /* num rows to insert - will be real value when row is 0 (all)  */
     SQLULEN      count= 0;                  /* current row */
     SQLLEN       length;
-    NET         *net= &stmt->dbc->mysql.net;
     SQLUSMALLINT ncol;
     long i;
     SQLCHAR      *to;
@@ -1380,7 +1377,7 @@ static SQLRETURN batch_insert( STMT *stmt, SQLULEN irow, DYNAMIC_STRING *ext_que
         /* For each row, build the value list from its columns */
         while (count < insert_count)
         {
-            to= net->buff;
+          to = (SQLCHAR*)stmt->temp_buf.buf;
 
             /* Append values for each column. */
             dynstr_append_mem(ext_query,"(", 1);
@@ -1458,13 +1455,13 @@ static SQLRETURN batch_insert( STMT *stmt, SQLULEN irow, DYNAMIC_STRING *ext_que
                 aprec->octet_length_ptr= &length;
                 aprec->indicator_ptr= &length;
 
-                if (copy_rowdata(stmt, aprec, iprec, &net, &to) != SQL_SUCCESS)
+                if (copy_rowdata(stmt, aprec, iprec, &to) != SQL_SUCCESS)
                   return SQL_ERROR;
 
             } /* END OF for (ncol= 0; ncol < result->field_count; ++ncol) */
 
-            length= (uint) ((char *)to - (char*) net->buff);
-            dynstr_append_mem(ext_query, (char*) net->buff, length-1);
+            length = (uint)((char *)to - (char*)stmt->temp_buf.buf);
+            dynstr_append_mem(ext_query, (char*)stmt->temp_buf.buf, length - 1);
             dynstr_append_mem(ext_query, "),", 2);
             ++count;
 

@@ -3860,41 +3860,67 @@ long double myodbc_strtold(const char *nptr, char **endptr)
 }
 
 
-/*
-  @type    : myodbc3 internal
-  @purpose : help function to enlarge buffer if necessary
-*/
-char *extend_buffer(NET *net, char *to, ulong length)
+tempBuf::tempBuf() : buf(NULL), buf_len(0), cur_pos(0)
 {
-    ulong need= 0;
+  extend_buffer(buf, 16384);
+}
 
-    need= (ulong)(to - (char *)net->buff) + length;
-    if (!to || need > net->max_packet - 10)
-    {
-        if (myodbc_net_realloc(net, need))
-        {
-            return 0;
-        }
+char *tempBuf::extend_buffer(size_t len)
+{
+  if (cur_pos > buf_len)
+    throw "Position is outside of buffer";
 
-        to= (char *)net->buff + need - length;
-    }
-    return to;
+  if (len > buf_len - cur_pos)
+  {
+    buf = (char*)realloc(buf, buf_len + len);
+    // TODO: smarter processing for Out-of-Memory
+    if (buf == NULL)
+      throw "Not enough memory for buffering";
+    buf_len = len;
+  }
+
+  return buf + cur_pos; // Return position in the new buffer
 }
 
 
-/*
-  @type    : myodbc3 internal
-  @purpose : help function to extend the buffer and copy the data
-*/
-char *add_to_buffer(NET *net,char *to,const char *from,ulong length)
+char *tempBuf::extend_buffer(char *to, size_t len)
 {
-    if ( !(to= extend_buffer(net,to,length)) )
-        return 0;
+  cur_pos = to - buf;
 
-    memcpy(to,from,length);
-
-    return to+length;
+  return extend_buffer(len);
 }
+
+
+char *tempBuf::add_to_buffer(const char *from, size_t len)
+{
+  if (cur_pos > buf_len)
+    throw "Position is outside of buffer";
+
+  size_t extend_by = buf_len - cur_pos >= len ? 0 :
+    buf_len - cur_pos + len;
+
+  extend_buffer(extend_by);
+  memcpy(buf + cur_pos, from, len);
+  cur_pos += len;
+  return buf + cur_pos;
+}
+
+char *tempBuf::add_to_buffer(char *to, const char *from, size_t len)
+{
+  cur_pos = to - buf;
+  if (cur_pos > buf_len)
+    throw "Position is outside of buffer";
+
+  return add_to_buffer(from, len);
+}
+
+
+tempBuf::~tempBuf()
+{
+  free(buf);
+}
+
+
 
 /*
   Get the offset and row numbers from a string with LIMIT
@@ -4001,7 +4027,7 @@ const char* check_row_locking(CHARSET_INFO* cs, char * query, char * query_end, 
 
 MY_LIMIT_CLAUSE find_position4limit(CHARSET_INFO* cs, char *query, char * query_end)
 {
-  MY_LIMIT_CLAUSE result={0,0,NULL,NULL};
+  MY_LIMIT_CLAUSE result(0,0,NULL,NULL);
   char *limit_pos = NULL;
 
   result.begin= result.end= query_end;
@@ -4219,46 +4245,3 @@ const char get_identifier_quote(STMT *stmt)
   return empty;
 }
 
-
-/** Realloc the NET packet buffer. */
-my_bool myodbc_net_realloc(NET *net, size_t length)
-{
-  uchar *buff;
-  size_t pkt_length;
-
-  if (length >= net->max_packet_size)
-  {
-    /* @todo: 1 and 2 codes are identical. */
-    net->error= 1;
-    net->last_errno= ER_NET_PACKET_TOO_LARGE;
-    return 1;
-  }
-  pkt_length = (length+IO_SIZE-1) & ~(IO_SIZE-1);
-  /*
-    We must allocate some extra bytes for the end 0 and to be able to
-    read big compressed blocks + 1 safety byte since uint3korr() in
-    net_read_packet() may actually read 4 bytes depending on build flags and
-    platform.
-  */
-  if (!(buff= (uchar*) myodbc_realloc((char*) net->buff, pkt_length +
-                                  NET_HEADER_SIZE + COMP_HEADER_SIZE + 1,
-                                  MYF(MY_WME))))
-  {
-    /* @todo: 1 and 2 codes are identical. */
-    net->error= 1;
-    net->last_errno= ER_OUT_OF_RESOURCES;
-    /* In the server the error is reported by MY_WME flag. */
-    return 1;
-  }
-  net->buff=net->write_pos=buff;
-  net->buff_end=buff+(net->max_packet= (ulong) pkt_length);
-  return 0;
-}
-
-
-/** Free net packet buffer. */
-void myodbc_net_end(NET *net)
-{
-  my_free(net->buff);
-  net->buff=0;
-}
