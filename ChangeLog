@@ -2,9 +2,13 @@
 
   Security Notes:
   Functionality added or changed:
+  * Unit tests will allocate/deallocate STMT/DBC/ENV for each test
+  * Added processing of new UTF8MB4 collations
   Bugs fixed:
+  * myodbc-installer does not show all DSN options (Bug #29753227/95290)
+  * MASTER: Crash noticed in SQLSetPos (Bug #29630465)
 
-  Built using MySQL 5.7.
+  Built using MySQL 5.7.28
 
 5.3.13
 
