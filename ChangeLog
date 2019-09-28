@@ -1,8 +1,19 @@
-8.0.18
+8.0.19
 
   Security Notes:
   Functionality added or changed:
   Bugs fixed:
+  Built using MySQL 8.0.
+
+
+8.0.18
+
+  Security Notes:
+  Functionality added or changed:
+  * Added support for OpenSSL 1.1
+  Bugs fixed:
+  * Memory leak while connecting with mysql server (Bug #26194929)
+  * Unsafe use of setlocale() (Bug #24814467/83297)
   Built using MySQL 8.0.18
 
 
