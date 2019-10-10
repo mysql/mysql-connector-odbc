@@ -426,26 +426,24 @@ static SQLRETURN update_setpos_status(STMT *stmt, SQLINTEGER irow,
 */
 
 static SQLRETURN copy_rowdata(STMT *stmt, DESCREC *aprec,
-                              DESCREC *iprec, SQLCHAR **to)
+                              DESCREC *iprec)
 {
     SQLRETURN rc;
-    SQLCHAR *orig_to= *to;
     /* Negative length means either NULL or DEFAULT, so we need 7 chars. */
     SQLUINTEGER length= (*aprec->octet_length_ptr > 0 ?
                          *aprec->octet_length_ptr + 1 : 7);
 
-    if (!(*to = (SQLCHAR *)stmt->temp_buf.extend_buffer((char*)*to, length)))
+    if (stmt->extend_buffer(length) == NULL)
         return set_error(stmt,MYERR_S1001,NULL,4001);
 
-    rc= insert_param(stmt, (uchar*) to, NULL, stmt->apd, aprec, iprec, 0);
+    rc= insert_param(stmt, NULL, stmt->apd, aprec, iprec, 0);
     if (!SQL_SUCCEEDED(rc))
         return rc;
 
-    /* We have to remove zero bytes or we have problems! */
-    while ( (*to > orig_to) && (*((*to) - 1) == (SQLCHAR) 0) ) --(*to);
+    stmt->buf_remove_trail_zeroes();
 
     /* insert "," */
-    if (!(*to= (SQLCHAR *)stmt->temp_buf.add_to_buffer((char *)*to, ",", 1)))
+    if (stmt->add_to_buffer(",", 1) == NULL)
         return set_error(stmt,MYERR_S1001,NULL,4001);
 
     return(SQL_SUCCESS);
@@ -465,7 +463,6 @@ static my_bool insert_field(STMT *stmt, MYSQL_RES *result,
   DESCREC *aprec= &aprec_, *iprec= &iprec_;
   MYSQL_FIELD *field= mysql_fetch_field_direct(result,nSrcCol);
   MYSQL_ROW   row_data;
-  unsigned char *to= (unsigned char*)stmt->temp_buf.buf;
   SQLLEN      length;
   char as_string[50], *dummy;
 
@@ -494,16 +491,16 @@ static my_bool insert_field(STMT *stmt, MYSQL_RES *result,
     aprec->octet_length_ptr= &length;
     aprec->indicator_ptr= &length;
 
-    if (!SQL_SUCCEEDED(insert_param(stmt, (uchar *) &to, NULL, stmt->apd,
+    if (!SQL_SUCCEEDED(insert_param(stmt, NULL, stmt->apd,
                                     aprec, iprec, 0)))
       return 1;
-    if (!(to= (unsigned char *)stmt->temp_buf.add_to_buffer((char *) to, " AND ", 5)))
+    if (stmt->add_to_buffer(" AND ", 5) == NULL)
     {
       return (my_bool)set_error(stmt, MYERR_S1001, NULL, 4001);
     }
 
-    length= (uint) ((char *)to - (char*) stmt->temp_buf.buf);
-    dynstr_append_mem(dynQuery, (char*)stmt->temp_buf.buf, length);
+    dynstr_append_mem(dynQuery, stmt->buf(), stmt->buf_pos());
+    stmt->buf_set_pos(0); // Buffer is used, can be reset
   }
   else
   {
@@ -747,7 +744,8 @@ static SQLRETURN build_set_clause(STMT *stmt, SQLULEN irow,
     for ( ncol= 0; ncol < stmt->result->field_count; ++ncol )
     {
         SQLLEN *pcbValue;
-        SQLCHAR *to = (SQLCHAR*)stmt->temp_buf.buf;
+        SQLCHAR *to = (SQLCHAR*)stmt->buf();
+
         field= mysql_fetch_field_direct(result,ncol);
         arrec= desc_get_rec(stmt->ard, ncol, FALSE);
         irrec= desc_get_rec(stmt->ird, ncol, FALSE);
@@ -821,11 +819,11 @@ static SQLRETURN build_set_clause(STMT *stmt, SQLULEN irow,
         aprec->octet_length_ptr= &length;
         aprec->indicator_ptr= &length;
 
-        if ( copy_rowdata(stmt,aprec,iprec,&to) != SQL_SUCCESS )
+        if ( copy_rowdata(stmt,aprec,iprec) != SQL_SUCCESS )
             return(SQL_ERROR);
 
-        length = (uint)((char *)to - (char*)stmt->temp_buf.buf);
-        dynstr_append_mem(dynQuery, (char*)stmt->temp_buf.buf, length);
+        dynstr_append_mem(dynQuery, stmt->buf(), stmt->buf_pos());
+        stmt->buf_set_pos(0); // Buffer is used, can be reset
     }
 
     if (ignore_count == result->field_count)
@@ -1345,7 +1343,6 @@ static SQLRETURN batch_insert( STMT *stmt, SQLULEN irow, DYNAMIC_STRING *ext_que
     SQLLEN       length;
     SQLUSMALLINT ncol;
     long i;
-    SQLCHAR      *to;
     ulong        query_length= 0;           /* our original query len so we can reset pos if break_insert   */
     my_bool      break_insert= FALSE;       /* true if we are to exceed max data size for transmission
                                                but this seems to be misused */
@@ -1377,8 +1374,6 @@ static SQLRETURN batch_insert( STMT *stmt, SQLULEN irow, DYNAMIC_STRING *ext_que
         /* For each row, build the value list from its columns */
         while (count < insert_count)
         {
-          to = (SQLCHAR*)stmt->temp_buf.buf;
-
             /* Append values for each column. */
             dynstr_append_mem(ext_query,"(", 1);
             for ( ncol= 0; ncol < result->field_count; ++ncol )
@@ -1455,13 +1450,14 @@ static SQLRETURN batch_insert( STMT *stmt, SQLULEN irow, DYNAMIC_STRING *ext_que
                 aprec->octet_length_ptr= &length;
                 aprec->indicator_ptr= &length;
 
-                if (copy_rowdata(stmt, aprec, iprec, &to) != SQL_SUCCESS)
+                if (copy_rowdata(stmt, aprec, iprec) != SQL_SUCCESS)
                   return SQL_ERROR;
 
             } /* END OF for (ncol= 0; ncol < result->field_count; ++ncol) */
 
-            length = (uint)((char *)to - (char*)stmt->temp_buf.buf);
-            dynstr_append_mem(ext_query, (char*)stmt->temp_buf.buf, length - 1);
+            length = stmt->buf_pos();
+            dynstr_append_mem(ext_query, stmt->buf(), length - 1);
+            stmt->buf_set_pos(0); // Buffer is used, can be reset
             dynstr_append_mem(ext_query, "),", 2);
             ++count;
 
@@ -1469,7 +1465,7 @@ static SQLRETURN batch_insert( STMT *stmt, SQLULEN irow, DYNAMIC_STRING *ext_que
               We have a limited capacity to shove data across the wire, but
               we handle this by sending in multiple calls to exec_stmt_query()
             */
-            if (ext_query->length + length >= (SQLULEN) stmt->dbc->net_buffer_len)
+            if (ext_query->length + length >= (SQLULEN) stmt->buf_len())
             {
                 break_insert= TRUE;
                 break;

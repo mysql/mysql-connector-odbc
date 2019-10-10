@@ -61,7 +61,7 @@ SQLRETURN exec_stmt_query(STMT *stmt, const char *query,
     /* if setting sql_select_limit fails, the query will probably fail anyway too */
     return rc;
   }
-
+  stmt->buf_set_pos(0);
   return odbc_stmt(stmt->dbc, query, query_length, req_lock);
 }
 
@@ -3875,7 +3875,7 @@ long double myodbc_strtold(const char *nptr, char **endptr)
 
 tempBuf::tempBuf() : buf(NULL), buf_len(0), cur_pos(0)
 {
-  extend_buffer(buf, 16384);
+  extend_buffer(16384);
 }
 
 char *tempBuf::extend_buffer(size_t len)
@@ -3889,7 +3889,7 @@ char *tempBuf::extend_buffer(size_t len)
     // TODO: smarter processing for Out-of-Memory
     if (buf == NULL)
       throw "Not enough memory for buffering";
-    buf_len = len;
+    buf_len += len;
   }
 
   return buf + cur_pos; // Return position in the new buffer
@@ -3927,6 +3927,11 @@ char *tempBuf::add_to_buffer(char *to, const char *from, size_t len)
   return add_to_buffer(from, len);
 }
 
+
+void tempBuf::remove_trail_zeroes()
+{
+  while (cur_pos && buf[cur_pos-1] == '\0') --cur_pos;
+}
 
 tempBuf::~tempBuf()
 {

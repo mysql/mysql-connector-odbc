@@ -241,13 +241,13 @@ skip_unlock_exit:
 SQLRETURN insert_params(STMT *stmt, SQLULEN row, char **finalquery,
                         SQLULEN *finalquery_length)
 {
-  char *query= GET_QUERY(&stmt->query), *to;
+  char *query= GET_QUERY(&stmt->query);
   uint i,length, had_info= 0;
   SQLRETURN rc= SQL_SUCCESS;
 
   int mutex_was_locked= myodbc_mutex_trylock(&stmt->dbc->lock);
 
-  to = (char*)stmt->temp_buf.buf + (finalquery_length != NULL ? *finalquery_length : 0);
+  //to = stmt->buf() + (finalquery_length != NULL ? *finalquery_length : 0);
 
   if (!stmt->dbc->ds->dont_use_set_locale)
   {
@@ -281,22 +281,21 @@ SQLRETURN insert_params(STMT *stmt, SQLULEN row, char **finalquery,
     {
       bind= get_param_bind(stmt, i, TRUE);
 
-      rc = insert_param(stmt, (uchar*)stmt->temp_buf.buf,
-                        bind, stmt->apd, aprec, iprec, row);
+      rc = insert_param(stmt, bind, stmt->apd, aprec, iprec, row);
     }
     else
     {
       pos= get_param_pos(&stmt->query, i);
       length= (uint) (pos-query);
 
-      if (!(to= stmt->temp_buf.add_to_buffer(to, query, length)))
+      if (stmt->add_to_buffer(query, length) == NULL)
       {
         goto memerror;
       }
 
       query= pos+1;  /* Skip '?' */
 
-      rc= insert_param(stmt, (uchar*)&to, NULL, stmt->apd, aprec, iprec, row);
+      rc= insert_param(stmt, NULL, stmt->apd, aprec, iprec, row);
     }
 
     if (!SQL_SUCCEEDED(rc))
@@ -324,28 +323,25 @@ SQLRETURN insert_params(STMT *stmt, SQLULEN row, char **finalquery,
   {
     length= (uint) (GET_QUERY_END(&stmt->query) - query);
 
-    if (!(to = stmt->temp_buf.add_to_buffer(to, query, length + 1)))
+    if (stmt->add_to_buffer(query, length) == NULL)
     {
       goto memerror;
     }
 
     if (finalquery_length!= NULL)
     {
-      *finalquery_length = to - (char*)stmt->temp_buf.buf - 1;
+      *finalquery_length = stmt->buf_pos();
     }
 
     if (finalquery!=NULL)
     {
-      if (!(to = (char*)myodbc_memdup((char*)stmt->temp_buf.buf,
-        (uint)(to - (char*)stmt->temp_buf.buf), MYF(0))))
+      char *dupquery = NULL;
+      if (!(dupquery = (char*)myodbc_memdup(stmt->buf(),
+        stmt->buf_pos(), MYF(0))))
       {
         goto memerror;
       }
-    }
-
-    if (finalquery!=NULL)
-    {
-      *finalquery= to;
+      *finalquery= dupquery;
     }
   }
 
@@ -375,7 +371,7 @@ error:
 }
 
 static
-void put_null_param(STMT *stmt, char** toptr, MYSQL_BIND *bind)
+void put_null_param(STMT *stmt, MYSQL_BIND *bind)
 {
   if (bind != NULL && ssps_used(stmt))
   {
@@ -383,13 +379,13 @@ void put_null_param(STMT *stmt, char** toptr, MYSQL_BIND *bind)
   }
   else
   {
-    *toptr = stmt->temp_buf.add_to_buffer(*toptr, "NULL", 4);
+    stmt->add_to_buffer("NULL", 4);
   }
 }
 
 
 static
-void put_default_value(STMT *stmt, char** toptr, MYSQL_BIND *bind)
+void put_default_value(STMT *stmt, MYSQL_BIND *bind)
 {
   if (bind != NULL && ssps_used(stmt))
   {
@@ -398,7 +394,7 @@ void put_default_value(STMT *stmt, char** toptr, MYSQL_BIND *bind)
   }
   else
   {
-    *toptr = stmt->temp_buf.add_to_buffer(*toptr, "DEFAULT", 7);
+    stmt->add_to_buffer("DEFAULT", 7);
   }
 }
 
@@ -466,7 +462,7 @@ BOOL bind_param(MYSQL_BIND *bind, const char *value, unsigned long length,
 
 /* TRUE - on memory allocation error */
 static
-BOOL put_param_value(STMT *stmt, char** toptr, MYSQL_BIND *bind,
+BOOL put_param_value(STMT *stmt, MYSQL_BIND *bind,
                      const char * value, unsigned long length)
 {
   if (ssps_used(stmt))
@@ -475,7 +471,7 @@ BOOL put_param_value(STMT *stmt, char** toptr, MYSQL_BIND *bind,
   }
   else
   {
-    *toptr = stmt->temp_buf.add_to_buffer(*toptr, value, length);
+    stmt->add_to_buffer(value, length);
   }
 
   return FALSE;
@@ -774,7 +770,7 @@ SQLRETURN convert_c_type2str(STMT *stmt, SQLSMALLINT ctype, DESCREC *iprec,
   @param[in]      aprec The APD record of the parameter
   @param[in]      iprec The IPD record of the parameter
 */
-SQLRETURN insert_param(STMT *stmt, uchar *place4param, MYSQL_BIND *bind, DESC* apd,
+SQLRETURN insert_param(STMT *stmt, MYSQL_BIND *bind, DESC* apd,
                        DESCREC *aprec, DESCREC *iprec, SQLULEN row)
 {
     long length;
@@ -784,9 +780,6 @@ SQLRETURN insert_param(STMT *stmt, uchar *place4param, MYSQL_BIND *bind, DESC* a
     SQLLEN *octet_length_ptr= NULL;
     SQLLEN *indicator_ptr= NULL;
     SQLRETURN result= SQL_SUCCESS;
-
-    /* carefully should be used either these 2 or that(bind) ptr. union? */
-    char **toptr= (char**)place4param, *to= *toptr;
 
     if (aprec->octet_length_ptr)
     {
@@ -812,7 +805,7 @@ SQLRETURN insert_param(STMT *stmt, uchar *place4param, MYSQL_BIND *bind, DESC* a
 
     if (indicator_ptr && *indicator_ptr == SQL_NULL_DATA)
     {
-      put_null_param(stmt, toptr, bind);
+      put_null_param(stmt, bind);
 
       return SQL_SUCCESS;
     }
@@ -861,7 +854,7 @@ SQLRETURN insert_param(STMT *stmt, uchar *place4param, MYSQL_BIND *bind, DESC* a
               aprec->concise_type == SQL_C_DEFAULT &&
               aprec->par.value == NULL))
     {
-      put_default_value(stmt, toptr, bind);
+      put_default_value(stmt, bind);
       return SQL_SUCCESS;
     }
     else if (IS_DATA_AT_EXEC(octet_length_ptr))
@@ -869,7 +862,7 @@ SQLRETURN insert_param(STMT *stmt, uchar *place4param, MYSQL_BIND *bind, DESC* a
         length= aprec->par.value_length;
         if ( !(data= aprec->par.value) )
         {
-          put_default_value(stmt, toptr, bind);
+          put_default_value(stmt, bind);
           return SQL_SUCCESS;
         }
     }
@@ -924,7 +917,7 @@ SQLRETURN insert_param(STMT *stmt, uchar *place4param, MYSQL_BIND *bind, DESC* a
           }
           else
           {
-            to = stmt->temp_buf.add_to_buffer(to, data, length);
+            stmt->add_to_buffer(data, length);
           }
           goto out;
         }
@@ -972,7 +965,7 @@ SQLRETURN insert_param(STMT *stmt, uchar *place4param, MYSQL_BIND *bind, DESC* a
             if (dbc->cxn_charset_info->number !=
                 dbc->ansi_charset_info->number)
             {
-              to = stmt->temp_buf.add_to_buffer(to, "_binary", 7);
+              stmt->add_to_buffer("_binary", 7);
             }
           }
           /* We have only added the introducer, data is added below. */
@@ -1000,7 +993,7 @@ SQLRETURN insert_param(STMT *stmt, uchar *place4param, MYSQL_BIND *bind, DESC* a
             }
             else
             {
-              to = stmt->temp_buf.add_to_buffer(to, "_utf8", 5);
+              stmt->add_to_buffer("_utf8", 5);
             }
           }
           else if (aprec->concise_type != SQL_C_WCHAR &&
@@ -1018,9 +1011,9 @@ SQLRETURN insert_param(STMT *stmt, uchar *place4param, MYSQL_BIND *bind, DESC* a
             }
             else
             {
-              to = stmt->temp_buf.add_to_buffer(to, "_", 1);
-              to = stmt->temp_buf.add_to_buffer(to, dbc->ansi_charset_info->csname,
-                              strlen(dbc->ansi_charset_info->csname));
+              stmt->add_to_buffer("_", 1);
+              stmt->add_to_buffer(dbc->ansi_charset_info->csname,
+                                  strlen(dbc->ansi_charset_info->csname));
             }
           }
           /* We have only added the introducer, data is added below. */
@@ -1036,7 +1029,7 @@ SQLRETURN insert_param(STMT *stmt, uchar *place4param, MYSQL_BIND *bind, DESC* a
         }
         else
         {
-          if (put_param_value(stmt, &to, bind, buff, length))
+          if (put_param_value(stmt, bind, buff, length))
           {
             goto memerror;
           }
@@ -1071,7 +1064,7 @@ SQLRETURN insert_param(STMT *stmt, uchar *place4param, MYSQL_BIND *bind, DESC* a
             length= sprintf(buff, "'%02d:%02d:%02d'", time->hour, time->minute, time->second);
           }
 
-          if (put_param_value(stmt, &to, bind, buff, length))
+          if (put_param_value(stmt, bind, buff, length))
           {
             goto memerror;
           }
@@ -1115,7 +1108,7 @@ SQLRETURN insert_param(STMT *stmt, uchar *place4param, MYSQL_BIND *bind, DESC* a
                   (int) time%100);
           }
 
-          if (put_param_value(stmt, &to, bind, buff, length))
+          if (put_param_value(stmt, bind, buff, length))
           {
             goto memerror;
           }
@@ -1133,7 +1126,7 @@ SQLRETURN insert_param(STMT *stmt, uchar *place4param, MYSQL_BIND *bind, DESC* a
           }
           else if (!convert)
           {
-            to = stmt->temp_buf.add_to_buffer(to, data, 1);
+            stmt->add_to_buffer(data, 1);
           }
           goto out;
         }
@@ -1189,7 +1182,7 @@ SQLRETURN insert_param(STMT *stmt, uchar *place4param, MYSQL_BIND *bind, DESC* a
       default:
         if (!convert)
         {
-          put_param_value(stmt, &to, bind, data, length);
+          put_param_value(stmt, bind, data, length);
           goto out;
         }
     }
@@ -1205,27 +1198,28 @@ SQLRETURN insert_param(STMT *stmt, uchar *place4param, MYSQL_BIND *bind, DESC* a
        is_binary_sql_type(iprec->concise_type))
       {
         SQLLEN transformed_len = 0;
-        to = stmt->temp_buf.add_to_buffer(to, " 0x", 3);
+        stmt->add_to_buffer(" 0x", 3);
         /* Make sure we have room for a fully-escaped string. */
-        if (!(to = stmt->temp_buf.extend_buffer(to, length * 2)))
+        if (!stmt->extend_buffer(length * 2))
         {
           goto memerror;
         }
 
-        copy_binhex_result(stmt, (SQLCHAR*)to, length * 2 + 1, &transformed_len, 0, data, length);
-        to += transformed_len;
+        copy_binhex_result(stmt, (SQLCHAR*)stmt->endbuf(), length * 2 + 1, &transformed_len, 0, data, length);
+        stmt->buf_add_pos(transformed_len);
       }
       else
       {
-        to = stmt->temp_buf.add_to_buffer(to, "'", 1);
+        stmt->add_to_buffer("'", 1);
         /* Make sure we have room for a fully-escaped string. */
-        if (!(to = stmt->temp_buf.extend_buffer(to, length * 2)))
+        if (!(stmt->extend_buffer(length * 2)))
         {
           goto memerror;
         }
 
-        to+= mysql_real_escape_string(&dbc->mysql, to, data, length);
-        to = stmt->temp_buf.add_to_buffer(to, "'", 1);
+        size_t added = mysql_real_escape_string(&dbc->mysql, stmt->endbuf(), data, length);
+        stmt->buf_add_pos(added);
+        stmt->add_to_buffer("'", 1);
       }
     }
 
@@ -1234,8 +1228,6 @@ out:
     {
       x_free(data);
     }
-
-    *toptr= to;
 
     return result;
 
@@ -1529,8 +1521,7 @@ SQLRETURN my_SQLExecute( STMT *pStmt )
           const char * stmtsBinder= " UNION ALL ";
           const ulong binderLength= strlen(stmtsBinder);
 
-          pStmt->temp_buf.add_to_buffer((char*)pStmt->temp_buf.buf + length,
-                     stmtsBinder, binderLength);
+          pStmt->add_to_buffer(stmtsBinder, binderLength);
           length+= binderLength;
         }
         else

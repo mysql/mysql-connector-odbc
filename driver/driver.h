@@ -475,6 +475,7 @@ struct tempBuf
 
   char* add_to_buffer(const char *from, size_t len);
   char* add_to_buffer(char *to, const char *from, size_t len);
+  void remove_trail_zeroes();
 
 	~tempBuf();
 };
@@ -507,7 +508,7 @@ struct STMT
   MYSQL_ROW	        (*fix_fields)(STMT *stmt,MYSQL_ROW row);
   MYSQL_FIELD	      *fields;
   MYSQL_ROW_OFFSET  end_of_set;
-  tempBuf           temp_buf;
+  tempBuf           tempbuf;
 
   LIST              list;
   MYCURSOR          cursor;
@@ -558,6 +559,19 @@ struct STMT
   enum OUT_PARAM_STATE out_params_state;
 
   int ssps_bind_result();
+
+  char* extend_buffer(char *to, size_t len);
+  char* extend_buffer(size_t len);
+
+  char* add_to_buffer(const char *from, size_t len);
+  char* buf() { return tempbuf.buf; }
+  char* endbuf() { return tempbuf.buf + tempbuf.cur_pos; }
+  size_t buf_pos() { return tempbuf.cur_pos; }
+  size_t buf_len() { return tempbuf.buf_len; }
+  void buf_set_pos(size_t pos) { tempbuf.cur_pos = pos; }
+  void buf_add_pos(size_t pos) { tempbuf.cur_pos += pos; }
+  void buf_remove_trail_zeroes() { tempbuf.remove_trail_zeroes(); }
+
 
   STMT() : dbc(NULL), result(NULL), array(NULL), result_array(NULL),
     current_values(NULL), fields(NULL), end_of_set(NULL), table_name(NULL),
