@@ -153,7 +153,7 @@ SQLRETURN my_pos_delete (STMT *stmt,STMT *stmtParam,
 SQLRETURN my_pos_update (STMT *stmt,STMT *stmtParam,
 			                  SQLUSMALLINT irow,DYNAMIC_STRING *dynStr);
 char *    check_if_positioned_cursor_exists (STMT *stmt, STMT **stmtNew);
-SQLRETURN insert_param  (STMT *stmt, uchar *to, MYSQL_BIND *bind, DESC *apd,
+SQLRETURN insert_param  (STMT *stmt, MYSQL_BIND *bind, DESC *apd,
                         DESCREC *aprec, DESCREC *iprec, SQLULEN row);
 
 void reset_getdata_position   (STMT *stmt);

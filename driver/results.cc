@@ -443,8 +443,7 @@ sql_get_data(STMT *stmt, SQLSMALLINT fCType, uint column_number,
       return set_stmt_error(stmt,"22002",
                             "Indicator variable required but not supplied",0);
     }
-
-    *pcbValue= SQL_NULL_DATA;
+    *pcbValue = SQL_NULL_DATA;
   }
   else
   {

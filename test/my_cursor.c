@@ -3163,7 +3163,7 @@ DECLARE_TEST(t_dae_setpos_update)
   SQLINTEGER z= 40;
   SQLCHAR *yval= (SQLCHAR *) "1234567890";
   SQLCHAR yout[11];
-  SQLLEN ylen= SQL_LEN_DATA_AT_EXEC(10);
+  SQLLEN xlen = 0, ylen= SQL_LEN_DATA_AT_EXEC(10), zlen = 0;
   SQLPOINTER holder= (SQLPOINTER)((size_t)0xcfcdcecc);
   SQLPOINTER paramptr;
   /* setup */
@@ -3177,9 +3177,9 @@ DECLARE_TEST(t_dae_setpos_update)
   ok_stmt(hstmt, SQLFetchScroll(hstmt, SQL_FETCH_NEXT, 0));
 
   /* bind values for positioned update */
-  ok_stmt(hstmt, SQLBindCol(hstmt, 1, SQL_C_LONG, &x, 0, NULL));
+  ok_stmt(hstmt, SQLBindCol(hstmt, 1, SQL_C_LONG, &x, 0, &xlen));
   ok_stmt(hstmt, SQLBindCol(hstmt, 2, SQL_C_BINARY, holder, 10, &ylen));
-  ok_stmt(hstmt, SQLBindCol(hstmt, 3, SQL_C_LONG, &z, 0, NULL));
+  ok_stmt(hstmt, SQLBindCol(hstmt, 3, SQL_C_LONG, &z, 0, &zlen));
 
   /* perform update and provide data */
   expect_stmt(hstmt, SQLSetPos(hstmt, 0, SQL_UPDATE, SQL_LOCK_NO_CHANGE),

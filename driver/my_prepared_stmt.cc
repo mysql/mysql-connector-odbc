@@ -541,6 +541,21 @@ static MYSQL_ROW fetch_varlength_columns(STMT *stmt, MYSQL_ROW columns)
 }
 
 
+char *STMT::extend_buffer(char *to, size_t len)
+{
+  return tempbuf.extend_buffer(to, len);
+}
+
+char *STMT::extend_buffer(size_t len)
+{
+  return tempbuf.extend_buffer(len);
+}
+
+char *STMT::add_to_buffer(const char *from, size_t len)
+{
+  return tempbuf.add_to_buffer(from, len);
+}
+
 int STMT::ssps_bind_result()
 {
   const unsigned int  num_fields= field_count(this);
