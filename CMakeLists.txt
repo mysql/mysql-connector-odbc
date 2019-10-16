@@ -1,4 +1,4 @@
-# Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved. 
+# Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
 # 
 # This program is free software; you can redistribute it and/or modify 
 # it under the terms of the GNU General Public License, version 2.0, as 
@@ -203,6 +203,7 @@ INCLUDE(${CMAKE_SOURCE_DIR}/cmake/gcov.cmake)
 INCLUDE(${CMAKE_SOURCE_DIR}/cmake/FindMySQL.cmake)
 #-----------------------------------------------------
 
+
 IF(MYSQL_VERSION_ID GREATER 80002)
   ADD_DEFINITIONS(-DMYSQL8) 
   SET(MYSQL8 1)
@@ -282,6 +283,7 @@ ELSE(WIN32)
         ENDIF(WITH_UNIXODBC)
 
 ENDIF(WIN32)
+
 #-----------------------------------------------------
 
 #-------- configuring paths to odbc heders for compatibility checks ---------
@@ -428,6 +430,9 @@ IF(RPM_BUILD AND CMAKE_SYSTEM_PROCESSOR MATCHES "(x86_64|ppc64|ppc64p7|s390x|spa
 ENDIF()
 
 MESSAGE(STATUS "Installation library subdir: ${LIB_SUBDIR}")
+
+INCLUDE(${CMAKE_SOURCE_DIR}/cmake/ssl_setup.cmake)
+setup_ssl_libs()
 
 INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR})
 

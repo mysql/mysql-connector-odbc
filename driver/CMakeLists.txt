@@ -193,30 +193,3 @@ WHILE(${DRIVER_INDEX} LESS ${DRIVERS_COUNT})
   MATH(EXPR DRIVER_INDEX "${DRIVER_INDEX} + 1")
 
 ENDWHILE(${DRIVER_INDEX} LESS ${DRIVERS_COUNT})
-
-IF(MYSQL8)
-  SET(ssl_libs_to_find
-    libcrypto*.*
-    libssl*.*
-    libeay32.*
-    ssleay32.*
-  )
-
-  SET(_SSL_PATH)
-
-  IF(WIN32)
-    SET(_SSL_PATH ${MYSQL_DIR}/bin/)
-  ELSE(WIN32)
-    SET(_SSL_PATH ${MYSQL_DIR}/lib/)
-  ENDIF(WIN32)
-
-  FOREACH(_lib_to_find IN LISTS ssl_libs_to_find)
-    INSTALL(DIRECTORY ${_SSL_PATH} DESTINATION ${LIB_SUBDIR}
-          FILES_MATCHING
-          PATTERN "mecab" EXCLUDE
-          PATTERN "pkgconfig" EXCLUDE
-          PATTERN "plugin" EXCLUDE
-          PATTERN ${_lib_to_find})
-  ENDFOREACH()
-
-ENDIF(MYSQL8)
