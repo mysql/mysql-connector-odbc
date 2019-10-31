@@ -55,6 +55,8 @@ FOREACH(T my_basics my_blob my_bulk my_catalog1 my_catalog2 my_crash my_curext m
     ADD_EXECUTABLE(${T} ${T}.c)
   ENDIF(WIN32)
 
+  set_target_properties(${T} PROPERTIES FOLDER Tests)
+
   IF(MYSQL_CXX_LINKAGE)
     SET_TARGET_PROPERTIES(${T} PROPERTIES 
           LINKER_LANGUAGE CXX

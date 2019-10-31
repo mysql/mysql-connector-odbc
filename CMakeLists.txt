@@ -63,6 +63,10 @@ macro(add_compile_options)
   add_definitions(${ARGV})
 endmacro()
 
+else()
+
+  set_property(GLOBAL PROPERTY USE_FOLDERS ON)
+
 endif()
 
 #-----------------------------------------------------

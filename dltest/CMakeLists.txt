@@ -29,6 +29,7 @@
 ##########################################################################
 
 ADD_EXECUTABLE(dltest dltest.c)
+set_target_properties(dltest PROPERTIES FOLDER Tests)
 
 IF(NOT WIN32)
 
