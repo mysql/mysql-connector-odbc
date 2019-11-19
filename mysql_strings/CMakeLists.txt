@@ -53,7 +53,6 @@ SET(STRINGS_SOURCES
   decimal.cc
   dtoa.cc
   int2str.cc
-  longlong2str.cc
   my_strchr.cc
   my_strtoll10.cc
   str2int.cc
@@ -77,9 +76,37 @@ IF(CMAKE_CXX_COMPILER_ID MATCHES "Clang" AND
   ADD_COMPILE_FLAGS(dtoa.cc COMPILE_FLAGS "-fno-strict-aliasing")
 ENDIF()
 
+# Generation of uca900 tables
+
+ADD_EXECUTABLE(uca9dump uca9-dump.cc)
+set_target_properties(uca9dump PROPERTIES FOLDER "Misc")
+
+SET(ZH_HANS_SRC_FILE ${CMAKE_CURRENT_SOURCE_DIR}/lang_data/zh_hans.txt)
+SET(ZH_HANS_DST_FILE ${CMAKE_CURRENT_BINARY_DIR}/uca900_zh_tbls.cc)
+SET(JA_HANS_SRC_FILE ${CMAKE_CURRENT_SOURCE_DIR}/lang_data/ja_hans.txt)
+SET(JA_HANS_DST_FILE ${CMAKE_CURRENT_BINARY_DIR}/uca900_ja_tbls.cc)
+ADD_CUSTOM_COMMAND(OUTPUT ${ZH_HANS_DST_FILE}
+                          ${JA_HANS_DST_FILE}
+                   COMMAND uca9dump zh
+                     --in_file=${ZH_HANS_SRC_FILE}
+                     --out_file=${ZH_HANS_DST_FILE}
+                   COMMAND uca9dump ja
+                     --in_file=${JA_HANS_SRC_FILE}
+                     --out_file=${JA_HANS_DST_FILE}
+                   DEPENDS uca9dump ${ZH_HANS_SRC_FILE} ${JA_HANS_SRC_FILE}
+                  )
+
+SET_SOURCE_FILES_PROPERTIES(
+  ${JA_HANS_DST_FILE} ${ZH_HANS_DST_FILE}
+  PROPERTIES GENERATED TRUE
+  )
+
+LIST(APPEND STRINGS_SOURCES ${JA_HANS_DST_FILE} ${ZH_HANS_DST_FILE})
+
 # Avoid dependencies on perschema data defined in mysys
 ADD_DEFINITIONS(-DDISABLE_MYSQL_THREAD_H)
 ADD_LIBRARY(mysql_strings ${STRINGS_SOURCES})
+set_target_properties(mysql_strings PROPERTIES FOLDER "Misc")
 
 IF(NOT WIN32)
   SET_TARGET_PROPERTIES(mysql_strings PROPERTIES COMPILE_FLAGS ${CMAKE_SHARED_LIBRARY_C_FLAGS})

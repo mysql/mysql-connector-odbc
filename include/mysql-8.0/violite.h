@@ -45,6 +45,8 @@
 #include "mysql/components/services/my_thread_bits.h"
 #include "mysql/components/services/mysql_socket_bits.h"
 
+#include "mysql/psi/mysql_socket.h"
+
 struct Vio;
 
 /* Simple vio interface in C;  The functions are implemented in violite.c */
@@ -174,9 +176,11 @@ int vio_keepalive(MYSQL_VIO vio, bool onoff);
 bool vio_should_retry(MYSQL_VIO vio);
 /* Check that operation was timed out */
 bool vio_was_timeout(MYSQL_VIO vio);
+#ifndef DBUG_OFF
 /* Short text description of the socket for those, who are curious.. */
 #define VIO_DESCRIPTION_SIZE 30 /* size of description */
 void vio_description(MYSQL_VIO vio, char *buf);
+#endif  // DBUG_OFF
 /* Return the type of the connection */
 enum enum_vio_type vio_type(const MYSQL_VIO vio);
 /* Return last error number */
@@ -223,25 +227,10 @@ extern "C" {
 #define HAVE_OPENSSL11 1
 #endif  // OPENSSL_VERSION_NUMBER
 
-/* apple deprecated openssl in MacOSX Lion */
-#ifdef __APPLE__
-#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-#endif
-
 #define HEADER_DES_LOCL_H dummy_something
-#ifndef WOLFSSL_MYSQL_COMPATIBLE
-#define WOLFSSL_MYSQL_COMPATIBLE
-#endif
-/* Set wolfSSL to use same type as MySQL do for socket handles */
-typedef my_socket WOLFSSL_SOCKET_T;
-#define WOLFSSL_SOCKET_T_DEFINED
 
-// clang-format off
-#include <wolfssl_fix_namespace_pollution_pre.h>
 #include <openssl/err.h>
 #include <openssl/ssl.h>
-#include <wolfssl_fix_namespace_pollution.h>
-// clang-format on
 
 enum enum_ssl_init_error {
   SSL_INITERR_NOERROR = 0,
@@ -417,7 +406,11 @@ struct Vio {
 #endif
 #ifdef HAVE_OPENSSL
   void *ssl_arg = {nullptr};
-#endif
+  struct PSI_socket_locker *m_psi_read_locker = {nullptr};
+  PSI_socket_locker_state m_psi_read_state;
+  struct PSI_socket_locker *m_psi_write_locker = {nullptr};
+  PSI_socket_locker_state m_psi_write_state;
+#endif /* HAVE_OPENSSL */
 #if defined(_WIN32)
   HANDLE handle_file_map = {nullptr};
   char *handle_map = {nullptr};

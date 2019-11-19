@@ -1,4 +1,4 @@
-/* Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+/* Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License, version 2.0,
@@ -26,16 +26,9 @@
    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301  USA */
 
 /*
- * This file is basicly usa7 character sets with some extra functions
- * for big5 handling
- */
-
-/*
- * This comment is parsed by configure to create ctype.c,
- * so don't change it unless you know what you are doing.
- *
- * .configure. strxfrm_multiply_big5=1
- * .configure. mbmaxlen_big5=2
+  Support for Chinese(BIG5) characters.
+  This file is basicly usa7 character sets with some extra functions
+  for big5 handling
  */
 
 #include <stddef.h>
@@ -45,12 +38,6 @@
 #include "my_compiler.h"
 #include "my_inttypes.h"
 #include "my_macros.h"
-
-/*
-  Support for Chinese(BIG5) characters, by jou@nematic.ieo.nctu.edu.tw
-  modified by Wei He (hewei@mail.ied.ac.cn)
-  modified by Alex Barkov <bar@udm.net>
-*/
 
 #define isbig5head(c) (0xa1 <= (uchar)(c) && (uchar)(c) <= 0xf9)
 #define isbig5tail(c)                            \
@@ -6554,42 +6541,43 @@ CHARSET_INFO my_charset_big5_chinese_ci = {
     0,                 /* min_sort_char */
     0xF9D5,            /* max_sort_char */
     ' ',               /* pad char      */
-    1,                 /* escape_with_backslash_is_dangerous */
+    true,              /* escape_with_backslash_is_dangerous */
     1,                 /* levels_for_compare */
     &my_charset_big5_handler,
     &my_collation_big5_chinese_ci_handler,
     PAD_SPACE};
 
-CHARSET_INFO my_charset_big5_bin = {84,
-                                    0,
-                                    0, /* number     */
-                                    MY_CS_COMPILED | MY_CS_BINSORT, /* state */
-                                    "big5",     /* cs name    */
-                                    "big5_bin", /* name       */
-                                    "",         /* comment    */
-                                    NULL,       /* tailoring */
-                                    NULL,       /* coll_param */
-                                    ctype_big5,
-                                    to_lower_big5,
-                                    to_upper_big5,
-                                    NULL,              /* sort_order   */
-                                    NULL,              /* uca          */
-                                    NULL,              /* tab_to_uni   */
-                                    NULL,              /* tab_from_uni */
-                                    &my_caseinfo_big5, /* caseinfo     */
-                                    NULL,              /* state_map    */
-                                    NULL,              /* ident_map    */
-                                    1,                 /* strxfrm_multiply */
-                                    1,                 /* caseup_multiply  */
-                                    1,                 /* casedn_multiply  */
-                                    1,                 /* mbminlen   */
-                                    2,                 /* mbmaxlen   */
-                                    1,                 /* mbmaxlenlen */
-                                    0,                 /* min_sort_char */
-                                    0xF9FE,            /* max_sort_char */
-                                    ' ',               /* pad char      */
-                                    1, /* escape_with_backslash_is_dangerous */
-                                    1, /* levels_for_compare */
-                                    &my_charset_big5_handler,
-                                    &my_collation_mb_bin_handler,
-                                    PAD_SPACE};
+CHARSET_INFO my_charset_big5_bin = {
+    84,
+    0,
+    0,                              /* number     */
+    MY_CS_COMPILED | MY_CS_BINSORT, /* state */
+    "big5",                         /* cs name    */
+    "big5_bin",                     /* name       */
+    "",                             /* comment    */
+    NULL,                           /* tailoring */
+    NULL,                           /* coll_param */
+    ctype_big5,
+    to_lower_big5,
+    to_upper_big5,
+    NULL,              /* sort_order   */
+    NULL,              /* uca          */
+    NULL,              /* tab_to_uni   */
+    NULL,              /* tab_from_uni */
+    &my_caseinfo_big5, /* caseinfo     */
+    NULL,              /* state_map    */
+    NULL,              /* ident_map    */
+    1,                 /* strxfrm_multiply */
+    1,                 /* caseup_multiply  */
+    1,                 /* casedn_multiply  */
+    1,                 /* mbminlen   */
+    2,                 /* mbmaxlen   */
+    1,                 /* mbmaxlenlen */
+    0,                 /* min_sort_char */
+    0xF9FE,            /* max_sort_char */
+    ' ',               /* pad char      */
+    true,              /* escape_with_backslash_is_dangerous */
+    1,                 /* levels_for_compare */
+    &my_charset_big5_handler,
+    &my_collation_mb_bin_handler,
+    PAD_SPACE};

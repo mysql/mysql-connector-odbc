@@ -59,6 +59,7 @@
 #include "include/mysql-8.0/mysql/service_mysql_alloc.h"
 #include "include/mysql-8.0/m_ctype.h"
 #include "include/mysql-8.0/my_io.h"
+#include "include/mysql-8.0/thr_mutex.h"
 
 #endif
 
@@ -81,6 +82,28 @@ extern "C"
 #if MYSQL_VERSION_ID < MIN_MYSQL_VERSION
 # error "Connector/ODBC requires v4.1 (or later) of the MySQL client library"
 #endif
+
+#if !MYSQLCLIENT_STATIC_LINKING || MYSQL_VERSION_ID >= 80018
+
+  /*
+    Note: Things no longer defined in client library headers, but still used
+    by ODBC code.
+  */
+
+  #define set_if_bigger(a, b)   \
+    do {                        \
+      if ((a) < (b)) (a) = (b); \
+    } while (0)
+
+  #define set_if_smaller(a, b)  \
+    do {                        \
+      if ((a) > (b)) (a) = (b); \
+    } while (0)
+
+  static inline void reset_dynamic(DYNAMIC_ARRAY* array) { array->elements = 0; }
+
+#endif
+
 
 #define my_sys_init my_init
 #define x_free(A) { void *tmp= (A); if (tmp) my_free((char *) tmp); }

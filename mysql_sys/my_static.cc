@@ -1,4 +1,4 @@
-/* Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+/* Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License, version 2.0,
@@ -101,8 +101,8 @@ void (*error_handler_hook)(uint error, const char *str,
                            myf MyFlags) = my_message_stderr;
 void (*fatal_error_handler_hook)(uint error, const char *str,
                                  myf MyFlags) = my_message_stderr;
-void (*local_message_hook)(enum loglevel ll, const char *format, va_list args)
-    MY_ATTRIBUTE((format(printf, 2, 0))) = my_message_local_stderr;
+void (*local_message_hook)(enum loglevel ll, uint ecode,
+                           va_list args) = my_message_local_stderr;
 
 static void enter_cond_dummy(void *a MY_ATTRIBUTE((unused)),
                              mysql_cond_t *b MY_ATTRIBUTE((unused)),
@@ -159,12 +159,6 @@ int (*is_killed_hook)(const void *) = is_killed_dummy;
 void (*debug_sync_C_callback_ptr)(const char *, size_t);
 #endif /* defined(ENABLED_DEBUG_SYNC) */
 
-#ifdef _WIN32
-/* from my_getsystime.c */
-ulonglong query_performance_frequency, query_performance_offset,
-    query_performance_offset_micros;
-#endif
-
 /* How to disable options */
-bool my_disable_locking = 0;
+bool my_disable_locking = false;
 bool my_enable_symlinks = false;

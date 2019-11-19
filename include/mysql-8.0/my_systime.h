@@ -40,6 +40,12 @@
 #ifdef HAVE_SYS_TIME_H
 #include <sys/time.h>  // clock_gettime()
 #endif                 /* HAVE_SYS_TIME_H */
+#ifdef _WIN32
+#include <winsock2.h>  // struct timeval
+#endif                 /* _WIN32 */
+
+#undef min
+#undef max
 
 using UTC_clock = std::chrono::system_clock;
 
@@ -116,15 +122,15 @@ inline unsigned long long int my_getsystime() {
    The maximum timespec value used to represent "inifinity" (as when
    requesting an "inifinite" timeout.
  */
-//constexpr const timespec TIMESPEC_POSINF = {
-//    std::numeric_limits<decltype(timespec::tv_sec)>::max(), 999999999};
+constexpr const timespec TIMESPEC_POSINF = {
+    std::numeric_limits<decltype(timespec::tv_sec)>::max(), 999999999};
 
 /** Type alias to reduce chance of coversion errors on timeout values. */
 using Timeout_type = std::uint64_t;
 
 /** Value representing "infinite" timeout. */
-//constexpr const Timeout_type TIMEOUT_INF =
-//    std::numeric_limits<Timeout_type>::max() - 1;
+constexpr const Timeout_type TIMEOUT_INF =
+    std::numeric_limits<Timeout_type>::max() - 1;
 
 void set_timespec_nsec(struct timespec *abstime, Timeout_type nsec);
 void set_timespec(struct timespec *abstime, Timeout_type sec);
@@ -193,6 +199,17 @@ inline unsigned long long int my_micro_time() {
   }
   return (static_cast<unsigned long long int>(t.tv_sec) * 1000000 + t.tv_usec);
 #endif /* _WIN32 */
+}
+
+/**
+  Convert microseconds since epoch to timeval.
+  @param      micro_time  Microseconds.
+  @param[out] tm          A timeval variable to write to.
+*/
+inline void my_micro_time_to_timeval(std::uint64_t micro_time,
+                                     struct timeval *tm) {
+  tm->tv_sec = micro_time / 1000000;
+  tm->tv_usec = micro_time % 1000000;
 }
 
 void get_date(char *to, int flag, time_t date);

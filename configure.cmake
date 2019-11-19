@@ -267,7 +267,12 @@ CHECK_FUNCTION_EXISTS (gethrtime HAVE_GETHRTIME)
 CHECK_FUNCTION_EXISTS (getnameinfo HAVE_GETNAMEINFO)
 CHECK_FUNCTION_EXISTS (getpass HAVE_GETPASS)
 CHECK_FUNCTION_EXISTS (getpassphrase HAVE_GETPASSPHRASE)
-CHECK_FUNCTION_EXISTS (getpwnam HAVE_GETPWNAM)
+#
+# Note: we don't need this functionality and we intentionally
+# want HAVE_GETPWNAM undefined so that these parts of the
+# code are not used.
+#
+#CHECK_FUNCTION_EXISTS (getpwnam HAVE_GETPWNAM)
 CHECK_FUNCTION_EXISTS (getpwuid HAVE_GETPWUID)
 CHECK_FUNCTION_EXISTS (getrlimit HAVE_GETRLIMIT)
 CHECK_FUNCTION_EXISTS (getrusage HAVE_GETRUSAGE)

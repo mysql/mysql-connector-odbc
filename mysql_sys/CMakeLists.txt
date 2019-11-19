@@ -34,7 +34,8 @@ SET(SYS_SOURCES array.cc charset-def.cc charset.cc errors.cc list.cc
                   my_error.cc my_fstream.cc my_getwd.cc my_init.cc my_lib.cc my_malloc.cc my_mess.cc
                   my_once.cc my_open.cc my_read.cc my_static.cc my_thread.cc my_thr_init.cc
                   psi_noop.cc sql_chars.cc my_string.cc thr_cond.cc thr_mutex.cc
-                  my_getsystime.cc)
+                  #my_getsystime.cc
+)
 
 IF (WIN32)
   LIST(APPEND SYS_SOURCES
@@ -46,6 +47,7 @@ ENDIF()
 SET(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 ADD_LIBRARY(mysql_sys ${SYS_SOURCES})
+set_target_properties(mysql_sys PROPERTIES FOLDER "Misc")
 
 IF(WIN32)
   ADD_DEFINITIONS(-DWIN32_LEAN_AND_MEAN) 

@@ -1,4 +1,4 @@
-/* Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+/* Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License, version 2.0,
@@ -29,17 +29,20 @@
 
 #include "my_macros.h"
 #include "my_psi_config.h"
-#include "mysql/psi/mysql_file.h"
-#include "mysql/psi/mysql_stage.h"
-#include "mysql/psi/mysql_thread.h"
-#include "mysql/psi/psi_rwlock.h"
+#include "mysql/components/services/mysql_mutex_bits.h"  // for mysql_mutex_t
+#include "mysql/components/services/psi_cond_bits.h"
+#include "mysql/components/services/psi_file_bits.h"    // for PSI_file_key
+#include "mysql/components/services/psi_memory_bits.h"  // for PSI_memory_key
+#include "mysql/components/services/psi_mutex_bits.h"
+#include "mysql/components/services/psi_rwlock_bits.h"  // for PSI_rwlock_key
+#include "mysql/components/services/psi_stage_bits.h"   // for PSI_stage_info
+#include "mysql/components/services/psi_thread_bits.h"  // for PSI_thread_key
 
-extern PSI_mutex_key key_BITMAP_mutex, key_IO_CACHE_append_buffer_lock,
-    key_IO_CACHE_SHARE_mutex, key_KEY_CACHE_cache_lock, key_THR_LOCK_charset,
-    key_THR_LOCK_heap, key_THR_LOCK_lock, key_THR_LOCK_malloc,
-    key_THR_LOCK_mutex, key_THR_LOCK_myisam, key_THR_LOCK_net,
-    key_THR_LOCK_open, key_THR_LOCK_threads, key_TMPDIR_mutex,
-    key_THR_LOCK_myisam_mmap;
+extern PSI_mutex_key key_IO_CACHE_append_buffer_lock, key_IO_CACHE_SHARE_mutex,
+    key_KEY_CACHE_cache_lock, key_THR_LOCK_charset, key_THR_LOCK_heap,
+    key_THR_LOCK_lock, key_THR_LOCK_malloc, key_THR_LOCK_mutex,
+    key_THR_LOCK_myisam, key_THR_LOCK_net, key_THR_LOCK_open,
+    key_THR_LOCK_threads, key_TMPDIR_mutex, key_THR_LOCK_myisam_mmap;
 
 extern PSI_rwlock_key key_SAFE_HASH_lock;
 
@@ -48,7 +51,7 @@ extern PSI_cond_key key_IO_CACHE_SHARE_cond, key_IO_CACHE_SHARE_cond_writer,
 
 extern PSI_stage_info stage_waiting_for_table_level_lock;
 
-extern mysql_mutex_t THR_LOCK_malloc, THR_LOCK_open, THR_LOCK_keycache;
+extern mysql_mutex_t THR_LOCK_malloc, THR_LOCK_open;
 extern mysql_mutex_t THR_LOCK_net;
 extern mysql_mutex_t THR_LOCK_charset;
 
@@ -71,7 +74,6 @@ extern PSI_memory_key key_memory_SAFE_HASH_ENTRY;
 extern PSI_memory_key key_memory_MY_TMPDIR_full_list;
 extern PSI_memory_key key_memory_MY_BITMAP_bitmap;
 extern PSI_memory_key key_memory_my_compress_alloc;
-extern PSI_memory_key key_memory_pack_frm;
 extern PSI_memory_key key_memory_my_err_head;
 extern PSI_memory_key key_memory_my_file_info;
 extern PSI_memory_key key_memory_MY_DIR;
@@ -95,21 +97,22 @@ extern PSI_thread_key key_thread_timer_notifier;
 #define EDQUOT (-1)
 #endif
 
-void my_error_unregister_all(void);
+void my_error_unregister_all();
 
 #ifdef _WIN32
+#include <stdint.h>  // int64_t
 #include <sys/stat.h>
 /* my_winfile.c exports, should not be used outside mysys */
 extern File my_win_open(const char *path, int oflag);
 extern int my_win_close(File fd);
-extern size_t my_win_read(File fd, uchar *buffer, size_t count);
-extern size_t my_win_write(File fd, const uchar *buffer, size_t count);
-extern size_t my_win_pread(File fd, uchar *buffer, size_t count,
-                           my_off_t offset);
-extern size_t my_win_pwrite(File fd, const uchar *buffer, size_t count,
-                            my_off_t offset);
-extern my_off_t my_win_lseek(File fd, my_off_t pos, int whence);
-extern int my_win_chsize(File fd, my_off_t newlength);
+extern int64_t my_win_read(File fd, uchar *buffer, size_t count);
+extern int64_t my_win_write(File fd, const uchar *buffer, size_t count);
+extern int64_t my_win_pread(File fd, uchar *buffer, size_t count,
+                            int64_t offset);
+extern int64_t my_win_pwrite(File fd, const uchar *buffer, size_t count,
+                             int64_t offset);
+extern int64_t my_win_lseek(File fd, int64_t pos, int whence);
+extern int my_win_chsize(File fd, int64_t newlength);
 extern FILE *my_win_fopen(const char *filename, const char *type);
 extern File my_win_fclose(FILE *file);
 extern File my_win_fileno(FILE *file);

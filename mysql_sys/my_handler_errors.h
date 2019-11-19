@@ -1,7 +1,7 @@
 #ifndef MYSYS_MY_HANDLER_ERRORS_INCLUDED
 #define MYSYS_MY_HANDLER_ERRORS_INCLUDED
 
-/* Copyright (c) 2008, 2017, Oracle and/or its affiliates. All rights reserved.
+/* Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License, version 2.0,
@@ -88,8 +88,8 @@ static const char *handler_error_messages[] = {
     "The event was corrupt, leading to illegal data being read",
     "The table is of a new format not supported by this version",
     "The event could not be processed no other hanlder error happened",
-    "Got a fatal error during initialzaction of handler",
-    "File to short; Expected more data in file",
+    "Got a fatal error during initialization of handler",
+    "File too short; Expected more data in file",
     "Read page with wrong checksum",
     "Too many active concurrent transactions",
     "Record not matching the given partition set",
@@ -104,7 +104,7 @@ static const char *handler_error_messages[] = {
     "InnoDB is in read only mode",
     "FTS query exceeds result cache memory limit",
     "Temporary file write failure",
-    "Operation not allowed when innodb_forced_recovery > 0",
+    "Operation not allowed when innodb_force_recovery > 0",
     "Too many words in a FTS phrase or proximity search",
     "Foreign key cascade delete/update exceeds max depth",
     "Required Create option missing",
@@ -118,7 +118,12 @@ static const char *handler_error_messages[] = {
     "Compute generate value failed",
     "Row format changed in storage engine",
     "Do not wait for lock",
-    "No more room in disk"};
+    "No more room in disk",
+    "No session temporary tablespace available",
+    "Invalid table name",
+    "Path is too long for the OS",
+    "Histogram sampling initialization failed",
+};
 
 extern void my_handler_error_register(void);
 extern void my_handler_error_unregister(void);

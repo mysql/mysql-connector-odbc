@@ -1,5 +1,5 @@
 /* Copyright (c) 2002 MySQL AB & tommy@valley.ne.jp
-   Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+   Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
 
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Library General Public
@@ -27,7 +27,16 @@
    Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
    MA 02110-1301  USA */
 
-/* This file is for binary pseudo charset, created by bar@mysql.com */
+/**
+  @file ctype-bin.cc
+  The “binary” pseudo-charset. binary is special in that it's not really
+  a character set; conversions from another charset _to_ binary means
+  “erase the charset information” and conversions _from_ binary to another
+  charset means “interpret these bytes as the destination charset”.
+  In other words, in no event are the bytes changed; you can think of
+  binary as the charset equivalent of void * that you can cast through.
+  Needless to say, this also means that using it can be rather dangerous.
+ */
 
 #include <string.h>
 #include <sys/types.h>
@@ -38,6 +47,7 @@
 #include "my_compiler.h"
 #include "my_inttypes.h"
 #include "my_macros.h"
+#include "template_utils.h"
 
 static const uchar ctype_bin[] = {
     0,  32,  32,  32,  32,  32,  32,  32,  32,  32,  40,  40, 40, 40, 40, 32,
@@ -128,7 +138,7 @@ static size_t my_lengthsp_binary(const CHARSET_INFO *cs MY_ATTRIBUTE((unused)),
 extern "C" {
 static int my_strnncollsp_binary(const CHARSET_INFO *cs, const uchar *s,
                                  size_t slen, const uchar *t, size_t tlen) {
-  return my_strnncoll_binary(cs, s, slen, t, tlen, 0);
+  return my_strnncoll_binary(cs, s, slen, t, tlen, false);
 }
 
 static int my_strnncoll_8bit_bin(const CHARSET_INFO *cs MY_ATTRIBUTE((unused)),
@@ -241,11 +251,11 @@ static int my_wc_mb_bin(const CHARSET_INFO *cs MY_ATTRIBUTE((unused)),
 
 extern "C" {
 static void my_hash_sort_8bit_bin(const CHARSET_INFO *cs MY_ATTRIBUTE((unused)),
-                                  const uchar *key, size_t len, ulong *nr1,
-                                  ulong *nr2) {
+                                  const uchar *key, size_t len, uint64 *nr1,
+                                  uint64 *nr2) {
   const uchar *pos = key;
-  ulong tmp1;
-  ulong tmp2;
+  uint64 tmp1;
+  uint64 tmp2;
 
   /*
      Remove trailing spaces. We have to do this to be able to compare
@@ -256,8 +266,8 @@ static void my_hash_sort_8bit_bin(const CHARSET_INFO *cs MY_ATTRIBUTE((unused)),
   tmp1 = *nr1;
   tmp2 = *nr2;
 
-  for (; pos < (uchar *)key; pos++) {
-    tmp1 ^= (ulong)((((uint)tmp1 & 63) + tmp2) * ((uint)*pos)) + (tmp1 << 8);
+  for (; pos < key; pos++) {
+    tmp1 ^= (uint64)((((uint)tmp1 & 63) + tmp2) * ((uint)*pos)) + (tmp1 << 8);
     tmp2 += 3;
   }
 
@@ -266,19 +276,19 @@ static void my_hash_sort_8bit_bin(const CHARSET_INFO *cs MY_ATTRIBUTE((unused)),
 }
 
 static void my_hash_sort_bin(const CHARSET_INFO *cs MY_ATTRIBUTE((unused)),
-                             const uchar *key, size_t len, ulong *nr1,
-                             ulong *nr2) {
+                             const uchar *key, size_t len, uint64 *nr1,
+                             uint64 *nr2) {
   const uchar *pos = key;
-  ulong tmp1;
-  ulong tmp2;
+  uint64 tmp1;
+  uint64 tmp2;
 
   key += len;
 
   tmp1 = *nr1;
   tmp2 = *nr2;
 
-  for (; pos < (uchar *)key; pos++) {
-    tmp1 ^= (ulong)((((uint)tmp1 & 63) + tmp2) * ((uint)*pos)) + (tmp1 << 8);
+  for (; pos < key; pos++) {
+    tmp1 ^= (uint64)((((uint)tmp1 & 63) + tmp2) * ((uint)*pos)) + (tmp1 << 8);
     tmp2 += 3;
   }
 
@@ -526,8 +536,8 @@ CHARSET_INFO my_charset_bin = {
     0,                                              /* min_sort_char */
     255,                                            /* max_sort_char */
     0,                                              /* pad char      */
-    0, /* escape_with_backslash_is_dangerous */
-    1, /* levels_for_compare */
+    false, /* escape_with_backslash_is_dangerous */
+    1,     /* levels_for_compare */
     &my_charset_handler,
     &my_collation_binary_handler,
     NO_PAD};

@@ -1,5 +1,5 @@
 /*
-   Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+   Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License, version 2.0,
@@ -21,8 +21,8 @@
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301  USA */
 
-#ifndef _m_string_h
-#define _m_string_h
+#ifndef M_STRING_INCLUDED
+#define M_STRING_INCLUDED
 
 /**
   @file include/m_string.h
@@ -36,6 +36,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "decimal.h"
 #include "lex_string.h"
 #include "my_config.h"
 #include "my_inttypes.h"
@@ -57,9 +58,9 @@ extern void *(*my_str_malloc)(size_t);
 extern void *(*my_str_realloc)(void *, size_t);
 extern void (*my_str_free)(void *);
 
-/* Declared in int2str() */
-extern char _dig_vec_upper[];
-extern char _dig_vec_lower[];
+/* Declared in int2str.cc. */
+extern const char _dig_vec_upper[];
+extern const char _dig_vec_lower[];
 
 /* Prototypes for string functions */
 
@@ -252,14 +253,13 @@ size_t my_fcvt_compact(double x, char *to, bool *error);
 size_t my_gcvt(double x, my_gcvt_arg_type type, int width, char *to,
                bool *error);
 
-#define NOT_FIXED_DEC 31
-
 /*
   The longest string my_fcvt can return is 311 + "precision" bytes.
-  Here we assume that we never cal my_fcvt() with precision >= NOT_FIXED_DEC
+  Here we assume that we never call my_fcvt() with precision >=
+  DECIMAL_NOT_SPECIFIED
   (+ 1 byte for the terminating '\0').
 */
-#define FLOATING_POINT_BUFFER (311 + NOT_FIXED_DEC)
+static constexpr int FLOATING_POINT_BUFFER{311 + DECIMAL_NOT_SPECIFIED};
 
 /*
   We want to use the 'e' format in some cases even if we have enough space
@@ -279,24 +279,15 @@ size_t my_gcvt(double x, my_gcvt_arg_type type, int width, char *to,
 #define MY_GCVT_MAX_FIELD_WIDTH \
   (DBL_DIG + 4 + MY_MAX(5, MAX_DECPT_FOR_F_FORMAT))
 
-extern char *int2str(long val, char *dst, int radix, int upcase);
-C_MODE_START
-extern char *int10_to_str(long val, char *dst, int radix);
-C_MODE_END
-extern const char *str2int(const char *src, int radix, long lower, long upper,
-                           long *val);
+const char *str2int(const char *src, int radix, long lower, long upper,
+                    long *val);
 longlong my_strtoll10(const char *nptr, const char **endptr, int *error);
-#if SIZEOF_LONG == SIZEOF_LONG_LONG
-#define ll2str(A, B, C, D) int2str((A), (B), (C), (D))
-#define longlong10_to_str(A, B, C) int10_to_str((A), (B), (C))
-#undef strtoll
-#define strtoll(A, B, C) strtol((A), (B), (C))
-#define strtoull(A, B, C) strtoul((A), (B), (C))
-#else
-extern char *ll2str(longlong val, char *dst, int radix, int upcase);
-extern char *longlong10_to_str(longlong val, char *dst, int radix);
-#endif
-#define longlong2str(A, B, C) ll2str((A), (B), (C), 1)
+char *ll2str(int64_t val, char *dst, int radix, bool upcase);
+char *longlong10_to_str(int64_t val, char *dst, int radix);
+
+inline char *longlong2str(int64_t val, char *dst, int radix) {
+  return ll2str(val, dst, radix, true);
+}
 
 /*
   This function saves a longlong value in a buffer and returns the pointer to
@@ -313,7 +304,6 @@ static inline char *ullstr(longlong value, char *buff) {
 }
 
 #define STRING_WITH_LEN(X) (X), ((sizeof(X) - 1))
-#define C_STRING_WITH_LEN(X) ((char *)(X)), ((sizeof(X) - 1))
 
 /**
   Skip trailing space (ASCII spaces only).
@@ -368,4 +358,4 @@ static inline void lex_cstring_set(LEX_CSTRING *lex_str, const char *c_str) {
   lex_str->length = strlen(c_str);
 }
 
-#endif
+#endif  // M_STRING_INCLUDED
