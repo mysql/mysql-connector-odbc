@@ -120,6 +120,7 @@ char *myodbc_ll2str(longlong val, char *dst, int radix);
 typedef int(*qsort_cmp)(const void *, const void *);
 
 void myodbc_qsort(void *base_ptr, size_t count, size_t size, qsort_cmp cmp);
+char *myodbc_int10_to_str(long int val, char *dst, int radix);
 #ifdef __cplusplus
 }
 #endif

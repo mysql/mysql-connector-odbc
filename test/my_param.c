@@ -28,6 +28,91 @@
 
 #include "odbctap.h"
 
+DECLARE_TEST(t_bug30428851)
+{
+  SQLRETURN rc = 0;
+#define NROW 2
+  SQLINTEGER par = NROW;
+  int i = 0;
+  SQLLEN    len = 0, offset = 0;
+  typedef struct data_fetch
+  {
+    SQLINTEGER id;
+    SQLCHAR strVal[32];
+    SQLINTEGER intVal;
+    SQLLEN     len1;
+    SQLLEN     len2;
+    SQLLEN     len3;
+  }df;
+
+  df data;
+  df src[NROW] = {{1, "Test1", 10, 4, 5, 4},
+                  {2, "Test2", 20, 4, 5, 4}};
+
+  memset(&data, 0, sizeof(data));
+  ok_sql(hstmt, "DROP TABLE IF EXISTS bug30428851");
+
+  ok_sql(hstmt, "CREATE TABLE bug30428851( " \
+    "`id` int(11) NOT NULL AUTO_INCREMENT, " \
+    "`strVal` varchar(45) DEFAULT NULL, " \
+    "`intVal` int(11) DEFAULT NULL, " \
+    "`txtVal` longtext, " \
+    " PRIMARY KEY(`id`))");
+
+  for (i = 0; i < NROW; ++i)
+  {
+    char buf[512] = {0};
+    snprintf(buf, 512, "INSERT INTO bug30428851 (id, strVal, intVal) VALUES (%d, '%s', %d)",
+    src[i].id, src[i].strVal, src[i].intVal);
+    ok_stmt(hstmt, SQLExecDirect(hstmt, buf, SQL_NTS));
+  }
+
+  ok_stmt(hstmt, SQLPrepare(hstmt,
+    "SELECT * FROM `bug30428851` WHERE id = ? LIMIT 1;", SQL_NTS));
+
+  ok_stmt(hstmt, SQLBindParameter(hstmt, 1, SQL_PARAM_INPUT,
+                                  SQL_C_SLONG, SQL_INTEGER, 10, 0, &par,
+                                  0, &len));
+
+  ok_stmt(hstmt, SQLExecute(hstmt));
+
+  ok_stmt(hstmt, SQLSetStmtAttr(hstmt, SQL_ATTR_ROW_ARRAY_SIZE,
+                                (SQLPOINTER)1, 0));
+  ok_stmt(hstmt, SQLSetStmtAttr(hstmt, SQL_ATTR_ROW_BIND_TYPE,
+                                (SQLPOINTER)sizeof(df), 0));
+  ok_stmt(hstmt, SQLSetStmtAttr(hstmt, SQL_ATTR_ROW_BIND_OFFSET_PTR,
+                                (SQLPOINTER)&offset, 0));
+
+  ok_stmt(hstmt, SQLBindCol(hstmt, 1, SQL_C_LONG,
+                            (SQLPOINTER)&data.id,
+                            sizeof(SQLINTEGER),
+                            (SQLLEN*)&data.len1));
+
+  ok_stmt(hstmt, SQLBindCol(hstmt, 2, SQL_C_CHAR,
+                            (SQLPOINTER)data.strVal,
+                            sizeof(data.strVal),
+                            (SQLLEN*)&data.len2));
+
+  ok_stmt(hstmt, SQLBindCol(hstmt, 3, SQL_C_LONG,
+                            (SQLPOINTER)&data.intVal,
+                            sizeof(SQLINTEGER),
+                            (SQLLEN*)&data.len3));
+
+  while(SQLFetch(hstmt) == SQL_SUCCESS);
+
+  printf("ROW # %i: %d %s %d \n", i, data.id, data.strVal, data.intVal);
+  is_num(src[NROW-1].id, data.id);
+  is_str(src[NROW-1].strVal, data.strVal, src[NROW-1].len2);
+  is_num(src[NROW-1].intVal, data.intVal);
+
+  is_num(src[NROW-1].len1, data.len1);
+  is_num(src[NROW-1].len2, data.len2);
+  is_num(src[NROW-1].len3, data.len3);
+
+  return OK;
+}
+
+
 /********************************************************
 * initialize tables                                     *
 *********************************************************/
@@ -1760,6 +1845,7 @@ DECLARE_TEST(t_bug28175772)
 
 
 BEGIN_TESTS
+  ADD_TEST(t_bug30428851)
   ADD_TEST(t_bug28175772)
   ADD_TEST(my_init_table)
 #ifndef USE_IODBC

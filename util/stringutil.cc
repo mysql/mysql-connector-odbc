@@ -1218,4 +1218,54 @@ void myodbc_qsort(void *base_ptr, size_t count, size_t size, qsort_cmp cmp)
   } while (stack_ptr > stack);
   return;
 }
+
+/*
+  Converts integer to its string representation in decimal notation.
+
+  SYNOPSIS
+    myodbc_int10_to_str()
+      val     - value to convert
+      dst     - points to buffer where string representation should be stored
+      radix   - flag that shows whenever val should be taken as signed or not
+
+  DESCRIPTION
+    This is version of int2str() function which is optimized for normal case
+    of radix 10/-10. It takes only sign of radix parameter into account and
+    not its absolute value.
+
+  RETURN VALUE
+    Pointer to ending NUL character.
+*/
+
+char *myodbc_int10_to_str(long int val, char *dst, int radix) {
+  char buffer[65];
+  char *p;
+  long int new_val;
+  unsigned long int uval = (unsigned long int)val;
+
+  if (radix < 0) /* -10 */
+  {
+    if (val < 0) {
+      *dst++ = '-';
+      /* Avoid integer overflow in (-val) for LLONG_MIN (BUG#31799). */
+      uval = (unsigned long int)0 - uval;
+    }
+  }
+
+  p = &buffer[sizeof(buffer) - 1];
+  *p = '\0';
+  new_val = (long)(uval / 10);
+  *--p = '0' + (char)(uval - (unsigned long)new_val * 10);
+  val = new_val;
+
+  while (val != 0) {
+    new_val = val / 10;
+    *--p = '0' + (char)(val - new_val * 10);
+    val = new_val;
+  }
+  while ((*dst++ = *p++) != 0)
+    ;
+  return dst - 1;
+}
+
 #endif

@@ -76,14 +76,8 @@
 #define MAX32_BUFF_SIZE 11
 #define MAX64_BUFF_SIZE 21
 
-/* Wrappers to hide differences in client library versions. */
-#if MYSQL_VERSION_ID >= 40100
-# define my_int2str(val, dst, radix, upcase) \
-    int2str((val), (dst), (radix), (upcase))
-#else
-# define my_int2str(val, dst, radix, upcase) \
-    int2str((val), (dst), (radix))
-#endif
+#define my_int2str(val, dst, radix, upcase) \
+    myodbc_int10_to_str((val), (dst), (radix))
 
 #if MYSQL_VERSION_ID >= 50100
 typedef unsigned char * DYNAMIC_ELEMENT;

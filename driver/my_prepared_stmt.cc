@@ -527,8 +527,14 @@ static MYSQL_ROW fetch_varlength_columns(STMT *stmt, MYSQL_ROW columns)
         stmt->lengths[i]= *stmt->result_bind[i].length;
       }
 
-      stmt->result_bind[i].buffer= stmt->array[i];
-      stmt->result_bind[i].buffer_length= stmt->lengths[i];
+      stmt->result_bind[i].buffer = stmt->array[i];
+
+      if (stmt->lengths[i] > 0 ||
+        is_varlen_type(stmt->result_bind[i].buffer_type))
+      {
+       // For fixed-length types we should not set zero length
+        stmt->result_bind[i].buffer_length = stmt->lengths[i];
+      }
 
       mysql_stmt_fetch_column(stmt->ssps, &stmt->result_bind[i], i, 0);
     }
