@@ -26,6 +26,7 @@
 # along with this program; if not, write to the Free Software Foundation, Inc., 
 # 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA 
 
+enable_cxx14()
 
 SET_PROPERTY(DIRECTORY PROPERTY INCLUDE_DIRECTORIES ${CMAKE_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/include/mysql-8.0)
 

@@ -32,7 +32,8 @@ PROJECT(MySQL_Connector_ODBC)
 
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8.5 FATAL_ERROR)
 if(COMMAND cmake_policy)
-	cmake_policy(SET CMP0003 NEW)
+  cmake_policy(VERSION 2.8)
+  cmake_policy(SET CMP0003 NEW)
 endif(COMMAND cmake_policy)
 
 cmake_policy(SET CMP0022 NEW)
@@ -423,6 +424,31 @@ ELSE(WIN32)
   endif()
 
 ENDIF(WIN32)
+
+#
+# Macro to enable C++14 for all targets in the current directory and below.
+#
+
+macro(enable_cxx14)
+
+if((CMAKE_VERSION VERSION_LESS 3.1) OR (CMAKE_CXX_COMPILER_ID MATCHES "SunPro"))
+
+  # Note: cmake does not know how to enable C++14 for SunPro compiler
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14")
+
+else()
+
+  # use C++14
+  set(CMAKE_CXX_STANDARD 14)
+  # error out if not supported
+  set(CMAKE_CXX_STANDARD_REQUIRED ON)
+  # do not use compiler specific extensions
+  set(CMAKE_CXX_EXTENSIONS OFF)
+
+endif()
+
+endmacro()
+
 #-----------------------------------------------------
 
 SET(EXECUTABLE_OUTPUT_PATH "${CMAKE_BINARY_DIR}/bin")
