@@ -78,13 +78,7 @@ my_bool free_current_result(STMT *stmt)
     }
     free_internal_result_buffers(stmt);
     /* We need to always free stmt->result because SSPS keep metadata there */
-    if (stmt->fake_result)
-    {
-      x_free(stmt->result);
-    }
-    else
-      mysql_free_result(stmt->result);
-
+    stmt_result_free(stmt);
     stmt->result= NULL;
   }
   return res;
@@ -427,6 +421,7 @@ SQLRETURN prepare(STMT *stmt, char * query, SQLINTEGER query_length)
       }
 
       /* Getting result metadata */
+      stmt->fake_result = false;  // reset in case it was set before
       if ((stmt->result= mysql_stmt_result_metadata(stmt->ssps)))
       {
         /*stmt->state= ST_SS_PREPARED;*/

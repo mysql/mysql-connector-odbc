@@ -1066,7 +1066,7 @@ SQLRETURN SQL_API MySQLGetTypeInfo(SQLHSTMT hstmt, SQLSMALLINT fSqlType)
                                               MYF(MY_FAE | MY_ZEROFILL));
   if (!stmt->result || !stmt->result_array)
   {
-    x_free(stmt->result);
+    stmt_result_free(stmt);
     x_free(stmt->result_array);
     return set_stmt_error(stmt, "S1001", "Not enough memory", 4001);
   }

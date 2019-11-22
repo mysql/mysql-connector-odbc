@@ -407,6 +407,24 @@ long double   get_double  (STMT *stmt, ulong column_number, char *value,
 BOOL          is_null     (STMT *stmt, ulong column_number, char *value);
 SQLRETURN     prepare     (STMT *stmt, char * query, SQLINTEGER query_length);
 
+
+inline
+void stmt_result_free(STMT * stmt)
+{
+  if (!stmt->result)
+    return;
+
+  if (stmt->fake_result)
+  {
+    x_free(stmt->result);
+  }
+  else
+    mysql_free_result(stmt->result);
+
+  stmt->result = NULL;
+}
+
+
 /* scroller-related functions */
 void          scroller_reset      (STMT *stmt);
 unsigned int  calc_prefetch_number(unsigned int selected, SQLULEN app_fetchs,
