@@ -1809,6 +1809,7 @@ DECLARE_TEST(t_bug28175772)
           " BEGIN"\
           " SET param1 := CONCAT(param1, 'bar'); "\
           " SET param2 := CONCAT(param2, 'bar'); "\
+          " SELECT 1; "\
           " END; ");
   sprintf(sql_drop_proc, "%s", "DROP PROCEDURE if exists inoutproc");
   sprintf(sql_select, "%s", "call inoutproc(?, ?)");
@@ -1844,9 +1845,69 @@ DECLARE_TEST(t_bug28175772)
 }
 
 
+DECLARE_TEST(t_sp_return)
+{
+  char sql_select[100] = { 0 };
+  SQLLEN iSize = SQL_NTS, iSize1 = SQL_NTS;
+  char val1[200] = { 0 }, val2[200] = { 0 };
+  SQLCHAR       SqlState[6], Msg[SQL_MAX_MESSAGE_LENGTH];
+  SQLINTEGER    NativeError;
+  SQLLEN len = 0;
+  SQLSMALLINT   i, MsgLen;
+  char strVal[255];
+
+
+  // connection strings
+  strcpy(val1, "test data 1");
+  strcpy(val2, "test data 2");
+
+  ok_sql(hstmt, "DROP PROCEDURE if exists simpleproc");
+  ok_sql(hstmt, "CREATE PROCEDURE simpleproc (param1 VARCHAR(100), " \
+          " param2 VARCHAR(100))"\
+          " BEGIN"\
+          " SELECT param1 UNION SELECT param2 UNION SELECT 'ABC'; "\
+          " END; ");
+
+  ok_stmt(hstmt, SQLPrepare(hstmt, (SQLCHAR*)"call simpleproc(?, ?)", SQL_NTS));
+  //bind the call statement 1
+  ok_stmt(hstmt, SQLBindParameter(hstmt, 1, SQL_PARAM_INPUT, SQL_C_CHAR,
+                                  SQL_CHAR, 0, 0, val1, 200, &iSize));
+  //bind the call statement 1
+  ok_stmt(hstmt, SQLBindParameter(hstmt, 2, SQL_PARAM_INPUT_OUTPUT, SQL_C_CHAR,
+                                  SQL_CHAR, 0, 0, val2, 200, &iSize1));
+  // execute
+  ok_stmt(hstmt, SQLExecute(hstmt));
+
+  ok_stmt(hstmt, SQLBindCol(hstmt, 1, SQL_C_CHAR,
+    (SQLPOINTER)strVal, sizeof(strVal), &len));
+
+  memset(strVal, 0, sizeof(strVal));
+  i = 0;
+  while (SQL_SUCCESS == SQLFetch(hstmt))
+  {
+    switch (i)
+    {
+      case 0:
+        is_str("test data 1", strVal, 11); break;
+      case 1:
+        is_str("test data 2", strVal, 11); break;
+      case 2:
+        is_str("ABC", strVal, 3); break;
+    }
+    ++i;
+  }
+  is_num(3, i);
+  ok_stmt(hstmt, SQLFreeStmt(hstmt, SQL_CLOSE));
+
+  return OK;
+}
+
 BEGIN_TESTS
+  ADD_TEST(t_sp_return)
+  // ADD_TEST(t_bug28175772) the libmysqlclient SERVER_PS_OUT_PARAMS flag
+  //                         is not working the test should be re-enabled
+  //                         after bug 30566136 is fixed
   ADD_TEST(t_bug30428851)
-  ADD_TEST(t_bug28175772)
   ADD_TEST(my_init_table)
 #ifndef USE_IODBC
   ADD_TEST(my_param_insert)

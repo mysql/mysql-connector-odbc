@@ -375,15 +375,7 @@ long long     binary2numeric        (long long *dst, char *src, uint srcLen);
 void          fill_ird_data_lengths (DESC *ird, ulong *lengths, uint fields);
 
 /* Functions to work with prepared and regular statements  */
-
-#ifdef SERVER_PS_OUT_PARAMS
-# define IS_PS_OUT_PARAMS(_stmt) ((_stmt)->dbc->mysql.server_status & SERVER_PS_OUT_PARAMS)
-#else
-/* In case if driver is built against old libmysl. In fact is not quite
-   correct */
-# define IS_PS_OUT_PARAMS(_stmt) (ssps_used(_stmt) && is_call_procedure(&_stmt->query) && !mysql_more_results(&(_stmt)->dbc->mysql))
-#endif
-
+#define IS_PS_OUT_PARAMS(_stmt) ((_stmt)->dbc->mysql.server_status & SERVER_PS_OUT_PARAMS)
 /* my_stmt.c */
 BOOL              ssps_used           (STMT *stmt);
 BOOL              returned_result     (STMT *stmt);
