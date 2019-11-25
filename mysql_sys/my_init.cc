@@ -418,11 +418,16 @@ static void my_win_init() {
 }
 #endif /* _WIN32 */
 
-PSI_stage_info stage_waiting_for_table_level_lock = {
-    0, "Waiting for table level lock", 0, PSI_DOCUMENT_ME};
+/*
+  These initializers do not work under VS2015, which we still use to build
+  Con/ODBC. And they are not really needed for our code.
+*/
 
-PSI_stage_info stage_waiting_for_disk_space = {0, "Waiting for disk space", 0,
-                                               PSI_DOCUMENT_ME};
+PSI_stage_info stage_waiting_for_table_level_lock /*  = {
+    0, "Waiting for table level lock", 0, PSI_DOCUMENT_ME}*/;
+
+PSI_stage_info stage_waiting_for_disk_space /* = {0, "Waiting for disk space", 0,
+                                               PSI_DOCUMENT_ME} */;
 
 PSI_mutex_key key_IO_CACHE_append_buffer_lock, key_IO_CACHE_SHARE_mutex,
     key_KEY_CACHE_cache_lock, key_THR_LOCK_charset, key_THR_LOCK_heap,
