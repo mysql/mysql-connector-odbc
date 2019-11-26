@@ -41,6 +41,7 @@
 #include <random>
 
 #ifndef _WIN32
+#include <netinet/in.h>
 #include <resolv.h>
 #else
 #include <winsock2.h>
