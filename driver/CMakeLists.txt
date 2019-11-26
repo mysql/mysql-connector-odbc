@@ -1,30 +1,30 @@
-# Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved. 
-# 
-# This program is free software; you can redistribute it and/or modify 
-# it under the terms of the GNU General Public License, version 2.0, as 
-# published by the Free Software Foundation. 
+# Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
 #
-# This program is also distributed with certain software (including 
-# but not limited to OpenSSL) that is licensed under separate terms, 
-# as designated in a particular file or component or in included license 
-# documentation. The authors of MySQL hereby grant you an 
-# additional permission to link the program and your derivative works 
-# with the separately licensed software that they have included with 
-# MySQL. 
-# 
-# Without limiting anything contained in the foregoing, this file, 
-# which is part of MySQL Connector/ODBC, is also subject to the 
-# Universal FOSS Exception, version 1.0, a copy of which can be found at 
-# http://oss.oracle.com/licenses/universal-foss-exception. 
-# 
-# This program is distributed in the hope that it will be useful, but 
-# WITHOUT ANY WARRANTY; without even the implied warranty of 
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-# See the GNU General Public License, version 2.0, for more details. 
-# 
-# You should have received a copy of the GNU General Public License 
-# along with this program; if not, write to the Free Software Foundation, Inc., 
-# 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA 
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License, version 2.0, as
+# published by the Free Software Foundation.
+#
+# This program is also distributed with certain software (including
+# but not limited to OpenSSL) that is licensed under separate terms,
+# as designated in a particular file or component or in included license
+# documentation. The authors of MySQL hereby grant you an
+# additional permission to link the program and your derivative works
+# with the separately licensed software that they have included with
+# MySQL.
+#
+# Without limiting anything contained in the foregoing, this file,
+# which is part of MySQL Connector/ODBC, is also subject to the
+# Universal FOSS Exception, version 1.0, a copy of which can be found at
+# http://oss.oracle.com/licenses/universal-foss-exception.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+# See the GNU General Public License, version 2.0, for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 
 ##########################################################################
 
@@ -61,7 +61,7 @@ WHILE(${DRIVER_INDEX} LESS ${DRIVERS_COUNT})
 
   IF(UNICODE)
     SET(DRIVER_SRCS ${DRIVER_SRCS} unicode.cc)
-	  SET(WIDECHARCALL "W")
+    SET(WIDECHARCALL "W")
   ELSE(UNICODE)
     SET(DRIVER_SRCS ${DRIVER_SRCS} ansi.cc)
     SET(WIDECHARCALL "")
@@ -87,10 +87,10 @@ WHILE(${DRIVER_INDEX} LESS ${DRIVERS_COUNT})
   INSTALL(TARGETS ${DRIVER_NAME} DESTINATION ${LIB_SUBDIR})
 
 IF(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-  SET_TARGET_PROPERTIES(${DRIVER_NAME} PROPERTIES 
+  SET_TARGET_PROPERTIES(${DRIVER_NAME} PROPERTIES
         LINK_FLAGS "${MYSQLODBCCONN_LINK_FLAGS_ENV} ${MYSQL_LINK_FLAGS}")
 ELSE(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-  SET_TARGET_PROPERTIES(${DRIVER_NAME} PROPERTIES 
+  SET_TARGET_PROPERTIES(${DRIVER_NAME} PROPERTIES
         LINK_FLAGS "${MYSQLODBCCONN_LINK_FLAGS_ENV} ${MYSQL_LINK_FLAGS}") # -flto
 ENDIF()
 
@@ -123,6 +123,8 @@ ENDIF()
             ${MYSQL_CLIENT_LIBS} ws2_32 ${ODBCINSTLIB} ${SECURE32_LIB})
     ENDIF(MYSQL8)
 
+    TARGET_LINK_LIBRARIES(${DRIVER_NAME} Dnsapi)
+
   ELSE(WIN32)
 
     IF(DEV_STUDIO_RUNTIME_DIR)
@@ -136,12 +138,14 @@ ENDIF()
                           ${MYSQL_CLIENT_LIBS} ${CMAKE_THREAD_LIBS_INIT} m)
     TARGET_LINK_LIBRARIES(${DRIVER_NAME} myodbc-util)
 
+    TARGET_LINK_LIBRARIES(${DRIVER_NAME} resolv)
+
     INCLUDE_DIRECTORIES(${DL_INCLUDES})
 
   ENDIF(WIN32)
 
   IF (MYSQL_CXX_LINKAGE)
-    SET_TARGET_PROPERTIES(${DRIVER_NAME} PROPERTIES 
+    SET_TARGET_PROPERTIES(${DRIVER_NAME} PROPERTIES
           LINKER_LANGUAGE CXX
           COMPILE_FLAGS "${MYSQLODBCCONN_COMPILE_FLAGS_ENV} ${MYSQL_CXXFLAGS}")
   ENDIF (MYSQL_CXX_LINKAGE)
@@ -193,3 +197,4 @@ WHILE(${DRIVER_INDEX} LESS ${DRIVERS_COUNT})
   MATH(EXPR DRIVER_INDEX "${DRIVER_INDEX} + 1")
 
 ENDWHILE(${DRIVER_INDEX} LESS ${DRIVERS_COUNT})
+

@@ -506,7 +506,7 @@ int list_datasource_details(DataSource *ds)
   if (ds->sslmode   ) printf("SSL Mode:             %s\n", ds_get_utf8attr(ds->sslmode, &ds->sslmode8));
   if (ds->sslverify) printf("Verify SSL cert      yes\n");
   if (ds->rsakey)    printf("RSA public key       %s\n", ds_get_utf8attr(ds->rsakey, &ds->rsakey8));
-  if (ds->port       ) printf("Port:                %d\n", ds->port);
+  if (ds->port && ds->has_port) printf("Port:                %d\n", ds->port);
   if (ds->plugin_dir  ) printf("Plugin directory:    %s\n", ds_get_utf8attr(ds->plugin_dir, &ds->plugin_dir8));
   if (ds->default_auth) printf("Default Authentication Library: %s\n", ds_get_utf8attr(ds->default_auth, &ds->default_auth8));
   printf("Options:\n");
@@ -551,6 +551,8 @@ int list_datasource_details(DataSource *ds)
   if (ds->can_handle_exp_pwd) printf("\tCAN_HANDLE_EXP_PWD\n");
   if (ds->enable_cleartext_plugin) printf("\tENABLE_CLEARTEXT_PLUGIN\n");
   if (ds->get_server_public_key) printf("\tGET_SERVER_PUBLIC_KEY\n");
+  if (ds->enable_dns_srv) printf("\tENABLE_DNS_SRV\n");
+  if (ds->multi_host) printf("\tMULTI_HOST\n");
 
   return 0;
 }

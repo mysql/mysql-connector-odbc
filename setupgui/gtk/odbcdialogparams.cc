@@ -1,30 +1,30 @@
-// Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved. 
-// 
-// This program is free software; you can redistribute it and/or modify 
-// it under the terms of the GNU General Public License, version 2.0, as 
-// published by the Free Software Foundation. 
-// 
-// This program is also distributed with certain software (including 
-// but not limited to OpenSSL) that is licensed under separate terms, 
-// as designated in a particular file or component or in included license 
-// documentation. The authors of MySQL hereby grant you an 
-// additional permission to link the program and your derivative works 
-// with the separately licensed software that they have included with 
-// MySQL. 
-// 
-// Without limiting anything contained in the foregoing, this file, 
-// which is part of MySQL Connector/ODBC, is also subject to the 
-// Universal FOSS Exception, version 1.0, a copy of which can be found at 
-// http://oss.oracle.com/licenses/universal-foss-exception. 
-// 
-// This program is distributed in the hope that it will be useful, but 
-// WITHOUT ANY WARRANTY; without even the implied warranty of 
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-// See the GNU General Public License, version 2.0, for more details. 
-// 
-// You should have received a copy of the GNU General Public License 
-// along with this program; if not, write to the Free Software Foundation, Inc., 
-// 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA 
+// Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+//
+// This program is free software; you can redistribute it and/or modify
+// it under the terms of the GNU General Public License, version 2.0, as
+// published by the Free Software Foundation.
+//
+// This program is also distributed with certain software (including
+// but not limited to OpenSSL) that is licensed under separate terms,
+// as designated in a particular file or component or in included license
+// documentation. The authors of MySQL hereby grant you an
+// additional permission to link the program and your derivative works
+// with the separately licensed software that they have included with
+// MySQL.
+//
+// Without limiting anything contained in the foregoing, this file,
+// which is part of MySQL Connector/ODBC, is also subject to the
+// Universal FOSS Exception, version 1.0, a copy of which can be found at
+// http://oss.oracle.com/licenses/universal-foss-exception.
+//
+// This program is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+// See the GNU General Public License, version 2.0, for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program; if not, write to the Free Software Foundation, Inc.,
+// 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 
 /**
  @file  odbcdialogparams.c
@@ -124,6 +124,8 @@ on_use_tcp_ip_server_toggled(GtkButton *button, gpointer user_data)
   SET_SENSITIVE(server, TRUE);
   SET_SENSITIVE(port, TRUE);
   SET_SENSITIVE(socket, FALSE);
+  SET_SENSITIVE(enable_dns_srv,TRUE);
+  SET_SENSITIVE(multi_host,TRUE);
 }
 
 
@@ -133,8 +135,18 @@ on_use_socket_file_toggled(GtkButton *button, gpointer user_data)
   SET_SENSITIVE(server, FALSE);
   SET_SENSITIVE(port, FALSE);
   SET_SENSITIVE(socket, TRUE);
+  SET_SENSITIVE(enable_dns_srv,FALSE);
+  SET_SENSITIVE(multi_host,FALSE);
 }
 
+void
+on_enable_DNS_SRV_toggled(GtkButton *button, gpointer user_data)
+{
+  if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON(button)))
+    SET_SENSITIVE(port, FALSE);
+  else
+    SET_SENSITIVE(port, TRUE);
+}
 
 void on_check_cursor_prefetch_toggled(GtkButton *button, gpointer user_data)
 {
@@ -342,8 +354,8 @@ void setBoolFieldData(gchar *widget_name, gboolean checked)
                                              widget_name));
   if (widget)
   {
-	  assert(widget);
-	  gtk_toggle_button_set_active(widget, checked);
+    assert(widget);
+    gtk_toggle_button_set_active(widget, checked);
   }
 }
 
@@ -604,6 +616,10 @@ int ShowOdbcParamsDialog(DataSource* params, HWND ParentWnd, BOOL isPrompt)
   dummy= GTK_WIDGET (gtk_builder_get_object (builder, "use_socket_file"));
   g_signal_connect ((gpointer) dummy, "toggled",
                     G_CALLBACK (on_use_socket_file_toggled), NULL);
+
+  dummy= GTK_WIDGET (gtk_builder_get_object (builder, "enable_dns_srv"));
+  g_signal_connect ((gpointer) dummy, "toggled",
+                    G_CALLBACK (on_enable_DNS_SRV_toggled), NULL);
 
   dummy= GTK_WIDGET (gtk_builder_get_object (builder, "sslkey_button"));
   entry= GTK_ENTRY (gtk_builder_get_object (builder, "sslkey"));

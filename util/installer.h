@@ -92,6 +92,7 @@ typedef struct {
   SQLWCHAR *plugin_dir;
   SQLWCHAR *default_auth;
 
+  bool has_port;
   unsigned int port;
   unsigned int readtimeout;
   unsigned int writetimeout;
@@ -165,6 +166,9 @@ typedef struct {
 
   BOOL no_date_overflow;
   BOOL enable_local_infile;
+
+  BOOL enable_dns_srv;
+  BOOL multi_host;
 } DataSource;
 
 /* perhaps that is a good idea to have const ds object with defaults */

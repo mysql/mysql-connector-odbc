@@ -152,6 +152,10 @@ static SQLWCHAR W_FORWARD_CURSOR[]=
   {'F','O','R','W','A','R','D','_','C','U','R','S','O','R',0};
 static SQLWCHAR W_AUTO_RECONNECT[]=
   {'A','U','T','O','_','R','E','C','O','N','N','E','C','T',0};
+static SQLWCHAR W_ENABLE_DNS_SRV[]=
+  {'E','N','A','B','L','E','_','D','N','S','_','S','R','V',0};
+static SQLWCHAR W_MULTI_HOST[]=
+  {'M','U','L','T','I','_','H','O','S','T',0};
 static SQLWCHAR W_AUTO_IS_NULL[]=
   {'A','U','T','O','_','I','S','_','N','U','L','L',0};
 static SQLWCHAR W_ZERO_DATE_TO_MIN[]=
@@ -224,7 +228,7 @@ SQLWCHAR *dsnparams[]= {W_DSN, W_DRIVER, W_DESCRIPTION, W_SERVER,
                         W_NO_BINARY_RESULT, W_DFLT_BIGINT_BIND_STR,
                         W_CLIENT_INTERACTIVE, W_NO_I_S, W_PREFETCH, W_NO_SSPS,
                         W_CAN_HANDLE_EXP_PWD, W_ENABLE_CLEARTEXT_PLUGIN,
-                        W_GET_SERVER_PUBLIC_KEY,
+                        W_GET_SERVER_PUBLIC_KEY, W_ENABLE_DNS_SRV, W_MULTI_HOST,
                         W_SAVEFILE, W_RSAKEY, W_PLUGIN_DIR, W_DEFAULT_AUTH,
                         W_NO_TLS_1, W_NO_TLS_1_1, W_NO_TLS_1_2,
                         W_SSLMODE, W_NO_DATE_OVERFLOW};
@@ -648,7 +652,8 @@ DataSource *ds_new()
   memset(ds, 0, sizeof(DataSource));
 
   /* non-zero DataSource defaults here */
-  ds->port=                   3306;
+  ds->port = 3306;
+  ds->has_port = false;
   /* DS_PARAM */
 
   return ds;
@@ -802,9 +807,11 @@ void ds_map_param(DataSource *ds, const SQLWCHAR *param,
     *strdest= &ds->savefile;
   else if (!sqlwcharcasecmp(W_RSAKEY, param))
     *strdest= &ds->rsakey;
-
   else if (!sqlwcharcasecmp(W_PORT, param))
+  {
+    ds->has_port = true;
     *intdest= &ds->port;
+  }
   else if (!sqlwcharcasecmp(W_SSLVERIFY, param))
     *intdest= &ds->sslverify;
   else if (!sqlwcharcasecmp(W_READTIMEOUT, param))
@@ -879,6 +886,10 @@ void ds_map_param(DataSource *ds, const SQLWCHAR *param,
     *booldest= &ds->enable_cleartext_plugin;
   else if (!sqlwcharcasecmp(W_GET_SERVER_PUBLIC_KEY, param))
     *booldest = &ds->get_server_public_key;
+  else if (!sqlwcharcasecmp(W_ENABLE_DNS_SRV, param))
+    *booldest = &ds->enable_dns_srv;
+  else if (!sqlwcharcasecmp(W_MULTI_HOST, param))
+    *booldest = &ds->multi_host;
   else if (!sqlwcharcasecmp(W_PLUGIN_DIR, param))
     *strdest= &ds->plugin_dir;
   else if (!sqlwcharcasecmp(W_DEFAULT_AUTH, param))
@@ -1341,7 +1352,8 @@ int ds_add(DataSource *ds)
   if (ds_add_strprop(ds->name, W_SAVEFILE   , ds->savefile   )) goto error;
 
   if (ds_add_intprop(ds->name, W_SSLVERIFY  , ds->sslverify  )) goto error;
-  if (ds_add_intprop(ds->name, W_PORT       , ds->port       )) goto error;
+  if(ds->has_port)
+    if (ds_add_intprop(ds->name, W_PORT       , ds->port       )) goto error;
   if (ds_add_intprop(ds->name, W_READTIMEOUT, ds->readtimeout)) goto error;
   if (ds_add_intprop(ds->name, W_WRITETIMEOUT, ds->writetimeout)) goto error;
   if (ds_add_intprop(ds->name, W_CLIENT_INTERACTIVE, ds->clientinteractive)) goto error;
@@ -1379,6 +1391,8 @@ int ds_add(DataSource *ds)
   if (ds_add_intprop(ds->name, W_CAN_HANDLE_EXP_PWD, ds->can_handle_exp_pwd)) goto error;
   if (ds_add_intprop(ds->name, W_ENABLE_CLEARTEXT_PLUGIN, ds->enable_cleartext_plugin)) goto error;
   if (ds_add_intprop(ds->name, W_GET_SERVER_PUBLIC_KEY, ds->get_server_public_key)) goto error;
+  if (ds_add_intprop(ds->name, W_ENABLE_DNS_SRV, ds->enable_dns_srv)) goto error;
+  if (ds_add_intprop(ds->name, W_MULTI_HOST, ds->multi_host)) goto error;
   if (ds_add_strprop(ds->name, W_PLUGIN_DIR  , ds->plugin_dir  )) goto error;
   if (ds_add_strprop(ds->name, W_DEFAULT_AUTH, ds->default_auth)) goto error;
   if (ds_add_intprop(ds->name, W_NO_TLS_1, ds->no_tls_1)) goto error;

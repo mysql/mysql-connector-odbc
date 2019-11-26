@@ -26,7 +26,6 @@
 // You should have received a copy of the GNU General Public License
 // along with this program; if not, write to the Free Software Foundation, Inc.,
 // 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
-
 //{{NO_DEPENDENCIES}}
 // Microsoft Visual C++ generated include file.
 // Used by odbcdialogparams.rc
@@ -136,9 +135,11 @@
 #define IDC_CHECK_no_tls_1              10058
 #define IDC_CHECK_no_tls_1_1            10059
 #define IDC_CHECK_no_tls_1_2            10060
-#define IDC_EDIT_sslmode               10061
+#define IDC_EDIT_sslmode                10061
 #define IDC_CHECK_get_server_public_key 10062
 #define IDC_CHECK_enable_local_infile   10063
+#define IDC_CHECK_enable_dns_srv        10064
+#define IDC_CHECK_multi_host            10065
 #define IDC_BUTTON_TEST                 11014
 #define IDC_BUTTON_HELP                 11015
 #define IDC_STATIC                      -1

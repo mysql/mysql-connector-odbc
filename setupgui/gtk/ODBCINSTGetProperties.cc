@@ -74,6 +74,8 @@ static const char *MYODBC_OPTIONS[][3] = {
   {"NO_CACHE",          "C", "Don't cache results of forward-only cursors"},
   {"FORWARD_CURSOR",    "C", "Force use of forward-only cursors"},
   {"AUTO_RECONNECT",    "C", "Enable automatic reconnect"},
+  {"ENABLE_DNS_SRV",    "C", "Enable usage of DNS SRV records"},
+  {"MULTI_HOST",        "C", "Enable usage of multiple hosts"},
   {"AUTO_IS_NULL",      "C", "Enable SQL_AUTO_IS_NULL"},
   {"ZERO_DATE_TO_MIN",  "C", "Return SQL_NULL_DATA for zero date"},
   {"MIN_DATE_TO_ZERO",  "C", "Bind minimal date as zero date"},

@@ -35,6 +35,18 @@
 #include "installer.h"
 #include "stringutil.h"
 
+#include <map>
+#include <vector>
+#include <sstream>
+#include <random>
+
+#ifndef _WIN32
+#include <resolv.h>
+#else
+#include <winsock2.h>
+#include <windns.h>
+#endif
+
 #ifndef CLIENT_NO_SCHEMA
 # define CLIENT_NO_SCHEMA      16
 #endif
@@ -140,6 +152,190 @@ SQLRETURN myodbc_set_initial_character_set(DBC *dbc, const char *charset)
   }
 
   return SQL_SUCCESS;
+}
+
+/*
+  Retrieve DNS+SRV list.
+
+  @param[in]  hostname  Full DNS+SRV address (ex: _mysql._tcp.example.com)
+  @param[out]  total_weight   Retrieve sum of total weight.
+
+  @return multimap containing list of SRV records
+*/
+
+
+struct Prio
+{
+  uint16_t prio;
+  uint16_t weight;
+  operator uint16_t() const
+  {
+    return prio;
+  }
+
+  bool operator < (const Prio &other) const
+  {
+    return prio < other.prio;
+  }
+};
+
+struct Srv_host_detail
+{
+  std::string name;
+  unsigned int port = MYSQL_PORT;
+};
+
+#ifdef _WIN32
+std::multimap<Prio,Srv_host_detail> srv_list(const std::string &hostname,
+                                             uint16_t &total_weight)
+{
+  DNS_STATUS status;               //Return value of  DnsQuery_A() function.
+  PDNS_RECORD pDnsRecord =nullptr;          //Pointer to DNS_RECORD structure.
+
+  std::multimap<Prio,Srv_host_detail> srv;
+
+  status = DnsQuery(hostname.c_str(), DNS_TYPE_SRV, DNS_QUERY_STANDARD, nullptr, &pDnsRecord, nullptr);
+  if (!status)
+  {
+    PDNS_RECORD pRecord = pDnsRecord;
+    while (pRecord)
+    {
+      if (pRecord->wType == DNS_TYPE_SRV)
+      {
+        srv.insert(std::make_pair(
+                     Prio({pRecord->Data.Srv.wPriority,
+                           pRecord->Data.Srv.wWeight}
+                          ),
+                     Srv_host_detail
+                     {
+                       pRecord->Data.Srv.pNameTarget,
+                       pRecord->Data.Srv.wPort
+                     }));
+        total_weight+=pRecord->Data.Srv.wWeight;
+      }
+      pRecord = pRecord->pNext;
+    }
+
+    DnsRecordListFree(pDnsRecord, DnsFreeRecordListDeep);
+  }
+  return srv;
+}
+#else
+
+std::multimap<Prio,Srv_host_detail> srv_list(const std::string &hostname,
+                                             uint16_t &total_weight)
+{
+  struct __res_state state {};
+  res_ninit(&state);
+
+  std::multimap<Prio,Srv_host_detail> srv;
+
+  unsigned char query_buffer[NS_PACKETSZ];
+
+
+  //let get
+  int res = res_nsearch(&state, hostname.c_str(), ns_c_in, ns_t_srv, query_buffer, sizeof (query_buffer) );
+
+  if (res >= 0)
+  {
+    ns_msg msg;
+    char name_buffer[NS_MAXDNAME];
+
+    ns_initparse(query_buffer, res, &msg);
+
+
+    auto process = [&msg, &name_buffer, &total_weight, &srv](const ns_rr &rr) -> void
+    {
+      const unsigned char* srv_data = ns_rr_rdata(rr);
+      Srv_host_detail host_data;
+      uint16_t prio, weight;
+
+      //Each NS_GET16 call moves srv_data to next value
+      NS_GET16(prio, srv_data);
+      NS_GET16(weight, srv_data);
+      NS_GET16(host_data.port, srv_data);
+
+      dn_expand(ns_msg_base(msg), ns_msg_end(msg),
+                srv_data, name_buffer, sizeof(name_buffer));
+
+      host_data.name = name_buffer;
+
+      srv.insert(std::make_pair(Prio({prio, weight}), std::move(host_data)));
+
+      total_weight+=weight;
+    };
+
+    for(int x= 0; x < ns_msg_count(msg, ns_s_an); x++)
+    {
+          ns_rr rr;
+          ns_parserr(&msg, ns_s_an, x, &rr);
+          process(rr);
+    }
+  }
+  res_nclose(&state);
+
+  return srv;
+}
+#endif
+
+
+/*
+  Parse a comma separated list of hosts, each optionally specifying a port after
+  a colon. If port is not specified then the default port is used.
+*/
+std::vector<Srv_host_detail> parse_host_list(const char* hosts_str,
+                                             unsigned int default_port)
+{
+  std::vector<Srv_host_detail> list;
+
+  //if hosts_str = nullprt will still add empty host, meaning it will use socket
+  std::string hosts(hosts_str ? hosts_str : "");
+
+  size_t pos_i = 0;
+  size_t pos_f = std::string::npos;
+
+  do
+  {
+    pos_f = hosts.find_first_of(",:", pos_i);
+
+    Srv_host_detail host_detail;
+    host_detail.name = hosts.substr(pos_i, pos_f-pos_i);
+
+    if( pos_f != std::string::npos && hosts[pos_f] == ':')
+    {
+      //port
+      pos_i = pos_f+1;
+      pos_f = hosts.find_first_of(',', pos_i);
+      std::string tmp_port = hosts.substr(pos_i,pos_f-pos_i);
+      long int val = std::atol(tmp_port.c_str());
+
+      /*
+        Note: strtol() returns 0 either if the number is 0
+        or conversion was not possible. We distinguish two cases
+        by cheking if end pointer was updated.
+      */
+
+      if ((val == 0 && tmp_port.length()==0) ||
+          (val > 65535 || val < 0))
+      {
+        std::stringstream err;
+        err << "Invalid port value in " << hosts;
+        throw err.str();
+      }
+
+      host_detail.port = static_cast<uint16_t>(val);
+    }
+    else
+    {
+      host_detail.port = default_port;
+    }
+
+    pos_i = pos_f+1;
+
+    list.push_back(host_detail);
+  }while (pos_f < hosts.size());
+
+  return list;
 }
 
 
@@ -364,44 +560,233 @@ SQLRETURN myodbc_do_connect(DBC *dbc, DataSource *ds)
   }
 #endif
 
-  if (!mysql_real_connect(mysql,
-                          ds_get_utf8attr(ds->server,   &ds->server8),
-                          ds_get_utf8attr(ds->uid,      &ds->uid8),
-                          ds_get_utf8attr(ds->pwd,      &ds->pwd8),
-                          ds_get_utf8attr(ds->database, &ds->database8),
-                          ds->port,
-                          ds_get_utf8attr(ds->socket,   &ds->socket8),
-                          flags))
-  {
-    unsigned int native_error= mysql_errno(mysql);
+  std::multimap<Prio,Srv_host_detail> hosts_prio;
 
-    /* Before 5.6.11 error returned by server was ER_MUST_CHANGE_PASSWORD(1820).
+  uint16_t total_weight = 0;
+
+  std::vector<Srv_host_detail> hosts;
+  try {
+    hosts = parse_host_list(ds_get_utf8attr(ds->server, &ds->server8), ds->port);
+
+  } catch (std::string &e)
+  {
+    set_dbc_error(dbc, "HY000", e.c_str(), 0);
+    return SQL_ERROR;
+  }
+
+  if(!ds->multi_host && hosts.size() > 1)
+  {
+    set_dbc_error(dbc, "HY000", "Missing option MULTI_HOST=1", 0);
+    return SQL_ERROR;
+  }
+
+  if(ds->enable_dns_srv && hosts.size() > 1)
+  {
+    set_dbc_error(dbc, "HY000", "Specifying multiple hostnames with DNS SRV look up is not allowed.", 0);
+    return SQL_ERROR;
+  }
+
+  if(ds->enable_dns_srv && ds->has_port)
+  {
+    set_dbc_error(dbc, "HY000", "Specifying a port number with DNS SRV lookup is not allowed.", 0);
+    return SQL_ERROR;
+  }
+
+  if(ds->enable_dns_srv)
+  {
+    if(ds->socket)
+    {
+      set_dbc_error(dbc, "HY000",
+#ifdef _WIN32
+                    "Using Named Pipes with DNS SRV lookup is not allowed.",
+#else
+                    "Using Unix domain sockets with DNS SRV lookup is not allowed",
+#endif
+                    0);
+      return SQL_ERROR;
+    }
+
+    hosts_prio = srv_list(hosts[0].name, total_weight);
+
+    if(hosts_prio.empty())
+    {
+      std::stringstream err;
+      err << "Unable to locate any hosts for " << ds->server8;
+      set_dbc_error(dbc, "HY000",
+                    err.str().c_str(),
+                    0);
+      return SQL_ERROR;
+    }
+
+  }
+  else
+  {
+    for(auto host : hosts)
+    {
+      hosts_prio.insert(std::make_pair(Prio({0, 0}), host));
+    }
+  }
+
+  auto do_connect = [&mysql,&ds,&flags,&dbc](
+                    const char *host,
+                    unsigned int port
+                    ) -> short
+  {
+    int protocol;
+    if(ds->socket)
+    {
+#ifdef _WIN32
+      protocol = MYSQL_PROTOCOL_PIPE;
+#else
+      protocol = MYSQL_PROTOCOL_SOCKET;
+#endif
+    } else
+    {
+      protocol = MYSQL_PROTOCOL_TCP;
+    }
+    mysql_options(mysql, MYSQL_OPT_PROTOCOL, &protocol);
+
+    //Setting server and port to the ds->server8 and ds->port
+    //TODO: IS THERE A FUNCTION TO DO THIS USING myodbc_malloc?
+    //COPY OF sqlwchardup
+    size_t chars= strlen(host);
+    x_free(ds->server8);
+    ds->server8= (SQLCHAR *)myodbc_malloc(( chars + 1) , MYF(0));
+    memcpy(ds->server8, host, chars);
+    ds->port = port;
+
+    if (!mysql_real_connect(mysql,
+                            host,
+                            ds_get_utf8attr(ds->uid,      &ds->uid8),
+                            ds_get_utf8attr(ds->pwd,      &ds->pwd8),
+                            ds_get_utf8attr(ds->database, &ds->database8),
+                            port,
+                            ds_get_utf8attr(ds->socket,   &ds->socket8),
+                            flags))
+    {
+      unsigned int native_error= mysql_errno(mysql);
+
+      /* Before 5.6.11 error returned by server was ER_MUST_CHANGE_PASSWORD(1820).
        In 5.6.11 it changed to ER_MUST_CHANGE_PASSWORD_LOGIN(1862)
        We must to change error for old servers in order to set correct sqlstate */
-    if (native_error == 1820 && ER_MUST_CHANGE_PASSWORD_LOGIN != 1820)
-    {
-      native_error= ER_MUST_CHANGE_PASSWORD_LOGIN;
-    }
+      if (native_error == 1820 && ER_MUST_CHANGE_PASSWORD_LOGIN != 1820)
+      {
+        native_error= ER_MUST_CHANGE_PASSWORD_LOGIN;
+      }
 
 #if MYSQL_VERSION_ID < 50610
-    /* In that special case when the driver was linked against old version of libmysql*/
-    if (native_error == ER_MUST_CHANGE_PASSWORD_LOGIN
-      && ds->can_handle_exp_pwd)
-    {
-      /* The password has expired, application said it knows how to deal with
+      /* In that special case when the driver was linked against old version of libmysql*/
+      if (native_error == ER_MUST_CHANGE_PASSWORD_LOGIN
+          && ds->can_handle_exp_pwd)
+      {
+        /* The password has expired, application said it knows how to deal with
          that, but the driver was linked  that
          does not support this option. Thus we change native error. */
-      /* TODO: enum/defines for driver specific errors */
-      return set_conn_error(dbc, MYERR_08004,
-        "Your password has expired, but underlying library doesn't support "
-        "this functionlaity", 0);
-    }
+        /* TODO: enum/defines for driver specific errors */
+        return set_conn_error(dbc, MYERR_08004,
+                              "Your password has expired, but underlying library doesn't support "
+                              "this functionlaity", 0);
+      }
 #endif
-    set_dbc_error(dbc, "HY000", mysql_error(mysql), native_error);
+      set_dbc_error(dbc, "HY000", mysql_error(mysql), native_error);
 
-    translate_error(dbc->error.sqlstate, MYERR_S1000, native_error);
+      translate_error(dbc->error.sqlstate, MYERR_S1000, native_error);
 
-    return SQL_ERROR;
+      return SQL_ERROR;
+    }
+
+    return SQL_SUCCESS;
+  };
+
+  //Connect loop
+  {
+    bool connected = false;
+    std::random_device generator;
+
+    while(!hosts_prio.empty() && !connected)
+    {
+      auto same_range = hosts_prio.equal_range(hosts_prio.begin()->first);
+      std::vector<Srv_host_detail*> same_prio;
+      std::vector<uint16_t> weights;
+
+      for(auto it = same_range.first; it != same_range.second; ++it)
+      {
+        //if weight is not used, we should put all weights = 1 so that
+        //discrete_distribution works as expected
+        weights.push_back(total_weight!= 0 ? it->first.weight : 1);
+        same_prio.push_back(&it->second);
+      }
+
+      while (!weights.empty() && !connected)
+      {
+        std::discrete_distribution<int> distribution(
+              weights.begin(), weights.end());
+
+        auto el = same_prio.begin();
+        auto weight_el = weights.begin();
+
+        if (same_prio.size() > 1)
+        {
+          int pos = distribution(generator);
+          std::advance(el, pos);
+          std::advance(weight_el, pos);
+        }
+
+        if(do_connect((*el)->name.c_str(), (*el)->port) == SQL_SUCCESS)
+        {
+          connected = true;
+        }
+        else
+        {
+          switch (mysql_errno(mysql))
+          {
+          case ER_CON_COUNT_ERROR:
+          case CR_SOCKET_CREATE_ERROR:
+          case CR_CONNECTION_ERROR:
+          case CR_CONN_HOST_ERROR:
+          case CR_IPSOCK_ERROR:
+          case CR_UNKNOWN_HOST:
+            //On Network errors, continue
+            break;
+          default:
+            //If SQLSTATE not 08xxx, which is used for network errors
+            if(strncmp(mysql_sqlstate(mysql), "08", 2) != 0)
+            {
+              //Return error and do not try another host
+              return SQL_ERROR;
+            }
+          }
+
+        }
+
+        same_prio.erase(el);
+        weights.erase(weight_el);
+      }
+
+      hosts_prio.erase(same_range.first, same_range.second);
+
+    };
+
+    if(!connected)
+    {
+      std::stringstream err;
+      if(ds->enable_dns_srv)
+      {
+        err << "Unable to connect to any of the hosts of "
+            << ds->server8 << " SRV";
+        set_dbc_error(dbc, "HY000",
+                      err.str().c_str(),
+                      0);
+      }
+      else if (ds->multi_host && hosts.size() > 1) {
+        err << "Unable to connect to any of the hosts";
+        set_dbc_error(dbc, "HY000",
+                      err.str().c_str(),
+                      0);
+      }
+      //The others will retrieve the error from connect
+      return SQL_ERROR;
+    }
   }
 
   if (!is_minimum_version(dbc->mysql.server_version, "4.1.1"))
