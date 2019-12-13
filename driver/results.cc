@@ -490,9 +490,10 @@ sql_get_data(STMT *stmt, SQLSMALLINT fCType, uint column_number,
         Handle BLOB -> CHAR conversion
         Conversion only for field which is having binary character set (63)
       */
-      if (((field->flags & (BLOB_FLAG|BINARY_FLAG))
-                == (BLOB_FLAG|BINARY_FLAG) )
-                && field->charsetnr == BINARY_CHARSET_NUMBER )
+      if ((field->flags & BINARY_FLAG) &&
+        field->charsetnr == BINARY_CHARSET_NUMBER &&
+        IS_LONGDATA(field->type) &&
+        !field->decimals)
       {
         return copy_binhex_result(stmt,
                                   (SQLCHAR *)rgbValue, cbValueMax, pcbValue,
@@ -538,6 +539,34 @@ sql_get_data(STMT *stmt, SQLSMALLINT fCType, uint column_number,
     case SQL_C_WCHAR:
       {
         char *tmp= get_string(stmt, column_number, value, &length, as_string);
+
+        if ((field->flags & BINARY_FLAG) &&
+          field->charsetnr == BINARY_CHARSET_NUMBER &&
+          IS_LONGDATA(field->type) &&
+          !field->decimals)
+        {
+          /*
+            1. convert binary data to hex into a temporary buffer
+            2. convert hex in the temporary buffer to WCHAR
+          */
+
+          SQLCHAR *c_buf = (SQLCHAR*)myodbc_malloc(length*2 + 1, MYF(0));
+          SQLRETURN rc2 = SQL_SUCCESS, rc3 = SQL_SUCCESS;
+
+          rc2 = copy_binhex_result(stmt, c_buf, cbValueMax, pcbValue,
+                                   field, tmp, length);
+
+          rc3 = copy_wchar_result(stmt, (SQLWCHAR *)rgbValue,
+                  (SQLINTEGER)(cbValueMax / sizeof(SQLWCHAR)), pcbValue,
+                  field, (char*)c_buf, length*2);
+
+          x_free(c_buf);
+
+          if (rc3 == SQL_SUCCESS)
+            return rc2;
+
+          return rc3;
+        }
 
         return copy_wchar_result(stmt, (SQLWCHAR *)rgbValue,
                         (SQLINTEGER)(cbValueMax / sizeof(SQLWCHAR)), pcbValue,

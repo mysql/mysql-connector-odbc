@@ -1,30 +1,30 @@
-// Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved. 
-// 
-// This program is free software; you can redistribute it and/or modify 
-// it under the terms of the GNU General Public License, version 2.0, as 
-// published by the Free Software Foundation. 
-// 
-// This program is also distributed with certain software (including 
-// but not limited to OpenSSL) that is licensed under separate terms, 
-// as designated in a particular file or component or in included license 
-// documentation. The authors of MySQL hereby grant you an 
-// additional permission to link the program and your derivative works 
-// with the separately licensed software that they have included with 
-// MySQL. 
-// 
-// Without limiting anything contained in the foregoing, this file, 
-// which is part of <MySQL Product>, is also subject to the 
-// Universal FOSS Exception, version 1.0, a copy of which can be found at 
-// http://oss.oracle.com/licenses/universal-foss-exception. 
-// 
-// This program is distributed in the hope that it will be useful, but 
-// WITHOUT ANY WARRANTY; without even the implied warranty of 
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-// See the GNU General Public License, version 2.0, for more details. 
-// 
-// You should have received a copy of the GNU General Public License 
-// along with this program; if not, write to the Free Software Foundation, Inc., 
-// 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA 
+// Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+//
+// This program is free software; you can redistribute it and/or modify
+// it under the terms of the GNU General Public License, version 2.0, as
+// published by the Free Software Foundation.
+//
+// This program is also distributed with certain software (including
+// but not limited to OpenSSL) that is licensed under separate terms,
+// as designated in a particular file or component or in included license
+// documentation. The authors of MySQL hereby grant you an
+// additional permission to link the program and your derivative works
+// with the separately licensed software that they have included with
+// MySQL.
+//
+// Without limiting anything contained in the foregoing, this file,
+// which is part of <MySQL Product>, is also subject to the
+// Universal FOSS Exception, version 1.0, a copy of which can be found at
+// http://oss.oracle.com/licenses/universal-foss-exception.
+//
+// This program is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+// See the GNU General Public License, version 2.0, for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program; if not, write to the Free Software Foundation, Inc.,
+// 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 
 #include <wchar.h>
 #include "odbctap.h"
@@ -258,7 +258,7 @@ DECLARE_TEST(sqldriverconnect)
   }
 
   ok_con(hdbc1, SQLDriverConnectW(hdbc1, NULL, WL(conn_in, wcslen(conn_in)),
-                                  wcslen(conn_in), conn_out, 
+                                  wcslen(conn_in), conn_out,
                                   sizeof(conn_out)/sizeof(SQLWCHAR),
                                   &conn_out_len, SQL_DRIVER_NOPROMPT));
 
@@ -1114,7 +1114,7 @@ DECLARE_TEST(t_bug28168)
     L"'\x03A8\x0391\x03A1\x039F uid'@localhost");
   SQLWCHAR *dropQuery2= W(L"DROP USER IF EXISTS "
     L"'\x03A8\x0391\x03A1\x039F uid'@'%'");
-    
+
   SQLWCHAR *createQuery= W(L"CREATE USER "
     L"'\x03A8\x0391\x03A1\x039F uid'@"
     L"localhost identified by "
@@ -1144,20 +1144,20 @@ DECLARE_TEST(t_bug28168)
   ok_env(henv, SQLAllocHandle(SQL_HANDLE_DBC, henv, &hdbc1));
 
   /* Connect using UTF8 as transport to avoid server bug with user names */
-  ok_con(hdbc1, SQLDriverConnectW(hdbc1, NULL, WL(work_conn_in, 
+  ok_con(hdbc1, SQLDriverConnectW(hdbc1, NULL, WL(work_conn_in,
                                   wcslen(work_conn_in)),
                                   wcslen(work_conn_in), NULL, 0,
                                   0, SQL_DRIVER_NOPROMPT));
 
   ok_con(hdbc1, SQLAllocStmt(hdbc1, &hstmt1));
 
-  /* 
+  /*
     Grant for localhost and for all other hosts if the test server
     runs remotely
   */
   ok_stmt(hstmt1, SQLExecDirectW(hstmt1, dropQuery, SQL_NTS));
   ok_stmt(hstmt1, SQLExecDirectW(hstmt1, dropQuery2, SQL_NTS));
-  
+
   ok_stmt(hstmt1, SQLExecDirectW(hstmt1, createQuery, SQL_NTS));
   ok_stmt(hstmt1, SQLExecDirectW(hstmt1, createQuery2, SQL_NTS));
 
@@ -1207,12 +1207,12 @@ DECLARE_TEST(t_bug28168)
                                256 * sizeof(SQLWCHAR), &errmsglen));
   ok_con(hdbc2, SQLFreeHandle(SQL_HANDLE_DBC, hdbc2));
 
-  /* 
+  /*
     The returned error message has to contain the substring
     with the username
   */
    wstr= sqlwchar_to_wchar_t(errmsgtxt);
-   is(wcsstr(wstr,  
+   is(wcsstr(wstr,
              L"Access denied for user '\x03A8\x0391\x03A1\x039F uid'@") != NULL);
   ok_stmt(hstmt1,SQLExecDirectW(hstmt1,
     W(L"DROP USER "
@@ -1283,7 +1283,7 @@ DECLARE_TEST(t_bug14363601)
   wcscat(conn_in, L";CHARSET=utf16");
 
   ok_con(hdbc1, SQLDriverConnectW(hdbc1, NULL, WL(conn_in, wcslen(conn_in)),
-                                  wcslen(conn_in), conn_out, 
+                                  wcslen(conn_in), conn_out,
                                   sizeof(conn_out)/sizeof(SQLWCHAR),
                                   &conn_out_len, SQL_DRIVER_NOPROMPT));
 
@@ -1294,17 +1294,17 @@ DECLARE_TEST(t_bug14363601)
                  "id INT, vc VARCHAR(32),"
                  "dc DOUBLE, bc BLOB)CHARSET=UTF8");
 
-  ok_stmt(hstmt1, SQLPrepareW(hstmt1, 
+  ok_stmt(hstmt1, SQLPrepareW(hstmt1,
 		    W(L"INSERT INTO bug14363601 (id, vc, dc, bc) "
                       L"VALUES (?, ?, ?, ?)"), SQL_NTS));
 
   /* Bind 1st INT param */
   ok_stmt(hstmt1, SQLBindParameter(hstmt1, 1, SQL_PARAM_INPUT, SQL_C_LONG,
                                   SQL_INTEGER, 0, 0, &col_id, 0, NULL));
-  
+
   /* Bind 2nd VARCHAR param */
   ok_stmt(hstmt1, SQLBindParameter(hstmt1, 2, SQL_PARAM_INPUT, SQL_C_WCHAR,
-				   SQL_WCHAR, 10, 0, col_vc, 
+				   SQL_WCHAR, 10, 0, col_vc,
                                   10*sizeof(SQLWCHAR), NULL));
 
   /* Bind 3rd DECIMAL param */
@@ -1314,12 +1314,12 @@ DECLARE_TEST(t_bug14363601)
 
   /* Bind 4th BLOB param */
   ok_stmt(hstmt1, SQLBindParameter(hstmt1, 4, SQL_PARAM_INPUT, SQL_C_BINARY,
-                                  SQL_BINARY, (SQLULEN)sizeof(col_bc), 0, &col_bc, 
+                                  SQL_BINARY, (SQLULEN)sizeof(col_bc), 0, &col_bc,
                                   sizeof(col_bc), &strlen_or_ind));
 
   ok_stmt(hstmt1, SQLExecute(hstmt1));
 
-  ok_stmt(hstmt1, SQLExecDirectW(hstmt1, W(L"SELECT * FROM bug14363601"), 
+  ok_stmt(hstmt1, SQLExecDirectW(hstmt1, W(L"SELECT * FROM bug14363601"),
                                  SQL_NTS));
 
   ok_stmt(hstmt1, SQLFetch(hstmt1));
@@ -1335,11 +1335,11 @@ DECLARE_TEST(t_bug14363601)
     is(col_vc[i] == col_vc_res[i]);
   }
 
-  ok_stmt(hstmt1, SQLGetData(hstmt1, 3, SQL_C_DOUBLE, &col_dc_res, 
+  ok_stmt(hstmt1, SQLGetData(hstmt1, 3, SQL_C_DOUBLE, &col_dc_res,
                              sizeof(col_dc_res), NULL));
   is(col_dc == col_dc_res);
 
-  ok_stmt(hstmt1, SQLGetData(hstmt1, 4, SQL_C_BINARY, &col_bc_res, 
+  ok_stmt(hstmt1, SQLGetData(hstmt1, 4, SQL_C_BINARY, &col_bc_res,
                              sizeof(col_bc_res), NULL));
 
   /* check the binary buffer byte by byte */
@@ -1358,14 +1358,14 @@ DECLARE_TEST(t_bug14363601)
   ok_con(hdbc1, SQLDisconnect(hdbc1));
   ok_con(hdbc1, SQLFreeConnect(hdbc1));
   ok_env(henv1, SQLFreeEnv(henv1));
-  
+
   /* OK if it has not crashed */
   return OK;
 }
 
 
 /*
-  Bug#14838690: ODBC 5.2.2 CONNECTOR BROKEN FOR ALL SQL SERVERS 
+  Bug#14838690: ODBC 5.2.2 CONNECTOR BROKEN FOR ALL SQL SERVERS
   OLDER THAN 5.5.3
   With utf8 byte string, Mysql server version < 5.5.3 failes with
   error message "Server does not support 4-byte encoded UTF8 characters."
@@ -1381,22 +1381,22 @@ DECLARE_TEST(t_bug14838690)
                  "id INT, vc VARCHAR(32)"
                  ")CHARSET=UTF8");
 
-  ok_stmt(hstmt, SQLPrepareW(hstmt, 
+  ok_stmt(hstmt, SQLPrepareW(hstmt,
 		    W(L"INSERT INTO bug14838690 (id, vc) "
                       L"VALUES (?, ?)"), SQL_NTS));
 
   /* Bind 1st INT param */
   ok_stmt(hstmt, SQLBindParameter(hstmt, 1, SQL_PARAM_INPUT, SQL_C_LONG,
                                   SQL_INTEGER, 0, 0, &col_id, 0, NULL));
-  
+
   /* Bind 2nd VARCHAR param with utf8 byte string */
   ok_stmt(hstmt, SQLBindParameter(hstmt, 2, SQL_PARAM_INPUT, SQL_C_WCHAR,
-                                   SQL_WVARCHAR, 10, 0, col_vc, 
+                                   SQL_WVARCHAR, 10, 0, col_vc,
                                   10*sizeof(SQLWCHAR), NULL));
 
   ok_stmt(hstmt, SQLExecute(hstmt));
 
-  ok_stmt(hstmt, SQLExecDirectW(hstmt, W(L"SELECT * FROM bug14838690"), 
+  ok_stmt(hstmt, SQLExecDirectW(hstmt, W(L"SELECT * FROM bug14838690"),
                                  SQL_NTS));
 
   ok_stmt(hstmt, SQLFetch(hstmt));
@@ -1419,11 +1419,42 @@ DECLARE_TEST(t_bug14838690)
   ok_sql(hstmt, "DROP TABLE IF EXISTS bug14838690");
 
   ok_stmt(hstmt, SQLFreeStmt(hstmt, SQL_DROP));
-  
+
   /* OK if it has not crashed */
   return OK;
 }
 
+DECLARE_TEST(t_bug28864788)
+{
+  SQLWCHAR *col_vb = W(L"ABCDEF"), col_vb_res[30];
+  SQLLEN buf_len = 0;
+  int i = 0;
+
+  ok_sql(hstmt, "DROP TABLE IF EXISTS bug28864788");
+  ok_sql(hstmt, "CREATE TABLE bug28864788(id INT, vb VARBINARY(32))");
+  ok_sql(hstmt, "INSERT INTO bug28864788(id, vb) VALUES (1, 0xabcdef)");
+
+  ok_stmt(hstmt, SQLExecDirectW(hstmt, W(L"SELECT id, vb FROM bug28864788"),
+    SQL_NTS));
+
+  ok_stmt(hstmt, SQLFetch(hstmt));
+
+  ok_stmt(hstmt, SQLGetData(hstmt, 2, SQL_C_WCHAR, col_vb_res,
+          sizeof(col_vb_res), &buf_len));
+
+  // is_num(12, buf_len);
+
+  /* we want to compare SQLWCHAR instead of wchar_t */
+  for (i = 0; i < 6; i++)
+  {
+    is(col_vb[i] == col_vb_res[i]);
+  }
+
+  ok_stmt(hstmt, SQLFreeStmt(hstmt, SQL_CLOSE));
+  ok_sql(hstmt, "DROP TABLE IF EXISTS bug28864788");
+
+  return OK;
+}
 
 BEGIN_TESTS
   ADD_TEST(sqlconnect)
@@ -1454,6 +1485,7 @@ BEGIN_TESTS
   // ADD_TEST_UNICODE(t_bug28168)
   // ADD_TEST_UNICODE(t_bug14363601) TODO: Fix
   // ADD_TEST_UNICODE(t_bug14838690) TODO: Fix
+  ADD_TEST(t_bug28864788)
 END_TESTS
 
 
