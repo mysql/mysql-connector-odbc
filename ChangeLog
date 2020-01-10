@@ -1,9 +1,27 @@
-8.0.19
+8.0.20
 
   Security Notes:
   Functionality added or changed:
   Bugs fixed:
-  Built using MySQL 8.0.
+  Built using MySQL 8.0.20
+
+
+8.0.19
+
+  Security Notes:
+  Functionality added or changed:
+  * For IDE projects the unit tests are placed inside Test folder
+  * Connector support for multi-host (WL #13323)
+  * DNS SRV support (WL #13403)
+  Bugs fixed:
+  * Prepared Statements when using ODBC / ClassicASP always
+    return 0 for INT values (Bug #30428851/97191)
+  * Stored procedure call via ADODB and ODBC connector returns
+    resultset of 1 row (Bug #29467224)
+  * When using SQL_C_WCHAR with SQLGetData, BINARY data is not returned
+    as HEX (Bug #28864788/92429)
+
+  Built using MySQL 8.0.19
 
 
 8.0.18
