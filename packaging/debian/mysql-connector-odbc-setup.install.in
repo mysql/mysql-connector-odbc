@@ -1,3 +1,5 @@
 usr/lib/libmyodbc8S.so
 usr/LICENSE.txt        usr/share/doc/mysql-connector-odbc-setup
 usr/README.txt         usr/share/doc/mysql-connector-odbc-setup
+usr/INFO_BIN           usr/share/doc/mysql-connector-odbc-setup
+usr/INFO_SRC           usr/share/doc/mysql-connector-odbc-setup
