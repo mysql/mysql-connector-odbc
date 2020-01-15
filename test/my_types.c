@@ -1327,7 +1327,6 @@ BEGIN_TESTS
   ADD_TEST(binary_suffix)
   ADD_TEST(t_sqlnum_msdn)
   ADD_TEST(t_sqlnum_from_str)
-  ADD_TEST(t_bug91904)
 #endif
   ADD_TEST(t_bug16917)
   ADD_TEST(t_bug16235)
@@ -1335,6 +1334,7 @@ BEGIN_TESTS
   ADD_TEST(float_scale)
   ADD_TEST(bit)
   ADD_TEST(t_bug32171)
+  ADD_TEST(t_bug91904)
 // ADD_TEST_UNICODE(sqlwchar) TODO: Fix
   ADD_TEST(t_bindsqlnum_basic)
   ADD_TEST(t_sqlnum_to_str)
