@@ -463,13 +463,21 @@ sql_get_data(STMT *stmt, SQLSMALLINT fCType, uint column_number,
 
     if (field->type == MYSQL_TYPE_BIT)
     {
-      if (is_binary_ctype(fCType))
+      switch(fCType)
       {
+      case SQL_C_BIT:
         return copy_binary_result(stmt, (SQLCHAR *)rgbValue, cbValueMax,
                                   pcbValue, field, value, length);
-      }
-      else
-      {
+
+      //https://docs.microsoft.com/en-us/sql/odbc/reference/appendixes/sql-to-c-bit?view=sql-server-ver15
+      //When bit SQL data is converted to character C data, the possible values are "0" and "1".
+      case SQL_C_CHAR:
+        return copy_bit_result(stmt, (SQLCHAR *)rgbValue, cbValueMax,
+                               pcbValue, field, value, length);
+      case SQL_C_WCHAR:
+        return wcopy_bit_result(stmt, (SQLWCHAR *)rgbValue, cbValueMax,
+                                pcbValue, field, value, length);
+      default:
         binary2numeric(&numericValue, value, length);
         convert= 0;
       }

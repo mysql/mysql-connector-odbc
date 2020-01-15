@@ -35,7 +35,6 @@
 #include "errmsg.h"
 #include <ctype.h>
 
-
 #define DATETIME_DIGITS 14
 
 const SQLULEN sql_select_unlimited= (SQLULEN)-1;
@@ -1023,6 +1022,78 @@ SQLRETURN copy_binhex_result(STMT *stmt,
     return SQL_SUCCESS_WITH_INFO;
 }
 
+/*
+  @type    : myodbc internal
+  @purpose : is used when converting a bit a SQL_C_CHAR
+*/
+
+template<typename T>
+SQLRETURN do_copy_bit_result(STMT *stmt,
+                             T *result, SQLLEN result_bytes,
+                             SQLLEN *avail_bytes,
+                             MYSQL_FIELD *field __attribute__((unused)),
+                             char *src, unsigned long src_bytes)
+{
+  // We need 2 chars, otherwise Don't copy anything! */
+  if (result_bytes < 2)
+    result = 0;
+
+  /* Apply max length to source data, if one was specified. */
+  if (stmt->stmt_options.max_length &&
+      src_bytes > stmt->stmt_options.max_length)
+    src_bytes= stmt->stmt_options.max_length;
+
+  /* Initialize the source offset */
+  if (!stmt->getdata.source)
+  {
+    stmt->getdata.source= src;
+  }
+  else
+  {
+    src_bytes-= stmt->getdata.source - src;
+    src= stmt->getdata.source;
+
+    /* If we've already retrieved everything, return SQL_NO_DATA_FOUND */
+    if (src_bytes == 0)
+    {
+      return SQL_NO_DATA_FOUND;
+    }
+  }
+
+  if (result && stmt->stmt_options.retrieve_data)
+  {
+    result[0] = *src ? '1' : '0';
+    result[1] = '\0';
+  }
+
+
+  if (avail_bytes && stmt->stmt_options.retrieve_data)
+  {
+    *avail_bytes= sizeof(T);
+  }
+
+  stmt->getdata.source++;
+
+  return SQL_SUCCESS;
+}
+
+SQLRETURN copy_bit_result(STMT *stmt,
+                          SQLCHAR *result, SQLLEN result_bytes, SQLLEN *avail_bytes,
+                          MYSQL_FIELD *field __attribute__((unused)),
+                          char *src, unsigned long src_bytes)
+{
+  return do_copy_bit_result<SQLCHAR>(stmt, result, result_bytes, avail_bytes, field,
+                            src, src_bytes);
+}
+
+SQLRETURN wcopy_bit_result(STMT *stmt,
+                          SQLWCHAR *result, SQLLEN result_bytes, SQLLEN *avail_bytes,
+                          MYSQL_FIELD *field __attribute__((unused)),
+                          char *src, unsigned long src_bytes)
+{
+  return do_copy_bit_result<SQLWCHAR>(stmt, result, result_bytes, avail_bytes, field,
+                            src, src_bytes);
+}
 
 /**
   Get the SQL data type and (optionally) type name for a MYSQL_FIELD.
@@ -3820,8 +3891,8 @@ char * complete_timestamp(const char * value, ulong length, char buff[21])
   Fix described :
   --------
   union {
-	long_double l_d;
-	long double ld;
+  long_double l_d;
+  long double ld;
   } u;
   // convert str to a long_double; store return val in union
   //(Putting value into union enables converted value to be
@@ -3842,17 +3913,17 @@ long double myodbc_strtold(const char *nptr, char **endptr)
   return strtod(nptr, endptr);
 #else
 # ifndef HAVE_FUNCTION_STRTOLD
-	return strtod(nptr, endptr);
+  return strtod(nptr, endptr);
 # else
 #  if defined(__hpux) && defined(_LONG_DOUBLE)
-	union {
-		long_double l_d;
-		long double ld;
-	} u;
-	u.l_d = strtold( nptr, endptr);
-	return u.ld;
+  union {
+    long_double l_d;
+    long double ld;
+  } u;
+  u.l_d = strtold( nptr, endptr);
+  return u.ld;
 #  else
-	return strtold(nptr, endptr);
+  return strtold(nptr, endptr);
 #  endif
 # endif
 #endif

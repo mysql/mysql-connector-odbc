@@ -45,7 +45,7 @@
 
 #define if_dynamic_cursor(st) ((st)->stmt_options.cursor_type == SQL_CURSOR_DYNAMIC)
 #define if_forward_cache(st) ((st)->stmt_options.cursor_type == SQL_CURSOR_FORWARD_ONLY && \
-			     (st)->dbc->ds->dont_cache_result)
+           (st)->dbc->ds->dont_cache_result)
 #define is_connected(dbc)    ((dbc)->mysql.net.vio)
 #define trans_supported(db) ((db)->mysql.server_capabilities & CLIENT_TRANSACTIONS)
 #define autocommit_on(db) ((db)->mysql.server_status & SERVER_STATUS_AUTOCOMMIT)
@@ -143,9 +143,9 @@ void      fix_result_types  (STMT *stmt);
 char *    fix_str           (char *to,const char *from,int length);
 char *    dupp_str          (char *from,int length);
 SQLRETURN my_pos_delete (STMT *stmt,STMT *stmtParam,
-			                  SQLUSMALLINT irow,DYNAMIC_STRING *dynStr);
+                        SQLUSMALLINT irow,DYNAMIC_STRING *dynStr);
 SQLRETURN my_pos_update (STMT *stmt,STMT *stmtParam,
-			                  SQLUSMALLINT irow,DYNAMIC_STRING *dynStr);
+                        SQLUSMALLINT irow,DYNAMIC_STRING *dynStr);
 char *    check_if_positioned_cursor_exists (STMT *stmt, STMT **stmtNew);
 SQLRETURN insert_param  (STMT *stmt, MYSQL_BIND *bind, DESC *apd,
                         DESCREC *aprec, DESCREC *iprec, SQLULEN row);
@@ -169,9 +169,15 @@ copy_binary_result(STMT *stmt,
                    SQLCHAR *result, SQLLEN result_bytes, SQLLEN *used_bytes,
                    MYSQL_FIELD *field, char *src, unsigned long src_bytes);
 SQLRETURN copy_binhex_result(STMT *stmt,
-			     SQLCHAR *rgbValue, SQLINTEGER cbValueMax,
-			     SQLLEN *pcbValue, MYSQL_FIELD *field, char *src,
-			     ulong src_length);
+           SQLCHAR *rgbValue, SQLINTEGER cbValueMax,
+           SQLLEN *pcbValue, MYSQL_FIELD *field, char *src,
+           ulong src_length);
+SQLRETURN copy_bit_result(STMT *stmt,
+                          SQLCHAR *result, SQLLEN result_bytes, SQLLEN *used_bytes,
+                          MYSQL_FIELD *field, char *src, unsigned long src_bytes);
+SQLRETURN wcopy_bit_result(STMT *stmt,
+                          SQLWCHAR *result, SQLLEN result_bytes, SQLLEN *used_bytes,
+                          MYSQL_FIELD *field, char *src, unsigned long src_bytes);
 SQLRETURN copy_wchar_result(STMT *stmt,
                             SQLWCHAR *rgbValue, SQLINTEGER cbValueMax,
                             SQLLEN *pcbValue, MYSQL_FIELD *field, char *src,
@@ -216,16 +222,16 @@ SQLLEN      get_bookmark_value                  (SQLSMALLINT fCType, SQLPOINTER 
    (field)->type == MYSQL_TYPE_NEWDECIMAL)
 
 SQLRETURN SQL_API my_SQLBindParameter(SQLHSTMT hstmt,SQLUSMALLINT ipar,
-				      SQLSMALLINT fParamType,
-				      SQLSMALLINT fCType, SQLSMALLINT fSqlType,
-				      SQLULEN cbColDef,
-				      SQLSMALLINT ibScale,
-				      SQLPOINTER  rgbValue,
-				      SQLLEN cbValueMax,
-				      SQLLEN *pcbValue);
+              SQLSMALLINT fParamType,
+              SQLSMALLINT fCType, SQLSMALLINT fSqlType,
+              SQLULEN cbColDef,
+              SQLSMALLINT ibScale,
+              SQLPOINTER  rgbValue,
+              SQLLEN cbValueMax,
+              SQLLEN *pcbValue);
 SQLRETURN SQL_API my_SQLExtendedFetch(SQLHSTMT hstmt, SQLUSMALLINT fFetchType,
-				      SQLLEN irow, SQLULEN *pcrow,
-				      SQLUSMALLINT *rgfRowStatus, my_bool upd_status);
+              SQLLEN irow, SQLULEN *pcrow,
+              SQLUSMALLINT *rgfRowStatus, my_bool upd_status);
 SQLRETURN SQL_API myodbc_single_fetch( SQLHSTMT hstmt, SQLUSMALLINT fFetchType,
               SQLLEN irow, SQLULEN *pcrow,
               SQLUSMALLINT *rgfRowStatus, my_bool upd_status);
@@ -257,16 +263,16 @@ int   check_if_server_is_alive  (DBC *dbc);
 
 my_bool   dynstr_append_quoted_name (DYNAMIC_STRING *str, const char *name);
 SQLRETURN set_handle_error          (SQLSMALLINT HandleType, SQLHANDLE handle,
-			                              myodbc_errid errid, const char *errtext, SQLINTEGER errcode);
+                                    myodbc_errid errid, const char *errtext, SQLINTEGER errcode);
 SQLRETURN set_error     (STMT *stmt,myodbc_errid errid, const char *errtext,
-		                    SQLINTEGER errcode);
+                        SQLINTEGER errcode);
 SQLRETURN set_conn_error(DBC *dbc,myodbc_errid errid, const char *errtext,
-			                  SQLINTEGER errcode);
+                        SQLINTEGER errcode);
 SQLRETURN set_env_error (ENV * env,myodbc_errid errid, const char *errtext,
-			                  SQLINTEGER errcode);
+                        SQLINTEGER errcode);
 SQLRETURN copy_str_data (SQLSMALLINT HandleType, SQLHANDLE Handle,
-			                  SQLCHAR *rgbValue, SQLSMALLINT cbValueMax,
-			                  SQLSMALLINT *pcbValue,char *src);
+                        SQLCHAR *rgbValue, SQLSMALLINT cbValueMax,
+                        SQLSMALLINT *pcbValue,char *src);
 SQLRETURN SQL_API my_SQLAllocEnv      (SQLHENV * phenv);
 SQLRETURN SQL_API my_SQLAllocConnect  (SQLHENV henv, SQLHDBC *phdbc);
 SQLRETURN SQL_API my_SQLFreeConnect   (SQLHDBC hdbc);

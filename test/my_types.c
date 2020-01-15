@@ -702,6 +702,73 @@ DECLARE_TEST(t_bug32171)
 }
 
 
+/**
+ Bug #32171: ODBC Driver incorrectly parses large Unsigned Integers
+*/
+DECLARE_TEST(t_bug91904)
+{
+  SQLUINTEGER pk;
+  SQLCHAR char_true[4] = {'z','z','z','z'};
+  SQLLEN char_true_length;
+  SQLCHAR text[4] = {'z','z','z','z'};
+  SQLLEN text_length;
+  SQLWCHAR wchar_true[4] = {'z','z','z','z'};
+  SQLLEN wchar_true_length;
+  SQLWCHAR wtext[4] = {'z','z','z','z'};
+  SQLLEN wtext_length;
+
+  ok_sql(hstmt, "DROP TABLE IF EXISTS t_bug91904");
+  ok_sql(hstmt, "CREATE TABLE `t_bug91904` (\
+                   `pk` int unsigned NOT NULL AUTO_INCREMENT,\
+                   `col_bit` bit(1) NOT NULL,\
+                   `text` VARCHAR(30),\
+                   PRIMARY KEY (`pk`),\
+                   UNIQUE KEY `pk_UNIQUE` (`pk`)\
+                   ) ENGINE=InnoDB AUTO_INCREMENT=6");
+
+
+  ok_stmt(hstmt, SQLExecDirect(hstmt, "INSERT INTO t_bug91904 VALUES (1, 1, \"1\")", SQL_NTS));
+
+  ok_sql(hstmt, "SELECT * FROM t_bug91904");
+
+  ok_stmt(hstmt, SQLBindCol(hstmt, 2, SQL_C_CHAR, char_true, sizeof(char_true), &char_true_length));
+  ok_stmt(hstmt, SQLBindCol(hstmt, 3, SQL_C_CHAR, text, sizeof(text), &text_length));
+  ok_stmt(hstmt, SQLFetch(hstmt));
+
+  is_str("1",char_true,2);
+  is_str("1",text, 2);
+  //Should not touch the rest of the buffer
+  is_num('z', char_true[2]);
+  is_num('z', text[2]);
+  is_num(sizeof(SQLCHAR), char_true_length);
+  is_num(sizeof(SQLCHAR), text_length);
+
+  expect_stmt(hstmt, SQLFetch(hstmt), SQL_NO_DATA);
+
+  ok_stmt(hstmt, SQLFreeStmt(hstmt, SQL_CLOSE));
+
+  ok_sql(hstmt, "SELECT * FROM t_bug91904");
+
+  ok_stmt(hstmt, SQLBindCol(hstmt, 2, SQL_C_WCHAR, wchar_true, sizeof(wchar_true), &wchar_true_length));
+  ok_stmt(hstmt, SQLBindCol(hstmt, 3, SQL_C_WCHAR, wtext, sizeof(wtext), &wtext_length));
+
+  ok_stmt(hstmt, SQLFetch(hstmt));
+
+  is_wstr(L"1", sqlwchar_to_wchar_t(wchar_true), 2);
+  is_wstr(L"1", sqlwchar_to_wchar_t(wtext), 2);
+  //Should not touch the rest of the buffer
+  is_num('z', wchar_true[2]);
+  is_num('z', wtext[2]);
+  is_num(sizeof(SQLWCHAR), wchar_true_length);
+  is_num(sizeof(SQLWCHAR), wtext_length);
+
+  ok_stmt(hstmt, SQLFreeStmt(hstmt, SQL_CLOSE));
+
+  ok_sql(hstmt, "DROP TABLE IF EXISTS t_bug91904");
+
+  return OK;
+}
+
 /** Test passing an SQL_C_CHAR to a SQL_WCHAR field. */
 DECLARE_TEST(sqlwchar)
 {
@@ -1260,6 +1327,7 @@ BEGIN_TESTS
   ADD_TEST(binary_suffix)
   ADD_TEST(t_sqlnum_msdn)
   ADD_TEST(t_sqlnum_from_str)
+  ADD_TEST(t_bug91904)
 #endif
   ADD_TEST(t_bug16917)
   ADD_TEST(t_bug16235)
@@ -1267,7 +1335,7 @@ BEGIN_TESTS
   ADD_TEST(float_scale)
   ADD_TEST(bit)
   ADD_TEST(t_bug32171)
-  // ADD_TEST_UNICODE(sqlwchar) TODO: Fix
+// ADD_TEST_UNICODE(sqlwchar) TODO: Fix
   ADD_TEST(t_bindsqlnum_basic)
   ADD_TEST(t_sqlnum_to_str)
   ADD_TEST(t_bug31220)
