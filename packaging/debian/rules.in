@@ -1,5 +1,5 @@
 #!/usr/bin/make -f
-# Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved. 
+# Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved. 
 # 
 # This program is free software; you can redistribute it and/or modify 
 # it under the terms of the GNU General Public License, version 2.0, as 
@@ -44,6 +44,7 @@ override_dh_auto_configure:
         #--disable-gui --disable-test ?
 	cmake -G 'Unix Makefiles' \
 	    -DCMAKE_INSTALL_PREFIX=/usr \
+	    -DINSTALL_LIBDIR=lib/$(DEB_HOST_MULTIARCH) \
 	    -DCMAKE_VERBOSE_MAKEFILE:BOOL=TRUE \
 	    -DFINDMYSQL_DEBUG:BOOL=TRUE \
 	    -DMYSQLCLIENT_STATIC_LINKING:BOOL=TRUE  \
@@ -75,4 +76,5 @@ TMP_PRIVATE_BINDIR = $(TMP_INSTDIR)$(PRIVATE_BINDIR)
 
 override_dh_auto_install:
 	dh_auto_install -- libdir=$(PRIVATE_BINDIR) DESTDIR=$(TMP_INSTDIR)
-	#mv $(TMP_INSTDIR)/usr/lib/$(DEB_HOST_MULTIARCH)/odbc/libmyodbc8-$(base_version).so $(TMP_INSTDIR)/usr/lib/$(DEB_HOST_MULTIARCH)/odbc/libmyodbc.so
+	mkdir -p $(TMP_INSTDIR)/usr/lib/$(DEB_HOST_MULTIARCH)/odbc
+	mv $(TMP_INSTDIR)/usr/lib/libmyodbc* $(TMP_INSTDIR)/usr/lib/$(DEB_HOST_MULTIARCH)/odbc/
