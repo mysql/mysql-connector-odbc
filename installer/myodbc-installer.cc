@@ -68,7 +68,7 @@ const char usage[] =
 "|    various Unix-like systems.                                        \n"
 "|                                                                      \n"
 #ifndef _WIN32
-#ifdef USE_IODBC
+#ifndef USE_IODBC
 "|    The program requires that unixODBC version 2.2.14 or newer        \n"
 "|    has already been installed on the system.                         \n"
 "|    UnixODBC can be downloaded from here:                             \n"
