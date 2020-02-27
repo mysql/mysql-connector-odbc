@@ -163,6 +163,25 @@ foreach(_xvar ${ENV_OR_OPT_VARS})
 endforeach()
 
 
+# Bail out if both MYSQL_DIR/MYSQL_CONFIG_EXECUTABLE and MYSQL_INCLUDE/LIB_DIR
+# were given
+
+if(MYSQL_DIR AND (MYSQL_INCLUDE_DIR OR MYSQL_LIB_DIR))
+  message(FATAL_ERROR
+    "Both MYSQL_DIR and MYSQL_INCLUDE_DIR/MYSQL_LIB_DIR were specified,"
+    " use either one or the other way of pointing at MySQL location."
+  )
+endif()
+
+if (MYSQL_CONFIG_EXECUTABLE AND (MYSQL_INCLUDE_DIR OR MYSQL_LIB_DIR))
+  message(FATAL_ERROR
+    "Both MYSQL_CONFIG_EXECUTABLE and MYSQL_INCLUDE_DIR/MYSQL_LIB_DIR were specified,"
+    " mixing settings detected with mysql_config and manually set by variables"
+    " is not supported and would confuse our build logic."
+  )
+endif()
+
+
 if(MYSQL_CONFIG_EXECUTABLE)
   set(_mysql_config_set_by_user 1)
 else()
@@ -174,6 +193,8 @@ else()
     set(_mysql_config_in_mysql_dir 1)
   endif()
 endif()
+
+
 
 ##########################################################################
 #
@@ -728,6 +749,16 @@ endif()
 if(MYSQL_EXTRA_LIBRARIES)
   separate_arguments(MYSQL_EXTRA_LIBRARIES)
   list(APPEND MYSQL_LIBRARIES ${MYSQL_EXTRA_LIBRARIES})
+endif()
+
+list(LENGTH MYSQL_LIBRARIES len)
+if (MYSQL_STATIC_LINKING AND (len LESS 2))
+  message(WARNING
+    "Statically linking MySQL client library normally requires linking"
+    " additional libraries that the client library depends on. It seems"
+    " no extra libraries have been specified. Provide the list of required"
+    " dependencies through MYSQL_EXTRA_LIBRARIES."
+  )
 endif()
 
 # For compatibility
