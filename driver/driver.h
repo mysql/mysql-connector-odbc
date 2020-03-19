@@ -530,7 +530,9 @@ struct tempBuf
   char* extend_buffer(char *to, size_t len);
   char* extend_buffer(size_t len);
 
+  // Append data to the current buffer
   char* add_to_buffer(const char *from, size_t len);
+
   char* add_to_buffer(char *to, const char *from, size_t len);
   void remove_trail_zeroes();
 
@@ -622,6 +624,7 @@ struct STMT
   char* extend_buffer(size_t len);
 
   char* add_to_buffer(const char *from, size_t len);
+  char* place_to_buffer(const char *from, size_t len);
   char* buf() { return tempbuf.buf; }
   char* endbuf() { return tempbuf.buf + tempbuf.cur_pos; }
   size_t buf_pos() { return tempbuf.cur_pos; }

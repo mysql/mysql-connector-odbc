@@ -308,6 +308,7 @@ void ssps_close(STMT *stmt)
     mysql_stmt_close(stmt->ssps);
     stmt->ssps= NULL;
   }
+  stmt->buf_set_pos(0);
 }
 
 

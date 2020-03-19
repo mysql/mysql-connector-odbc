@@ -359,31 +359,10 @@ SQLRETURN SQL_API SQLParamOptions( SQLHSTMT     hstmt,
 
   CHECK_HANDLE(hstmt);
 
-  rc= stmt_SQLSetDescField(stmt, stmt->apd, 0, SQL_DESC_ARRAY_SIZE,
-                           (SQLPOINTER)crow, buflen);
+  rc= MySQLSetStmtAttr(stmt, SQL_ATTR_PARAMSET_SIZE, (SQLPOINTER)crow, 0);
   if (!SQL_SUCCEEDED(rc))
     return rc;
-  /*
-     We make the assumption that if this is using the pointer to a 64-bit
-     value, then it is correct. However the SQL_DESC_ROWS_PROCESSED_PTR is a
-     pointer to a 32-bit value so we zero-out the unused half and save a
-     pointer to the 32-bits we'll actually use.
-     Some more discussion at
-        http://mail.easysoft.com/pipermail/unixodbc-dev/2005-July/000627.html
-  */
-#ifdef USE_SQLPARAMOPTIONS_SQLULEN_PTR
-  if (pirow != NULL)
-  {
-    int x = 1;
-    if(*(char *)&x != 1)
-    {
-      *pirow= 0;
-      pirow= (SQLULEN *)((char *)pirow + 4);
-    }
-  }
-#endif
-  rc= stmt_SQLSetDescField(stmt, stmt->ipd, 0, SQL_DESC_ROWS_PROCESSED_PTR,
-                           pirow, SQL_IS_POINTER);
+  rc= MySQLSetStmtAttr(stmt, SQL_ATTR_PARAMS_PROCESSED_PTR, pirow, 0);
   return rc;
 }
 

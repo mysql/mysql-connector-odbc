@@ -1902,7 +1902,78 @@ DECLARE_TEST(t_sp_return)
   return OK;
 }
 
+/*
+  Bug 30591722
+  Only a single value is being inserted instead of the array with
+  SQLParamOptions
+*/
+DECLARE_TEST(t_bug30591722)
+{
+  #undef RCNT
+  #define RCNT 100
+
+  int cnt = 0;
+
+  SQLUINTEGER lval[RCNT] = { 0 };
+  SQLUINTEGER uintval1[RCNT] = { 0 };
+  SQLUINTEGER uintval2[RCNT] = { 0 };
+
+  DECLARE_BASIC_HANDLES(henv1, hdbc1, hstmt1);
+
+  /* Connect with SSPS enabled */
+  printf("\nCreating a new connection NO_SSPS=1\n");
+  alloc_basic_handles_with_opt(&henv1, &hdbc1, &hstmt1, NULL, NULL, NULL,
+    "test", "NO_SSPS=1");
+
+  printf("Creating a table\n");
+  ok_sql(hstmt1, "DROP TABLE IF EXISTS bug30591722");
+  ok_sql(hstmt1, "CREATE TABLE bug30591722(id INT, id2 INT)");
+
+  ok_stmt(hstmt1, SQLParamOptions(hstmt1, RCNT, (SQLULEN*)&lval));
+
+  for (int j = 0; j < RCNT; j++)
+  {
+    uintval1[j] = j;
+    uintval2[j] = 100 + j;
+  }
+
+  printf("SQLPrepare\n");
+  ok_stmt(hstmt1, SQLPrepare(hstmt1,
+    "INSERT INTO bug30591722 VALUES (?+1, ?+100)", SQL_NTS));
+
+  printf("Bind Parameters\n");
+  ok_stmt(hstmt1, SQLBindParameter(hstmt1, 1,
+    SQL_PARAM_INPUT, SQL_C_ULONG, SQL_NUMERIC, 4, 0, &uintval1, 0, NULL));
+
+  ok_stmt(hstmt1, SQLBindParameter(hstmt1, 2,
+    SQL_PARAM_INPUT, SQL_C_ULONG, SQL_NUMERIC, 4, 0, &uintval2, 0, NULL));
+
+  printf("SQLExecute\n");
+  ok_stmt(hstmt1, SQLExecute(hstmt1));
+
+  printf("Checking the result using SELECT\n");
+  ok_stmt(hstmt1, SQLExecDirect(hstmt1,
+    (SQLCHAR*)"select * from bug30591722 order by id", SQL_NTS));
+
+  while (SQLFetch(hstmt1) == SQL_SUCCESS)
+  {
+    SQLUINTEGER id1 = 0, id2 = 0;
+    ok_stmt(hstmt1, SQLGetData(hstmt1, 1, SQL_C_ULONG, &id1, 0, NULL));
+    ok_stmt(hstmt1, SQLGetData(hstmt1, 2, SQL_C_ULONG, &id2, 0, NULL));
+    is_num(cnt + 1, id1);
+    is_num(cnt + 200, id2);
+    ++cnt;
+  }
+  is_num(100, cnt);
+  printf("Freeing handles\n");
+  free_basic_handles(&henv1, &hdbc1, &hstmt1);
+  printf("Handles are freed\n");
+  return OK;
+}
+
+
 BEGIN_TESTS
+  ADD_TEST(t_bug30591722)
   ADD_TEST(t_sp_return)
   // ADD_TEST(t_bug28175772) the libmysqlclient SERVER_PS_OUT_PARAMS flag
   //                         is not working the test should be re-enabled

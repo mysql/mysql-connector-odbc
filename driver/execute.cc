@@ -1397,7 +1397,7 @@ SQLRETURN my_SQLExecute( STMT *pStmt )
 
   if ( pStmt->ipd->rows_processed_ptr )
   {
-    *pStmt->ipd->rows_processed_ptr= 0;
+    *pStmt->ipd->rows_processed_ptr= (SQLULEN)0;
   }
 
   /* Locking if we have params array for "SELECT" statemnt */
