@@ -919,7 +919,8 @@ void ds_map_param(DataSource *ds, const SQLWCHAR *param,
  */
 int ds_lookup(DataSource *ds)
 {
-  SQLWCHAR buf[8192];
+#define DS_BUF_LEN 8192  
+  SQLWCHAR buf[DS_BUF_LEN];
   SQLWCHAR *entries= buf;
   SQLWCHAR **dest;
   SQLWCHAR val[256];
@@ -930,14 +931,11 @@ int ds_lookup(DataSource *ds)
   BOOL *booldest;
   /* No need for SAVE_MODE() because we always call config_get() above. */
 
-#ifdef _WIN32
-  /* We must do this to detect the WinXP bug mentioned below */
   memset(buf, 0xff, sizeof(buf));
-#endif
 
   /* get entries and check if data source exists */
   if ((size= SQLGetPrivateProfileStringW(ds->name, NULL, W_EMPTY,
-                                         buf, 8192, W_ODBC_INI)) < 1)
+                                         buf, DS_BUF_LEN, W_ODBC_INI)) < 1)
   {
     rc= -1;
     goto end;
@@ -980,7 +978,7 @@ int ds_lookup(DataSource *ds)
     /* revert to system mode and try again */
     config_set(ODBC_SYSTEM_DSN);
     if ((size= SQLGetPrivateProfileStringW(ds->name, NULL, W_EMPTY,
-                                           buf, 8192, W_ODBC_INI)) < 1)
+                                           buf, DS_BUF_LEN, W_ODBC_INI)) < 1)
     {
       rc= -1;
       goto end;
@@ -988,8 +986,10 @@ int ds_lookup(DataSource *ds)
   }
 #endif
 
-  for (used= 0; used < size; used += sqlwcharlen(entries) + 1,
-                             entries += sqlwcharlen(entries) + 1)
+  for (used= 0;
+       used < DS_BUF_LEN && entries[0];
+       used += sqlwcharlen(entries) + 1,
+       entries += sqlwcharlen(entries) + 1)
   {
     int valsize;
     ds_map_param(ds, entries, &dest, &intdest, &booldest);
