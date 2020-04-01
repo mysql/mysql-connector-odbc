@@ -2710,11 +2710,13 @@ ulong myodbc_escape_string(STMT *stmt,
   @param[in] ary   Array in little endian form
   @param[in] s     Scale
 */
-static void sqlnum_scale(int *ary, int s)
+void sqlnum_scale(unsigned *ary, int s)
 {
   /* multiply out all pieces */
   while (s--)
   {
+//    if (ary[7] > >> 16)
+
     ary[0] *= 10;
     ary[1] *= 10;
     ary[2] *= 10;
@@ -2734,7 +2736,7 @@ static void sqlnum_scale(int *ary, int s)
 
   @param[in] ary   Array in little endian form
 */
-static void sqlnum_unscale_le(int *ary)
+static void sqlnum_unscale_le(unsigned *ary)
 {
   int i;
   for (i= 7; i > 0; --i)
@@ -2752,7 +2754,7 @@ static void sqlnum_unscale_le(int *ary)
 
   @param[in] ary   Array in big endian form
 */
-static void sqlnum_unscale_be(int *ary, int start)
+static void sqlnum_unscale_be(unsigned *ary, int start)
 {
   int i;
   for (i= start; i < 7; ++i)
@@ -2769,7 +2771,7 @@ static void sqlnum_unscale_be(int *ary, int start)
 
   @param[in] ary   Array in little endian form
 */
-static void sqlnum_carry(int *ary)
+static void sqlnum_carry(unsigned *ary)
 {
   int i;
   /* carry over rest of structure */
@@ -2792,6 +2794,7 @@ static void sqlnum_carry(int *ary)
                           This indicates failure, and the result of sqlnum
                           is undefined.
 */
+
 void sqlnum_from_str(const char *numstr, SQL_NUMERIC_STRUCT *sqlnum,
                      int *overflow_ptr)
 {
@@ -2800,7 +2803,7 @@ void sqlnum_from_str(const char *numstr, SQL_NUMERIC_STRUCT *sqlnum,
      current segment of the number leaving extra bits
      to multiply/carry
   */
-  int build_up[8], tmp_prec_calc[8];
+  unsigned build_up[8], tmp_prec_calc[8];
   /* current segment as integer */
   unsigned int curnum;
   /* current segment digits copied for strtoul() */
@@ -2843,11 +2846,10 @@ void sqlnum_from_str(const char *numstr, SQL_NUMERIC_STRUCT *sqlnum,
       --sqlnum->precision;
       decpt= NULL;
     }
-    /* terminate prematurely if we can't do anything else */
-    /*if (overflow && !decpt)
-      break;
-    else */if (overflow)
-      /*continue;*/goto end;
+
+    if (overflow)
+      goto end;
+
     /* grab just this piece, and convert to int */
     memcpy(curdigs, numstr + i, usedig);
     curdigs[usedig]= 0;
@@ -2879,6 +2881,11 @@ void sqlnum_from_str(const char *numstr, SQL_NUMERIC_STRUCT *sqlnum,
     while (reqscale < sqlnum->scale && sqlnum->scale > 0)
     {
       sqlnum_unscale_le(build_up);
+
+      // Value 2 of overflow indicates truncation, not critical
+      if (build_up[0] % 10)
+        overflow = 2;
+
       build_up[0] /= 10;
       --sqlnum->precision;
       --sqlnum->scale;
@@ -2908,20 +2915,22 @@ void sqlnum_from_str(const char *numstr, SQL_NUMERIC_STRUCT *sqlnum,
   /* calculate minimum precision */
   memcpy(tmp_prec_calc, build_up, sizeof(build_up));
 
-  do
   {
-    sqlnum_unscale_le(tmp_prec_calc);
-    i= tmp_prec_calc[0] % 10;
-    tmp_prec_calc[0] /= 10;
-    if (i == 0)
-      --sqlnum->precision;
-  } while (i == 0 && sqlnum->precision > 0);
+    SQLCHAR temp_precision = sqlnum->precision;
 
-  /* detect precision overflow */
-  if (sqlnum->precision > reqprec)
-    overflow= 1;
-  else
-    sqlnum->precision= reqprec;
+    do
+    {
+      sqlnum_unscale_le(tmp_prec_calc);
+      i= tmp_prec_calc[0] % 10;
+      tmp_prec_calc[0] /= 10;
+      if (i == 0)
+        --temp_precision;
+    } while (i == 0 && temp_precision > 0);
+
+    /* detect precision overflow */
+    if (temp_precision > reqprec)
+      overflow= 1;
+  }
 
   /* compress results into SQL_NUMERIC_STRUCT.val */
   for (i= 0; i < 8; ++i)
@@ -2960,7 +2969,7 @@ void sqlnum_to_str(SQL_NUMERIC_STRUCT *sqlnum, SQLCHAR *numstr,
                    SQLCHAR **numbegin, SQLCHAR reqprec, SQLSCHAR reqscale,
                    int *truncptr)
 {
-  int expanded[8];
+  unsigned expanded[8];
   int i, j;
   int max_space= 0;
   int calcprec= 0;

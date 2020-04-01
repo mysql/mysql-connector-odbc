@@ -923,7 +923,10 @@ sql_get_data(STMT *stmt, SQLSMALLINT fCType, uint column_number,
         if (rgbValue)
         {
           if (convert)
+          {
             sqlnum_from_str(get_string(stmt, column_number, value, &length, as_string), sqlnum, &overflow);
+            *pcbValue = sizeof(SQL_NUMERIC_STRUCT);
+          }
           else /* bit field */
           {
             /* Lazy way - converting number we have to a string.
@@ -933,14 +936,19 @@ sql_get_data(STMT *stmt, SQLSMALLINT fCType, uint column_number,
             sprintf(_value, "%llu", numericValue);
 
             sqlnum_from_str(_value, sqlnum, &overflow);
+            *pcbValue = sizeof(ulonglong);
           }
 
         }
-        *pcbValue= sizeof(ulonglong);
 
-        if (overflow)
+        if (overflow == 1)
           return set_stmt_error(stmt, "22003",
                                 "Numeric value out of range", 0);
+        else if (overflow == 2)
+        {
+          set_stmt_error(stmt, "01S07", "Fractional truncation", 0);
+          result = SQL_SUCCESS_WITH_INFO;
+        }
       }
       break;
 

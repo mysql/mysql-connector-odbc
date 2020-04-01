@@ -861,7 +861,7 @@ DECLARE_TEST(t_sqlnum_msdn)
   ok_stmt(hstmt, SQLFetch(hstmt));
 
   is_num(sqlnum->sign, 1);
-  is_num(sqlnum->precision, 38);
+  is_num(sqlnum->precision, 5);
   is_num(sqlnum->scale, 3);
   is(!memcmp(sqlnum->val, exp_data, SQL_MAX_NUMERIC_LEN));
 
@@ -886,12 +886,13 @@ DECLARE_TEST(t_sqlnum_msdn)
   @param[in]  overflow    Whether to expect a retrieval failure (22003)
   @return OK/FAIL just like a test.
 */
+
 int sqlnum_test_from_str(SQLHANDLE hstmt,
-                         const char *numstr, SQLCHAR prec, SQLSCHAR scale,
-                         SQLCHAR sign, SQLCHAR *expdata, int expnum,
-                         int overflow)
+  const char *numstr, SQLCHAR prec, SQLSCHAR scale,
+  SQLCHAR sign, SQLCHAR *expdata, int expnum,
+  int overflow)
 {
-  SQL_NUMERIC_STRUCT *sqlnum= malloc(sizeof(SQL_NUMERIC_STRUCT));
+  SQL_NUMERIC_STRUCT *sqlnum = malloc(sizeof(SQL_NUMERIC_STRUCT));
   SQLCHAR buf[512];
   SQLHANDLE ard;
   unsigned long numval;
@@ -903,18 +904,22 @@ int sqlnum_test_from_str(SQLHANDLE hstmt,
   ok_stmt(hstmt, SQLGetStmtAttr(hstmt, SQL_ATTR_APP_ROW_DESC, &ard, 0, NULL));
 
   ok_desc(ard, SQLSetDescField(ard, 1, SQL_DESC_TYPE,
-                               (SQLPOINTER) SQL_C_NUMERIC, SQL_IS_INTEGER));
+    (SQLPOINTER)SQL_C_NUMERIC, SQL_IS_INTEGER));
   ok_desc(ard, SQLSetDescField(ard, 1, SQL_DESC_PRECISION,
-                               (SQLPOINTER)(size_t)prec, SQL_IS_INTEGER));
+    (SQLPOINTER)(size_t)prec, SQL_IS_INTEGER));
   ok_desc(ard, SQLSetDescField(ard, 1, SQL_DESC_SCALE,
-                               (SQLPOINTER)(size_t)scale, SQL_IS_INTEGER));
+    (SQLPOINTER)(size_t)scale, SQL_IS_INTEGER));
   ok_desc(ard, SQLSetDescField(ard, 1, SQL_DESC_DATA_PTR,
-                               sqlnum, SQL_IS_POINTER));
+    sqlnum, SQL_IS_POINTER));
 
-  if (overflow)
+  if (overflow == 1)
   {
     expect_stmt(hstmt, SQLFetch(hstmt), SQL_ERROR);
     return check_sqlstate(hstmt, "22003");
+  }
+  else if (overflow == 2)
+  {
+    expect_stmt(hstmt, SQLFetch(hstmt), SQL_SUCCESS_WITH_INFO);
   }
   else
     ok_stmt(hstmt, SQLFetch(hstmt));
@@ -930,8 +935,8 @@ int sqlnum_test_from_str(SQLHANDLE hstmt,
   {
     /* only use this for <=32bit values */
     int i;
-    numval= 0;
-    for (i= 0; i < 8; ++i)
+    numval = 0;
+    for (i = 0; i < 8; ++i)
       numval += sqlnum->val[7 - i] << (8 * (7 - i));
     is_num(numval, expnum);
   }
@@ -948,68 +953,67 @@ int sqlnum_test_from_str(SQLHANDLE hstmt,
 
    Make sure to use little-endian in SQLCHAR arrays.
 */
+
 DECLARE_TEST(t_sqlnum_from_str)
 {
-  char *num1= "25.212";
-  char *num2= "-101234.0010";
-  char *num3= "-101230.0010";
+  char *num1 = "25.212";
+  char *num2 = "-101234.0010";
+  char *num3 = "-101230.0010";
 
   /* some basic tests including min-precision and scale changes */
   is(sqlnum_test_from_str(hstmt, num1, 5, 3, 1, NULL, 25212, 0) == OK);
   is(sqlnum_test_from_str(hstmt, num1, 4, 3, 1, NULL, 0, 1) == OK);
-  is(sqlnum_test_from_str(hstmt, num1, 4, 2, 1, NULL, 2521, 0) == OK);
-  is(sqlnum_test_from_str(hstmt, num1, 2, 0, 1, NULL, 25, 0) == OK);
+  is(sqlnum_test_from_str(hstmt, num1, 4, 2, 1, NULL, 2521, 2) == OK);
+  is(sqlnum_test_from_str(hstmt, num1, 2, 0, 1, NULL, 25, 2) == OK);
   is(sqlnum_test_from_str(hstmt, num1, 2, -1, 1, NULL, 0, 1) == OK);
 
   /* more comprehensive testing of scale and precision */
-  {SQLCHAR expdata[]= {0x2a, 0x15, 0x57, 0x3c, 0,0,0,0,0,0,0,0,0,0,0,0};
-   is(sqlnum_test_from_str(hstmt, num2, 9, 4, 0, expdata, 0, 0) == OK);}
-  is(sqlnum_test_from_str(hstmt, num2, 9, 4, 0, NULL, 1012340010, 0) == OK);
+  {SQLCHAR expdata[] = { 0x2a, 0x15, 0x57, 0x3c, 0,0,0,0,0,0,0,0,0,0,0,0 };
+  is(sqlnum_test_from_str(hstmt, num2, 10, 4, 0, expdata, 0, 0) == OK); }
+  is(sqlnum_test_from_str(hstmt, num2, 10, 4, 0, NULL, 1012340010, 0) == OK);
   is(sqlnum_test_from_str(hstmt, num2, 9, 3, 0, NULL, 101234001, 0) == OK);
   is(sqlnum_test_from_str(hstmt, num2, 8, 3, 0, NULL, 0, 1) == OK);
-  is(sqlnum_test_from_str(hstmt, num2, 8, 2, 0, NULL, 10123400, 0) == OK);
-  is(sqlnum_test_from_str(hstmt, num2, 7, 2, 0, NULL, 10123400, 0) == OK);
-  is(sqlnum_test_from_str(hstmt, num2, 6, 2, 0, NULL, 10123400, 0) == OK);
-  is(sqlnum_test_from_str(hstmt, num2, 6, 1, 0, NULL, 1012340, 0) == OK);
-  is(sqlnum_test_from_str(hstmt, num2, 6, 0, 0, NULL, 101234, 0) == OK);
+  is(sqlnum_test_from_str(hstmt, num2, 8, 2, 0, NULL, 10123400, 2) == OK);
+  is(sqlnum_test_from_str(hstmt, num2, 7, 1, 0, NULL, 1012340, 2) == OK);
+  is(sqlnum_test_from_str(hstmt, num2, 6, 0, 0, NULL, 101234, 2) == OK);
   is(sqlnum_test_from_str(hstmt, num2, 6, -1, 0, NULL, 0, 1) == OK);
 
-  is(sqlnum_test_from_str(hstmt, num3, 6, -1, 0, NULL, 10123, 0) == OK);
-  is(sqlnum_test_from_str(hstmt, num3, 5, -1, 0, NULL, 10123, 0) == OK);
+  is(sqlnum_test_from_str(hstmt, num3, 5, -1, 0, NULL, 10123, 2) == OK);
 
   /* Bug#35920 */
-  is(sqlnum_test_from_str(hstmt, "8000.00", 30, 2, 1, NULL, 800000, 0) == OK);
-  is(sqlnum_test_from_str(hstmt, "1234567.00", 30, 2, 1, NULL, 123456700, 0) == OK);
+  is(sqlnum_test_from_str(hstmt, "8000.00", 6, 2, 1, NULL, 800000, 0) == OK);
+  is(sqlnum_test_from_str(hstmt, "1234567.00", 9, 2, 1, NULL, 123456700, 0) == OK);
 
   /* some larger numbers */
-  {SQLCHAR expdata[SQL_MAX_NUMERIC_LEN]= {0xD5, 0x50, 0x94, 0x49, 0,0,0,0,0,0,0,0,0,0,0,0};
-   is(OK == sqlnum_test_from_str(hstmt, "1234456789", 10, 0, 1, expdata, 0, 0));}
-  {SQLCHAR expdata[SQL_MAX_NUMERIC_LEN]= {0x7c, 0x62, 0,0, 0,0,0,0,0,0,0,0,0,0,0,0};
-   is(OK == sqlnum_test_from_str(hstmt, "25.212", 5, 3, 1, expdata, 0, 0));}
-  {SQLCHAR expdata[SQL_MAX_NUMERIC_LEN]= {0xaa, 0x86, 0x1, 0, 0,0,0,0,0,0,0,0,0,0,0,0};
-   is(OK == sqlnum_test_from_str(hstmt, "10.0010", 6, 4, 1, expdata, 0, 0));}
-  {SQLCHAR expdata[SQL_MAX_NUMERIC_LEN]= {0x2a, 0x15, 0x57, 0x3c, 0,0,0,0,0,0,0,0,0,0,0,0};
-   is(OK == sqlnum_test_from_str(hstmt, "-101234.0010", 10, 4, 0, expdata, 0, 0));}
-  {SQLCHAR expdata[SQL_MAX_NUMERIC_LEN]= {0x72, 0x8b, 0x1, 0, 0,0,0,0,0,0,0,0,0,0,0,0};
-   is(OK == sqlnum_test_from_str(hstmt, "101234", 6, 0, 1, expdata, 0, 0));}
-  {SQLCHAR expdata[SQL_MAX_NUMERIC_LEN]= {0x97, 0x03, 0x7C, 0xE3, 0x76, 0x5E, 0xF0, 0x00, 0x24, 0x1A, 0,0,0,0,0,0};
-   is(OK == sqlnum_test_from_str(hstmt, "123445678999123445678999", 24, 0, 1, expdata, 0, 0));}
-  {SQLCHAR expdata[SQL_MAX_NUMERIC_LEN]= {0x95, 0xFA, 0x0B, 0xF1, 0xED, 0x3C, 0x7C, 0xE4, 0x1B, 0x5F, 0x80, 0x1A, 0x16, 0x06, 0,0};
-   is(OK == sqlnum_test_from_str(hstmt, "123445678999123445678999543216789", 33, 0, 1, expdata, 0, 0));}
-  {SQLCHAR expdata[SQL_MAX_NUMERIC_LEN]= {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
-   is(OK == sqlnum_test_from_str(hstmt, "12344567899912344567899954321678909876543212", 44, 0, 1, expdata, 0, 1));}
+  {SQLCHAR expdata[SQL_MAX_NUMERIC_LEN] = { 0xD5, 0x50, 0x94, 0x49, 0,0,0,0,0,0,0,0,0,0,0,0 };
+  is(OK == sqlnum_test_from_str(hstmt, "1234456789", 10, 0, 1, expdata, 0, 0)); }
+  {SQLCHAR expdata[SQL_MAX_NUMERIC_LEN] = { 0x7c, 0x62, 0,0, 0,0,0,0,0,0,0,0,0,0,0,0 };
+  is(OK == sqlnum_test_from_str(hstmt, "25.212", 5, 3, 1, expdata, 0, 0)); }
+  {SQLCHAR expdata[SQL_MAX_NUMERIC_LEN] = { 0xaa, 0x86, 0x1, 0, 0,0,0,0,0,0,0,0,0,0,0,0 };
+  is(OK == sqlnum_test_from_str(hstmt, "10.0010", 6, 4, 1, expdata, 0, 0)); }
+  {SQLCHAR expdata[SQL_MAX_NUMERIC_LEN] = { 0x2a, 0x15, 0x57, 0x3c, 0,0,0,0,0,0,0,0,0,0,0,0 };
+  is(OK == sqlnum_test_from_str(hstmt, "-101234.0010", 10, 4, 0, expdata, 0, 0)); }
+  {SQLCHAR expdata[SQL_MAX_NUMERIC_LEN] = { 0x72, 0x8b, 0x1, 0, 0,0,0,0,0,0,0,0,0,0,0,0 };
+  is(OK == sqlnum_test_from_str(hstmt, "101234", 6, 0, 1, expdata, 0, 0)); }
+  {SQLCHAR expdata[SQL_MAX_NUMERIC_LEN] = { 0x97, 0x03, 0x7C, 0xE3, 0x76, 0x5E, 0xF0, 0x00, 0x24, 0x1A, 0,0,0,0,0,0 };
+  is(OK == sqlnum_test_from_str(hstmt, "123445678999123445678999", 24, 0, 1, expdata, 0, 0)); }
+  {SQLCHAR expdata[SQL_MAX_NUMERIC_LEN] = { 0x95, 0xFA, 0x0B, 0xF1, 0xED, 0x3C, 0x7C, 0xE4, 0x1B, 0x5F, 0x80, 0x1A, 0x16, 0x06, 0,0 };
+  is(OK == sqlnum_test_from_str(hstmt, "123445678999123445678999543216789", 33, 0, 1, expdata, 0, 0)); }
+  {SQLCHAR expdata[SQL_MAX_NUMERIC_LEN] = { 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 };
+  is(OK == sqlnum_test_from_str(hstmt, "12344567899912344567899954321678909876543212", 44, 0, 1, expdata, 0, 1)); }
   /* overflow with dec pt after the overflow */
-  {SQLCHAR expdata[SQL_MAX_NUMERIC_LEN]= {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
-   is(OK == sqlnum_test_from_str(hstmt, "1234456789991234456789995432167890987654321.2", 44, 1, 1, expdata, 0, 1));}
-  {SQLCHAR expdata[SQL_MAX_NUMERIC_LEN]= {0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff};
-   is(OK == sqlnum_test_from_str(hstmt, "340282366920938463463374607431768211455", 39, 0, 1, expdata, 0, 0)); /* MAX */}
-  {SQLCHAR expdata[SQL_MAX_NUMERIC_LEN]= {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
-   is(OK == sqlnum_test_from_str(hstmt, "340282366920938463463374607431768211456", 39, 0, 1, expdata, 0, 1)); /* MAX+1 */}
-  {SQLCHAR expdata[SQL_MAX_NUMERIC_LEN]= {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
-   is(OK == sqlnum_test_from_str(hstmt, "0", 1, 0, 1, expdata, 0, 0));}
+  {SQLCHAR expdata[SQL_MAX_NUMERIC_LEN] = { 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 };
+  is(OK == sqlnum_test_from_str(hstmt, "1234456789991234456789995432167890987654321.2", 44, 1, 1, expdata, 0, 1)); }
+  {SQLCHAR expdata[SQL_MAX_NUMERIC_LEN] = { 0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff };
+  is(OK == sqlnum_test_from_str(hstmt, "340282366920938463463374607431768211455", 39, 0, 1, expdata, 0, 0)); /* MAX */}
+  {SQLCHAR expdata[SQL_MAX_NUMERIC_LEN] = { 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 };
+  is(OK == sqlnum_test_from_str(hstmt, "340282366920938463463374607431768211456", 39, 0, 1, expdata, 0, 1)); /* MAX+1 */}
+  {SQLCHAR expdata[SQL_MAX_NUMERIC_LEN] = { 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 };
+  is(OK == sqlnum_test_from_str(hstmt, "0", 1, 0, 1, expdata, 0, 0)); }
 
   return OK;
 }
+
 
 
 /*
