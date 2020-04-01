@@ -2,7 +2,13 @@
 
   Security Notes:
   Functionality added or changed:
+  * DEB packages released for ODBC (WL #13565)
   Bugs fixed:
+  * SQLBindCol, binding SQL_BIT column to SQL_C_CHAR doesn't work properly
+    (Bug #28484784/91904)
+  * When using SQL_C_WCHAR with SQLGetData, binary data is not returned as hex
+    (Bug #28864788/92429)
+
   Built using MySQL 8.0.20
 
 
