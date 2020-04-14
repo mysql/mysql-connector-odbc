@@ -39,7 +39,7 @@ MACRO(_ENV_OR_DEFAULT VAR _default)
 
 ENDMACRO(_ENV_OR_DEFAULT VAR _key _default)
 
-MESSAGE(STATUS "Configuring ini files for tests")
+MESSAGE(STATUS "Configuring ini files for tests (${BINARY_DIR})")
 
 SET(TEST_DRIVER1 "${DRIVER_LOCATION1}")
 SET(TEST_DRIVER2 "${DRIVER_LOCATION2}")
@@ -62,6 +62,13 @@ ENDIF(${DRIVERS_COUNT} LESS 2)
 
 SET(DESCRIPTION1 "MySQL ODBC ${CONNECTOR_MAJOR}.${CONNECTOR_MINOR} ${CONNECTOR_DRIVER_TYPE1} Driver test" )
 SET(DESCRIPTION2 "MySQL ODBC ${CONNECTOR_MAJOR}.${CONNECTOR_MINOR} ${CONNECTOR_DRIVER_TYPE2} Driver test" )
+
+# Note: protection against parallel runs of this script during parallel
+# builds.
+
+if(EXISTS ${BINARY_DIR}/odbc.ini AND EXISTS ${BINARY_DIR}/odbcinst.ini)
+  return()
+endif()
 
 CONFIGURE_FILE(odbcinst.ini.in ${BINARY_DIR}/odbcinst.ini @ONLY)
 CONFIGURE_FILE(odbc.ini.in     ${BINARY_DIR}/odbc.ini @ONLY)
