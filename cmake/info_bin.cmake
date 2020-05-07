@@ -36,6 +36,14 @@ FUNCTION(GENERATE_INFO_BIN)
   ENDIF()
 
   MESSAGE("Generating INFO_BIN")
+
+  #
+  # Note: In later versions of cmake, if variable SOURCE_DATE_EPOCH is set
+  # in the environment, its value is used as a timestamp instead of the
+  # current date. This is used by Debian packaging tools, for example, to
+  # achieve "repeatable builds". See also packaging/debian/CMakeLists.txt
+  #
+
   string(TIMESTAMP INFO_DATE "%Y-%m-%d")
 
   IF (CMAKE_BUILD_TYPE)

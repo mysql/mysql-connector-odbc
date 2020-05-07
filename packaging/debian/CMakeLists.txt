@@ -33,6 +33,10 @@
 cmake_minimum_required(VERSION 2.8.12)
 project(MySQL_Connector_ODBC_Deb_Init NONE)
 
+if(NOT CMAKE_SYSTEM_NAME STREQUAL "Linux")
+  mesage(FATAL_ERROR "Debian packages can be built only on Linux!")
+endif()
+
 # ----------------------------------------------------------------------
 # Set some variables to replace
 # Use the version variables from "version.cmake"
@@ -40,10 +44,24 @@ project(MySQL_Connector_ODBC_Deb_Init NONE)
 
 include(../../version.cmake)
 
-string(TIMESTAMP YEAR "%Y")
-if(NOT YEAR)
-  message(FATAL_ERROR "Could not determine what year it is")
-endif()
+#
+# Timestamp for use in debian/changelog
+#
+# Note: Debian tools use the timestamp of the last entry in the changelog
+# as the value of SOURCE_DATE_EPOCH env. vairable which fixes build time
+# at that point. This will, for example, fix the build date reported in
+# in INFO_BIN file. Here we determine the value of the timestamp of the
+# last changelog entry generated from changelog.in below.
+#
+
+IF (NOT DEFINED DEB_CHANGELOG_TIMESTAMP)
+  execute_process(
+    COMMAND date --rfc-2822
+    OUTPUT_VARIABLE DEB_CHANGELOG_TIMESTAMP
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+  )
+  SET (DEB_CHANGELOG_TIMESTAMP ${DEB_CHANGELOG_TIMESTAMP} CACHE STRING "")
+ENDIF()
 
 set(PRODUCT   "MySQL Connector/ODBC ${CONNECTOR_BASE_VERSION}")
 
