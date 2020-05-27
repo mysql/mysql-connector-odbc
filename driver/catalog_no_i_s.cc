@@ -1562,9 +1562,8 @@ primary_keys_no_i_s(SQLHSTMT hstmt,
       return handle_connection_error(stmt);
     }
 
-    stmt->lengths= (unsigned long*) myodbc_malloc( sizeof(long)*SQLPRIM_KEYS_FIELDS*
-                                            (ulong) stmt->result->row_count,
-                                            MYF(MY_ZEROFILL));
+    stmt->alloc_lengths(SQLPRIM_KEYS_FIELDS*(ulong) stmt->result->row_count);
+
     if (!stmt->lengths)
     {
       set_mem_error(&stmt->dbc->mysql);

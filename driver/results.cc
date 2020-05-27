@@ -2433,6 +2433,8 @@ SQLRETURN SQL_API my_SQLExtendedFetch( SQLHSTMT             hstmt,
     res= SQL_SUCCESS;
     for (i= 0 ; i < rows_to_fetch ; ++i)
     {
+      values = nullptr;
+
       if ( stmt->result_array )
       {
         values= stmt->result_array + cur_row*stmt->result->field_count;
@@ -2482,9 +2484,9 @@ SQLRETURN SQL_API my_SQLExtendedFetch( SQLHSTMT             hstmt,
           values= stmt->array;
         }
 
-        if ( stmt->fix_fields )
+        if (stmt->fix_fields)
         {
-            values= (*stmt->fix_fields)(stmt,values);
+          values= (*stmt->fix_fields)(stmt,values);
         }
 
         stmt->current_values= values;

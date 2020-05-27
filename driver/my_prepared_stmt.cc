@@ -366,7 +366,8 @@ bool is_varlen_type(enum enum_field_types type)
   return (type == MYSQL_TYPE_BLOB ||
           type == MYSQL_TYPE_TINY_BLOB ||
           type == MYSQL_TYPE_MEDIUM_BLOB ||
-          type == MYSQL_TYPE_LONG_BLOB);
+          type == MYSQL_TYPE_LONG_BLOB ||
+          type == MYSQL_TYPE_VAR_STRING);
 }
 
 /* The structure and following allocation function are borrowed from c/c++ and adopted */
@@ -498,17 +499,22 @@ allocate_buffer_for_field(const MYSQL_FIELD * const field, BOOL outparams)
 /* }}} */
 
 
-static MYSQL_ROW fetch_varlength_columns(STMT *stmt, MYSQL_ROW columns)
+static MYSQL_ROW fetch_varlength_columns(STMT *stmt, MYSQL_ROW values)
 {
   const unsigned int  num_fields= field_count(stmt);
   unsigned int i;
   uint desc_index= ~0L, stream_column= ~0L;
+
+  // Only do something if values have not been fetched yet
+  if (values)
+    return values;
 
   if (stmt->out_params_state == OPS_STREAMS_PENDING)
   {
     desc_find_outstream_rec(stmt, &desc_index, &stream_column);
   }
 
+  bool reallocated_buffers = false;
   for (i= 0; i < num_fields; ++i)
   {
 
@@ -526,6 +532,8 @@ static MYSQL_ROW fetch_varlength_columns(STMT *stmt, MYSQL_ROW columns)
         stmt->array[i]= (char*)myodbc_realloc(stmt->array[i], *stmt->result_bind[i].length,
           MYF(MY_ALLOW_ZERO_PTR));
         stmt->lengths[i]= *stmt->result_bind[i].length;
+        stmt->result_bind[i].buffer_length = *stmt->result_bind[i].length;
+        reallocated_buffers = true;
       }
 
       stmt->result_bind[i].buffer = stmt->array[i];
@@ -538,8 +546,13 @@ static MYSQL_ROW fetch_varlength_columns(STMT *stmt, MYSQL_ROW columns)
       }
 
       mysql_stmt_fetch_column(stmt->ssps, &stmt->result_bind[i], i, 0);
+
     }
   }
+
+  // Result buffers must be set again after reallocating
+  if (reallocated_buffers)
+    mysql_stmt_bind_result(stmt->ssps, stmt->result_bind);
 
   fill_ird_data_lengths(stmt->ird, stmt->result_bind[0].length,
                                   stmt->result->field_count);
@@ -563,6 +576,106 @@ char *STMT::add_to_buffer(const char *from, size_t len)
   return tempbuf.add_to_buffer(from, len);
 }
 
+void STMT::free_lengths()
+{
+  if (lengths && lengths_allocated)
+  {
+    x_free(lengths);
+    lengths = nullptr;
+    lengths_allocated = false;
+  }
+}
+
+void STMT::alloc_lengths(size_t num)
+{
+  free_lengths();
+
+  lengths = (unsigned long*)myodbc_malloc(sizeof(unsigned long)*num,
+                                          MYF(MY_ZEROFILL));
+  lengths_allocated = true;
+}
+
+STMT::~STMT()
+{
+  free_lengths();
+}
+
+#if 0
+int STMT::ssps_bind_result()
+{
+  const unsigned int  num_fields= field_count(this);
+  unsigned int        i;
+
+  if (num_fields == 0)
+  {
+    return 0;
+  }
+
+  fix_fields = fetch_varlength_columns;
+
+  if (!lengths)
+    alloc_lengths(num_fields);
+
+  if (result_bind)
+  {
+    for (i=0; i < num_fields; ++i)
+    {
+      /* length marks such fields */
+      if (lengths[i] > 0)
+      {
+        if (result_bind[i].buffer == array[i])
+        {
+          /* make sure we do not free it twice */
+          array[i]= NULL;
+          lengths[i]= 0;
+        }
+        /* Resetting buffer and buffer_length for those fields */
+        x_free(result_bind[i].buffer);
+        result_bind[i].buffer       = 0;
+        result_bind[i].buffer_length= 0;
+      }
+    }
+  }
+  else
+  {
+    my_bool       *is_null= (my_bool*)myodbc_malloc(sizeof(my_bool)*num_fields,
+                                      MYF(MY_ZEROFILL));
+    my_bool       *err=     (my_bool*)myodbc_malloc(sizeof(my_bool)*num_fields,
+                                      MYF(MY_ZEROFILL));
+    unsigned long *len=     (unsigned long*)myodbc_malloc(sizeof(unsigned long)*num_fields,
+                                      MYF(MY_ZEROFILL));
+
+    /*TODO care about memory allocation errors */
+    result_bind=  (MYSQL_BIND*)myodbc_malloc(sizeof(MYSQL_BIND)*num_fields,
+                                             MYF(MY_ZEROFILL));
+    array=        (MYSQL_ROW)myodbc_malloc(sizeof(char*)*num_fields,
+                                             MYF(MY_ZEROFILL));
+
+    for (i= 0; i < num_fields; ++i)
+    {
+      MYSQL_FIELD    *field= mysql_fetch_field_direct(result, i);
+      st_buffer_size_type p= allocate_buffer_for_field(field,
+                                                      IS_PS_OUT_PARAMS(this));
+
+      result_bind[i].buffer_type  = p.type;
+      result_bind[i].buffer       = p.buffer;
+      result_bind[i].buffer_length= (unsigned long)p.size;
+      result_bind[i].length       = &len[i];
+      result_bind[i].is_null      = &is_null[i];
+      result_bind[i].error        = &err[i];
+      result_bind[i].is_unsigned  = (field->flags & UNSIGNED_FLAG)? 1: 0;
+
+      array[i]= p.buffer;
+
+    }
+
+    return mysql_stmt_bind_result(ssps, result_bind);
+  }
+
+  return 0;
+}
+#endif
+
 int STMT::ssps_bind_result()
 {
   const unsigned int  num_fields= field_count(this);
@@ -575,27 +688,27 @@ int STMT::ssps_bind_result()
 
   if (result_bind)
   {
-    /* We have fields requiring to read real length first */
-    if (fix_fields != NULL)
-    {
-      for (i=0; i < num_fields; ++i)
-      {
-        /* length marks such fields */
-        if (lengths[i] > 0)
-        {
-          if (result_bind[i].buffer == array[i])
-          {
-            /* make sure we do not free it twice */
-            array[i]= NULL;
-            lengths[i]= 0;
-          }
-          /* Resetting buffer and buffer_length for those fields */
-          x_free(result_bind[i].buffer);
-          result_bind[i].buffer       = 0;
-          result_bind[i].buffer_length= 0;
-        }
-      }
-    }
+    ///* We have fields requiring to read real length first */
+    //if (fix_fields != NULL)
+    //{
+    //  for (i=0; i < num_fields; ++i)
+    //  {
+    //    /* length marks such fields */
+    //    if (lengths[i] > 0)
+    //    {
+    //      if (result_bind[i].buffer == array[i])
+    //      {
+    //        /* make sure we do not free it twice */
+    //        array[i]= NULL;
+    //        lengths[i]= 0;
+    //      }
+    //      /* Resetting buffer and buffer_length for those fields */
+    //      x_free(result_bind[i].buffer);
+    //      result_bind[i].buffer       = 0;
+    //      result_bind[i].buffer_length= 0;
+    //    }
+    //  }
+    //}
   }
   else
   {
@@ -637,10 +750,7 @@ int STMT::ssps_bind_result()
 
         /* Need to alloc it only once*/
         if (lengths == NULL)
-        {
-          lengths= (unsigned long*)myodbc_malloc(sizeof(unsigned long)*num_fields, MYF(MY_ZEROFILL));
-        }
-        /* Buffer of initial length? */
+          alloc_lengths(num_fields);
       }
     }
 
@@ -650,15 +760,17 @@ int STMT::ssps_bind_result()
   return 0;
 }
 
-
-BOOL ssps_0buffers_truncated_only(STMT *stmt)
+/*
+  Function determines if the buffers need to be extended
+*/
+BOOL ssps_buffers_need_extending(STMT *stmt)
 {
-  if (stmt->fix_fields == NULL)
-  {
-    /* That is enough to tell that not */
-    return FALSE;
-  }
-  else
+  //if (stmt->fix_fields == NULL)
+  //{
+  //  /* That is enough to tell that not */
+  //  return FALSE;
+  //}
+  //else
   {
     const unsigned int  num_fields= field_count(stmt);
     unsigned int i;
@@ -666,14 +778,14 @@ BOOL ssps_0buffers_truncated_only(STMT *stmt)
     for (i= 0; i < num_fields; ++i)
     {
       if (*stmt->result_bind[i].error != 0
-        && stmt->result_bind[i].buffer_length >= (*stmt->result_bind[i].length))
+        && stmt->result_bind[i].buffer_length < (*stmt->result_bind[i].length))
       {
-        return FALSE;
+        return TRUE;
       }
     }
   }
 
-  return TRUE;
+  return FALSE;
 }
 
 

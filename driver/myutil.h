@@ -451,7 +451,7 @@ void        ssps_close            (STMT *stmt);
 SQLRETURN   ssps_fetch_chunk      (STMT *stmt, char *dest, unsigned long dest_bytes,
                                   unsigned long *avail_bytes);
 void        free_result_bind      (STMT *stmt);
-BOOL        ssps_0buffers_truncated_only(STMT *stmt);
+BOOL        ssps_buffers_need_extending(STMT *stmt);
 long long   ssps_get_int64        (STMT *stmt, ulong column_number, char *value,
                                   ulong length);
 long double ssps_get_double       (STMT *stmt, ulong column_number, char *value,
@@ -461,6 +461,8 @@ char *      ssps_get_string       (STMT *stmt, ulong column_number, char *value,
 SQLRETURN   ssps_send_long_data   (STMT *stmt, unsigned int param_num, const char *chunk,
                                   unsigned long length);
 MYSQL_BIND * get_param_bind       (STMT *stmt, unsigned int param_number, int reset);
+
+bool is_varlen_type(enum enum_field_types type);
 
 /* connect.c */
 void free_connection_stmts(DBC *dbc);

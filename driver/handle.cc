@@ -656,12 +656,11 @@ SQLRETURN SQL_API my_SQLFreeStmtExtended(SQLHSTMT hstmt,SQLUSMALLINT fOption,
 
     x_free(stmt->fields);   // TODO: Looks like STMT::fields is not used anywhere
     x_free(stmt->result_array);
-    x_free(stmt->lengths);
     stmt->result= 0;
     stmt->fake_result= 0;
     stmt->fields= 0;
     stmt->result_array= 0;
-    stmt->lengths= 0;
+    stmt->free_lengths();
     stmt->current_values= 0;   /* For SQLGetData */
     stmt->fix_fields= 0;
     stmt->affected_rows= 0;

@@ -214,10 +214,14 @@ MYSQL_ROW fetch_row(STMT *stmt)
 
     if ((error= mysql_stmt_fetch(stmt->ssps)))
     {
-      if (error != MYSQL_DATA_TRUNCATED || !ssps_0buffers_truncated_only(stmt))
+      if (error == MYSQL_DATA_TRUNCATED && ssps_buffers_need_extending(stmt))
       {
-        return NULL;
+        if (stmt->fix_fields)
+        {
+          return stmt->fix_fields(stmt, nullptr); // it returns stmt->array
+        }
       }
+      return NULL;
     }
 
     return stmt->array;

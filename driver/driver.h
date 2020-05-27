@@ -578,6 +578,7 @@ struct STMT
   MY_PARSED_QUERY	query, orig_query;
   DYNAMIC_ARRAY     *param_bind;
 
+  my_bool           lengths_allocated;
   unsigned long     *lengths; /* used to set lengths if we shuffle field values
                          of the resultset of auxiliary query or if we fix_fields. */
   /*
@@ -632,11 +633,13 @@ struct STMT
   void buf_set_pos(size_t pos) { tempbuf.cur_pos = pos; }
   void buf_add_pos(size_t pos) { tempbuf.cur_pos += pos; }
   void buf_remove_trail_zeroes() { tempbuf.remove_trail_zeroes(); }
+  void alloc_lengths(size_t num);
+  void free_lengths();
 
 
   STMT() : dbc(NULL), result(NULL), array(NULL), result_array(NULL),
     current_values(NULL), fields(NULL), end_of_set(NULL), table_name(NULL),
-    param_bind(NULL), lengths(NULL), affected_rows(0),
+    param_bind(NULL), lengths_allocated(FALSE), lengths(NULL), affected_rows(0),
     current_row(0), cursor_row(0), dae_type(0),
     order(NULL), order_count(0), param_count(0), current_param(0),
     rows_found_in_set(0),
@@ -647,6 +650,8 @@ struct STMT
     ssps(NULL), result_bind(NULL), param_place_bind(NULL),
     out_params_state(OPS_UNKNOWN)
   { }
+
+  ~STMT();
 };
 
 

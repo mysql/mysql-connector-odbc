@@ -28,6 +28,76 @@
 
 #include "odbctap.h"
 
+DECLARE_TEST(t_bug31373948)
+{
+  char *buf;
+  char foo[16] = "foo ";
+  char *ins_query = "INSERT INTO t_bug31373948 (name, largedata) VALUES (?,?)";
+  char *sel_query = "SELECT id, largedata FROM t_bug31373948 WHERE name LIKE ? "\
+                    "ORDER BY id";
+  unsigned long id = 0;
+  unsigned long rnum = 0;
+  SQLLEN idLenOrInd = 0;
+  SQLLEN largeLenOrInd = 0;
+  SQLRETURN rcc = 0;
+
+  ok_sql(hstmt, "DROP TABLE IF EXISTS t_bug31373948");
+  ok_sql(hstmt, "CREATE TABLE t_bug31373948 (id int primary key auto_increment,"\
+                "name VARCHAR(45), largedata VARCHAR(16000))");
+  buf = malloc(100*1000);
+
+  ok_stmt(hstmt, SQLPrepare(hstmt, ins_query, SQL_NTS));
+  ok_stmt(hstmt, SQLBindParameter(hstmt, 1, SQL_PARAM_INPUT, SQL_C_CHAR, SQL_CHAR, 0,
+                                  0, foo, 5, NULL));
+  ok_stmt(hstmt, SQLBindParameter(hstmt, 2, SQL_PARAM_INPUT, SQL_C_CHAR, SQL_CHAR, 0,
+                                  0, buf, 16000, NULL));
+
+  for (char i = 'A'; i < 'Q'; ++i)
+    memset(buf + (i - 'A') * 1000, i, 1000);
+
+  for (char c = '0'; c <= '9'; ++c)
+  {
+    buf[0] = c;
+    foo[3] = c;
+    ok_stmt(hstmt, SQLExecute(hstmt));
+  }
+  ok_stmt(hstmt, SQLFreeStmt(hstmt, SQL_RESET_PARAMS));
+
+  ok_stmt(hstmt, SQLPrepare(hstmt, sel_query, SQL_NTS));
+  ok_stmt(hstmt, SQLBindParameter(hstmt, 1, SQL_PARAM_INPUT, SQL_C_CHAR, SQL_CHAR, 0,
+    0, foo, 5, NULL));
+  foo[3] = '%';
+  ok_stmt(hstmt, SQLExecute(hstmt));
+  ok_stmt(hstmt, SQLBindCol(hstmt, 1, SQL_C_ULONG, &id, sizeof(id), &idLenOrInd));
+  ok_stmt(hstmt, SQLBindCol(hstmt, 2, SQL_C_CHAR, buf, 17000, &largeLenOrInd));
+
+  memset(buf, 0, 16000);
+
+  while (SQLFetch(hstmt) == SQL_SUCCESS)
+  {
+
+    printMessage("id: %d, Len 1: %ld, Len 2: %ld", id, idLenOrInd, largeLenOrInd);
+    is(id == (rnum + 1));
+
+    idLenOrInd = 0;
+    is(largeLenOrInd == 16000);
+    largeLenOrInd = 0;
+
+    is(buf[0] == '0' + rnum);
+
+    for (unsigned i = 1; i < 16000; ++i)
+    {
+      is (buf[i] == 'A' + i / 1000);
+    }
+    
+    ++rnum;
+    memset(buf, 0, 16000);
+  }
+  is(rnum == 10);
+  free(buf);
+  return OK;
+}
+
 DECLARE_TEST(t_bug30428851)
 {
   SQLRETURN rc = 0;
@@ -1003,6 +1073,8 @@ DECLARE_TEST(t_bug59772)
     if (rc != SQL_ERROR)
       overall_result= FAIL;
 
+    is (paramsProcessed == ROWS_TO_INSERT);
+
     for (i= 0; i < paramsProcessed; ++i)
 
       /* We expect error statuses for all parameters */
@@ -1973,6 +2045,8 @@ DECLARE_TEST(t_bug30591722)
 
 
 BEGIN_TESTS
+  ADD_TEST(t_bug31373948)
+  ADD_TEST(t_bug59772)
   ADD_TEST(t_bug30591722)
   ADD_TEST(t_sp_return)
   // ADD_TEST(t_bug28175772) the libmysqlclient SERVER_PS_OUT_PARAMS flag
@@ -1993,7 +2067,6 @@ BEGIN_TESTS
 #endif
   ADD_TEST(t_param_offset)
   ADD_TEST(t_bug49029)
-  // ADD_TEST(t_bug59772) TODO: Fix
   // ADD_TEST(t_odbcoutparams) TODO: Fix
   // ADD_TEST(t_bug14501952) TODO: Fix
   // ADD_TEST(t_bug14563386) TODO: Fix
@@ -2011,3 +2084,4 @@ END_TESTS
 
 
 RUN_TESTS
+  
