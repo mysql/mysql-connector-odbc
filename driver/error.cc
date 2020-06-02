@@ -322,17 +322,20 @@ SQLRETURN set_conn_error(DBC *dbc, myodbc_errid errid, const char *errtext,
 }
 
 
-/*
-  @type    : myodbc3 internal
-  @purpose : sets the error information to statement handle.
-*/
-
-SQLRETURN set_error(STMT *stmt, myodbc_errid errid, const char *errtext,
-                    SQLINTEGER errcode)
+MYERROR::MYERROR(myodbc_errid errid, const char *errtext, SQLINTEGER errcode,
+                 char *prefix)
 {
-    return copy_error(&stmt->error, errid, errtext, errcode,
-                      stmt->dbc->st_error_prefix);
+  SQLCHAR     *errmsg;
+
+  errmsg = (errtext ? (SQLCHAR *)errtext :
+    (SQLCHAR *)myodbc3_errors[errid].message);
+  native_error = errcode ? (myodbc_errid)errcode : errid + MYODBC_ERROR_CODE_START;
+
+  retcode = myodbc3_errors[errid].retcode;  /* RETCODE */
+  myodbc_stpmov(sqlstate, myodbc3_errors[errid].sqlstate);   /* SQLSTATE */
+  strxmov(message, prefix, errmsg, NullS);           /* MESSAGE */
 }
+
 
 
 /*

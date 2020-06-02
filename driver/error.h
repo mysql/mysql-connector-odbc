@@ -54,18 +54,6 @@
 #define MYODBC_ERROR_PREFIX	 "[MySQL][ODBC " MYODBC_STRDRIVERID " Driver]"
 #define MYODBC_ERROR_CODE_START  500
 
-/*
-  error handler structure
-*/
-typedef struct tagERROR {
-  SQLRETURN   retcode;
-  char        current;
-
-  char	   sqlstate[6];
-  char	   message[SQL_MAX_MESSAGE_LENGTH+1];
-  SQLINTEGER  native_error;
-
-} MYERROR;
 
 #define CLEAR_ERROR(error) do {\
   error.message[0]= '\0'; \
@@ -144,6 +132,30 @@ typedef enum myodbc_errid
     /* Please add new errors to the end of enum, and not in alphabet order */
     MYERR_08004,
 } myodbc_errid;
+
+/*
+  error handler structure
+*/
+struct MYERROR
+{
+  SQLRETURN   retcode;
+  char        current;
+
+  char	   sqlstate[6];
+  char	   message[SQL_MAX_MESSAGE_LENGTH + 1];
+  SQLINTEGER  native_error;
+
+  MYERROR() : retcode(0), current(0), native_error(0)
+  {}
+
+  MYERROR(SQLRETURN rc) : MYERROR()
+  {
+    retcode = rc;
+  }
+
+  MYERROR(myodbc_errid errid, const char *errtext, SQLINTEGER errcode,
+    char *prefix);
+};
 
 /*
   error handler-predefined structure

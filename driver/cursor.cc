@@ -85,7 +85,7 @@ static const char *find_used_table(STMT *stmt)
                 table_name= field->org_table;
             if ( strcmp(field->org_table, table_name) )
             {
-                set_error(stmt,MYERR_S1000,
+                stmt->set_error(MYERR_S1000,
                           "Can't modify a row from a statement that uses more than one table",0);
                 return NULL;
             }
@@ -97,7 +97,7 @@ static const char *find_used_table(STMT *stmt)
                 table_name= field->table;
             if ( strcmp(field->table, table_name) )
             {
-                set_error(stmt,MYERR_S1000,
+                stmt->set_error(MYERR_S1000,
                           "Can't modify a row from a statement that uses more than one table",0);
                 return NULL;
             }
@@ -246,7 +246,7 @@ static my_bool check_if_usable_unique_key_exists(STMT *stmt)
   if (exec_stmt_query(stmt, buff, strlen(buff), FALSE) ||
       !(res= mysql_store_result(&stmt->dbc->mysql)))
   {
-    set_error(stmt, MYERR_S1000, mysql_error(&stmt->dbc->mysql),
+    stmt->set_error( MYERR_S1000, mysql_error(&stmt->dbc->mysql),
               mysql_errno(&stmt->dbc->mysql));
     myodbc_mutex_unlock(&stmt->dbc->lock);
     return FALSE;
@@ -357,10 +357,10 @@ static void set_dynamic_cursor_name(STMT *stmt)
 static SQLRETURN update_status(STMT *stmt, SQLUSMALLINT status)
 {
     if ( stmt->affected_rows == 0 )
-        return set_error(stmt,MYERR_01S03,NULL,0);
+        return stmt->set_error(MYERR_01S03,NULL,0);
 
     else if ( stmt->affected_rows > 1 )
-        return set_error(stmt,MYERR_01S04,NULL,0);
+        return stmt->set_error(MYERR_01S04,NULL,0);
 
     /*
       This only comes from SQLExecute(), not SQLSetPos() or
@@ -391,7 +391,7 @@ static SQLRETURN update_setpos_status(STMT *stmt, SQLINTEGER irow,
 
   if (irow && rows > 1)
   {
-    return set_error(stmt,MYERR_01S04,NULL,0);
+    return stmt->set_error(MYERR_01S04,NULL,0);
   }
 
   /*
@@ -434,7 +434,7 @@ static SQLRETURN copy_rowdata(STMT *stmt, DESCREC *aprec,
                          *aprec->octet_length_ptr + 1 : 7);
 
     if (stmt->extend_buffer(length) == NULL)
-        return set_error(stmt,MYERR_S1001,NULL,4001);
+        return stmt->set_error(MYERR_S1001,NULL,4001);
 
     rc= insert_param(stmt, NULL, stmt->apd, aprec, iprec, 0);
     if (!SQL_SUCCEEDED(rc))
@@ -444,7 +444,7 @@ static SQLRETURN copy_rowdata(STMT *stmt, DESCREC *aprec,
 
     /* insert "," */
     if (stmt->add_to_buffer(",", 1) == NULL)
-        return set_error(stmt,MYERR_S1001,NULL,4001);
+        return stmt->set_error(MYERR_S1001,NULL,4001);
 
     return(SQL_SUCCESS);
 }
@@ -496,7 +496,7 @@ static my_bool insert_field(STMT *stmt, MYSQL_RES *result,
       return 1;
     if (stmt->add_to_buffer(" AND ", 5) == NULL)
     {
-      return (my_bool)set_error(stmt, MYERR_S1001, NULL, 4001);
+      return (my_bool)stmt->set_error( MYERR_S1001, NULL, 4001);
     }
 
     dynstr_append_mem(dynQuery, stmt->buf(), stmt->buf_pos());
@@ -590,7 +590,7 @@ static SQLRETURN append_all_fields(STMT *stmt, DYNAMIC_STRING *dynQuery)
   if (exec_stmt_query(stmt, select, strlen(select), FALSE) ||
       !(presultAllColumns= mysql_store_result(&stmt->dbc->mysql)))
   {
-    set_error(stmt, MYERR_S1000, mysql_error(&stmt->dbc->mysql),
+    stmt->set_error( MYERR_S1000, mysql_error(&stmt->dbc->mysql),
               mysql_errno(&stmt->dbc->mysql));
     myodbc_mutex_unlock(&stmt->dbc->lock);
     return SQL_ERROR;
@@ -624,7 +624,7 @@ static SQLRETURN append_all_fields(STMT *stmt, DYNAMIC_STRING *dynQuery)
         table_field->type == MYSQL_TYPE_DOUBLE ||
         table_field->type == MYSQL_TYPE_DECIMAL)
     {
-      set_error(stmt,MYERR_S1000,
+      stmt->set_error(MYERR_S1000,
                 "Invalid use of floating point comparision in positioned operations",0);
       mysql_free_result(presultAllColumns);
       return SQL_ERROR;
@@ -1502,7 +1502,7 @@ static SQLRETURN batch_insert( STMT *stmt, SQLULEN irow, DYNAMIC_STRING *ext_que
           pcbValue= NULL;
           TargetValuePtr= NULL;
 
-          reset_getdata_position(stmt);
+          stmt->reset_getdata_position();
 
           if (arrec->data_ptr)
           {
@@ -1628,7 +1628,7 @@ SQLRETURN SQL_API my_SQLSetPos(SQLHSTMT hstmt, SQLSETPOSIROW irow,
     CLEAR_STMT_ERROR(stmt);
 
     if ( !result )
-        return set_error(stmt,MYERR_S1010,NULL,0);
+        return stmt->set_error(MYERR_S1010,NULL,0);
 
     /* With mysql_use_reslt we cannot do anything but move cursor
        forward. additional connection?
@@ -1643,39 +1643,39 @@ SQLRETURN SQL_API my_SQLSetPos(SQLHSTMT hstmt, SQLSETPOSIROW irow,
       if (fOption != SQL_POSITION)
       {
         /* HY109. Perhaps 24000 Invalid cursor state is a better fit*/
-        return set_error(stmt, MYERR_S1109,NULL, 0);
+        return stmt->set_error( MYERR_S1109,NULL, 0);
       }
       /* We can't go back with forwrd only cursor */
       else if (irow < stmt->current_row)
       {
         /* Same HY109 Invalid cursor position*/
-        return set_error(stmt, MYERR_S1109,NULL, 0);
+        return stmt->set_error( MYERR_S1109,NULL, 0);
       }
     }
 
     /* If irow > maximum rows in the resultset. for forwrd only row_count is 0
      */
     if ( fOption != SQL_ADD && irow > num_rows(stmt))
-        return set_error(stmt,MYERR_S1107,NULL,0);
+        return stmt->set_error(MYERR_S1107,NULL,0);
 
     /* Not a valid lock type ..*/
     if ( fLock != SQL_LOCK_NO_CHANGE )
-        return set_error(stmt,MYERR_S1C00,NULL,0);
+        return stmt->set_error(MYERR_S1C00,NULL,0);
 
     switch ( fOption )
     {
         case SQL_POSITION:
             {
                 if ( irow == 0 )
-                    return set_error(stmt,MYERR_S1109,NULL,0);
+                    return stmt->set_error(MYERR_S1109,NULL,0);
 
                 if ( irow > stmt->rows_found_in_set )
-                    return set_error(stmt,MYERR_S1107,NULL,0);
+                    return stmt->set_error(MYERR_S1107,NULL,0);
 
                 /* If Dynamic cursor, fetch the latest resultset */
                 if ( if_dynamic_cursor(stmt) && set_dynamic_result(stmt) )
                 {
-                    return set_error(stmt,MYERR_S1000, alloc_error, 0);
+                    return stmt->set_error(MYERR_S1000, alloc_error, 0);
                 }
 
                 myodbc_mutex_lock(&stmt->dbc->lock);
@@ -1684,7 +1684,7 @@ SQLRETURN SQL_API my_SQLSetPos(SQLHSTMT hstmt, SQLSETPOSIROW irow,
                 stmt->cursor_row= (long)(stmt->current_row+irow);
                 data_seek(stmt, (my_ulonglong)stmt->cursor_row);
                 stmt->current_values= fetch_row(stmt);
-                reset_getdata_position(stmt);
+                stmt->reset_getdata_position();
                 if ( stmt->fix_fields )
                     stmt->current_values= (*stmt->fix_fields)(stmt,stmt->current_values);
                 /*
@@ -1702,15 +1702,15 @@ SQLRETURN SQL_API my_SQLSetPos(SQLHSTMT hstmt, SQLSETPOSIROW irow,
                 DYNAMIC_STRING dynQuery;
 
                 if ( irow > stmt->rows_found_in_set )
-                    return set_error(stmt,MYERR_S1107,NULL,0);
+                    return stmt->set_error(MYERR_S1107,NULL,0);
 
                 /* IF dynamic cursor THEN rerun query to refresh resultset */
                 if ( if_dynamic_cursor(stmt) && set_dynamic_result(stmt) )
-                    return set_error(stmt,MYERR_S1000, alloc_error, 0);
+                    return stmt->set_error(MYERR_S1000, alloc_error, 0);
 
                 /* start building our DELETE statement */
                 if ( init_dynamic_string(&dynQuery, "DELETE FROM ", 1024, 1024) )
-                    return set_error(stmt,MYERR_S1001,NULL,4001);
+                    return stmt->set_error(MYERR_S1001,NULL,4001);
 
                 sqlRet = setpos_delete( stmt, irow, &dynQuery );
                 dynstr_free(&dynQuery);
@@ -1722,19 +1722,19 @@ SQLRETURN SQL_API my_SQLSetPos(SQLHSTMT hstmt, SQLSETPOSIROW irow,
                 DYNAMIC_STRING dynQuery;
 
                 if ( irow > stmt->rows_found_in_set )
-                    return set_error(stmt,MYERR_S1107,NULL,0);
+                    return stmt->set_error(MYERR_S1107,NULL,0);
 
                 /* IF dynamic cursor THEN rerun query to refresh resultset */
                 if (!stmt->dae_type && if_dynamic_cursor(stmt) &&
                     set_dynamic_result(stmt))
-                  return set_error(stmt,MYERR_S1000, alloc_error, 0);
+                  return stmt->set_error(MYERR_S1000, alloc_error, 0);
 
                 if (rc= setpos_dae_check_and_init(stmt, irow, fLock,
                                                   DAE_SETPOS_UPDATE))
                   return rc;
 
                 if ( init_dynamic_string(&dynQuery, "UPDATE ", 1024, 1024) )
-                    return set_error(stmt,MYERR_S1001,NULL,4001);
+                    return stmt->set_error(MYERR_S1001,NULL,4001);
 
                 sqlRet= setpos_update(stmt,irow,&dynQuery);
                 dynstr_free(&dynQuery);
@@ -1749,7 +1749,7 @@ SQLRETURN SQL_API my_SQLSetPos(SQLHSTMT hstmt, SQLSETPOSIROW irow,
 
                 if (!stmt->dae_type && if_dynamic_cursor(stmt) &&
                     set_dynamic_result(stmt))
-                  return set_error(stmt,MYERR_S1000, alloc_error, 0);
+                  return stmt->set_error(MYERR_S1000, alloc_error, 0);
                 result= stmt->result;
 
                 if ( !(table_name= find_used_table(stmt)) )
@@ -1806,7 +1806,7 @@ SQLRETURN SQL_API my_SQLSetPos(SQLHSTMT hstmt, SQLSETPOSIROW irow,
             }
 
         default:
-            return set_error(stmt,MYERR_S1009,NULL,0);
+            return stmt->set_error(MYERR_S1009,NULL,0);
     }
     return sqlRet;
 }
@@ -1820,20 +1820,20 @@ MySQLSetCursorName(SQLHSTMT hstmt, SQLCHAR *name, SQLSMALLINT len)
   CLEAR_STMT_ERROR(stmt);
 
   if (!name)
-    return set_error(stmt, MYERR_S1009, NULL, 0);
+    return stmt->set_error( MYERR_S1009, NULL, 0);
 
   if (len == SQL_NTS)
     len= strlen((char *)name);
 
   if (len < 0)
-    return set_error(stmt, MYERR_S1009, NULL, 0);
+    return stmt->set_error( MYERR_S1009, NULL, 0);
 
   /** @todo use charset-aware casecmp */
   if (len == 0 ||
       len > MYSQL_MAX_CURSOR_LEN ||
       myodbc_casecmp((char *)name, "SQLCUR", 6) == 0 ||
       myodbc_casecmp((char *)name, "SQL_CUR", 7) == 0)
-    return set_error(stmt, MYERR_34000, NULL, 0);
+    return stmt->set_error( MYERR_34000, NULL, 0);
 
   x_free(stmt->cursor.name);
   stmt->cursor.name= dupp_str((char*)name, len);
@@ -1902,7 +1902,7 @@ SQLRETURN SQL_API SQLBulkOperations(SQLHSTMT  Handle, SQLSMALLINT Operation)
   CLEAR_STMT_ERROR(stmt);
 
   if ( !result )
-      return set_error(stmt,MYERR_S1010,NULL,0);
+      return stmt->set_error(MYERR_S1010,NULL,0);
 
   stmt->stmt_options.bookmark_insert= FALSE;
 
@@ -1925,7 +1925,7 @@ SQLRETURN SQL_API SQLBulkOperations(SQLHSTMT  Handle, SQLSMALLINT Operation)
       if (!stmt->dae_type && if_dynamic_cursor(stmt) &&
           set_dynamic_result(stmt))
       {
-        return set_error(stmt,MYERR_S1000, alloc_error, 0);
+        return stmt->set_error(MYERR_S1000, alloc_error, 0);
       }
 
       if (rc= setpos_dae_check_and_init(stmt, irow, SQL_LOCK_NO_CHANGE,
@@ -1936,7 +1936,7 @@ SQLRETURN SQL_API SQLBulkOperations(SQLHSTMT  Handle, SQLSMALLINT Operation)
 
       if ( init_dynamic_string(&dynQuery, "UPDATE ", 1024, 1024) )
       {
-        return set_error(stmt,MYERR_S1001,NULL,4001);
+        return stmt->set_error(MYERR_S1001,NULL,4001);
       }
 
       sqlRet= setpos_update_bookmark(stmt, &dynQuery);
@@ -1949,11 +1949,11 @@ SQLRETURN SQL_API SQLBulkOperations(SQLHSTMT  Handle, SQLSMALLINT Operation)
 
       /* IF dynamic cursor THEN rerun query to refresh resultset */
       if ( if_dynamic_cursor(stmt) && set_dynamic_result(stmt) )
-          return set_error(stmt,MYERR_S1000, alloc_error, 0);
+          return stmt->set_error(MYERR_S1000, alloc_error, 0);
 
       /* start building our DELETE statement */
       if ( init_dynamic_string(&dynQuery, "DELETE FROM ", 1024, 1024) )
-          return set_error(stmt,MYERR_S1001,NULL,4001);
+          return stmt->set_error(MYERR_S1001,NULL,4001);
 
       sqlRet = setpos_delete_bookmark(stmt, &dynQuery);
       dynstr_free(&dynQuery);
@@ -1965,7 +1965,7 @@ SQLRETURN SQL_API SQLBulkOperations(SQLHSTMT  Handle, SQLSMALLINT Operation)
       break;
     }
   default:
-    return set_error((STMT*)Handle,MYERR_S1C00,NULL,0);
+    return ((STMT*)(Handle))->set_error(MYERR_S1C00,NULL,0);
   }
 
   return sqlRet;

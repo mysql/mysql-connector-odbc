@@ -119,7 +119,7 @@ BOOL ssps_get_out_params(STMT *stmt)
       {
         stmt->out_params_state= OPS_STREAMS_PENDING;
         stmt->current_param= ~0L;
-        reset_getdata_position(stmt);
+        stmt->reset_getdata_position();
       }
       else//(out_params & GOT_OUT_PARAMETERS)
       {
@@ -199,7 +199,7 @@ BOOL ssps_get_out_params(STMT *stmt)
               target= (char*)ptr_offset_adjust(aprec->data_ptr, stmt->apd->bind_offset_ptr,
                                     stmt->apd->bind_type, default_size, 0);
 
-              reset_getdata_position(stmt);
+              stmt->reset_getdata_position();
 
               if (iprec->parameter_type == SQL_PARAM_INPUT_OUTPUT
                || iprec->parameter_type == SQL_PARAM_OUTPUT)
@@ -538,8 +538,7 @@ static MYSQL_ROW fetch_varlength_columns(STMT *stmt, MYSQL_ROW values)
 
       stmt->result_bind[i].buffer = stmt->array[i];
 
-      if (stmt->lengths[i] > 0 ||
-        is_varlen_type(stmt->result_bind[i].buffer_type))
+      if (stmt->lengths[i] > 0 /* || is_varlen_type(stmt->result_bind[i].buffer_type)*/)
       {
        // For fixed-length types we should not set zero length
         stmt->result_bind[i].buffer_length = stmt->lengths[i];
@@ -600,81 +599,131 @@ STMT::~STMT()
   free_lengths();
 }
 
-#if 0
-int STMT::ssps_bind_result()
+void STMT::reset_getdata_position()
 {
-  const unsigned int  num_fields= field_count(this);
-  unsigned int        i;
+  getdata.column = (uint)~0L;
+  getdata.source = NULL;
+  getdata.dst_bytes = (ulong)~0L;
+  getdata.dst_offset = (ulong)~0L;
+  getdata.src_offset = (ulong)~0L;
+  getdata.latest_bytes = getdata.latest_used = 0;
+}
 
-  if (num_fields == 0)
+SQLRETURN STMT::set_error(myodbc_errid errid, const char *errtext,
+                         SQLINTEGER errcode)
+{
+  error = MYERROR(errid, errtext, errcode, dbc->st_error_prefix);
+  return error.retcode;
+}
+
+long STMT::compute_cur_row(unsigned fFetchType, SQLLEN irow)
+{
+  long cur_row = 0;
+  long max_row = (long)num_rows(this);
+
+  switch (fFetchType)
   {
-    return 0;
+  case SQL_FETCH_NEXT:
+    cur_row = (current_row < 0 ? 0 : current_row + rows_found_in_set);
+    break;
+  case SQL_FETCH_PRIOR:
+    cur_row = (current_row <= 0 ? -1 : 
+      (long)(current_row - ard->array_size));
+    break;
+  case SQL_FETCH_FIRST:
+    cur_row = 0L;
+    break;
+  case SQL_FETCH_LAST:
+    cur_row = max_row - ard->array_size;
+    break;
+  case SQL_FETCH_ABSOLUTE:
+    if (irow < 0)
+    {
+      /* Fetch from end of result set */
+      if (max_row + irow < 0 && -irow <= (long)ard->array_size)
+      {
+        /*
+          | FetchOffset | > LastResultRow AND
+          | FetchOffset | <= RowsetSize
+        */
+        cur_row = 0;     /* Return from beginning */
+      }
+      else
+        cur_row = max_row + irow;     /* Ok if max_row <= -irow */
+    }
+    else
+      cur_row = (long)irow - 1;
+    break;
+
+  case SQL_FETCH_RELATIVE:
+    cur_row = current_row + irow;
+    if (current_row > 0 && cur_row < 0 &&
+      (long)-irow <= (long)ard->array_size)
+    {
+      cur_row = 0;
+    }
+    break;
+
+  case SQL_FETCH_BOOKMARK:
+  {
+    cur_row = irow;
+    if (cur_row < 0 && (long)-irow <= (long)ard->array_size)
+    {
+      cur_row = 0;
+    }
+  }
+  break;
+
+  default:
+    set_error(MYERR_S1106, "Fetch type out of range", 0);
+    throw error;
   }
 
-  fix_fields = fetch_varlength_columns;
-
-  if (!lengths)
-    alloc_lengths(num_fields);
-
-  if (result_bind)
+  if (cur_row < 0)
   {
-    for (i=0; i < num_fields; ++i)
+    current_row = -1;  /* Before first row */
+    rows_found_in_set = 0;
+    data_seek(this, 0L);
+    throw MYERROR(SQL_NO_DATA_FOUND);
+  }
+  if (cur_row > max_row)
+  {
+    if (scroller_exists(this))
     {
-      /* length marks such fields */
-      if (lengths[i] > 0)
+      while (cur_row > (max_row = (long)scroller_move(this)));
+
+      switch (scroller_prefetch(this))
       {
-        if (result_bind[i].buffer == array[i])
-        {
-          /* make sure we do not free it twice */
-          array[i]= NULL;
-          lengths[i]= 0;
-        }
-        /* Resetting buffer and buffer_length for those fields */
-        x_free(result_bind[i].buffer);
-        result_bind[i].buffer       = 0;
-        result_bind[i].buffer_length= 0;
+      case SQL_NO_DATA:
+        throw MYERROR(SQL_NO_DATA_FOUND);
+      case SQL_ERROR:   
+        set_error(MYERR_S1000, mysql_error(&dbc->mysql), 0);
+        throw error;
       }
     }
-  }
-  else
-  {
-    my_bool       *is_null= (my_bool*)myodbc_malloc(sizeof(my_bool)*num_fields,
-                                      MYF(MY_ZEROFILL));
-    my_bool       *err=     (my_bool*)myodbc_malloc(sizeof(my_bool)*num_fields,
-                                      MYF(MY_ZEROFILL));
-    unsigned long *len=     (unsigned long*)myodbc_malloc(sizeof(unsigned long)*num_fields,
-                                      MYF(MY_ZEROFILL));
-
-    /*TODO care about memory allocation errors */
-    result_bind=  (MYSQL_BIND*)myodbc_malloc(sizeof(MYSQL_BIND)*num_fields,
-                                             MYF(MY_ZEROFILL));
-    array=        (MYSQL_ROW)myodbc_malloc(sizeof(char*)*num_fields,
-                                             MYF(MY_ZEROFILL));
-
-    for (i= 0; i < num_fields; ++i)
+    else
     {
-      MYSQL_FIELD    *field= mysql_fetch_field_direct(result, i);
-      st_buffer_size_type p= allocate_buffer_for_field(field,
-                                                      IS_PS_OUT_PARAMS(this));
-
-      result_bind[i].buffer_type  = p.type;
-      result_bind[i].buffer       = p.buffer;
-      result_bind[i].buffer_length= (unsigned long)p.size;
-      result_bind[i].length       = &len[i];
-      result_bind[i].is_null      = &is_null[i];
-      result_bind[i].error        = &err[i];
-      result_bind[i].is_unsigned  = (field->flags & UNSIGNED_FLAG)? 1: 0;
-
-      array[i]= p.buffer;
-
+      cur_row = max_row;
     }
-
-    return mysql_stmt_bind_result(ssps, result_bind);
   }
 
-  return 0;
+  if (!result_array && !if_forward_cache(this))
+  {
+    /*
+      If Dynamic, it loses the stmt->end_of_set, so
+      seek to desired row, might have new data or
+      might be deleted
+    */
+    if (stmt_options.cursor_type != SQL_CURSOR_DYNAMIC &&
+      cur_row && cur_row == (long)(current_row + rows_found_in_set))
+      row_seek(this, this->end_of_set);
+    else
+      data_seek(this, cur_row);
+  }
+  current_row = cur_row;
+  return current_row;
+
 }
-#endif
 
 int STMT::ssps_bind_result()
 {

@@ -39,17 +39,6 @@
 #define SQL_MY_PRIMARY_KEY 1212
 
 
-void reset_getdata_position(STMT *stmt)
-{
-  stmt->getdata.column= (uint) ~0L;
-  stmt->getdata.source= NULL;
-  stmt->getdata.dst_bytes= (ulong) ~0L;
-  stmt->getdata.dst_offset= (ulong) ~0L;
-  stmt->getdata.src_offset= (ulong) ~0L;
-  stmt->getdata.latest_bytes= stmt->getdata.latest_used= 0;
-}
-
-
 /* Verifies if C type is suitable for copying SQL_BINARY data
    http://msdn.microsoft.com/en-us/library/ms713559%28VS.85%29.aspx */
 my_bool is_binary_ctype( SQLSMALLINT cType)
@@ -357,7 +346,7 @@ sql_get_bookmark_data(STMT *stmt, SQLSMALLINT fCType, uint column_number,
     break;
 
   default:
-    return set_error(stmt,MYERR_07006,
+    return stmt->set_error(MYERR_07006,
                      "Restricted data type attribute violation",0);
     break;
   }
@@ -742,7 +731,7 @@ sql_get_data(STMT *stmt, SQLSMALLINT fCType, uint column_number,
         }
         else
         {
-          return set_error(stmt,MYERR_07006,
+          return stmt->set_error(MYERR_07006,
                        "Restricted data type attribute violation",0);
         }
 
@@ -953,7 +942,7 @@ sql_get_data(STMT *stmt, SQLSMALLINT fCType, uint column_number,
       break;
 
     default:
-      return set_error(stmt,MYERR_07006,
+      return stmt->set_error(MYERR_07006,
                        "Restricted data type attribute violation",0);
       break;
     }
@@ -1210,7 +1199,7 @@ MySQLColAttribute(SQLHSTMT hstmt, SQLUSMALLINT column,
   }
 
   if (column == 0 || column > stmt->ird->count)
-    return set_error((STMT*)hstmt,  MYERR_07009, NULL, 0);
+    return ((STMT*)hstmt)->set_error(MYERR_07009, NULL, 0);
 
   if (!num_attr)
     num_attr= &nparam;
@@ -1535,7 +1524,7 @@ SQLRETURN SQL_API SQLGetData(SQLHSTMT      StatementHandle,
     if (sColNum != stmt->getdata.column)
     {
       /* New column. Reset old offset */
-      reset_getdata_position(stmt);
+      stmt->reset_getdata_position();
       stmt->getdata.column= sColNum;
     }
     irrec= desc_get_rec(stmt->ird, sColNum, FALSE);
@@ -1784,7 +1773,7 @@ fill_fetch_bookmark_buffers(STMT *stmt, ulong value, uint rownum)
     SQLPOINTER TargetValuePtr= NULL;
     ulong copy_bytes= 0;
 
-    reset_getdata_position(stmt);
+    stmt->reset_getdata_position();
 
     if (arrec->data_ptr)
     {
@@ -1850,7 +1839,7 @@ fill_fetch_buffers(STMT *stmt, MYSQL_ROW values, uint rownum)
       SQLLEN *pcbValue= NULL;
       SQLPOINTER TargetValuePtr= NULL;
 
-      reset_getdata_position(stmt);
+      stmt->reset_getdata_position();
 
       if (arrec->data_ptr)
       {
@@ -1936,7 +1925,7 @@ SQLRETURN SQL_API myodbc_single_fetch( SQLHSTMT             hstmt,
     /* for scrollable cursor("scroller") max_row is max row for currently
        fetched part of resultset */
     max_row= (long) num_rows(stmt);
-    reset_getdata_position(stmt);
+    stmt->reset_getdata_position();
     stmt->current_values= 0;          /* For SQLGetData */
 
     switch ( fFetchType )
@@ -2010,7 +1999,7 @@ SQLRETURN SQL_API myodbc_single_fetch( SQLHSTMT             hstmt,
         break;
 
       default:
-          return set_error(stmt, MYERR_S1106, "Fetch type out of range", 0);
+          return stmt->set_error( MYERR_S1106, "Fetch type out of range", 0);
     }
 
     if ( cur_row < 0 )
@@ -2032,7 +2021,7 @@ SQLRETURN SQL_API myodbc_single_fetch( SQLHSTMT             hstmt,
           case SQL_NO_DATA:
             set_stmt_error(stmt, "01S07", "One or more row has error.", 0);
             return SQL_SUCCESS_WITH_INFO; //SQL_NO_DATA_FOUND
-          case SQL_ERROR:   return set_error(stmt,MYERR_S1000,
+          case SQL_ERROR:   return stmt->set_error(MYERR_S1000,
                                             mysql_error(&stmt->dbc->mysql), 0);
         }
       }
@@ -2280,12 +2269,12 @@ SQLRETURN SQL_API my_SQLExtendedFetch( SQLHSTMT             hstmt,
     if ( stmt->stmt_options.cursor_type == SQL_CURSOR_FORWARD_ONLY )
     {
       if ( fFetchType != SQL_FETCH_NEXT && !stmt->dbc->ds->safe )
-        return  set_error(stmt,MYERR_S1106,
+        return  stmt->set_error(MYERR_S1106,
                           "Wrong fetchtype with FORWARD ONLY cursor", 0);
     }
 
     if ( if_dynamic_cursor(stmt) && set_dynamic_result(stmt) )
-      return set_error(stmt,MYERR_S1000,
+      return stmt->set_error(MYERR_S1000,
                        "Driver Failed to set the internal dynamic result", 0);
 
     if ( !pcrow )
@@ -2294,108 +2283,18 @@ SQLRETURN SQL_API my_SQLExtendedFetch( SQLHSTMT             hstmt,
     /* for scrollable cursor("scroller") max_row is max row for currently
        fetched part of resultset */
     max_row= (long) num_rows(stmt);
-    reset_getdata_position(stmt);
+
+    stmt->reset_getdata_position();
     stmt->current_values= 0;          /* For SQLGetData */
 
-    switch ( fFetchType )
+    try
     {
-      case SQL_FETCH_NEXT:
-        cur_row= (stmt->current_row < 0 ? 0 :
-                  stmt->current_row+stmt->rows_found_in_set);
-        break;
-      case SQL_FETCH_PRIOR:
-        cur_row= (stmt->current_row <= 0 ? -1 :
-                  (long)(stmt->current_row - stmt->ard->array_size));
-        break;
-      case SQL_FETCH_FIRST:
-        cur_row= 0L;
-        break;
-      case SQL_FETCH_LAST:
-        cur_row= max_row - stmt->ard->array_size;
-        break;
-      case SQL_FETCH_ABSOLUTE:
-        if (irow < 0)
-        {
-          /* Fetch from end of result set */
-          if ( max_row+irow < 0 && -irow <= (long) stmt->ard->array_size )
-          {
-            /*
-              | FetchOffset | > LastResultRow AND
-              | FetchOffset | <= RowsetSize
-            */
-            cur_row= 0;     /* Return from beginning */
-          }
-          else
-            cur_row= max_row+irow;     /* Ok if max_row <= -irow */
-        }
-        else
-          cur_row= (long) irow-1;
-        break;
-
-      case SQL_FETCH_RELATIVE:
-        cur_row= stmt->current_row + irow;
-        if (stmt->current_row > 0 && cur_row < 0 &&
-           (long)-irow <= (long)stmt->ard->array_size)
-        {
-          cur_row= 0;
-        }
-        break;
-
-      case SQL_FETCH_BOOKMARK:
-        {
-          cur_row= irow;
-          if (cur_row < 0 && (long)-irow <= (long)stmt->ard->array_size)
-          {
-            cur_row= 0;
-          }
-        }
-        break;
-
-      default:
-          return set_error(stmt, MYERR_S1106, "Fetch type out of range", 0);
+      cur_row = stmt->compute_cur_row(fFetchType, irow);
     }
-
-    if ( cur_row < 0 )
+    catch (MYERROR &e)
     {
-      stmt->current_row= -1;  /* Before first row */
-      stmt->rows_found_in_set= 0;
-      data_seek(stmt, 0L);
-      return SQL_NO_DATA_FOUND;
+      return e.retcode;
     }
-    if ( cur_row > max_row )
-    {
-      if (scroller_exists(stmt))
-      {
-        while (cur_row > (max_row= (long)scroller_move(stmt)));
-
-        switch (scroller_prefetch(stmt))
-        {
-          case SQL_NO_DATA: return SQL_NO_DATA_FOUND;
-          case SQL_ERROR:   return set_error(stmt,MYERR_S1000,
-                                            mysql_error(&stmt->dbc->mysql), 0);
-        }
-      }
-      else
-      {
-        cur_row= max_row;
-      }
-    }
-
-    if ( !stmt->result_array && !if_forward_cache(stmt) )
-    {
-        /*
-          If Dynamic, it loses the stmt->end_of_set, so
-          seek to desired row, might have new data or
-          might be deleted
-        */
-        if ( stmt->stmt_options.cursor_type != SQL_CURSOR_DYNAMIC &&
-             cur_row && cur_row == (long)(stmt->current_row +
-                                          stmt->rows_found_in_set) )
-            row_seek(stmt, stmt->end_of_set);
-        else
-            data_seek(stmt, cur_row);
-    }
-    stmt->current_row= cur_row;
 
     if (scroller_exists(stmt)
       || (if_forward_cache(stmt) && !stmt->result_array)

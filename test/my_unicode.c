@@ -29,7 +29,6 @@
 #include <wchar.h>
 #include "odbctap.h"
 #include <sqlucode.h>
-#include "../driver/error.h"
 
 
 DECLARE_TEST(sqlconnect)
@@ -1458,6 +1457,7 @@ DECLARE_TEST(t_bug28864788)
 
 BEGIN_TESTS
   ADD_TEST(sqlconnect)
+  ADD_TEST_UNICODE(sqlstatistics)
   ADD_TEST_UNICODE(sqlprepare)
   ADD_TEST(sqlprepare_ansi)
   ADD_TEST_UNICODE(sqlchar)
@@ -1479,7 +1479,6 @@ BEGIN_TESTS
   ADD_TEST_UNICODE(sqlspecialcolumns)
   ADD_TEST(sqlforeignkeys)
   ADD_TEST_UNICODE(sqlprimarykeys)
-  ADD_TEST_UNICODE(sqlstatistics)
   ADD_TEST_UNICODE(t_bug32161)
   // ADD_TEST_UNICODE(t_bug34672) TODO: Fix
   // ADD_TEST_UNICODE(t_bug28168)

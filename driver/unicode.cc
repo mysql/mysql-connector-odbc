@@ -104,7 +104,7 @@ SQLColAttributeWImpl(SQLHSTMT hstmt, SQLUSMALLINT column,
 
     /* We set the error only when the result is intented to be returned */
     if ((char_attr || num_attr) && len > char_attr_max - 1)
-      rc= set_error(stmt, MYERR_01004, NULL, 0);
+      rc= stmt->set_error( MYERR_01004, NULL, 0);
 
     if (char_attr_len)
       *char_attr_len= (SQLSMALLINT)len * sizeof(SQLWCHAR);
@@ -302,7 +302,7 @@ SQLDescribeColW(SQLHSTMT hstmt, SQLUSMALLINT column,
 
     /* We set the error only when the result is intented to be returned */
     if (name && len > name_max - 1)
-      rc= set_error(stmt, MYERR_01004, NULL, 0);
+      rc= stmt->set_error( MYERR_01004, NULL, 0);
 
     if (name_len)
       *name_len= (SQLSMALLINT)len;
@@ -537,7 +537,7 @@ SQLGetCursorNameW(SQLHSTMT hstmt, SQLWCHAR *cursor, SQLSMALLINT cursor_max,
   CLEAR_STMT_ERROR(stmt);
 
   if (cursor_max < 0)
-    return set_error(stmt, MYERR_S1090, NULL, 0);
+    return stmt->set_error( MYERR_S1090, NULL, 0);
 
   name= sqlchar_as_sqlwchar(stmt->dbc->cxn_charset_info,
                             MySQLGetCursorName(hstmt), &len, &errors);
@@ -547,7 +547,7 @@ SQLGetCursorNameW(SQLHSTMT hstmt, SQLWCHAR *cursor, SQLSMALLINT cursor_max,
 
   /* Warn if name truncated, but buffer is not null */
   if (cursor && len > cursor_max - 1)
-    rc= set_error(stmt, MYERR_01004, NULL, 0);
+    rc= stmt->set_error( MYERR_01004, NULL, 0);
 
   if (cursor_max > 0)
   {

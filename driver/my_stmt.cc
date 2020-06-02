@@ -385,7 +385,7 @@ SQLRETURN prepare(STMT *stmt, char * query, SQLINTEGER query_length)
      If that changes we will need to make "parse" to set error and return rc */
   if (parse(&stmt->query))
   {
-    return set_error(stmt, MYERR_S1001, NULL, 4001);
+    return stmt->set_error( MYERR_S1001, NULL, 4001);
   }
 
   ssps_close(stmt);
@@ -464,7 +464,7 @@ SQLRETURN append2param_value(STMT *stmt, DESCREC * aprec, const char *chunk, uns
                                         aprec->par.value_length + length + 1,
                                         MYF(0))) )
     {
-      return set_error(stmt,MYERR_S1001,NULL,4001);
+      return stmt->set_error(MYERR_S1001,NULL,4001);
     }
 
     memcpy(aprec->par.value+aprec->par.value_length,chunk,length);
@@ -477,7 +477,7 @@ SQLRETURN append2param_value(STMT *stmt, DESCREC * aprec, const char *chunk, uns
     /* New value */
     if ( !(aprec->par.value= (char*)myodbc_malloc(length+1,MYF(0))) )
     {
-      return set_error(stmt,MYERR_S1001,NULL,4001);
+      return stmt->set_error(MYERR_S1001,NULL,4001);
     }
     memcpy(aprec->par.value,chunk,length);
     aprec->par.value_length= length;

@@ -635,6 +635,9 @@ struct STMT
   void buf_remove_trail_zeroes() { tempbuf.remove_trail_zeroes(); }
   void alloc_lengths(size_t num);
   void free_lengths();
+  void reset_getdata_position();
+  long compute_cur_row(unsigned fFetchType, SQLLEN irow);
+  SQLRETURN set_error(myodbc_errid errid, const char *errtext, SQLINTEGER errcode);
 
 
   STMT() : dbc(NULL), result(NULL), array(NULL), result_array(NULL),

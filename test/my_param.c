@@ -35,7 +35,7 @@ DECLARE_TEST(t_bug31373948)
   char *ins_query = "INSERT INTO t_bug31373948 (name, largedata) VALUES (?,?)";
   char *sel_query = "SELECT id, largedata FROM t_bug31373948 WHERE name LIKE ? "\
                     "ORDER BY id";
-  unsigned long id = 0;
+  SQLUINTEGER id = 0;
   unsigned long rnum = 0;
   SQLLEN idLenOrInd = 0;
   SQLLEN largeLenOrInd = 0;
@@ -2046,7 +2046,6 @@ DECLARE_TEST(t_bug30591722)
 
 BEGIN_TESTS
   ADD_TEST(t_bug31373948)
-  ADD_TEST(t_bug59772)
   ADD_TEST(t_bug30591722)
   ADD_TEST(t_sp_return)
   // ADD_TEST(t_bug28175772) the libmysqlclient SERVER_PS_OUT_PARAMS flag
@@ -2055,6 +2054,7 @@ BEGIN_TESTS
   ADD_TEST(t_bug30428851)
   ADD_TEST(my_init_table)
 #ifndef USE_IODBC
+  ADD_TEST(t_bug59772)
   ADD_TEST(my_param_insert)
   ADD_TEST(my_param_update)
   ADD_TEST(my_param_delete)

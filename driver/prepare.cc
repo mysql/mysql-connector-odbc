@@ -96,7 +96,7 @@ SQLRETURN my_SQLPrepare(SQLHSTMT hstmt, SQLCHAR *szSqlStr, SQLINTEGER cbSqlStr,
   {
     if (!(szSqlStr= (SQLCHAR*)dupp_str((char *)szSqlStr, cbSqlStr)))
     {
-      return set_error(stmt, MYERR_S1001, NULL, 4001);
+      return stmt->set_error( MYERR_S1001, NULL, 4001);
     }
   }
 
@@ -130,7 +130,7 @@ SQLRETURN SQL_API my_SQLBindParameter( SQLHSTMT     StatementHandle,
 
     if (ParameterNumber < 1)
     {
-        set_error(stmt,MYERR_S1093,NULL,0);
+        stmt->set_error(MYERR_S1093,NULL,0);
         return SQL_ERROR;
     }
 

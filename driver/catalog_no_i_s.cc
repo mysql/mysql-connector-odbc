@@ -1797,7 +1797,7 @@ procedure_columns_no_i_s(SQLHSTMT hstmt,
   {
     myodbc_mutex_unlock(&stmt->dbc->lock);
 
-    nReturn= set_error(stmt, MYERR_S1000, mysql_error(&stmt->dbc->mysql),
+    nReturn= stmt->set_error( MYERR_S1000, mysql_error(&stmt->dbc->mysql),
                       mysql_errno(&stmt->dbc->mysql));
     goto clean_exit;
   }
@@ -1997,7 +1997,7 @@ procedure_columns_no_i_s(SQLHSTMT hstmt,
     {
       myodbc_mutex_unlock(&stmt->dbc->lock);
 
-      nReturn= set_error(stmt, MYERR_S1000, mysql_error(&stmt->dbc->mysql),
+      nReturn= stmt->set_error( MYERR_S1000, mysql_error(&stmt->dbc->mysql),
                 mysql_errno(&stmt->dbc->mysql));
       goto exit_with_free;
     }
@@ -2009,7 +2009,7 @@ procedure_columns_no_i_s(SQLHSTMT hstmt,
 
     if (row == NULL)
     {
-      nReturn= set_error(stmt, MYERR_S1000, mysql_error(&stmt->dbc->mysql),
+      nReturn= stmt->set_error( MYERR_S1000, mysql_error(&stmt->dbc->mysql),
                 mysql_errno(&stmt->dbc->mysql));
       goto exit_with_free;
     }
@@ -2234,7 +2234,7 @@ special_columns_no_i_s(SQLHSTMT hstmt, SQLUSMALLINT fColType,
 
     if ( fColType != SQL_BEST_ROWID )
     {
-        return set_error(stmt, MYERR_S1000,
+        return stmt->set_error( MYERR_S1000,
                          "Unsupported argument to SQLSpecialColumns", 4000);
     }
 

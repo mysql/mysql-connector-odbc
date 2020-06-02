@@ -264,8 +264,6 @@ int   check_if_server_is_alive  (DBC *dbc);
 my_bool   dynstr_append_quoted_name (DYNAMIC_STRING *str, const char *name);
 SQLRETURN set_handle_error          (SQLSMALLINT HandleType, SQLHANDLE handle,
                                     myodbc_errid errid, const char *errtext, SQLINTEGER errcode);
-SQLRETURN set_error     (STMT *stmt,myodbc_errid errid, const char *errtext,
-                        SQLINTEGER errcode);
 SQLRETURN set_conn_error(DBC *dbc,myodbc_errid errid, const char *errtext,
                         SQLINTEGER errcode);
 SQLRETURN set_env_error (ENV * env,myodbc_errid errid, const char *errtext,
@@ -538,7 +536,7 @@ void free_connection_stmts(DBC *dbc);
 
 #define CHECK_DESC_OUTPUT(d, s) CHECK_STMT_OUTPUT(d, s)
 
-#define CHECK_DATA_OUTPUT(s, d) if(d == NULL) return set_error((STMT *)s, MYERR_S1000, "Invalid output buffer", 0)
+#define CHECK_DATA_OUTPUT(s, d) if(d == NULL) return ((STMT *)s)->set_error(MYERR_S1000, "Invalid output buffer", 0)
 
 #define IF_NOT_NULL(v, x) if (v != NULL) x
 

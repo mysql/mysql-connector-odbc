@@ -131,7 +131,7 @@ end_transaction(SQLSMALLINT HandleType,
 
   default:
     result= SQL_ERROR;
-    set_error((STMT*)Handle,MYERR_S1092,NULL,0);
+    ((STMT*)Handle)->set_error(MYERR_S1092,NULL,0);
     break;
   }
   return result;

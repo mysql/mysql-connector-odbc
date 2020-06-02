@@ -95,7 +95,7 @@ SQLColAttributeImpl(SQLHSTMT hstmt, SQLUSMALLINT column,
 
     /* We set the error only when the result is intented to be returned */
     if ((char_attr || num_attr) && len > char_attr_max - 1)
-      rc= set_error(stmt, MYERR_01004, NULL, 0);
+      rc= stmt->set_error(MYERR_01004, NULL, 0);
 
     if (char_attr && char_attr_max > 1)
       strmake((char *)char_attr, (char *)value, char_attr_max - 1);
@@ -223,7 +223,7 @@ SQLDescribeCol(SQLHSTMT hstmt, SQLUSMALLINT column,
 
     /* We set the error only when the result is intented to be returned */
     if (name && len > name_max - 1)
-      rc= set_error(stmt, MYERR_01004, NULL, 0);
+      rc= stmt->set_error(MYERR_01004, NULL, 0);
 
     if (name && name_max > 1)
       strmake((char *)name, (char *)value, name_max - 1);
@@ -452,7 +452,7 @@ SQLGetCursorName(SQLHSTMT hstmt, SQLCHAR *cursor, SQLSMALLINT cursor_max,
   CLEAR_STMT_ERROR(stmt);
 
   if (cursor_max < 0)
-    return set_error(stmt, MYERR_S1090, NULL, 0);
+    return stmt->set_error(MYERR_S1090, NULL, 0);
 
   name= MySQLGetCursorName(hstmt);
   len= strlen((char *)name);
@@ -465,7 +465,7 @@ SQLGetCursorName(SQLHSTMT hstmt, SQLCHAR *cursor, SQLSMALLINT cursor_max,
 
   /* We set the error only when the result is intented to be returned */
   if (cursor && len > cursor_max - 1)
-    return set_error(stmt, MYERR_01004, NULL, 0);
+    return stmt->set_error(MYERR_01004, NULL, 0);
 
   return SQL_SUCCESS;
 }

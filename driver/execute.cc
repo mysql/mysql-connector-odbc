@@ -160,7 +160,7 @@ SQLRETURN do_query(STMT *stmt,char *query, SQLULEN query_length)
       /* Query was supposed to return result, but result is NULL*/
       if (returned_result(stmt))
       {
-        set_error(stmt, MYERR_S1000, mysql_error(&stmt->dbc->mysql),
+        stmt->set_error( MYERR_S1000, mysql_error(&stmt->dbc->mysql),
                 mysql_errno(&stmt->dbc->mysql));
         goto exit;
       }
@@ -193,7 +193,7 @@ SQLRETURN do_query(STMT *stmt,char *query, SQLULEN query_length)
     {
       if (bind_result(stmt) || get_result(stmt))
       {
-          set_error(stmt, MYERR_S1000, mysql_error(&stmt->dbc->mysql),
+          stmt->set_error( MYERR_S1000, mysql_error(&stmt->dbc->mysql),
                   mysql_errno(&stmt->dbc->mysql));
           goto exit;
       }
@@ -269,7 +269,7 @@ SQLRETURN insert_params(STMT *stmt, SQLULEN row, char **finalquery,
     if (stmt->dummy_state != ST_DUMMY_PREPARED &&
         (!aprec || !aprec->par.real_param_done))
     {
-      rc= set_error(stmt, MYERR_07001,
+      rc= stmt->set_error( MYERR_07001,
           "The number of parameter markers is not equal "
           "to he number of parameters provided",0);
       goto error;
@@ -360,7 +360,7 @@ SQLRETURN insert_params(STMT *stmt, SQLULEN row, char **finalquery,
   return rc;
 
 memerror:      /* Too much data */
-  rc= set_error(stmt,MYERR_S1001,NULL,4001);
+  rc= stmt->set_error(MYERR_S1001,NULL,4001);
 error:
   /* ! was _already_ locked, when we tried to lock */
   if (!mutex_was_locked)
@@ -1236,7 +1236,7 @@ memerror:
     {
       x_free(data);
     }
-    return set_error(stmt, MYERR_S1001, NULL, 4001);
+    return stmt->set_error( MYERR_S1001, NULL, 4001);
 }
 
 
@@ -1260,7 +1260,7 @@ SQLRETURN do_my_pos_cursor( STMT *pStmt, STMT *pStmtCursor )
       ++pszQuery;
 
   if ( init_dynamic_string( &dynQuery, pszQuery, 1024, 1024 ) )
-      return set_error( pStmt, MYERR_S1001, NULL, 4001 );
+      return pStmt->set_error(MYERR_S1001, NULL, 4001 );
 
   if ( !myodbc_casecmp( pszQuery, "delete", 6 ) )
   {
@@ -1272,7 +1272,7 @@ SQLRETURN do_my_pos_cursor( STMT *pStmt, STMT *pStmtCursor )
   }
   else
   {
-      nReturn = set_error( pStmt, MYERR_S1000, "Specified SQL syntax is not supported", 0 );
+      nReturn = pStmt->set_error(MYERR_S1000, "Specified SQL syntax is not supported", 0 );
   }
 
   if ( SQL_SUCCEEDED( nReturn ) )
@@ -1351,12 +1351,12 @@ SQLRETURN my_SQLExecute( STMT *pStmt )
   CLEAR_STMT_ERROR( pStmt );
 
   if (!GET_QUERY(&pStmt->query))
-      return set_error(pStmt, MYERR_S1010,
+      return pStmt->set_error( MYERR_S1010,
                        "No previous SQLPrepare done", 0);
 
   if (is_set_names_statement(GET_QUERY(&pStmt->query)))
   {
-    return set_error(pStmt, MYERR_42000,
+    return pStmt->set_error( MYERR_42000,
                      "SET NAMES not allowed by driver", 0);
   }
 
@@ -1365,14 +1365,14 @@ SQLRETURN my_SQLExecute( STMT *pStmt )
     /* Save a copy of the query, because we're about to modify it. */
     if (copy_parsed_query(&pStmt->query, &pStmt->orig_query))
     {
-      return set_error(pStmt,MYERR_S1001,NULL,4001);
+      return pStmt->set_error(MYERR_S1001,NULL,4001);
     }
 
     /* Cursor statement use mysql_use_result - thus any operation
        will couse commands out of sync */
     if (if_forward_cache(pStmtCursor))
     {
-      return set_error(pStmt,MYERR_S1010,NULL,0);
+      return pStmt->set_error(MYERR_S1010,NULL,0);
     }
 
     /* Chop off the 'WHERE CURRENT OF ...' - doing it a hard way...*/
@@ -1734,7 +1734,7 @@ static SQLRETURN find_next_out_stream(STMT *stmt, SQLPOINTER *token)
   if (rec != NULL)
   {
     uint cur_column_number= stmt->getdata.column;
-    reset_getdata_position(stmt);
+    stmt->reset_getdata_position();
     stmt->getdata.column= cur_column_number;
     stmt->getdata.src_offset= 0;
 

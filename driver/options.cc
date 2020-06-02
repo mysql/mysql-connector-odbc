@@ -643,13 +643,13 @@ MySQLSetStmtAttr(SQLHSTMT hstmt, SQLINTEGER Attribute, SQLPOINTER ValuePtr,
 
               if (desc->alloc_type == SQL_DESC_ALLOC_AUTO &&
                   desc->stmt != stmt)
-                return set_error((STMT*)hstmt,MYERR_S1017,
+                return ((STMT*)hstmt)->set_error(MYERR_S1017,
                                  "Invalid use of an automatically allocated "
                                  "descriptor handle",0);
 
               if (desc->alloc_type == SQL_DESC_ALLOC_USER &&
                   stmt->dbc != desc->exp.dbc)
-                return set_error((STMT*)hstmt,MYERR_S1024,
+                return ((STMT*)hstmt)->set_error(MYERR_S1024,
                                  "Invalid attribute value",0);
 
               if (Attribute == SQL_ATTR_APP_PARAM_DESC)
@@ -666,7 +666,7 @@ MySQLSetStmtAttr(SQLHSTMT hstmt, SQLINTEGER Attribute, SQLPOINTER ValuePtr,
               if (desc->desc_type != DESC_UNKNOWN &&
                   desc->desc_type != desc_type)
               {
-                return set_error((STMT*)hstmt,MYERR_S1024,
+                return ((STMT*)hstmt)->set_error(MYERR_S1024,
                                  "Descriptor type mismatch",0);
               }
 
@@ -701,13 +701,13 @@ MySQLSetStmtAttr(SQLHSTMT hstmt, SQLINTEGER Attribute, SQLPOINTER ValuePtr,
         case SQL_ATTR_AUTO_IPD:
         case SQL_ATTR_ENABLE_AUTO_IPD:
             if (ValuePtr != (SQLPOINTER)SQL_FALSE)
-                return set_error((STMT*)hstmt,MYERR_S1C00,
+                return ((STMT*)hstmt)->set_error(MYERR_S1C00,
                                  "Optional feature not implemented",0);
             break;
 
         case SQL_ATTR_IMP_PARAM_DESC:
         case SQL_ATTR_IMP_ROW_DESC:
-            return set_error((STMT*)hstmt,MYERR_S1024,
+            return ((STMT*)hstmt)->set_error(MYERR_S1024,
                              "Invalid attribute/option identifier",0);
 
         case SQL_ATTR_PARAM_BIND_OFFSET_PTR:
@@ -758,7 +758,7 @@ MySQLSetStmtAttr(SQLHSTMT hstmt, SQLINTEGER Attribute, SQLPOINTER ValuePtr,
                                         ValuePtr, SQL_IS_INTEGER);
 
         case SQL_ATTR_ROW_NUMBER:
-            return set_error((STMT*)hstmt,MYERR_S1000,
+            return ((STMT*)hstmt)->set_error(MYERR_S1000,
                              "Trying to set read-only attribute",0);
 
         case SQL_ATTR_ROW_OPERATION_PTR:
