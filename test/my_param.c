@@ -28,6 +28,102 @@
 
 #include "odbctap.h"
 
+typedef struct {
+  long            length;
+  unsigned char data[4096];
+} T_LOB;
+
+DECLARE_TEST(my_param_data)
+{
+  int   i, rcnt, c1 = 1, c2 = 4096;
+  T_LOB c3, *pt;
+  c3.length = c2;
+  SQLRETURN rc = 0;
+  SQLLEN c1_len_or_ind = 0, c2_len_or_ind = 0, c3_len_or_ind = 0;
+
+  unsigned char *org_data[10];
+  DECLARE_BASIC_HANDLES(henv1, hdbc1, hstmt1);
+
+  /* Connect with SSPS enabled */
+  alloc_basic_handles_with_opt(&henv1, &hdbc1, &hstmt1, NULL, NULL, NULL,
+    NULL, "NO_SSPS=1");
+
+  SQLExecDirect(hstmt, "DROP TABLE IF EXISTS test_param_data", SQL_NTS);
+
+  ok_sql(hstmt, "CREATE TABLE test_param_data"\
+                "(c1 int, c2 int, c3 longblob)");
+
+  for (c1 = 1; c1 < 11; ++c1)
+  {
+    c3.length = (c1 % 2) ? 944 : 3312;
+    org_data[c1 - 1] = calloc(c3.length + 100, 1);
+    
+    SQLLEN indic1 = sizeof(long);
+    SQLLEN indic2 = sizeof(long);
+    SQLLEN indic3 = SQL_LEN_DATA_AT_EXEC(c3.length);
+
+    for (i = 0; i < c3.length; i++)
+    {
+      org_data[c1 - 1][i] = c3.data[i] = i % 256;
+    }
+
+    ok_stmt(hstmt1, SQLBindParameter(hstmt1, 1, SQL_PARAM_INPUT,
+            SQL_C_LONG, SQL_INTEGER, sizeof(long), 0, &c1,
+            sizeof(long), &indic1));
+
+    ok_stmt(hstmt1, SQLBindParameter(hstmt1, 2, SQL_PARAM_INPUT,
+            SQL_C_LONG, SQL_INTEGER, sizeof(long), 0, &c2,
+            sizeof(long), &indic2));
+
+    ok_stmt(hstmt1, SQLBindParameter(hstmt1, 3, SQL_PARAM_INPUT,
+            SQL_C_BINARY, SQL_LONGVARBINARY, sizeof(T_LOB), 0, &c3,
+            sizeof(T_LOB), &indic3));
+
+    expect_stmt(hstmt1, SQLExecDirect(hstmt1, "INSERT INTO test_param_data(c1, c2, c3)"\
+                "VALUES (?, ?, ?)", SQL_NTS),
+                SQL_NEED_DATA);
+
+
+    expect_stmt(hstmt1, SQLParamData(hstmt1, (SQLPOINTER)&pt),
+                SQL_NEED_DATA);
+
+    ok_stmt(hstmt1, SQLPutData(hstmt1, pt->data, pt->length));
+
+    ok_stmt(hstmt1, SQLParamData(hstmt1, (SQLPOINTER)&pt));
+
+  }
+
+  ok_sql(hstmt1, "SELECT * FROM test_param_data ORDER BY c1");
+
+  ok_stmt(hstmt1, SQLBindCol(hstmt1, 1, SQL_C_ULONG, &c1, sizeof(c1), &c1_len_or_ind));
+  ok_stmt(hstmt1, SQLBindCol(hstmt1, 2, SQL_C_ULONG, &c2, sizeof(c2), &c2_len_or_ind));
+  ok_stmt(hstmt1, SQLBindCol(hstmt1, 3, SQL_C_BINARY, c3.data, 4000, &c3_len_or_ind));
+
+  rcnt = 1;
+  while (1)
+  {
+    int expected_length = (rcnt % 2) ? 944 : 3312;
+    memset(c3.data, 0, 4000);
+    c1 = 0;
+    c2 = 0;
+    if (SQLFetch(hstmt1) != SQL_SUCCESS)
+      break;
+    is_num(c1, rcnt);
+    is_num(c2, 4096);
+    is_num(c3_len_or_ind, expected_length);
+    is(memcmp(c3.data, org_data[rcnt-1], expected_length) == 0);
+    ++rcnt;
+  }
+
+  is_num(rcnt, 11);
+
+  for(i = 0; i < 10; ++i)
+    free(org_data[i]);
+
+  free_basic_handles(&henv1, &hdbc1, &hstmt1);
+  return OK;
+}
+
 DECLARE_TEST(t_bug31373948)
 {
   char *buf;
@@ -2045,6 +2141,7 @@ DECLARE_TEST(t_bug30591722)
 
 
 BEGIN_TESTS
+  ADD_TEST(my_param_data)
   ADD_TEST(t_bug31373948)
   ADD_TEST(t_bug30591722)
   ADD_TEST(t_sp_return)

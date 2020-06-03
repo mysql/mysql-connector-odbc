@@ -336,6 +336,7 @@ SQLRETURN insert_params(STMT *stmt, SQLULEN row, char **finalquery,
     if (finalquery!=NULL)
     {
       char *dupquery = NULL;
+
       if (!(dupquery = (char*)myodbc_memdup(stmt->buf(),
         stmt->buf_pos(), MYF(0))))
       {
@@ -1698,14 +1699,15 @@ static SQLRETURN execute_dae(STMT *stmt)
 {
   SQLRETURN rc;
   char *query;
+  SQLULEN query_len = 0;
 
   switch (stmt->dae_type)
   {
   case DAE_NORMAL:
     query= GET_QUERY(&stmt->query);
-    if (!SQL_SUCCEEDED(rc= insert_params(stmt, 0, &query, 0)))
+    if (!SQL_SUCCEEDED(rc= insert_params(stmt, 0, &query, &query_len)))
       break;
-    rc= do_query(stmt, query, 0);
+    rc= do_query(stmt, query, query_len);
     break;
   case DAE_SETPOS_INSERT:
     stmt->dae_type= DAE_SETPOS_DONE;
