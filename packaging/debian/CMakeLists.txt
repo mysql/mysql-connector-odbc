@@ -44,6 +44,11 @@ endif()
 
 include(../../version.cmake)
 
+string(TIMESTAMP YEAR "%Y")
+if(NOT YEAR)
+  message(FATAL_ERROR "Could not determine what year it is")
+endif()
+
 #
 # Timestamp for use in debian/changelog
 #
