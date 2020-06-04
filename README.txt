@@ -1,4 +1,4 @@
-Copyright (c) 1995, 2020, Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 1995, 2020, Oracle and/or its affiliates.
 
 This is a release of MySQL Connector/ODBC (formerly MyODBC), the driver that
 enables ODBC applications to communicate with MySQL servers.
