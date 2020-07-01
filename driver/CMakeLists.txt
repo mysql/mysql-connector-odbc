@@ -157,9 +157,11 @@ WHILE(${DRIVER_INDEX} LESS ${DRIVERS_COUNT})
 
   if(APPLE)
     set_property(TARGET ${DRIVER_NAME} APPEND PROPERTY INSTALL_RPATH "@loader_path")
+    set_property(TARGET ${DRIVER_NAME} APPEND PROPERTY INSTALL_RPATH "@loader_path/private")
     mangle_osx_rpaths(${DRIVER_NAME})
   elseif(NOT WIN32)
     set_property(TARGET ${DRIVER_NAME} APPEND PROPERTY INSTALL_RPATH "$ORIGIN")
+    set_property(TARGET ${DRIVER_NAME} APPEND PROPERTY INSTALL_RPATH "$ORIGIN/private")
   endif()
 
   # FIXME: RPATH not set anywhere...

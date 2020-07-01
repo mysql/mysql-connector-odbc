@@ -1,30 +1,30 @@
-# Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
-# 
-# This program is free software; you can redistribute it and/or modify 
-# it under the terms of the GNU General Public License, version 2.0, as 
-# published by the Free Software Foundation. 
+# Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
 #
-# This program is also distributed with certain software (including 
-# but not limited to OpenSSL) that is licensed under separate terms, 
-# as designated in a particular file or component or in included license 
-# documentation. The authors of MySQL hereby grant you an 
-# additional permission to link the program and your derivative works 
-# with the separately licensed software that they have included with 
-# MySQL. 
-# 
-# Without limiting anything contained in the foregoing, this file, 
-# which is part of MySQL Connector/ODBC, is also subject to the 
-# Universal FOSS Exception, version 1.0, a copy of which can be found at 
-# http://oss.oracle.com/licenses/universal-foss-exception. 
-# 
-# This program is distributed in the hope that it will be useful, but 
-# WITHOUT ANY WARRANTY; without even the implied warranty of 
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-# See the GNU General Public License, version 2.0, for more details. 
-# 
-# You should have received a copy of the GNU General Public License 
-# along with this program; if not, write to the Free Software Foundation, Inc., 
-# 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA 
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License, version 2.0, as
+# published by the Free Software Foundation.
+#
+# This program is also distributed with certain software (including
+# but not limited to OpenSSL) that is licensed under separate terms,
+# as designated in a particular file or component or in included license
+# documentation. The authors of MySQL hereby grant you an
+# additional permission to link the program and your derivative works
+# with the separately licensed software that they have included with
+# MySQL.
+#
+# Without limiting anything contained in the foregoing, this file,
+# which is part of MySQL Connector/ODBC, is also subject to the
+# Universal FOSS Exception, version 1.0, a copy of which can be found at
+# http://oss.oracle.com/licenses/universal-foss-exception.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+# See the GNU General Public License, version 2.0, for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 
 ##########################################################################
 
@@ -78,8 +78,8 @@ FIND_PACKAGE(Threads)
 INCLUDE(version.cmake)
 
 IF(NOT WIN32)
-	INCLUDE(CheckFunctionExists)
-	CHECK_FUNCTION_EXISTS(dlopen DLOPEN_IN_LIBC)
+  INCLUDE(CheckFunctionExists)
+  CHECK_FUNCTION_EXISTS(dlopen DLOPEN_IN_LIBC)
     SET(DL_INCLUDES)
     SET(DL_LFLAGS)
     SET(DL_LIBS)
@@ -93,13 +93,13 @@ ENDIF(NOT WIN32)
 
 # RPATH handling
 SET(CMAKE_SKIP_BUILD_RPATH  FALSE)
-SET(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE) 
+SET(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
 SET(CMAKE_INSTALL_RPATH "")
 SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH FALSE)
 
 #Default is to build both drivers
 IF(UNICODE OR NOT ANSI)
-	MESSAGE(STATUS "Configuring to build Unicode driver")
+  MESSAGE(STATUS "Configuring to build Unicode driver")
   SET(IS_UNICODE_DRIVER 1)
   SET(CONNECTOR_DRIVER_TYPE "Unicode")
   SET(CONNECTOR_DRIVER_TYPE_LIST "Unicode")
@@ -108,7 +108,7 @@ IF(UNICODE OR NOT ANSI)
 ENDIF(UNICODE OR NOT ANSI)
 
 IF(ANSI OR NOT UNICODE)
-	MESSAGE(STATUS "Configuring to build ANSI driver")
+  MESSAGE(STATUS "Configuring to build ANSI driver")
   SET(IS_UNICODE_DRIVER ${IS_UNICODE_DRIVER} 0)
   # We need space separated string
   IF(UNICODE OR NOT ANSI)
@@ -211,12 +211,12 @@ INCLUDE(${CMAKE_SOURCE_DIR}/cmake/FindMySQL.cmake)
 
 
 IF(MYSQL_VERSION_ID GREATER 80002)
-  ADD_DEFINITIONS(-DMYSQL8) 
+  ADD_DEFINITIONS(-DMYSQL8)
   SET(MYSQL8 1)
 ENDIF(MYSQL_VERSION_ID GREATER 80002)
 
 IF(MYSQLCLIENT_STATIC_LINKING)
-  ADD_DEFINITIONS(-DMYSQLCLIENT_STATIC_LINKING) 
+  ADD_DEFINITIONS(-DMYSQLCLIENT_STATIC_LINKING)
 ENDIF(MYSQLCLIENT_STATIC_LINKING)
 
 IF(MYSQL8)
@@ -231,8 +231,8 @@ ENDIF(MYSQL8)
 CONFIGURE_FILE(${CMAKE_SOURCE_DIR}/VersionInfo.h.cmake ${CMAKE_SOURCE_DIR}/VersionInfo.h @ONLY)
 CONFIGURE_FILE(${CMAKE_SOURCE_DIR}/scripts/macosx/postflight.in ${CMAKE_SOURCE_DIR}/scripts/macosx/postflight @ONLY)
 IF(WIN32)
-	CONFIGURE_FILE(${CMAKE_SOURCE_DIR}/Install.bat.cmake ${CMAKE_SOURCE_DIR}/Install.bat @ONLY)
-	CONFIGURE_FILE(${CMAKE_SOURCE_DIR}/Uninstall.bat.cmake ${CMAKE_SOURCE_DIR}/Uninstall.bat @ONLY)
+  CONFIGURE_FILE(${CMAKE_SOURCE_DIR}/Install.bat.cmake ${CMAKE_SOURCE_DIR}/Install.bat @ONLY)
+  CONFIGURE_FILE(${CMAKE_SOURCE_DIR}/Uninstall.bat.cmake ${CMAKE_SOURCE_DIR}/Uninstall.bat @ONLY)
 ENDIF(WIN32)
 
 #SET(CMAKE_VERBOSE_MAKEFILE ON)
@@ -282,8 +282,8 @@ ELSE(WIN32)
                         ADD_DEFINITIONS(-DUSE_UNIXODBC)
                 ENDIF(COMPILE_RESULT)
 
-	ELSE(WITH_UNIXODBC)
-		ADD_DEFINITIONS(-DHAVE_SQLGETPRIVATEPROFILESTRINGW)
+  ELSE(WITH_UNIXODBC)
+    ADD_DEFINITIONS(-DHAVE_SQLGETPRIVATEPROFILESTRINGW)
                 #---- if it is not UnixODBC we assume iODBC -------
                 ADD_DEFINITIONS(-DUSE_IODBC)
         ENDIF(WITH_UNIXODBC)
@@ -330,17 +330,17 @@ ELSE(COMPILE_RESULT)
                 ADD_DEFINITIONS(-DUSE_SQLPARAMOPTIONS_SQLUINTEGER_PTR)
         ELSE(COMPILE_RESULT1)
                 # SQLULEN is a default
-		MESSAGE(STATUS "Apparently odbc headers could not be found. 2nd and 3rd parameters assumed to be (*)SQLULEN by default")
+    MESSAGE(STATUS "Apparently odbc headers could not be found. 2nd and 3rd parameters assumed to be (*)SQLULEN by default")
                 ADD_DEFINITIONS(-DUSE_SQLPARAMOPTIONS_SQLULEN_PTR)
         ENDIF(COMPILE_RESULT1)
 
 ENDIF(COMPILE_RESULT)
 #-----------------------------------------------------
 
-	IF(NOT NO_THREADS)
-		MESSAGE(STATUS "Enabling threads support")
-		ADD_DEFINITIONS(-DTHREAD)
-	ENDIF(NOT NO_THREADS)
+  IF(NOT NO_THREADS)
+    MESSAGE(STATUS "Enabling threads support")
+    ADD_DEFINITIONS(-DTHREAD)
+  ENDIF(NOT NO_THREADS)
 
 #------------ build options for windows --------------
 
@@ -353,15 +353,15 @@ IF(WIN32)
         ADD_DEFINITIONS(-DENGLISH -D_USERDLL)
         ADD_DEFINITIONS(-D_WIN32 -DWIN32 -D_WINDOWS -D__WIN__)
 
-	#Since 5.5.13 libmysql introduces dependency on Secur32.lib
-	FILE(STRINGS "${MYSQL_INCLUDE_DIR}\\mysql_version.h" mysql_version REGEX "^\#define[ \t]+MYSQL_VERSION_ID")
+  #Since 5.5.13 libmysql introduces dependency on Secur32.lib
+  FILE(STRINGS "${MYSQL_INCLUDE_DIR}\\mysql_version.h" mysql_version REGEX "^\#define[ \t]+MYSQL_VERSION_ID")
 
-	STRING(REGEX REPLACE "^\#define[ \t]+MYSQL_VERSION_ID[ \t]+([0-9]+)" "\\1" MYSQL_CLIENT_VERSION "${mysql_version}")
+  STRING(REGEX REPLACE "^\#define[ \t]+MYSQL_VERSION_ID[ \t]+([0-9]+)" "\\1" MYSQL_CLIENT_VERSION "${mysql_version}")
 
-	IF(MYSQL_CLIENT_VERSION GREATER 50512)
-		MESSAGE(STATUS "MySQL client lib(version ${MYSQL_CLIENT_VERSION}) requires Secure32.lib - TRUE")
-		SET(SECURE32_LIB Secur32)
-	ENDIF(MYSQL_CLIENT_VERSION GREATER 50512)
+  IF(MYSQL_CLIENT_VERSION GREATER 50512)
+    MESSAGE(STATUS "MySQL client lib(version ${MYSQL_CLIENT_VERSION}) requires Secure32.lib - TRUE")
+    SET(SECURE32_LIB Secur32)
+  ENDIF(MYSQL_CLIENT_VERSION GREATER 50512)
 
         # edits for all config build flags
         FOREACH(TYPE C CXX)
@@ -600,5 +600,61 @@ ELSE(WIN32)
   INSTALL(FILES ChangeLog    DESTINATION .)
 
 ENDIF(WIN32)
+
+IF(MYSQLCLIENT_STATIC_LINKING)
+
+  #
+  # Note: Currently we simply copy all libraries bundled in the server installation
+  # filtering-out these that we know are not needed on the client side.
+  #
+  # More precise approach would be to get information about external dependencies
+  # from mysql_config and other sources and bundle only these libraries that we
+  # know are needed. But this is not implemented yet. Note also that dependencies
+  # reported by mysql_config in MYSQL_EXTERNAL_DEPENDENCIES do not include things
+  # like client-side plugins and their dependencies.
+  #
+
+  file(GLOB _bundled1 "${MYSQL_LIB_DIR}/*${CMAKE_SHARED_LIBRARY_SUFFIX}*")
+  file(GLOB _bundled2 "${MYSQL_LIB_DIR}/private/*${CMAKE_SHARED_LIBRARY_SUFFIX}*")
+
+  foreach(lib IN LISTS _bundled1 _bundled2)
+
+    get_filename_component(lib_name ${lib} NAME_WE)
+
+    if(NOT lib_name MATCHES "mysql|protobuf|lber|ldap_r")
+
+    message("found bundled libs: ${lib}")
+
+    install(FILES "${lib}"
+      DESTINATION "lib/private"
+      COMPONENT JDBCDll
+    )
+
+    endif()
+
+  endforeach()
+
+  file(GLOB _bundled "${MYSQL_PLUGIN_DIR}/*${CMAKE_SHARED_LIBRARY_SUFFIX}*")
+
+  foreach(lib ${_bundled})
+
+    get_filename_component(lib_name ${lib} NAME_WE)
+
+    if(
+      lib_name MATCHES "_client"
+      AND NOT lib_name MATCHES "qa_auth_client"
+    )
+
+    message("found client plugin: ${lib}")
+
+    install(FILES "${lib}"
+      DESTINATION "lib/plugin"
+      COMPONENT JDBCDll
+    )
+
+    endif()
+  endforeach()
+
+ENDIF()
 
 INCLUDE(CPack)

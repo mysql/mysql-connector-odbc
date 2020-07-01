@@ -38,14 +38,14 @@ function(setup_ssl_libs)
     find_library(OPENSSL_LIBRARY
       NAMES libssl-1_1 libssl-1_1-x64 libssl ssl ssleay32
       PATH_SUFFIXES private
-      PATHS ${MYSQL_DIR}/bin ${MYSQL_DIR}/lib
+      PATHS ${MYSQL_DIR}/bin ${MYSQL_LIB_DIR}
       NO_DEFAULT_PATH
     )
 
     find_library(CRYPTO_LIBRARY
       NAMES libcrypto-1_1 libcrypto-1_1-x64 libcrypto crypto libeay32
       PATH_SUFFIXES private
-      PATHS ${MYSQL_DIR}/bin ${MYSQL_DIR}/lib
+      PATHS ${MYSQL_DIR}/bin ${MYSQL_LIB_DIR}
       NO_DEFAULT_PATH
     )
     message("-- OpenSSL library: ${OPENSSL_LIBRARY}")
@@ -57,7 +57,7 @@ function(setup_ssl_libs)
     get_filename_component(CRYPTO_LIB_NAME_WE "${CRYPTO_LIBRARY}" NAME_WE)
     get_filename_component(OPENSSL_LIB_DIR "${OPENSSL_LIBRARY}" DIRECTORY)
     get_filename_component(CRYPTO_LIB_DIR "${CRYPTO_LIBRARY}" DIRECTORY)
-    
+
     SET(_SSL_PATH ${OPENSSL_LIB_DIR})
 
     link_directories(${OPENSSL_LIB_DIR})
@@ -75,10 +75,17 @@ function(setup_ssl_libs)
 
         message("-- bundling OpenSSL library: ${lib}")
 
-        install(FILES ${lib}
-          DESTINATION ${LIB_SUBDIR}
-          COMPONENT OpenSSLDll
-        )
+        if(WIN32 OR APPLE)
+          install(FILES ${lib}
+            DESTINATION "${LIB_SUBDIR}"
+            COMPONENT OpenSSLDll
+            )
+        else()
+          install(FILES ${lib}
+            DESTINATION "${LIB_SUBDIR}/private"
+            COMPONENT OpenSSLDll
+            )
+        endif()
 
       endforeach()
 

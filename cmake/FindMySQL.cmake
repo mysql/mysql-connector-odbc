@@ -1,33 +1,33 @@
 # -*- indent-tabs-mode:nil; -*-
 # vim: set expandtab:
 #
-# Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved. 
-# 
-# This program is free software; you can redistribute it and/or modify 
-# it under the terms of the GNU General Public License, version 2.0, as 
-# published by the Free Software Foundation. 
+# Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
 #
-# This program is also distributed with certain software (including 
-# but not limited to OpenSSL) that is licensed under separate terms, 
-# as designated in a particular file or component or in included license 
-# documentation. The authors of MySQL hereby grant you an 
-# additional permission to link the program and your derivative works 
-# with the separately licensed software that they have included with 
-# MySQL. 
-# 
-# Without limiting anything contained in the foregoing, this file, 
-# which is part of MySQL Connector/ODBC, is also subject to the 
-# Universal FOSS Exception, version 1.0, a copy of which can be found at 
-# http://oss.oracle.com/licenses/universal-foss-exception. 
-# 
-# This program is distributed in the hope that it will be useful, but 
-# WITHOUT ANY WARRANTY; without even the implied warranty of 
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-# See the GNU General Public License, version 2.0, for more details. 
-# 
-# You should have received a copy of the GNU General Public License 
-# along with this program; if not, write to the Free Software Foundation, Inc., 
-# 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA 
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License, version 2.0, as
+# published by the Free Software Foundation.
+#
+# This program is also distributed with certain software (including
+# but not limited to OpenSSL) that is licensed under separate terms,
+# as designated in a particular file or component or in included license
+# documentation. The authors of MySQL hereby grant you an
+# additional permission to link the program and your derivative works
+# with the separately licensed software that they have included with
+# MySQL.
+#
+# Without limiting anything contained in the foregoing, this file,
+# which is part of MySQL Connector/ODBC, is also subject to the
+# Universal FOSS Exception, version 1.0, a copy of which can be found at
+# http://oss.oracle.com/licenses/universal-foss-exception.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+# See the GNU General Public License, version 2.0, for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 
 ##########################################################################
 
@@ -119,6 +119,7 @@ set(ENV_OR_OPT_VARS
   MYSQL_INCLUDE_DIR
   MYSQL_LIB_DIR
   MYSQL_LIB_DIR_LIST
+  MYSQL_PLUGIN_DIR
   MYSQL_CFLAGS
   MYSQL_CXXFLAGS
   MYSQL_CONFIG_EXECUTABLE
@@ -134,6 +135,7 @@ set(ENV_OR_OPT_PATH_VARS
   MYSQL_DIR
   MYSQL_INCLUDE_DIR
   MYSQL_LIB_DIR
+  MYSQL_PLUGIN_DIR
 )
 
 foreach(_xvar ${ENV_OR_OPT_VARS})
@@ -152,7 +154,7 @@ foreach(_xvar ${ENV_OR_OPT_VARS})
     set(${_xvar} $ENV{${_xvar}})
   endif()
 
-  # Notmalize the path if the variable is set and is a path 
+  # Notmalize the path if the variable is set and is a path
   if(${_xvar})
     list(FIND ENV_OR_OPT_PATH_VARS ${_xvar} _index)
     if (${_index} GREATER -1)
@@ -166,16 +168,17 @@ endforeach()
 # Bail out if both MYSQL_DIR/MYSQL_CONFIG_EXECUTABLE and MYSQL_INCLUDE/LIB_DIR
 # were given
 
-if(MYSQL_DIR AND (MYSQL_INCLUDE_DIR OR MYSQL_LIB_DIR))
+if(MYSQL_DIR AND (MYSQL_INCLUDE_DIR OR MYSQL_LIB_DIR OR MYSQL_PLUGIN_DIR))
   message(FATAL_ERROR
-    "Both MYSQL_DIR and MYSQL_INCLUDE_DIR/MYSQL_LIB_DIR were specified,"
+    "Both MYSQL_DIR and MYSQL_INCLUDE_DIR/MYSQL_LIB_DIR/MYSQL_PLUGIN_DIR were specified,"
     " use either one or the other way of pointing at MySQL location."
   )
 endif()
 
-if (MYSQL_CONFIG_EXECUTABLE AND (MYSQL_INCLUDE_DIR OR MYSQL_LIB_DIR))
+
+if (MYSQL_CONFIG_EXECUTABLE AND (MYSQL_INCLUDE_DIR OR MYSQL_LIB_DIR OR MYSQL_PLUGIN_DIR))
   message(FATAL_ERROR
-    "Both MYSQL_CONFIG_EXECUTABLE and MYSQL_INCLUDE_DIR/MYSQL_LIB_DIR were specified,"
+    "Both MYSQL_CONFIG_EXECUTABLE and MYSQL_INCLUDE_DIR/MYSQL_LIB_DIR/MYSQL_PLUGIN_DIR were specified,"
     " mixing settings detected with mysql_config and manually set by variables"
     " is not supported and would confuse our build logic."
   )
@@ -374,7 +377,7 @@ macro(_mysql_config _var _regex _opt)
   IF(CMAKE_SYSTEM_NAME MATCHES "SunOS")
     string(REGEX REPLACE " -latomic" "" _mysql_config_output "${_mysql_config_output}")
   ENDIF()
-  string(REGEX REPLACE "${_regex}" "" _mysql_config_output "${_mysql_config_output}")
+    string(REGEX REPLACE "${_regex}" "" _mysql_config_output "${_mysql_config_output}")
   separate_arguments(_mysql_config_output)
   set(${_var} ${_mysql_config_output})
 endmacro()
@@ -557,7 +560,7 @@ endif()
 
 ##########################################################################
 #
-# Find MYSQL_LIB_DIR, MYSQL_LIB and MYSQL_LIBRARIES
+# Find MYSQL_LIB_DIR, MYSQL_LIB, MYSQL_PLUGIN_DIR and MYSQL_LIBRARIES
 #
 ##########################################################################
 
@@ -581,8 +584,12 @@ if(MYSQL_LIB_DIR)
   _check_lib_search_error(MYSQL_LIB_DIR MYSQL_LIB "")
   set(MYSQL_LIBRARIES ${MYSQL_LIB})
 
+  if(NOT DEFINED MYSQL_PLUGIN_DIR)
+    set(MYSQL_PLUGIN_DIR "${MYSQL_LIB_DIR}/plugin")
+  endif()
+
 elseif(MYSQL_DIR AND
-       (NOT _mysql_config_in_mysql_dir) AND 
+       (NOT _mysql_config_in_mysql_dir) AND
        (NOT _mysql_config_set_by_user))
 
   if(FINDMYSQL_DEBUG)
@@ -603,6 +610,10 @@ elseif(MYSQL_DIR AND
   get_filename_component(MYSQL_LIB_DIR "${MYSQL_LIB}" PATH)
   set(MYSQL_LIBRARIES "${MYSQL_LIB}")
 
+  if(NOT DEFINED MYSQL_PLUGIN_DIR AND MYSQL_LIB_DIR)
+    set(MYSQL_PLUGIN_DIR "${MYSQL_LIB_DIR}/plugin")
+  endif()
+
 elseif(MYSQL_CONFIG_EXECUTABLE)
 
   if(FINDMYSQL_DEBUG)
@@ -612,6 +623,7 @@ elseif(MYSQL_CONFIG_EXECUTABLE)
   # This code assumes there is just one "-L...." and that
   # no space between "-L" and the path
   _mysql_config(MYSQL_LIB_DIR "(^| )-L" "--libs")
+  _mysql_conf(MYSQL_PLUGIN_DIR  "--variable=plugindir")
 
   IF(CMAKE_SYSTEM_NAME MATCHES "SunOS")
     # This is needed to make Solaris binaries using the default runtime lib path
@@ -626,7 +638,7 @@ elseif(MYSQL_CONFIG_EXECUTABLE)
     MESSAGE(STATUS "MYSQL_LIB_DIR_LIST = ${MYSQL_LIB_DIR_LIST}")
 
     FOREACH(_path_to_check IN LISTS MYSQL_LIB_DIR)
-      FIND_LIBRARY(_mysql_client_lib_var 
+      FIND_LIBRARY(_mysql_client_lib_var
         NAMES ${_search_libs}
         PATHS ${_path_to_check}
         NO_DEFAULT_PATH
@@ -892,6 +904,7 @@ message(STATUS "MySQL client environment/cmake variables set that the user can o
 message(STATUS "  MYSQL_DIR                   : ${MYSQL_DIR}")
 message(STATUS "  MYSQL_INCLUDE_DIR           : ${MYSQL_INCLUDE_DIR}")
 message(STATUS "  MYSQL_LIB_DIR               : ${MYSQL_LIB_DIR}")
+message(STATUS "  MYSQL_PLUGIN_DIR            : ${MYSQL_PLUGIN_DIR}")
 message(STATUS "  MYSQL_CONFIG_EXECUTABLE     : ${MYSQL_CONFIG_EXECUTABLE}")
 message(STATUS "  MYSQL_CXX_LINKAGE           : ${MYSQL_CXX_LINKAGE}")
 message(STATUS "  MYSQL_CFLAGS                : ${MYSQL_CFLAGS}")
