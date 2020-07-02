@@ -627,7 +627,7 @@ IF(MYSQLCLIENT_STATIC_LINKING AND NOT RPM_BUILD)
 
     get_filename_component(lib_name ${lib} NAME_WE)
 
-    if(NOT lib_name MATCHES "mysql|protobuf|lber|ldap_r")
+    if(NOT lib_name MATCHES "mysql|protobuf|lber|ldap_r|ssl|crypto")
 
     message("found bundled libs: ${lib}")
 
