@@ -601,7 +601,7 @@ ELSE(WIN32)
 
 ENDIF(WIN32)
 
-IF(MYSQLCLIENT_STATIC_LINKING)
+IF(MYSQLCLIENT_STATIC_LINKING AND NOT RPM_BUILD)
 
   #Look for libraries and client-side plugins which are
   #bundled with the mysql client library and which are
