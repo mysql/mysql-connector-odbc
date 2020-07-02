@@ -69,5 +69,27 @@ function(setup_ssl_libs)
       "${OPENSSL_LIB_DIR}/${CRYPTO_LIB_NAME_WE}*"
     )
 
+  if(MYSQLCLIENT_STATIC_LINKING)
+
+    foreach(lib ${glob1} ${glob2})
+
+      message("-- bundling OpenSSL library: ${lib}")
+
+      if(WIN32 OR APPLE)
+        install(FILES ${lib}
+          DESTINATION "${LIB_SUBDIR}"
+          COMPONENT OpenSSLDll
+          )
+      else()
+        install(FILES ${lib}
+          DESTINATION "${LIB_SUBDIR}/private"
+          COMPONENT OpenSSLDll
+          )
+      endif()
+
+    endforeach()
+
+  endif()
+
   ENDIF(MYSQL8)
 endfunction(setup_ssl_libs)
