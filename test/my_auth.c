@@ -255,7 +255,7 @@ DECLARE_TEST(t_ldap_auth)
     */
     sprintf((char *)conn, "DSN=%s;UID=ldap_simple;PWD=%s;"
                           "DATABASE=test; PLUGIN_DIR=%s",
-              (char *)mydsn, ldap_simple_pwd,(char *) tplugin_dir);
+              (char *)mydsn, ldap_simple_pwd,(char *) plugin_dir);
     if (mysock != NULL)
     {
       strcat((char *)conn, ";SOCKET=");
@@ -304,7 +304,7 @@ DECLARE_TEST(t_ldap_auth)
     */
     sprintf((char *)conn, "DSN=%s;UID=%s;PWD=%s;"
                           "DATABASE=test; PLUGIN_DIR=%s",
-              (char *)mydsn, ldap_user ,ldap_scram_pwd,(char *) tplugin_dir);
+              (char *)mydsn, ldap_user ,ldap_scram_pwd,(char *) plugin_dir);
     if (mysock != NULL)
     {
       strcat((char *)conn, ";SOCKET=");
