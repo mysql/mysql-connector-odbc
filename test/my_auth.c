@@ -211,14 +211,11 @@ DECLARE_TEST(t_ldap_auth)
 #if MYSQL_VERSION_ID >= 80021
   SQLCHAR   conn[512], conn_out[512];
   SQLSMALLINT conn_out_len;
-  SQLCHAR *tplugin_dir= (SQLCHAR *)"/tmp/test_new_directory/";
-  SQLCHAR *tdefault_auth= (SQLCHAR *)"auth_test_plugin";
   HDBC hdbc1;
   HSTMT hstmt1;
   SQLCHAR buf[255];
   SQLLEN buflen;
   SQLRETURN rc;
-  SQLUSMALLINT plugin_status= FALSE;
   const char* ldap_user = getenv("LDAP_USER");
   const char* ldap_user_dn = getenv("LDAP_USER_DN");
   const char* ldap_simple_pwd = getenv("LDAP_SIMPLE_PWD");
@@ -271,28 +268,23 @@ DECLARE_TEST(t_ldap_auth)
       strcat((char *)conn, pbuff);
     }
 
-    expect_dbc(hdbc1, SQLDriverConnect(hdbc1, NULL, conn, SQL_NTS, conn_out,
+    expect_dbc(hdbc1, rc = SQLDriverConnect(hdbc1, NULL, conn, SQL_NTS, conn_out,
                                 sizeof(conn_out), &conn_out_len,
                                 SQL_DRIVER_NOPROMPT), SQL_ERROR);
 
-
-
+    rc= SQLExecDirect(hdbc1, (SQLCHAR *)"select 'Hello Simple LDAP'", SQL_NTS);
     if(rc == SQL_SUCCESS)
     {
-      rc= SQLExecDirect(hdbc1, (SQLCHAR *)"select 'Hello Simple LDAP'", SQL_NTS);
-      if(rc == SQL_SUCCESS)
+      SQLFetch(hdbc1);
+
+      SQLGetData(hstmt, 1, SQL_CHAR, buf, sizeof(buf), &buflen);
+      if(buflen > 0)
       {
-        SQLFetch(hdbc1);
-
-        SQLGetData(hstmt, 1, SQL_CHAR, buf, sizeof(buf), &buflen);
-        if(buflen > 0)
-        {
-          printf("OUTPUT: %s",buf);
-        }
+        printf("OUTPUT: %s",buf);
       }
-
-      SQLDisconnect(hdbc1);
     }
+
+    SQLDisconnect(hdbc1);
 
     ok_stmt(hstmt1, SQLFreeStmt(hstmt1, SQL_DROP));
     ok_con(hdbc1, SQLDisconnect(hdbc1));
@@ -329,23 +321,19 @@ DECLARE_TEST(t_ldap_auth)
                                 sizeof(conn_out), &conn_out_len,
                                 SQL_DRIVER_NOPROMPT), SQL_ERROR);
 
-
+    rc= SQLExecDirect(hdbc1, (SQLCHAR *)"select 'Hello Simple LDAP'", SQL_NTS);
     if(rc == SQL_SUCCESS)
     {
-      rc= SQLExecDirect(hdbc1, (SQLCHAR *)"select 'Hello Simple LDAP'", SQL_NTS);
-      if(rc == SQL_SUCCESS)
+      SQLFetch(hdbc1);
+
+      SQLGetData(hstmt, 1, SQL_CHAR, buf, sizeof(buf), &buflen);
+      if(buflen > 0)
       {
-        SQLFetch(hdbc1);
-
-        SQLGetData(hstmt, 1, SQL_CHAR, buf, sizeof(buf), &buflen);
-        if(buflen > 0)
-        {
-          printf("OUTPUT: %s",buf);
-        }
+        printf("OUTPUT: %s",buf);
       }
-
-      SQLDisconnect(hdbc1);
     }
+
+    SQLDisconnect(hdbc1);
 
     ok_stmt(hstmt1, SQLFreeStmt(hstmt1, SQL_DROP));
     ok_con(hdbc1, SQLDisconnect(hdbc1));
