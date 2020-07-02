@@ -35,6 +35,11 @@
 /* We don't want ansi calls to be mapped to unicode counterparts, but that does not work */
 /* #define SQL_NOUNICODEMAP 1*/
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 #ifdef HAVE_CONFIG_H
 # include <myconf.h>
 #endif
@@ -152,7 +157,7 @@ SQLCHAR *myplugindir= NULL;
 
 SQLCHAR *test_db= (SQLCHAR *)"client_odbc_test";
 /* Suffix is useful if a testsuite is run more than once */
-const SQLCHAR *testname_suffix="";
+const SQLCHAR *testname_suffix= (SQLCHAR*)"";
 /* -1 means that the fact has to be established, 0 - ansi driver, 1 - unicode */
 int     unicode_driver= -1;
 #define REQUIRES_UNICODE_DRIVER if (unicode_driver == 0) skip("This testcase is designed for Unicode drivers only")
@@ -675,13 +680,11 @@ static void print_diag_installer(BOOL is_success, const char *text,
 {
   if (!is_success)
   {
-    SQLCHAR     message[SQL_MAX_MESSAGE_LENGTH];
-    SQLINTEGER  error_code;
-    SQLSMALLINT length;
+    DWORD  error_code;
+    WORD length;
+    char     message[SQL_MAX_MESSAGE_LENGTH];
     SQLRETURN   drc;
-
     drc= SQLInstallerError(1, &error_code, message, SQL_MAX_MESSAGE_LENGTH - 1, &length);
-
     if (SQL_SUCCEEDED(drc))
       printf("# [%s] %s in %s on line %d\n",
              text, message, file, line);
@@ -1050,7 +1053,7 @@ const char *my_fetch_str(SQLHSTMT hstmt, SQLCHAR *szData,SQLUSMALLINT icol)
        better/(in more easy way) test the value */
     if (nLen < 0)
     {
-      strcpy(szData, "(Null)");
+      strcpy((char*)szData, "(Null)");
     }
     printMessage(" my_fetch_str: %s(%ld)", szData, nLen);
     return((const char *)szData);
@@ -1116,7 +1119,7 @@ int driver_supports_setpos(SQLHDBC hdbc)
 */
 int mysql_min_version(SQLHDBC hdbc, char *min_version, unsigned int length)
 {
-  SQLCHAR server_version[MYSQL_NAME_LEN+1];
+  char server_version[MYSQL_NAME_LEN+1];
   SQLRETURN rc;
 
   rc = SQLGetInfo(hdbc,SQL_DBMS_VER,server_version,MYSQL_NAME_LEN,NULL);
@@ -1205,7 +1208,7 @@ int get_connection(SQLHDBC *hdbc, const SQLCHAR *dsn, const SQLCHAR *uid,
   /* We never set the custom DSN, but sometimes use DRIVER instead */
   if (dsn == NULL)
     sprintf((char *)dsn_buf, "DSN=%s", (char *)mydsn);
-  else if (dsn == USE_DRIVER)
+  else if (dsn == (const SQLCHAR*)USE_DRIVER)
     sprintf((char *)dsn_buf, "DRIVER=%s", (char *)mydriver);
   else
     sprintf((char *)dsn_buf, "DSN=%s", (char *)dsn);
@@ -1213,7 +1216,7 @@ int get_connection(SQLHDBC *hdbc, const SQLCHAR *dsn, const SQLCHAR *uid,
   /* We never set the custom DSN, but sometimes use DRIVER instead */
   if (dsn == NULL)
     sprintf((char *)dsn_buf, "DSN=%s", (char *)mydsn);
-  else if (dsn == USE_DRIVER)
+  else if (dsn == (const SQLCHAR*)USE_DRIVER)
     sprintf((char *)dsn_buf, "DRIVER=%s", (char *)mydriver);
   else
     sprintf((char *)dsn_buf, "DSN=%s", (char *)dsn);
@@ -1230,7 +1233,7 @@ int get_connection(SQLHDBC *hdbc, const SQLCHAR *dsn, const SQLCHAR *uid,
   if (mysock && mysock[0])
   {
     sprintf((char *)socket_buf, ";SOCKET=%s", (char *)mysock);
-    strcat((char *)connIn, socket_buf);
+    strcat((char *)connIn, (char*)socket_buf);
   }
   if (db && db[0])
   {
@@ -1239,14 +1242,14 @@ int get_connection(SQLHDBC *hdbc, const SQLCHAR *dsn, const SQLCHAR *uid,
   }
   if (myport)
   {
-    sprintf(port_buf, ";PORT=%d", myport);
-    strcat((char *)connIn, port_buf);
+    sprintf((char*)port_buf, ";PORT=%d", myport);
+    strcat((char *)connIn, (char*)port_buf);
   }
 
   if (options != NULL && options[0] > 0)
   {
-    strcat(connIn, ";");
-    strcat(connIn, options);
+    strcat((char*)connIn, ";");
+    strcat((char*)connIn, (char*)options);
   }
 
 #if MYSQL_VERSION_ID >= 50507
@@ -1437,14 +1440,14 @@ SQLWCHAR *dup_wchar_t_as_sqlwchar(wchar_t *from, size_t len)
 {
   if (sizeof(wchar_t) == sizeof(SQLWCHAR))
   {
-    SQLWCHAR *to= gc_alloc(len * sizeof(SQLWCHAR));
+    SQLWCHAR *to= (SQLWCHAR*)gc_alloc(len * sizeof(SQLWCHAR));
     memcpy(to, from, len * sizeof(wchar_t));
     return to;
   }
   else
   {
     size_t i;
-    SQLWCHAR *to= gc_alloc(2 * len * sizeof(SQLWCHAR));
+    SQLWCHAR *to= (SQLWCHAR*)gc_alloc(2 * len * sizeof(SQLWCHAR));
     SQLWCHAR *out= to;
     for (i= 0; i < len; i++)
       to+= utf32toutf16((UTF32)from[i], (UTF16 *)to);
@@ -1467,7 +1470,7 @@ SQLWCHAR *dup_wchar_t_as_sqlwchar(wchar_t *from, size_t len)
 */
 SQLWCHAR *dup_char_as_sqlwchar(SQLCHAR *from)
 {
-  SQLWCHAR *to= gc_alloc((strlen((char *)from) + 1) * sizeof(SQLWCHAR));
+  SQLWCHAR *to= (SQLWCHAR*)gc_alloc((strlen((char *)from) + 1) * sizeof(SQLWCHAR));
   SQLWCHAR *out= to;
   while (from && *from)
     *(to++)= (SQLWCHAR)*(from++);
@@ -1503,8 +1506,12 @@ int using_unixodbc_version(SQLHANDLE henv, SQLCHAR *ver)
   SQLCHAR buf[10];
   if(SQLGetEnvAttr(henv, SQL_ATTR_UNIXODBC_VERSION, buf, 10, NULL) != SQL_SUCCESS)
     return 0;
-  if(!strcmp(buf, ver))
+  if(!strcmp((char*)buf, (char*)ver))
     return 1;
 #endif /* SQL_ATTR_UNIXODBC_VERSION */
   return 0;
 }
+
+#ifdef __cplusplus
+}
+#endif

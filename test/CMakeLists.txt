@@ -44,15 +44,20 @@ IF(NOT WIN32)
   SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${ODBC_LINK_FLAGS}")
 ENDIF(NOT WIN32)
 
-FOREACH(T my_basics my_blob my_bulk my_catalog1 my_catalog2 my_crash my_curext my_cursor
-		my_datetime my_desc my_dyn_cursor my_error my_info my_keys my_param
-		my_prepare my_relative my_result1 my_result2 my_scroll my_setup my_tran
-		my_types my_unicode my_unixodbc my_use_result my_bug13766 my_pooling
-                my_auth my_data)
+FOREACH(FN my_basics.c my_blob.c my_bulk.c my_catalog1.c my_catalog2.c
+    my_crash.c my_curext.c my_cursor.c my_datetime.c my_desc.c
+    my_dyn_cursor.c my_error.c my_info.c my_keys.c my_param.c
+		my_prepare.c my_relative.c my_result1.c my_result2.c my_scroll.c
+    my_setup.c my_tran.c my_types.c my_unicode.c my_unixodbc.c
+    my_use_result.c my_bug13766.c my_pooling.c my_auth.c my_data.c
+    my_options.cc)
+    
+  GET_FILENAME_COMPONENT(T ${FN} NAME_WE)
+    
   IF(WIN32)
-    ADD_EXECUTABLE(${T} ${T}.c odbctap.h)
+    ADD_EXECUTABLE(${T} ${FN} odbctap.h)
   ELSE(WIN32)
-    ADD_EXECUTABLE(${T} ${T}.c)
+    ADD_EXECUTABLE(${T} ${FN})
   ENDIF(WIN32)
 
   add_dependencies(${T} generate_test_config_files)
@@ -99,7 +104,7 @@ elseif(NOT WIN32)
   set_property(TARGET ${T} APPEND PROPERTY INSTALL_RPATH "$ORIGIN")
 endif()
 
-ENDFOREACH(T)
+ENDFOREACH(FN)
 
 # Adding testsuites for testing driver without DM. May be useful to test behaviors that normally are initiated by DM only
 # Separate testsuites for ansi and unicode driver are created - we can't use same test for both since there is no DM to convert

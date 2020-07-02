@@ -198,6 +198,8 @@ static SQLWCHAR W_NO_DATE_OVERFLOW[] =
 { 'N', 'O', '_', 'D', 'A', 'T', 'E', '_', 'O', 'V', 'E', 'R', 'F', 'L', 'O', 'W', 0 };
 static SQLWCHAR W_ENABLE_LOCAL_INFILE[] =
 { 'E', 'N', 'A', 'B', 'L', 'E', '_', 'L', 'O', 'C', 'A', 'L', '_', 'I', 'N', 'F', 'I', 'L', 'E', 0 };
+static SQLWCHAR W_LOAD_DATA_LOCAL_DIR[] =
+{ 'L', 'O', 'A', 'D', '_', 'D', 'A', 'T', 'A', '_', 'L', 'O', 'C', 'A', 'L', '_', 'D', 'I', 'R', 0 };
 
 /* DS_PARAM */
 /* externally used strings */
@@ -231,7 +233,7 @@ SQLWCHAR *dsnparams[]= {W_DSN, W_DRIVER, W_DESCRIPTION, W_SERVER,
                         W_GET_SERVER_PUBLIC_KEY, W_ENABLE_DNS_SRV, W_MULTI_HOST,
                         W_SAVEFILE, W_RSAKEY, W_PLUGIN_DIR, W_DEFAULT_AUTH,
                         W_NO_TLS_1, W_NO_TLS_1_1, W_NO_TLS_1_2,
-                        W_SSLMODE, W_NO_DATE_OVERFLOW};
+                        W_SSLMODE, W_NO_DATE_OVERFLOW, W_LOAD_DATA_LOCAL_DIR};
 static const
 int dsnparamcnt= sizeof(dsnparams) / sizeof(SQLWCHAR *);
 /* DS_PARAM */
@@ -685,6 +687,7 @@ void ds_delete(DataSource *ds)
   x_free(ds->savefile);
   x_free(ds->plugin_dir);
   x_free(ds->default_auth);
+  x_free(ds->load_data_local_dir);
 
   x_free(ds->name8);
   x_free(ds->driver8);
@@ -706,6 +709,7 @@ void ds_delete(DataSource *ds)
   x_free(ds->savefile8);
   x_free(ds->plugin_dir8);
   x_free(ds->default_auth8);
+  x_free(ds->load_data_local_dir8);
 
   x_free(ds);
 }
@@ -904,6 +908,8 @@ void ds_map_param(DataSource *ds, const SQLWCHAR *param,
     *booldest = &ds->no_date_overflow;
   else if (!sqlwcharcasecmp(W_ENABLE_LOCAL_INFILE, param))
     *booldest = &ds->enable_local_infile;
+  else if (!sqlwcharcasecmp(W_LOAD_DATA_LOCAL_DIR, param))
+    *strdest= &ds->load_data_local_dir;
 
   /* DS_PARAM */
 }
@@ -919,7 +925,7 @@ void ds_map_param(DataSource *ds, const SQLWCHAR *param,
  */
 int ds_lookup(DataSource *ds)
 {
-#define DS_BUF_LEN 8192  
+#define DS_BUF_LEN 8192
   SQLWCHAR buf[DS_BUF_LEN];
   SQLWCHAR *entries= buf;
   SQLWCHAR **dest;
@@ -1400,7 +1406,8 @@ int ds_add(DataSource *ds)
   if (ds_add_intprop(ds->name, W_NO_TLS_1_2, ds->no_tls_1_2)) goto error;
   if (ds_add_intprop(ds->name, W_NO_DATE_OVERFLOW, ds->no_date_overflow)) goto error;
   if (ds_add_intprop(ds->name, W_ENABLE_LOCAL_INFILE, ds->enable_local_infile)) goto error;
-  /* DS_PARAM */
+  if (ds_add_strprop(ds->name, W_LOAD_DATA_LOCAL_DIR, ds->load_data_local_dir)) goto error;
+ /* DS_PARAM */
 
   rc= 0;
 

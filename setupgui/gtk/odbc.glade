@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Generated with glade 3.22.1 -->
+<!-- Generated with glade 3.18.3 -->
 <!-- *****************************************************************************************
  Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
 
@@ -30,7 +30,7 @@
  51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 -->
 <interface>
-  <requires lib="gtk+" version="3.0"/>
+  <requires lib="gtk+" version="2.24"/>
   <object class="GtkAdjustment" id="adjustment1">
     <property name="upper">65535</property>
     <property name="value">3306</property>
@@ -52,15 +52,12 @@
     <property name="window_position">center-on-parent</property>
     <property name="destroy_with_parent">True</property>
     <child>
-      <placeholder/>
-    </child>
-    <child>
       <object class="GtkVBox" id="vbox1">
         <property name="visible">True</property>
         <property name="can_focus">False</property>
         <child>
           <object class="GtkImage" id="header">
-            <property name="width_request">520</property>
+            <property name="width_request">568</property>
             <property name="height_request">63</property>
             <property name="visible">True</property>
             <property name="can_focus">False</property>
@@ -449,6 +446,7 @@
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="receives_default">False</property>
+                            <property name="xalign">0.5</property>
                             <property name="draw_indicator">True</property>
                           </object>
                           <packing>
@@ -463,6 +461,7 @@
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="receives_default">False</property>
+                            <property name="xalign">0.5</property>
                             <property name="draw_indicator">True</property>
                           </object>
                           <packing>
@@ -478,6 +477,7 @@
                             <property name="can_focus">True</property>
                             <property name="receives_default">False</property>
                             <property name="use_underline">True</property>
+                            <property name="xalign">0.5</property>
                             <property name="draw_indicator">True</property>
                           </object>
                           <packing>
@@ -493,6 +493,7 @@
                             <property name="can_focus">True</property>
                             <property name="receives_default">False</property>
                             <property name="use_underline">True</property>
+                            <property name="xalign">0.5</property>
                             <property name="draw_indicator">True</property>
                           </object>
                           <packing>
@@ -507,6 +508,7 @@
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="receives_default">False</property>
+                            <property name="xalign">0.5</property>
                             <property name="draw_indicator">True</property>
                           </object>
                           <packing>
@@ -521,6 +523,7 @@
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="receives_default">False</property>
+                            <property name="xalign">0.5</property>
                             <property name="draw_indicator">True</property>
                           </object>
                         </child>
@@ -531,6 +534,7 @@
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="receives_default">False</property>
+                            <property name="xalign">0.5</property>
                             <property name="draw_indicator">True</property>
                           </object>
                           <packing>
@@ -545,6 +549,7 @@
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="receives_default">False</property>
+                            <property name="xalign">0.5</property>
                             <property name="draw_indicator">True</property>
                           </object>
                           <packing>
@@ -561,6 +566,7 @@
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="receives_default">False</property>
+                            <property name="xalign">0.5</property>
                             <property name="draw_indicator">True</property>
                           </object>
                           <packing>
@@ -611,7 +617,7 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkTable" id="table2">
+                      <object class="GtkTable" id="connection_input_table">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <property name="border_width">8</property>
@@ -665,7 +671,6 @@
                           <object class="GtkLabel" id="labelPluginDir">
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
-                            <property name="hexpand">False</property>
                             <property name="label" translatable="yes">Plugin directory:</property>
                             <property name="justify">right</property>
                             <property name="width_chars">10</property>
@@ -683,7 +688,6 @@
                           <object class="GtkLabel" id="labelAuth">
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
-                            <property name="hexpand">True</property>
                             <property name="label" translatable="yes">Authentication Library:</property>
                             <property name="justify">right</property>
                             <property name="width_chars">10</property>
@@ -731,6 +735,8 @@
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
                                 <property name="receives_default">True</property>
+                                <property name="relief">none</property>
+                                <property name="xalign">0.46000000834465027</property>
                               </object>
                               <packing>
                                 <property name="expand">False</property>
@@ -800,6 +806,7 @@
                         <property name="has_tooltip">True</property>
                         <property name="tooltip_text" translatable="yes">Change BIGINT columns to INT  columns (some applications can't handle BIGINT).</property>
                         <property name="use_underline">True</property>
+                        <property name="xalign">0.5</property>
                         <property name="draw_indicator">True</property>
                       </object>
                       <packing>
@@ -815,6 +822,7 @@
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="receives_default">False</property>
+                        <property name="xalign">0.5</property>
                         <property name="draw_indicator">True</property>
                       </object>
                       <packing>
@@ -833,6 +841,7 @@
                         <property name="has_tooltip">True</property>
                         <property name="tooltip_text" translatable="yes">SQLDescribeCol() returns fully qualified column names.</property>
                         <property name="use_underline">True</property>
+                        <property name="xalign">0.5</property>
                         <property name="draw_indicator">True</property>
                       </object>
                       <packing>
@@ -851,6 +860,7 @@
                         <property name="has_tooltip">True</property>
                         <property name="tooltip_text" translatable="yes">Forces results from the catalog functions, such as SQLTables, to always return NULL and the driver to report that catalogs are not supported.</property>
                         <property name="use_underline">True</property>
+                        <property name="xalign">0.5</property>
                         <property name="draw_indicator">True</property>
                       </object>
                       <packing>
@@ -866,6 +876,7 @@
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="receives_default">False</property>
+                        <property name="xalign">0.5</property>
                         <property name="draw_indicator">True</property>
                       </object>
                       <packing>
@@ -884,6 +895,7 @@
                         <property name="has_tooltip">True</property>
                         <property name="tooltip_text" translatable="yes">Driver won't use INFORMATION_SCHEMA that can make some functions work faster in certain cases. Also quality of results may be lower as some data is only available in I_S.</property>
                         <property name="use_underline">True</property>
+                        <property name="xalign">0.5</property>
                         <property name="draw_indicator">True</property>
                       </object>
                       <packing>
@@ -929,6 +941,7 @@
                             <property name="has_tooltip">True</property>
                             <property name="tooltip_text" translatable="yes">Enable or disable the dynamic cursor support. (Not allowed in Connector/ODBC 2.50.)</property>
                             <property name="use_underline">True</property>
+                            <property name="xalign">0.5</property>
                             <property name="draw_indicator">True</property>
                           </object>
                           <packing>
@@ -947,6 +960,7 @@
                             <property name="has_tooltip">True</property>
                             <property name="tooltip_text" translatable="yes">Force use of ODBC manager cursors (experimental).</property>
                             <property name="use_underline">True</property>
+                            <property name="xalign">0.5</property>
                             <property name="draw_indicator">True</property>
                           </object>
                           <packing>
@@ -965,6 +979,7 @@
                             <property name="has_tooltip">True</property>
                             <property name="tooltip_text" translatable="yes">Do not cache the results locally in the driver, instead read from server (mysql_use_result()). This works only for forward-only cursors. This option is very important in dealing with large tables when you don't want the driver to cache the entire result set.</property>
                             <property name="use_underline">True</property>
+                            <property name="xalign">0.5</property>
                             <property name="draw_indicator">True</property>
                           </object>
                           <packing>
@@ -983,6 +998,7 @@
                             <property name="has_tooltip">True</property>
                             <property name="tooltip_text" translatable="yes">Force the use of Forward-only cursor type. In case of applications setting the default static/dynamic cursor type, and one wants the driver to use non-cache result sets, then this option ensures the forward-only cursor behavior.</property>
                             <property name="use_underline">True</property>
+                            <property name="xalign">0.5</property>
                             <property name="draw_indicator">True</property>
                           </object>
                           <packing>
@@ -1002,6 +1018,7 @@
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
                                 <property name="receives_default">False</property>
+                                <property name="xalign">0.5</property>
                                 <property name="draw_indicator">True</property>
                               </object>
                               <packing>
@@ -1057,6 +1074,7 @@
                             <property name="has_tooltip">True</property>
                             <property name="tooltip_text" translatable="yes">The client can't handle that MySQL returns the true value of affected rows. If this flag is set, MySQL returns “found rows” instead. You must have MySQL 3.21.14 or newer to get this to work.</property>
                             <property name="use_underline">True</property>
+                            <property name="xalign">0.5</property>
                             <property name="draw_indicator">True</property>
                           </object>
                           <packing>
@@ -1074,6 +1092,7 @@
                             <property name="receives_default">False</property>
                             <property name="tooltip_text" translatable="yes">When set, this option causes the connection to set the SQL_AUTO_IS_NULL option to 1. This disables the standard behavior, but may enable older applications to correctly identify AUTO_INCREMENT values.</property>
                             <property name="use_underline">True</property>
+                            <property name="xalign">0.5</property>
                             <property name="draw_indicator">True</property>
                           </object>
                           <packing>
@@ -1092,6 +1111,7 @@
                             <property name="has_tooltip">True</property>
                             <property name="tooltip_text" translatable="yes">Pad CHAR columns to full column length.</property>
                             <property name="use_underline">True</property>
+                            <property name="xalign">0.5</property>
                             <property name="draw_indicator">True</property>
                           </object>
                           <packing>
@@ -1110,6 +1130,7 @@
                             <property name="has_tooltip">True</property>
                             <property name="tooltip_text" translatable="yes">Translates zero dates (XXXX-00-00) into the minimum date values supported by ODBC, XXXX-01-01. This resolves an issue where some statement swill not work because the date returned and the minimumd ODBC date value are incompatible.</property>
                             <property name="use_underline">True</property>
+                            <property name="xalign">0.5</property>
                             <property name="yalign">0.56000000238418579</property>
                             <property name="draw_indicator">True</property>
                           </object>
@@ -1158,6 +1179,7 @@
                         <property name="has_tooltip">True</property>
                         <property name="tooltip_text" translatable="yes">Make a debug log in /tmp/myodbc.log.</property>
                         <property name="use_underline">True</property>
+                        <property name="xalign">0.5</property>
                         <property name="draw_indicator">True</property>
                       </object>
                       <packing>
@@ -1455,6 +1477,7 @@
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="receives_default">False</property>
+                        <property name="xalign">0.5</property>
                         <property name="draw_indicator">True</property>
                       </object>
                       <packing>
@@ -1470,6 +1493,7 @@
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="receives_default">False</property>
+                        <property name="xalign">0.5</property>
                         <property name="draw_indicator">True</property>
                       </object>
                       <packing>
@@ -1485,6 +1509,7 @@
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="receives_default">False</property>
+                        <property name="xalign">0.5</property>
                         <property name="draw_indicator">True</property>
                       </object>
                       <packing>
@@ -1556,16 +1581,197 @@
                     <property name="can_focus">False</property>
                     <property name="border_width">8</property>
                     <child>
-                      <object class="GtkCheckButton" id="safe">
-                        <property name="label" translatable="yes">Enable Safe Options (see documentation)</property>
-                        <property name="use_action_appearance">False</property>
+                      <object class="GtkTable" id="table5">
                         <property name="visible">True</property>
-                        <property name="can_focus">True</property>
-                        <property name="receives_default">False</property>
-                        <property name="has_tooltip">True</property>
-                        <property name="tooltip_text" translatable="yes">Add some extra safety checks (should not be needed but...).</property>
-                        <property name="use_underline">True</property>
-                        <property name="draw_indicator">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="n_rows">8</property>
+                        <property name="n_columns">2</property>
+                        <child>
+                          <placeholder/>
+                        </child>
+                        <child>
+                          <placeholder/>
+                        </child>
+                        <child>
+                          <placeholder/>
+                        </child>
+                        <child>
+                          <placeholder/>
+                        </child>
+                        <child>
+                          <object class="GtkCheckButton" id="safe">
+                            <property name="label" translatable="yes">Enable Safe Options (see documentation)</property>
+                            <property name="use_action_appearance">False</property>
+                            <property name="visible">True</property>
+                            <property name="can_focus">True</property>
+                            <property name="receives_default">False</property>
+                            <property name="has_tooltip">True</property>
+                            <property name="tooltip_text" translatable="yes">Add some extra safety checks (should not be needed but...).</property>
+                            <property name="use_underline">True</property>
+                            <property name="xalign">0.5</property>
+                            <property name="draw_indicator">True</property>
+                          </object>
+                        </child>
+                        <child>
+                          <object class="GtkCheckButton" id="default_bigint_bind_str">
+                            <property name="label" translatable="yes">Bind BIGINT parameters as strings</property>
+                            <property name="use_action_appearance">False</property>
+                            <property name="visible">True</property>
+                            <property name="can_focus">True</property>
+                            <property name="receives_default">False</property>
+                            <property name="tooltip_text" translatable="yes">Causes BIGINT parameters to be bound as strings</property>
+                            <property name="use_underline">True</property>
+                            <property name="xalign">0</property>
+                            <property name="draw_indicator">True</property>
+                          </object>
+                          <packing>
+                            <property name="left_attach">1</property>
+                            <property name="right_attach">2</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkCheckButton" id="no_date_overflow">
+                            <property name="label" translatable="yes">Disable Date Overflow error</property>
+                            <property name="visible">True</property>
+                            <property name="can_focus">True</property>
+                            <property name="receives_default">False</property>
+                            <property name="xalign">0</property>
+                            <property name="draw_indicator">True</property>
+                          </object>
+                          <packing>
+                            <property name="left_attach">1</property>
+                            <property name="right_attach">2</property>
+                            <property name="top_attach">1</property>
+                            <property name="bottom_attach">2</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkCheckButton" id="dont_use_set_locale">
+                            <property name="label" translatable="yes">Don't Use setlocale()</property>
+                            <property name="use_action_appearance">False</property>
+                            <property name="visible">True</property>
+                            <property name="can_focus">True</property>
+                            <property name="receives_default">False</property>
+                            <property name="has_tooltip">True</property>
+                            <property name="tooltip_text" translatable="yes">Disable the use of extended fetch (experimental).</property>
+                            <property name="use_underline">True</property>
+                            <property name="xalign">0</property>
+                            <property name="draw_indicator">True</property>
+                          </object>
+                          <packing>
+                            <property name="top_attach">1</property>
+                            <property name="bottom_attach">2</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkCheckButton" id="ignore_space_after_function_names">
+                            <property name="label" translatable="yes">Ignore space after function names</property>
+                            <property name="use_action_appearance">False</property>
+                            <property name="visible">True</property>
+                            <property name="can_focus">True</property>
+                            <property name="receives_default">False</property>
+                            <property name="has_tooltip">True</property>
+                            <property name="tooltip_text" translatable="yes">Tell server to ignore space after function name and before ‘(’ (needed by PowerBuilder). This makes all function names keywords.</property>
+                            <property name="use_underline">True</property>
+                            <property name="xalign">0</property>
+                            <property name="draw_indicator">True</property>
+                          </object>
+                          <packing>
+                            <property name="top_attach">2</property>
+                            <property name="bottom_attach">3</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkCheckButton" id="read_options_from_mycnf">
+                            <property name="label" translatable="yes">Read options from my.cnf</property>
+                            <property name="use_action_appearance">False</property>
+                            <property name="visible">True</property>
+                            <property name="can_focus">True</property>
+                            <property name="receives_default">False</property>
+                            <property name="has_tooltip">True</property>
+                            <property name="tooltip_text" translatable="yes">Read parameters from the [client] and [odbc] groups from my.cnf.</property>
+                            <property name="use_underline">True</property>
+                            <property name="xalign">0</property>
+                            <property name="draw_indicator">True</property>
+                          </object>
+                          <packing>
+                            <property name="top_attach">3</property>
+                            <property name="bottom_attach">4</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkCheckButton" id="disable_transactions">
+                            <property name="label" translatable="yes">Disable transaction support</property>
+                            <property name="use_action_appearance">False</property>
+                            <property name="visible">True</property>
+                            <property name="can_focus">True</property>
+                            <property name="receives_default">False</property>
+                            <property name="has_tooltip">True</property>
+                            <property name="tooltip_text" translatable="yes">Disable transactions.</property>
+                            <property name="use_underline">True</property>
+                            <property name="xalign">0</property>
+                            <property name="draw_indicator">True</property>
+                          </object>
+                          <packing>
+                            <property name="top_attach">4</property>
+                            <property name="bottom_attach">5</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <placeholder/>
+                        </child>
+                        <child>
+                          <placeholder/>
+                        </child>
+                        <child>
+                          <object class="GtkCheckButton" id="min_date_to_zero">
+                            <property name="label" translatable="yes">Bind minimal date as zero date</property>
+                            <property name="use_action_appearance">False</property>
+                            <property name="visible">True</property>
+                            <property name="can_focus">True</property>
+                            <property name="receives_default">False</property>
+                            <property name="has_tooltip">True</property>
+                            <property name="tooltip_text" translatable="yes">Translates the minimum ODBC date value (XXXX-01-01) to the zero date format supported by MySQL (XXXX-00-00). This resolves an issue where some statement swill not work because the date returned and the minimumd ODBC date value are incompatible.</property>
+                            <property name="use_underline">True</property>
+                            <property name="xalign">0</property>
+                            <property name="draw_indicator">True</property>
+                          </object>
+                          <packing>
+                            <property name="top_attach">5</property>
+                            <property name="bottom_attach">6</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkCheckButton" id="no_ssps">
+                            <property name="label" translatable="yes">Prepare statements on the client</property>
+                            <property name="use_action_appearance">False</property>
+                            <property name="visible">True</property>
+                            <property name="can_focus">True</property>
+                            <property name="receives_default">False</property>
+                            <property name="tooltip_text" translatable="yes">Do not use the Server-side prepared statements and prepare them on the client</property>
+                            <property name="use_underline">True</property>
+                            <property name="xalign">0</property>
+                            <property name="draw_indicator">True</property>
+                          </object>
+                          <packing>
+                            <property name="top_attach">6</property>
+                            <property name="bottom_attach">7</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkCheckButton" id="enable_local_infile">
+                            <property name="label" translatable="yes">Enable LOAD DATA LOCAL INFILE statements</property>
+                            <property name="visible">True</property>
+                            <property name="can_focus">True</property>
+                            <property name="receives_default">False</property>
+                            <property name="xalign">0</property>
+                            <property name="draw_indicator">True</property>
+                          </object>
+                          <packing>
+                            <property name="top_attach">7</property>
+                            <property name="bottom_attach">8</property>
+                          </packing>
+                        </child>
                       </object>
                       <packing>
                         <property name="expand">True</property>
@@ -1574,157 +1780,67 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkCheckButton" id="dont_use_set_locale">
-                        <property name="label" translatable="yes">Don't Use setlocale()</property>
-                        <property name="use_action_appearance">False</property>
+                      <object class="GtkTable" id="table6">
                         <property name="visible">True</property>
-                        <property name="can_focus">True</property>
-                        <property name="receives_default">False</property>
-                        <property name="has_tooltip">True</property>
-                        <property name="tooltip_text" translatable="yes">Disable the use of extended fetch (experimental).</property>
-                        <property name="use_underline">True</property>
-                        <property name="draw_indicator">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="border_width">8</property>
+                        <property name="n_columns">2</property>
+                        <property name="column_spacing">8</property>
+                        <property name="row_spacing">5</property>
+                        <child>
+                          <object class="GtkLabel" id="labelPluginDir1">
+                            <property name="visible">True</property>
+                            <property name="can_focus">False</property>
+                            <property name="label" translatable="yes">Plugin directory:</property>
+                            <property name="justify">right</property>
+                            <property name="width_chars">10</property>
+                            <property name="max_width_chars">10</property>
+                            <property name="xalign">1</property>
+                          </object>
+                          <packing>
+                            <property name="x_options">GTK_EXPAND | GTK_SHRINK | GTK_FILL</property>
+                            <property name="y_options"/>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkHBox" id="hbox_plugin1">
+                            <property name="visible">True</property>
+                            <property name="can_focus">False</property>
+                            <child>
+                              <object class="GtkEntry" id="load_data_local_dir">
+                                <property name="visible">True</property>
+                                <property name="can_focus">True</property>
+                              </object>
+                              <packing>
+                                <property name="expand">True</property>
+                                <property name="fill">True</property>
+                                <property name="position">0</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkButton" id="load_data_local_dir_button">
+                                <property name="label" translatable="yes">...</property>
+                                <property name="visible">True</property>
+                                <property name="can_focus">True</property>
+                                <property name="receives_default">True</property>
+                              </object>
+                              <packing>
+                                <property name="expand">False</property>
+                                <property name="fill">True</property>
+                                <property name="position">1</property>
+                              </packing>
+                            </child>
+                          </object>
+                          <packing>
+                            <property name="left_attach">1</property>
+                            <property name="right_attach">2</property>
+                          </packing>
+                        </child>
                       </object>
                       <packing>
-                        <property name="expand">True</property>
+                        <property name="expand">False</property>
                         <property name="fill">True</property>
                         <property name="position">1</property>
-                      </packing>
-                    </child>
-                    <child>
-                      <object class="GtkCheckButton" id="ignore_space_after_function_names">
-                        <property name="label" translatable="yes">Ignore space after function names</property>
-                        <property name="use_action_appearance">False</property>
-                        <property name="visible">True</property>
-                        <property name="can_focus">True</property>
-                        <property name="receives_default">False</property>
-                        <property name="has_tooltip">True</property>
-                        <property name="tooltip_text" translatable="yes">Tell server to ignore space after function name and before ‘(’ (needed by PowerBuilder). This makes all function names keywords.</property>
-                        <property name="use_underline">True</property>
-                        <property name="draw_indicator">True</property>
-                      </object>
-                      <packing>
-                        <property name="expand">True</property>
-                        <property name="fill">True</property>
-                        <property name="position">2</property>
-                      </packing>
-                    </child>
-                    <child>
-                      <object class="GtkCheckButton" id="read_options_from_mycnf">
-                        <property name="label" translatable="yes">Read options from my.cnf</property>
-                        <property name="use_action_appearance">False</property>
-                        <property name="visible">True</property>
-                        <property name="can_focus">True</property>
-                        <property name="receives_default">False</property>
-                        <property name="has_tooltip">True</property>
-                        <property name="tooltip_text" translatable="yes">Read parameters from the [client] and [odbc] groups from my.cnf.</property>
-                        <property name="use_underline">True</property>
-                        <property name="draw_indicator">True</property>
-                      </object>
-                      <packing>
-                        <property name="expand">True</property>
-                        <property name="fill">True</property>
-                        <property name="position">3</property>
-                      </packing>
-                    </child>
-                    <child>
-                      <object class="GtkCheckButton" id="disable_transactions">
-                        <property name="label" translatable="yes">Disable transaction support</property>
-                        <property name="use_action_appearance">False</property>
-                        <property name="visible">True</property>
-                        <property name="can_focus">True</property>
-                        <property name="receives_default">False</property>
-                        <property name="has_tooltip">True</property>
-                        <property name="tooltip_text" translatable="yes">Disable transactions.</property>
-                        <property name="use_underline">True</property>
-                        <property name="draw_indicator">True</property>
-                      </object>
-                      <packing>
-                        <property name="expand">True</property>
-                        <property name="fill">True</property>
-                        <property name="position">4</property>
-                      </packing>
-                    </child>
-                    <child>
-                      <object class="GtkCheckButton" id="min_date_to_zero">
-                        <property name="label" translatable="yes">Bind minimal date as zero date</property>
-                        <property name="use_action_appearance">False</property>
-                        <property name="visible">True</property>
-                        <property name="can_focus">True</property>
-                        <property name="receives_default">False</property>
-                        <property name="has_tooltip">True</property>
-                        <property name="tooltip_text" translatable="yes">Translates the minimum ODBC date value (XXXX-01-01) to the zero date format supported by MySQL (XXXX-00-00). This resolves an issue where some statement swill not work because the date returned and the minimumd ODBC date value are incompatible.</property>
-                        <property name="use_underline">True</property>
-                        <property name="draw_indicator">True</property>
-                      </object>
-                      <packing>
-                        <property name="expand">True</property>
-                        <property name="fill">True</property>
-                        <property name="position">5</property>
-                      </packing>
-                    </child>
-                    <child>
-                      <object class="GtkCheckButton" id="no_ssps">
-                        <property name="label" translatable="yes">Prepare statements on the client</property>
-                        <property name="use_action_appearance">False</property>
-                        <property name="visible">True</property>
-                        <property name="can_focus">True</property>
-                        <property name="receives_default">False</property>
-                        <property name="tooltip_text" translatable="yes">Do not use the Server-side prepared statements and prepare them on the client</property>
-                        <property name="use_underline">True</property>
-                        <property name="draw_indicator">True</property>
-                      </object>
-                      <packing>
-                        <property name="expand">True</property>
-                        <property name="fill">True</property>
-                        <property name="position">6</property>
-                      </packing>
-                    </child>
-                    <child>
-                      <object class="GtkCheckButton" id="default_bigint_bind_str">
-                        <property name="label" translatable="yes">Bind BIGINT parameters as strings</property>
-                        <property name="use_action_appearance">False</property>
-                        <property name="visible">True</property>
-                        <property name="can_focus">True</property>
-                        <property name="receives_default">False</property>
-                        <property name="tooltip_text" translatable="yes">Causes BIGINT parameters to be bound as strings</property>
-                        <property name="use_underline">True</property>
-                        <property name="draw_indicator">True</property>
-                      </object>
-                      <packing>
-                        <property name="expand">True</property>
-                        <property name="fill">True</property>
-                        <property name="position">7</property>
-                      </packing>
-                    </child>
-                    <child>
-                      <object class="GtkCheckButton" id="no_date_overflow">
-                        <property name="label" translatable="yes">Disable Date Overflow error</property>
-                        <property name="visible">True</property>
-                        <property name="can_focus">True</property>
-                        <property name="receives_default">False</property>
-                        <property name="xalign">0.5</property>
-                        <property name="draw_indicator">True</property>
-                      </object>
-                      <packing>
-                        <property name="expand">True</property>
-                        <property name="fill">True</property>
-                        <property name="position">8</property>
-                      </packing>
-                    </child>
-                    <child>
-                      <object class="GtkCheckButton" id="enable_local_infile">
-                        <property name="label" translatable="yes">Enable LOAD DATA LOCAL INFILE statements</property>
-                        <property name="visible">True</property>
-                        <property name="can_focus">True</property>
-                        <property name="receives_default">False</property>
-                        <property name="xalign">0.5</property>
-                        <property name="draw_indicator">True</property>
-                      </object>
-                      <packing>
-                        <property name="expand">True</property>
-                        <property name="fill">True</property>
-                        <property name="position">9</property>
                       </packing>
                     </child>
                   </object>

@@ -140,6 +140,8 @@
 #define IDC_CHECK_enable_local_infile   10063
 #define IDC_CHECK_enable_dns_srv        10064
 #define IDC_CHECK_multi_host            10065
+#define IDC_EDIT_load_data_local_dir    10066
+#define IDC_CHOOSER_load_data_local_dir 10067
 #define IDC_BUTTON_TEST                 11014
 #define IDC_BUTTON_HELP                 11015
 #define IDC_STATIC                      -1

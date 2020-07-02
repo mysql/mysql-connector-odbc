@@ -539,6 +539,13 @@ SQLRETURN myodbc_do_connect(DBC *dbc, DataSource *ds)
     mysql_options(mysql, MYSQL_OPT_LOCAL_INFILE, &on_int);
   }
 
+  if (ds->load_data_local_dir && ds->load_data_local_dir[0])
+  {
+    ds_get_utf8attr(ds->load_data_local_dir, &ds->load_data_local_dir8);
+    mysql_options(mysql, MYSQL_OPT_LOAD_DATA_LOCAL_DIR,
+                  ds->load_data_local_dir8);
+  }
+
 #if MYSQL_VERSION_ID >= 50711
   if (ds->sslmode)
   {

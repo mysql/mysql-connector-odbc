@@ -407,6 +407,7 @@ void syncTabsData(HWND hwnd, DataSource *params)
   GET_BOOL_TAB(MISC_TAB, default_bigint_bind_str);
   GET_BOOL_TAB(MISC_TAB, no_date_overflow);
   GET_BOOL_TAB(MISC_TAB, enable_local_infile);
+  GET_STRING_TAB(MISC_TAB, load_data_local_dir);
 }
 
 /*
@@ -512,6 +513,7 @@ void syncTabs(HWND hwnd, DataSource *params)
   SET_BOOL_TAB(MISC_TAB, default_bigint_bind_str);
   SET_BOOL_TAB(MISC_TAB, no_date_overflow);
   SET_BOOL_TAB(MISC_TAB, enable_local_infile);
+  SET_STRING_TAB(MISC_TAB, load_data_local_dir);
 }
 
 void FillParameters(HWND hwnd, DataSource *params)

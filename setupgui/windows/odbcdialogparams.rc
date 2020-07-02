@@ -1,5 +1,5 @@
 /////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License, version 2.0, as
@@ -93,38 +93,38 @@ END
 // Dialog
 //
 
-IDD_DIALOG1 DIALOGEX 0, 0, 279, 425
+IDD_DIALOG1 DIALOGEX 0, 0, 379, 425
 STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | DS_CENTER | WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU
 CAPTION "Dialog"
 FONT 8, "MS Shell Dlg", 400, 0, 0x1
 BEGIN
-    GROUPBOX        "Connection Parameters",IDC_STATIC,18,53,248,148
+    GROUPBOX        "Connection Parameters",IDC_STATIC,18,53,348,148
     RTEXT           "Data Source &Name:",IDC_STATIC,23,68,67,8
-    EDITTEXT        IDC_EDIT_name,98,64,143,14,ES_AUTOHSCROLL
+    EDITTEXT        IDC_EDIT_name,98,64,243,14,ES_AUTOHSCROLL
     RTEXT           "D&escription:",IDC_STATIC,23,87,67,8
-    EDITTEXT        IDC_EDIT_description,98,83,143,14,ES_AUTOHSCROLL
+    EDITTEXT        IDC_EDIT_description,98,83,243,14,ES_AUTOHSCROLL
     GROUPBOX        "",IDC_STATIC,31,105,59,26,NOT WS_VISIBLE
     CONTROL         "TCP/IP &Server:",IDC_RADIO_tcp,"Button",BS_AUTORADIOBUTTON | BS_RIGHT,32,105,60,13
     CONTROL         "Named &Pipe:",IDC_RADIO_pipe,"Button",BS_AUTORADIOBUTTON | BS_RIGHT,32,122,60,13
     RTEXT           "Server",IDC_STATIC,97,104,0,0 // Invisible, needed for accessibility
-    EDITTEXT        IDC_EDIT_server,98,104,85,14,ES_AUTOHSCROLL
-    RTEXT           "&Port:",IDC_STATIC,187,107,19,8
-    EDITTEXT        IDC_EDIT_port,212,104,28,14,ES_AUTOHSCROLL | ES_NUMBER
+    EDITTEXT        IDC_EDIT_server,198,104,85,14,ES_AUTOHSCROLL
+    RTEXT           "&Port:",IDC_STATIC,287,107,19,8
+    EDITTEXT        IDC_EDIT_port,312,104,28,14,ES_AUTOHSCROLL | ES_NUMBER
     RTEXT           "Named Pipe",IDC_STATIC,97,104,0,0 // Invisible, needed for accessibility
-    EDITTEXT        IDC_EDIT_socket,98,123,85,14,WS_DISABLED,ES_AUTOHSCROLL
+    EDITTEXT        IDC_EDIT_socket,98,123,185,14,WS_DISABLED,ES_AUTOHSCROLL
     RTEXT           "&User:",IDC_STATIC,23,143,67,8
-    EDITTEXT        IDC_EDIT_uid,98,142,85,14,ES_AUTOHSCROLL
+    EDITTEXT        IDC_EDIT_uid,98,142,185,14,ES_AUTOHSCROLL
     RTEXT           "Pass&word:",IDC_STATIC,23,164,67,8
-    EDITTEXT        IDC_EDIT_pwd,98,161,85,14,ES_PASSWORD | ES_AUTOHSCROLL
+    EDITTEXT        IDC_EDIT_pwd,98,161,185,14,ES_PASSWORD | ES_AUTOHSCROLL
     RTEXT           "Data&base:",IDC_STATIC,23,182,67,8
-    COMBOBOX        IDC_EDIT_database,98,180,85,42,CBS_DROPDOWN | CBS_AUTOHSCROLL | CBS_SORT | WS_VSCROLL | WS_TABSTOP
-    PUSHBUTTON      "&Test",IDC_BUTTON_TEST,199,179,41,14
-    CONTROL         "",IDC_TAB1,"SysTabControl32",WS_TABSTOP,17,214,249,184
+    COMBOBOX        IDC_EDIT_database,98,180,185,42,CBS_DROPDOWN | CBS_AUTOHSCROLL | CBS_SORT | WS_VSCROLL | WS_TABSTOP
+    PUSHBUTTON      "&Test",IDC_BUTTON_TEST,299,179,41,14
+    CONTROL         "",IDC_TAB1,"SysTabControl32",WS_TABSTOP,17,214,349,184
     PUSHBUTTON      "&Details >>",IDC_BUTTON_DETAILS,17,405,50,14
-    DEFPUSHBUTTON   "OK",IDOK,111,405,50,15
-    PUSHBUTTON      "&Cancel",IDCANCEL,165,405,50,15
-    PUSHBUTTON      "&Help",IDC_BUTTON_HELP,217,405,49,15
-    CONTROL         130,IDC_STATIC,"Static",SS_BITMAP,0,0,279,39
+    DEFPUSHBUTTON   "OK",IDOK,211,405,50,15
+    PUSHBUTTON      "&Cancel",IDCANCEL,265,405,50,15
+    PUSHBUTTON      "&Help",IDC_BUTTON_HELP,317,405,49,15
+    CONTROL         130,IDC_STATIC,"Static",SS_BITMAP,0,0,379,39
 END
 
 IDD_TAB1 DIALOGEX 0, 0, 209, 231
@@ -144,26 +144,26 @@ BEGIN
     CONTROL         "&Interactive Client",IDC_CHECK_clientinteractive,
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,87,79,10
     RTEXT           "&Character Set:",IDC_STATIC,12,102,67,8
-    COMBOBOX        IDC_EDIT_charset,90,102,97,8,CBS_DROPDOWN | CBS_AUTOHSCROLL | CBS_SORT | WS_VSCROLL | WS_TABSTOP
+    COMBOBOX        IDC_EDIT_charset,90,102,197,8,CBS_DROPDOWN | CBS_AUTOHSCROLL | CBS_SORT | WS_VSCROLL | WS_TABSTOP
     RTEXT           "I&nitial Statement:",IDC_STATIC,12,117,67,8
-    EDITTEXT        IDC_EDIT_initstmt,90,117,97,12,ES_AUTOHSCROLL
+    EDITTEXT        IDC_EDIT_initstmt,90,117,197,12,ES_AUTOHSCROLL
 
 // Second Column
     CONTROL         "Can &Handle Expired Password",IDC_CHECK_can_handle_exp_pwd
-                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,125,12,113,10
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,175,12,113,10
     CONTROL         "Enab&le Cleartext Authentication",IDC_CHECK_enable_cleartext_plugin
-                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,125,27,113,10
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,175,27,113,10
     CONTROL         "Get Server Public Key",IDC_CHECK_get_server_public_key
-                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,125,42,113,10
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,175,42,113,10
     CONTROL         "Use DNS SRV records",IDC_CHECK_enable_dns_srv
-                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,125,57,113,10
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,175,57,113,10
     CONTROL         "Multi Host",IDC_CHECK_multi_host
-                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,125,72,113,10
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,175,72,113,10
     RTEXT           "Plugin Directory:",IDC_STATIC,12,132,67,8
-    EDITTEXT        IDC_EDIT_plugin_dir,90,132,97,12,ES_AUTOHSCROLL
-    PUSHBUTTON      "...",IDC_CHOOSER_plugin_dir,192,132,12,12,BS_CENTER
+    EDITTEXT        IDC_EDIT_plugin_dir,90,132,197,12,ES_AUTOHSCROLL
+    PUSHBUTTON      "...",IDC_CHOOSER_plugin_dir,292,132,12,12,BS_CENTER
     RTEXT           "Authentication Library:",IDC_STATIC,12,147,67,8
-    EDITTEXT        IDC_EDIT_default_auth,90,147,97,12,ES_AUTOHSCROLL
+    EDITTEXT        IDC_EDIT_default_auth,90,147,197,12,ES_AUTOHSCROLL
 
 END
 
@@ -269,12 +269,20 @@ BEGIN
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,87,138,10
     CONTROL         "&Prepare statements on the client",IDC_CHECK_no_ssps,
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,102,138,10
-    CONTROL         "Bi&nd BIGINT parameters as strings",IDC_CHECK_default_bigint_bind_str,
-                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,117,138,10
-    CONTROL         "Disable Date Overflow error", IDC_CHECK_no_date_overflow,
-                    "Button", BS_AUTOCHECKBOX | WS_TABSTOP, 12, 132, 138, 10
     CONTROL         "Enable LOAD DATA LOCAL INFILE statements", IDC_CHECK_enable_local_infile,
-                    "Button", BS_AUTOCHECKBOX | WS_TABSTOP, 12, 147, 150, 10
+                    "Button", BS_AUTOCHECKBOX | WS_TABSTOP, 12, 117, 170, 10
+
+    RTEXT           "LOAD DATA LOCAL Directory:",IDC_STATIC,8,134,100,8
+    EDITTEXT        IDC_EDIT_load_data_local_dir,112,132,195,12,ES_AUTOHSCROLL
+    PUSHBUTTON      "...",IDC_CHOOSER_load_data_local_dir,312,132,12,12,BS_CENTER
+
+    // Second column
+
+    CONTROL         "Bi&nd BIGINT parameters as strings",IDC_CHECK_default_bigint_bind_str,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,175,12,138,10
+    CONTROL         "Disable Date Overflow error", IDC_CHECK_no_date_overflow,
+                    "Button", BS_AUTOCHECKBOX | WS_TABSTOP, 175, 27, 138, 10
+
 END
 
 #ifdef APSTUDIO_INVOKED
