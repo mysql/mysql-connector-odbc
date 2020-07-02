@@ -633,12 +633,12 @@ IF(MYSQLCLIENT_STATIC_LINKING)
 
     if(${lib} MATCHES ".*private.*")
       install(FILES "${lib}"
-        DESTINATION "lib/private"
+        DESTINATION "${LIB_SUBDIR}/private"
         COMPONENT JDBCDll
         )
       else()
         install(FILES "${lib}"
-          DESTINATION lib
+          DESTINATION ${LIB_SUBDIR}
           COMPONENT JDBCDll
           )
       endif()
@@ -661,7 +661,7 @@ IF(MYSQLCLIENT_STATIC_LINKING)
     message("found client plugin: ${lib}")
 
     install(FILES "${lib}"
-      DESTINATION "lib/plugin"
+      DESTINATION "${LIB_SUBDIR}/plugin"
       COMPONENT JDBCDll
     )
 
