@@ -246,6 +246,7 @@ DECLARE_TEST(t_ldap_auth)
   {
 
     ok_env(henv, SQLAllocHandle(SQL_HANDLE_DBC, henv, &hdbc1));
+    ok_con(hdbc1, SQLAllocStmt(hdbc1, &hstmt1));
 
     /*
       Test verifies that setting PLUGIN_DIR coonection parameter
@@ -295,6 +296,7 @@ DECLARE_TEST(t_ldap_auth)
   {
 
     ok_env(henv, SQLAllocHandle(SQL_HANDLE_DBC, henv, &hdbc1));
+    ok_con(hdbc1, SQLAllocStmt(hdbc1, &hstmt1));
 
     /*
       Test verifies that setting PLUGIN_DIR coonection parameter
@@ -339,7 +341,6 @@ DECLARE_TEST(t_ldap_auth)
     ok_con(hdbc1, SQLDisconnect(hdbc1));
     ok_con(hdbc1, SQLFreeHandle(SQL_HANDLE_DBC, hdbc1));
   }
-
 
 #endif
 
