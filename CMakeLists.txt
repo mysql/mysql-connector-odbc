@@ -603,6 +603,12 @@ ENDIF(WIN32)
 
 IF(MYSQLCLIENT_STATIC_LINKING)
 
+  #Look for libraries and client-side plugins which are
+  #bundled with the mysql client library and which are
+  # required by it and bundle them as well.
+
+  message("looking for bundled client lib deps")
+
   #
   # Note: Currently we simply copy all libraries bundled in the server installation
   # filtering-out these that we know are not needed on the client side.
@@ -625,10 +631,17 @@ IF(MYSQLCLIENT_STATIC_LINKING)
 
     message("found bundled libs: ${lib}")
 
-    install(FILES "${lib}"
-      DESTINATION "lib/private"
-      COMPONENT JDBCDll
-    )
+    if(${lib} MATCHES ".*private.*")
+      install(FILES "${lib}"
+        DESTINATION "lib/private"
+        COMPONENT JDBCDll
+        )
+      else()
+        install(FILES "${lib}"
+          DESTINATION lib
+          COMPONENT JDBCDll
+          )
+      endif()
 
     endif()
 
