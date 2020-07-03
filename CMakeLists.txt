@@ -624,7 +624,7 @@ IF(MYSQLCLIENT_STATIC_LINKING AND NOT RPM_BUILD)
   file(GLOB _bundled2 "${MYSQL_LIB_DIR}/private/*${CMAKE_SHARED_LIBRARY_SUFFIX}*")
   file(GLOB _bundled3 "${MYSQL_DIR}/bin/*${CMAKE_SHARED_LIBRARY_SUFFIX}*")
 
-  foreach(lib IN LISTS _bundled1 _bundled2)
+  foreach(lib IN LISTS _bundled1 _bundled2 _bundled3)
 
     get_filename_component(lib_name ${lib} NAME_WE)
 
