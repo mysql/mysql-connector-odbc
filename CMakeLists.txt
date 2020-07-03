@@ -622,7 +622,7 @@ IF(MYSQLCLIENT_STATIC_LINKING AND NOT RPM_BUILD)
 
   file(GLOB _bundled1 "${MYSQL_LIB_DIR}/*${CMAKE_SHARED_LIBRARY_SUFFIX}*")
   file(GLOB _bundled2 "${MYSQL_LIB_DIR}/private/*${CMAKE_SHARED_LIBRARY_SUFFIX}*")
-  file(GLOB _bundled3 "${MYSQL_DIR}/bin/*${CMAKE_SHARED_LIBRARY_SUFFIX}*")
+
 
   foreach(lib IN LISTS _bundled1 _bundled2 _bundled3)
 
@@ -648,6 +648,29 @@ IF(MYSQLCLIENT_STATIC_LINKING AND NOT RPM_BUILD)
     endif()
 
   endforeach()
+
+  if(WIN32)
+    # On windows, openssl libs are on bin directory
+    file(GLOB _bundled3 "${MYSQL_DIR}/bin/*${CMAKE_SHARED_LIBRARY_SUFFIX}*")
+
+    foreach(lib IN LISTS _bundled3)
+
+      get_filename_component(lib_name ${lib} NAME_WE)
+
+      if(lib_name MATCHES "ssl|crypto")
+
+        message("found bundled libs: ${lib}")
+
+        install(FILES ${lib}
+          DESTINATION "${LIB_SUBDIR}"
+          COMPONENT OdbcDll
+          )
+
+      endif()
+
+    endforeach()
+
+  endif()
 
   file(GLOB _bundled "${MYSQL_PLUGIN_DIR}/*${CMAKE_SHARED_LIBRARY_SUFFIX}*")
 
