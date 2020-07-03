@@ -622,24 +622,26 @@ IF(MYSQLCLIENT_STATIC_LINKING AND NOT RPM_BUILD)
 
   file(GLOB _bundled1 "${MYSQL_LIB_DIR}/*${CMAKE_SHARED_LIBRARY_SUFFIX}*")
   file(GLOB _bundled2 "${MYSQL_LIB_DIR}/private/*${CMAKE_SHARED_LIBRARY_SUFFIX}*")
+  file(GLOB _bundled3 "${MYSQL_DIR}/bin/*${CMAKE_SHARED_LIBRARY_SUFFIX}*")
 
   foreach(lib IN LISTS _bundled1 _bundled2)
 
     get_filename_component(lib_name ${lib} NAME_WE)
 
-    if(NOT lib_name MATCHES "mysql|protobuf|lber|ldap_r|ssl|crypto")
+    if(NOT lib_name MATCHES "mysql|protobuf|lber|ldap_r"
+        OR lib_name MATCHES "ssl|crypto")
 
-    message("found bundled libs: ${lib}")
+      message("found bundled libs: ${lib}")
 
-    if(${lib} MATCHES ".*private.*")
-      install(FILES "${lib}"
-        DESTINATION "${LIB_SUBDIR}/private"
-        COMPONENT JDBCDll
-        )
+      if(WIN32 OR APPLE)
+        install(FILES ${lib}
+          DESTINATION "${LIB_SUBDIR}"
+          COMPONENT OdbcDll
+          )
       else()
-        install(FILES "${lib}"
-          DESTINATION ${LIB_SUBDIR}
-          COMPONENT JDBCDll
+        install(FILES ${lib}
+          DESTINATION "${LIB_SUBDIR}/private"
+          COMPONENT OdbcDll
           )
       endif()
 
