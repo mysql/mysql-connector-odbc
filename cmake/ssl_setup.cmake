@@ -38,14 +38,14 @@ function(setup_ssl_libs)
     find_library(OPENSSL_LIBRARY
       NAMES libssl-1_1 libssl-1_1-x64 libssl ssl ssleay32
       PATH_SUFFIXES private
-      PATHS ${MYSQL_DIR}/bin ${MYSQL_DIR}/lib
+      PATHS ${MYSQL_DIR}/bin ${MYSQL_LIB_DIR}
       NO_DEFAULT_PATH
     )
 
     find_library(CRYPTO_LIBRARY
       NAMES libcrypto-1_1 libcrypto-1_1-x64 libcrypto crypto libeay32
       PATH_SUFFIXES private
-      PATHS ${MYSQL_DIR}/bin ${MYSQL_DIR}/lib
+      PATHS ${MYSQL_DIR}/bin ${MYSQL_LIB_DIR}
       NO_DEFAULT_PATH
     )
     message("-- OpenSSL library: ${OPENSSL_LIBRARY}")
@@ -57,32 +57,10 @@ function(setup_ssl_libs)
     get_filename_component(CRYPTO_LIB_NAME_WE "${CRYPTO_LIBRARY}" NAME_WE)
     get_filename_component(OPENSSL_LIB_DIR "${OPENSSL_LIBRARY}" DIRECTORY)
     get_filename_component(CRYPTO_LIB_DIR "${CRYPTO_LIBRARY}" DIRECTORY)
-    
+
     SET(_SSL_PATH ${OPENSSL_LIB_DIR})
 
     link_directories(${OPENSSL_LIB_DIR})
-    file(GLOB glob1
-      "${OPENSSL_LIB_DIR}/${OPENSSL_LIB_NAME_WE}*"
-    )
-
-    file(GLOB glob2
-      "${OPENSSL_LIB_DIR}/${CRYPTO_LIB_NAME_WE}*"
-    )
-
-    if(MYSQLCLIENT_STATIC_LINKING)
-
-      foreach(lib ${glob1} ${glob2})
-
-        message("-- bundling OpenSSL library: ${lib}")
-
-        install(FILES ${lib}
-          DESTINATION ${LIB_SUBDIR}
-          COMPONENT OpenSSLDll
-        )
-
-      endforeach()
-
-    endif()
 
   ENDIF(MYSQL8)
 endfunction(setup_ssl_libs)
