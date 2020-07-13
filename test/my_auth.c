@@ -228,16 +228,21 @@ DECLARE_TEST(t_ldap_auth)
   {
     if(ldap_user_dn)
     {
-      sprintf(buf, "CREATE USER IF NOT EXISTS ldap_simple IDENTIFIED WITH "
+      sprintf(buf, "CREATE USER IF NOT EXISTS ldap_simple@'%%' IDENTIFIED WITH "
                    "authentication_ldap_simple AS '%s'",ldap_user_dn);
-      SQLExecDirect(hstmt, buf, SQL_NTS);
+      rc = SQLExecDirect(hstmt, buf, SQL_NTS);
+      sprintf(buf, "GRANT ALL ON *.* to ldap_simple@'%%'");
+      rc = SQLExecDirect(hstmt,(SQLCHAR*)buf, SQL_NTS);
     }
 
     if(ldap_user)
     {
-      sprintf(buf, "CREATE USER %s IDENTIFIED WITH authentication_ldap_sasl",
+      sprintf(buf, "CREATE USER IF NOT EXISTS  %s@'%%' IDENTIFIED WITH authentication_ldap_sasl",
               ldap_user);
-      SQLExecDirect(hstmt, buf, SQL_NTS);
+      rc = SQLExecDirect(hstmt, buf, SQL_NTS);
+      sprintf(buf, "GRANT ALL ON *.* to  %s@'%%'",
+              ldap_user);
+      rc = SQLExecDirect(hstmt, buf, SQL_NTS);
     }
 
   }
@@ -246,7 +251,6 @@ DECLARE_TEST(t_ldap_auth)
   {
 
     ok_env(henv, SQLAllocHandle(SQL_HANDLE_DBC, henv, &hdbc1));
-    ok_con(hdbc1, SQLAllocStmt(hdbc1, &hstmt1));
 
     /*
       Test verifies that setting PLUGIN_DIR coonection parameter
@@ -255,8 +259,8 @@ DECLARE_TEST(t_ldap_auth)
       it won't find required library needed for authentication.
     */
     sprintf((char *)conn, "DSN=%s;UID=ldap_simple;PWD=%s;"
-                          "DATABASE=test; PLUGIN_DIR=%s",
-              (char *)mydsn, ldap_simple_pwd,(char *) plugin_dir);
+                          "DATABASE=test; ENABLE_CLEARTEXT_PLUGIN=1",
+              (char *)mydsn, ldap_simple_pwd);
     if (mysock != NULL)
     {
       strcat((char *)conn, ";SOCKET=");
@@ -271,23 +275,22 @@ DECLARE_TEST(t_ldap_auth)
 
     expect_dbc(hdbc1, rc = SQLDriverConnect(hdbc1, NULL, conn, SQL_NTS, conn_out,
                                 sizeof(conn_out), &conn_out_len,
-                                SQL_DRIVER_NOPROMPT), SQL_ERROR);
+                                SQL_DRIVER_NOPROMPT), SQL_DRIVER_NOPROMPT);
 
-    rc= SQLExecDirect(hdbc1, (SQLCHAR *)"select 'Hello Simple LDAP'", SQL_NTS);
+    ok_con(hdbc1, SQLAllocHandle(SQL_HANDLE_STMT, hdbc1, &hstmt1));
+
+    rc= SQLExecDirect(hstmt1, (SQLCHAR *)"select 'Hello Simple LDAP'", SQL_NTS);
     if(rc == SQL_SUCCESS)
     {
-      SQLFetch(hdbc1);
+      SQLFetch(hstmt1);
 
-      SQLGetData(hstmt, 1, SQL_CHAR, buf, sizeof(buf), &buflen);
+      SQLGetData(hstmt1, 1, SQL_CHAR, buf, sizeof(buf), &buflen);
       if(buflen > 0)
       {
-        printf("OUTPUT: %s",buf);
+        printf("OUTPUT: %s\n",buf);
       }
     }
 
-    SQLDisconnect(hdbc1);
-
-    ok_stmt(hstmt1, SQLFreeStmt(hstmt1, SQL_DROP));
     ok_con(hdbc1, SQLDisconnect(hdbc1));
     ok_con(hdbc1, SQLFreeHandle(SQL_HANDLE_DBC, hdbc1));
   }
@@ -296,7 +299,7 @@ DECLARE_TEST(t_ldap_auth)
   {
 
     ok_env(henv, SQLAllocHandle(SQL_HANDLE_DBC, henv, &hdbc1));
-    ok_con(hdbc1, SQLAllocStmt(hdbc1, &hstmt1));
+
 
     /*
       Test verifies that setting PLUGIN_DIR coonection parameter
@@ -321,23 +324,22 @@ DECLARE_TEST(t_ldap_auth)
 
     expect_dbc(hdbc1, SQLDriverConnect(hdbc1, NULL, conn, SQL_NTS, conn_out,
                                 sizeof(conn_out), &conn_out_len,
-                                SQL_DRIVER_NOPROMPT), SQL_ERROR);
+                                SQL_DRIVER_NOPROMPT), SQL_DRIVER_NOPROMPT);
 
-    rc= SQLExecDirect(hdbc1, (SQLCHAR *)"select 'Hello Simple LDAP'", SQL_NTS);
+    ok_con(hdbc1, SQLAllocHandle(SQL_HANDLE_STMT, hdbc1, &hstmt1));
+
+    rc= SQLExecDirect(hstmt1, (SQLCHAR *)"select 'Hello Simple LDAP'", SQL_NTS);
     if(rc == SQL_SUCCESS)
     {
-      SQLFetch(hdbc1);
+      SQLFetch(hstmt1);
 
-      SQLGetData(hstmt, 1, SQL_CHAR, buf, sizeof(buf), &buflen);
+      SQLGetData(hstmt1, 1, SQL_CHAR, buf, sizeof(buf), &buflen);
       if(buflen > 0)
       {
-        printf("OUTPUT: %s",buf);
+        printf("OUTPUT: %s\n",buf);
       }
     }
 
-    SQLDisconnect(hdbc1);
-
-    ok_stmt(hstmt1, SQLFreeStmt(hstmt1, SQL_DROP));
     ok_con(hdbc1, SQLDisconnect(hdbc1));
     ok_con(hdbc1, SQLFreeHandle(SQL_HANDLE_DBC, hdbc1));
   }
