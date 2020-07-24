@@ -2382,11 +2382,11 @@ int check_if_server_is_alive( DBC *dbc )
   @purpose : appends quoted string to dynamic string
 */
 
-my_bool dynstr_append_quoted_name(DYNAMIC_STRING *str, const char *name)
+my_bool myodbc_append_quoted_name(DYNAMIC_STRING *str, const char *name)
 {
     uint tmp= strlen(name);
     char *pos;
-    if ( dynstr_realloc(str,tmp+3) )
+    if ( myodbc_dynstr_realloc(str,tmp+3) )
         return 1;
     pos= str->str+str->length;
     *pos='`';

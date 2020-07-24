@@ -499,13 +499,13 @@ static my_bool insert_field(STMT *stmt, MYSQL_RES *result,
       return (my_bool)stmt->set_error( MYERR_S1001, NULL, 4001);
     }
 
-    dynstr_append_mem(dynQuery, stmt->buf(), stmt->buf_pos());
+    myodbc_append_mem(dynQuery, stmt->buf(), stmt->buf_pos());
     stmt->buf_set_pos(0); // Buffer is used, can be reset
   }
   else
   {
     --dynQuery->length;
-    dynstr_append_mem(dynQuery, " IS NULL AND ",13);
+    myodbc_append_mem(dynQuery, " IS NULL AND ",13);
   }
   return 0;
 }
@@ -535,8 +535,8 @@ static SQLRETURN insert_pk_fields(STMT *stmt, DYNAMIC_STRING *dynQuery)
         if (!myodbc_strcasecmp(cursor->pkcol[index].name, field->org_name))
         {
           /* PK data exists...*/
-          dynstr_append_quoted_name(dynQuery, field->org_name);
-          dynstr_append_mem(dynQuery, "=", 1);
+          myodbc_append_quoted_name(dynQuery, field->org_name);
+          myodbc_append_mem(dynQuery, "=", 1);
           if (insert_field(stmt, result, dynQuery, ncol))
             return SQL_ERROR;
           cursor->pkcol[index].bind_done= TRUE;
@@ -637,8 +637,8 @@ static SQLRETURN append_all_fields(STMT *stmt, DYNAMIC_STRING *dynQuery)
       if (cursor_field->org_name &&
           !strcmp(cursor_field->org_name, table_field->name))
       {
-        dynstr_append_quoted_name(dynQuery, table_field->name);
-        dynstr_append_mem(dynQuery, "=", 1);
+        myodbc_append_quoted_name(dynQuery, table_field->name);
+        myodbc_append_mem(dynQuery, "=", 1);
         if (insert_field(stmt, result, dynQuery, j))
         {
           mysql_free_result(presultAllColumns);
@@ -676,7 +676,7 @@ static SQLRETURN build_where_clause( STMT * pStmt,
     set_current_cursor_data( pStmt, irow );
 
     /* simply append WHERE to our statement */
-    dynstr_append_mem( dynQuery, " WHERE ", 7 );
+    myodbc_append_mem( dynQuery, " WHERE ", 7 );
 
     /*
       If a suitable key exists, then we'll use those columns, otherwise
@@ -704,11 +704,11 @@ static SQLRETURN build_where_clause( STMT * pStmt,
 
         sprintf( buff, " LIMIT %lu",
                  (unsigned long)pStmt->ard->array_size );
-        dynstr_append( dynQuery, buff );
+        myodbc_append_mem( dynQuery, buff , (uint)strlen(buff));
     }
     else
     {
-        dynstr_append_mem( dynQuery, " LIMIT 1", 8 );
+        myodbc_append_mem( dynQuery, " LIMIT 1", 8 );
     }
 
     return SQL_SUCCESS;
@@ -731,7 +731,7 @@ static SQLRETURN build_set_clause(STMT *stmt, SQLULEN irow,
     MYSQL_RES   *result= stmt->result;
     DESCREC *arrec, *irrec;
 
-    dynstr_append_mem(dynQuery," SET ",5);
+    myodbc_append_mem(dynQuery," SET ",5);
 
     desc_rec_init_apd(aprec);
     desc_rec_init_ipd(iprec);
@@ -795,8 +795,8 @@ static SQLRETURN build_set_clause(STMT *stmt, SQLULEN irow,
             }
         }
 
-        dynstr_append_quoted_name(dynQuery,field->org_name);
-        dynstr_append_mem(dynQuery,"=",1);
+        myodbc_append_quoted_name(dynQuery,field->org_name);
+        myodbc_append_mem(dynQuery,"=",1);
 
         iprec->concise_type= get_sql_data_type(stmt, field, NULL);
         aprec->concise_type= arrec->concise_type;
@@ -822,7 +822,7 @@ static SQLRETURN build_set_clause(STMT *stmt, SQLULEN irow,
         if ( copy_rowdata(stmt,aprec,iprec) != SQL_SUCCESS )
             return(SQL_ERROR);
 
-        dynstr_append_mem(dynQuery, stmt->buf(), stmt->buf_pos());
+        myodbc_append_mem(dynQuery, stmt->buf(), stmt->buf_pos());
         stmt->buf_set_pos(0); // Buffer is used, can be reset
     }
 
@@ -1015,7 +1015,7 @@ static SQLRETURN setpos_delete_bookmark(STMT *stmt, DYNAMIC_STRING *dynQuery)
   }
 
   /* appened our table name to our DELETE statement */
-  dynstr_append_quoted_name(dynQuery,table_name);
+  myodbc_append_quoted_name(dynQuery,table_name);
   query_length= dynQuery->length;
 
   IS_BOOKMARK_VARIABLE(stmt);
@@ -1101,7 +1101,7 @@ static SQLRETURN setpos_delete(STMT *stmt, SQLUSMALLINT irow,
   }
 
   /* appened our table name to our DELETE statement */
-  dynstr_append_quoted_name(dynQuery,table_name);
+  myodbc_append_quoted_name(dynQuery,table_name);
   query_length= dynQuery->length;
 
   /* IF irow == 0 THEN delete all rows in the current rowset ELSE specific (as in one) row */
@@ -1170,7 +1170,7 @@ static SQLRETURN setpos_update_bookmark(STMT *stmt, DYNAMIC_STRING *dynQuery)
     return SQL_ERROR;
   }
 
-  dynstr_append_quoted_name(dynQuery,table_name);
+  myodbc_append_quoted_name(dynQuery,table_name);
   query_length= dynQuery->length;
 
   IS_BOOKMARK_VARIABLE(stmt);
@@ -1255,7 +1255,7 @@ static SQLRETURN setpos_update(STMT *stmt, SQLUSMALLINT irow,
   if ( !(table_name= find_used_table(stmt)) )
       return SQL_ERROR;
 
-  dynstr_append_quoted_name(dynQuery,table_name);
+  myodbc_append_quoted_name(dynQuery,table_name);
   query_length= dynQuery->length;
 
   if ( !irow )
@@ -1375,7 +1375,7 @@ static SQLRETURN batch_insert( STMT *stmt, SQLULEN irow, DYNAMIC_STRING *ext_que
         while (count < insert_count)
         {
             /* Append values for each column. */
-            dynstr_append_mem(ext_query,"(", 1);
+            myodbc_append_mem(ext_query,"(", 1);
             for ( ncol= 0; ncol < result->field_count; ++ncol )
             {
                 MYSQL_FIELD *field= mysql_fetch_field_direct(result,ncol);
@@ -1456,9 +1456,9 @@ static SQLRETURN batch_insert( STMT *stmt, SQLULEN irow, DYNAMIC_STRING *ext_que
             } /* END OF for (ncol= 0; ncol < result->field_count; ++ncol) */
 
             length = stmt->buf_pos();
-            dynstr_append_mem(ext_query, stmt->buf(), length - 1);
+            myodbc_append_mem(ext_query, stmt->buf(), length - 1);
             stmt->buf_set_pos(0); // Buffer is used, can be reset
-            dynstr_append_mem(ext_query, "),", 2);
+            myodbc_append_mem(ext_query, "),", 2);
             ++count;
 
             /*
@@ -1709,11 +1709,11 @@ SQLRETURN SQL_API my_SQLSetPos(SQLHSTMT hstmt, SQLSETPOSIROW irow,
                     return stmt->set_error(MYERR_S1000, alloc_error, 0);
 
                 /* start building our DELETE statement */
-                if ( init_dynamic_string(&dynQuery, "DELETE FROM ", 1024, 1024) )
+                if ( myodbc_init_dynamic_string(&dynQuery, "DELETE FROM ", 1024, 1024) )
                     return stmt->set_error(MYERR_S1001,NULL,4001);
 
                 sqlRet = setpos_delete( stmt, irow, &dynQuery );
-                dynstr_free(&dynQuery);
+                myodbc_dynstr_free(&dynQuery);
                 break;
             }
 
@@ -1733,11 +1733,11 @@ SQLRETURN SQL_API my_SQLSetPos(SQLHSTMT hstmt, SQLSETPOSIROW irow,
                                                   DAE_SETPOS_UPDATE))
                   return rc;
 
-                if ( init_dynamic_string(&dynQuery, "UPDATE ", 1024, 1024) )
+                if ( myodbc_init_dynamic_string(&dynQuery, "UPDATE ", 1024, 1024) )
                     return stmt->set_error(MYERR_S1001,NULL,4001);
 
                 sqlRet= setpos_update(stmt,irow,&dynQuery);
-                dynstr_free(&dynQuery);
+                myodbc_dynstr_free(&dynQuery);
                 break;
             }
 
@@ -1759,34 +1759,34 @@ SQLRETURN SQL_API my_SQLSetPos(SQLHSTMT hstmt, SQLSETPOSIROW irow,
                                                   DAE_SETPOS_INSERT))
                   return rc;
 
-                if ( init_dynamic_string(&dynQuery, "INSERT INTO ", 1024,1024) )
+                if ( myodbc_init_dynamic_string(&dynQuery, "INSERT INTO ", 1024,1024) )
                     return set_stmt_error(stmt, "S1001", "Not enough memory",
                                           4001);
 
                 /* Append the table's DB name if exists */
                 if (result->fields && result->fields[0].db_length)
                 {
-                  dynstr_append_quoted_name(&dynQuery, result->fields[0].db);
-                  dynstr_append_mem(&dynQuery,".",1);
+                  myodbc_append_quoted_name(&dynQuery, result->fields[0].db);
+                  myodbc_append_mem(&dynQuery,".",1);
                 }
 
-                dynstr_append_quoted_name(&dynQuery,table_name);
-                dynstr_append_mem(&dynQuery,"(",1);
+                myodbc_append_quoted_name(&dynQuery,table_name);
+                myodbc_append_mem(&dynQuery,"(",1);
 
                 /* build list of column names */
                 for (nCol= 0; nCol < result->field_count; ++nCol)
                 {
                     MYSQL_FIELD *field= mysql_fetch_field_direct(result, nCol);
-                    dynstr_append_quoted_name(&dynQuery, field->org_name);
-                    dynstr_append_mem(&dynQuery, ",", 1);
+                    myodbc_append_quoted_name(&dynQuery, field->org_name);
+                    myodbc_append_mem(&dynQuery, ",", 1);
                 }
                 --dynQuery.length;        /* Remove last ',' */
-                dynstr_append_mem(&dynQuery,") VALUES ",9);
+                myodbc_append_mem(&dynQuery,") VALUES ",9);
 
                 /* process row(s) using our INSERT as base */
                 sqlRet= batch_insert(stmt, irow, &dynQuery);
 
-                dynstr_free(&dynQuery);
+                myodbc_dynstr_free(&dynQuery);
                 break;
             }
 
@@ -1934,13 +1934,13 @@ SQLRETURN SQL_API SQLBulkOperations(SQLHSTMT  Handle, SQLSMALLINT Operation)
         return rc;
       }
 
-      if ( init_dynamic_string(&dynQuery, "UPDATE ", 1024, 1024) )
+      if ( myodbc_init_dynamic_string(&dynQuery, "UPDATE ", 1024, 1024) )
       {
         return stmt->set_error(MYERR_S1001,NULL,4001);
       }
 
       sqlRet= setpos_update_bookmark(stmt, &dynQuery);
-      dynstr_free(&dynQuery);
+      myodbc_dynstr_free(&dynQuery);
       break;
     }
   case SQL_DELETE_BY_BOOKMARK:
@@ -1952,11 +1952,11 @@ SQLRETURN SQL_API SQLBulkOperations(SQLHSTMT  Handle, SQLSMALLINT Operation)
           return stmt->set_error(MYERR_S1000, alloc_error, 0);
 
       /* start building our DELETE statement */
-      if ( init_dynamic_string(&dynQuery, "DELETE FROM ", 1024, 1024) )
+      if ( myodbc_init_dynamic_string(&dynQuery, "DELETE FROM ", 1024, 1024) )
           return stmt->set_error(MYERR_S1001,NULL,4001);
 
       sqlRet = setpos_delete_bookmark(stmt, &dynQuery);
-      dynstr_free(&dynQuery);
+      myodbc_dynstr_free(&dynQuery);
       break;
     }
   case SQL_FETCH_BY_BOOKMARK:

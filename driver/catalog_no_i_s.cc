@@ -1777,14 +1777,14 @@ procedure_columns_no_i_s(SQLHSTMT hstmt,
   int params_num= 0, return_params_num= 0;
   unsigned int i, j, total_params_num= 0;
 
-  if (init_dynamic_string(&dynQuery, "SELECT 1", 1024,1024))
+  if (myodbc_init_dynamic_string(&dynQuery, "SELECT 1", 1024,1024))
     return set_stmt_error(stmt, "HY001", "Not enough memory", 4001);
 
   params_r= params= (LIST *) myodbc_malloc(sizeof(LIST), MYF(MY_ZEROFILL));
 
   if (params_r == NULL)
   {
-    dynstr_free(&dynQuery);
+    myodbc_dynstr_free(&dynQuery);
     set_mem_error(&stmt->dbc->mysql);
     return handle_connection_error(stmt);
   }
@@ -1879,10 +1879,10 @@ procedure_columns_no_i_s(SQLHSTMT hstmt,
 
       if (cbColumnName)
       {
-        dynstr_append_mem(&dynQuery, ",", 1);
-        dynstr_append_os_quoted(&dynQuery, (char *)param_name, NullS);
-        dynstr_append_mem(&dynQuery, " LIKE ", 6);
-        dynstr_append_os_quoted(&dynQuery, (char *)szColumnName, NullS);
+        myodbc_append_mem(&dynQuery, ",", 1);
+        myodbc_append_os_quoted(&dynQuery, (char *)param_name, NullS);
+        myodbc_append_mem(&dynQuery, " LIKE ", 6);
+        myodbc_append_os_quoted(&dynQuery, (char *)szColumnName, NullS);
       }
 
       if (param_ordinal_position == 0)
@@ -2099,7 +2099,7 @@ clean_exit:
     mysql_free_result(columns_res);
   }
 
-  dynstr_free(&dynQuery);
+  myodbc_dynstr_free(&dynQuery);
   x_free(params_r);
 
   return nReturn;

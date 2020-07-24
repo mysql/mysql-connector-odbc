@@ -261,7 +261,7 @@ void  myodbc_sqlstate2_init     (void);
 void  myodbc_sqlstate3_init     (void);
 int   check_if_server_is_alive  (DBC *dbc);
 
-my_bool   dynstr_append_quoted_name (DYNAMIC_STRING *str, const char *name);
+my_bool   myodbc_append_quoted_name (DYNAMIC_STRING *str, const char *name);
 SQLRETURN set_handle_error          (SQLSMALLINT HandleType, SQLHANDLE handle,
                                     myodbc_errid errid, const char *errtext, SQLINTEGER errcode);
 SQLRETURN set_conn_error(DBC *dbc,myodbc_errid errid, const char *errtext,

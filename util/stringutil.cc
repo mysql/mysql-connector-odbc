@@ -1268,4 +1268,100 @@ char *myodbc_int10_to_str(long int val, char *dst, int radix) {
   return dst - 1;
 }
 
+
+bool myodbc_init_dynamic_string(DYNAMIC_STRING *str, const char *init_str,
+                         size_t init_alloc, size_t alloc_increment) {
+  size_t length;
+  DBUG_TRACE;
+
+  if (!alloc_increment) alloc_increment = 128;
+  length = 1;
+  if (init_str && (length = strlen(init_str) + 1) < init_alloc)
+    init_alloc =
+        ((length + alloc_increment - 1) / alloc_increment) * alloc_increment;
+  if (!init_alloc) init_alloc = alloc_increment;
+
+  if (!(str->str = (char *)my_malloc(PSI_NOT_INSTRUMENTED, init_alloc,
+                                     MYF(MY_WME))))
+    return true;
+  str->length = length - 1;
+  if (init_str) memcpy(str->str, init_str, length);
+  str->max_length = init_alloc;
+  str->alloc_increment = alloc_increment;
+  return false;
+}
+
+bool myodbc_append_mem(DYNAMIC_STRING *str, const char *append, size_t length) {
+  char *new_ptr;
+  if (str->length + length >= str->max_length) {
+    size_t new_length =
+        (str->length + length + str->alloc_increment) / str->alloc_increment;
+    new_length *= str->alloc_increment;
+    if (!(new_ptr = (char *)my_realloc(PSI_NOT_INSTRUMENTED, str->str,
+                                       new_length, MYF(MY_WME))))
+      return true;
+    str->str = new_ptr;
+    str->max_length = new_length;
+  }
+  if (length > 0) memcpy(str->str + str->length, append, length);
+  str->length += length;
+  str->str[str->length] = 0; /* Safety for C programs */
+  return false;
+}
+
+bool myodbc_append_os_quoted(DYNAMIC_STRING *str, const char *append, ...) {
+#ifdef _WIN32
+  const char *quote_str = "\"";
+  const uint quote_len = 1;
+#else
+  const char *quote_str = "\'";
+  const uint quote_len = 1;
+#endif /* _WIN32 */
+  bool ret = true;
+  va_list dirty_text;
+
+  ret &= myodbc_append_mem(str, quote_str, quote_len); /* Leading quote */
+  va_start(dirty_text, append);
+  while (append != NullS) {
+    const char *cur_pos = append;
+    const char *next_pos = cur_pos;
+
+    /* Search for quote in each string and replace with escaped quote */
+    while (*(next_pos = strcend(cur_pos, quote_str[0])) != '\0') {
+      ret &= myodbc_append_mem(str, cur_pos, (uint)(next_pos - cur_pos));
+      ret &= myodbc_append_mem(str, "\\", 1);
+      ret &= myodbc_append_mem(str, quote_str, quote_len);
+      cur_pos = next_pos + 1;
+    }
+    ret &= myodbc_append_mem(str, cur_pos, (uint)(next_pos - cur_pos));
+    append = va_arg(dirty_text, char *);
+  }
+  va_end(dirty_text);
+  ret &= myodbc_append_mem(str, quote_str, quote_len); /* Trailing quote */
+
+  return ret;
+}
+
+void myodbc_dynstr_free(DYNAMIC_STRING *str) {
+  my_free(str->str);
+  str->str = NULL;
+}
+
+bool myodbc_dynstr_realloc(DYNAMIC_STRING *str, size_t additional_size) {
+  DBUG_TRACE;
+
+  if (!additional_size) return false;
+  if (str->length + additional_size > str->max_length) {
+    str->max_length =
+        ((str->length + additional_size + str->alloc_increment - 1) /
+         str->alloc_increment) *
+        str->alloc_increment;
+    if (!(str->str = (char *)my_realloc(PSI_NOT_INSTRUMENTED, str->str,
+                                        str->max_length, MYF(MY_WME))))
+      return true;
+  }
+  return false;
+}
+
+
 #endif

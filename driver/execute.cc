@@ -1260,7 +1260,7 @@ SQLRETURN do_my_pos_cursor( STMT *pStmt, STMT *pStmtCursor )
   while ( isspace( *pszQuery ) )
       ++pszQuery;
 
-  if ( init_dynamic_string( &dynQuery, pszQuery, 1024, 1024 ) )
+  if ( myodbc_init_dynamic_string( &dynQuery, pszQuery, 1024, 1024 ) )
       return pStmt->set_error(MYERR_S1001, NULL, 4001 );
 
   if ( !myodbc_casecmp( pszQuery, "delete", 6 ) )
@@ -1279,7 +1279,7 @@ SQLRETURN do_my_pos_cursor( STMT *pStmt, STMT *pStmtCursor )
   if ( SQL_SUCCEEDED( nReturn ) )
       pStmt->state = ST_EXECUTED;
 
-  dynstr_free( &dynQuery );
+  myodbc_dynstr_free( &dynQuery );
 
   return( nReturn );
 }
