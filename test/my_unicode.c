@@ -170,20 +170,17 @@ DECLARE_TEST(sqlprepare_ansi)
 
 DECLARE_TEST(sqlchar)
 {
-  HDBC hdbc1;
-  HSTMT hstmt1;
+  DECLARE_BASIC_HANDLES(henv1, hdbc1, hstmt1);
   SQLCHAR data[]= "S\xe3o Paolo", buff[30];
   SQLWCHAR wbuff[MAX_ROW_DATA_LEN+1];
   wchar_t wcdata[]= L"S\x00e3o Paolo";
 
-  ok_env(henv, SQLAllocConnect(henv, &hdbc1));
-  ok_con(hdbc1, SQLConnectW(hdbc1,
-                            WC(mydsn), SQL_NTS,
-                            WC(myuid), SQL_NTS,
-                            WC(mypwd), SQL_NTS));
+  alloc_basic_handles_with_opt(&henv1, &hdbc1, &hstmt1, NULL, NULL, NULL,
+                               NULL, "");
+
   ok_con(hdbc, SQLAllocStmt(hdbc1, &hstmt1));
 
-  ok_stmt(hstmt1, SQLPrepareW(hstmt1, W(L"SELECT ? FROM DUAL"), SQL_NTS));
+  ok_stmt(hstmt1, SQLPrepareW(hstmt1, W(L"SELECT CAST(? AS BINARY)"), SQL_NTS));
 
   ok_stmt(hstmt1, SQLBindParameter(hstmt1, 1, SQL_PARAM_INPUT, SQL_C_CHAR,
                                    SQL_WVARCHAR, 0, 0, data, sizeof(data),
@@ -206,11 +203,7 @@ DECLARE_TEST(sqlchar)
 
   expect_stmt(hstmt1, SQLFetch(hstmt1), SQL_NO_DATA_FOUND);
 
-  ok_stmt(hstmt, SQLFreeStmt(hstmt1, SQL_DROP));
-
-  ok_con(hdbc1, SQLDisconnect(hdbc1));
-  ok_con(hdbc1, SQLFreeConnect(hdbc1));
-
+  free_basic_handles(&henv1, &hdbc1, &hstmt1);
   return OK;
 }
 

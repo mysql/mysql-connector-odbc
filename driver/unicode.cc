@@ -866,7 +866,7 @@ SQLPrepareWImpl(SQLHSTMT hstmt, SQLWCHAR *str, SQLINTEGER str_len)
     return set_stmt_error(stmt, "22018", NULL, 0);
   }
 
-  return MySQLPrepare(hstmt, conv, str_len, TRUE);
+  return MySQLPrepare(hstmt, conv, str_len, true, false);
 }
 
 

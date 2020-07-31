@@ -125,8 +125,9 @@ typedef char * DYNAMIC_ELEMENT;
   Utility function prototypes that share among files
 */
 
-SQLRETURN         my_SQLPrepare (SQLHSTMT hstmt, SQLCHAR *szSqlStr, SQLINTEGER cbSqlStr,
-                                my_bool dupe);
+SQLRETURN         my_SQLPrepare (SQLHSTMT hstmt, SQLCHAR *szSqlStr,
+                                 SQLINTEGER cbSqlStr, bool dupe,
+                                 bool reset_select_limit);
 SQLRETURN         my_SQLExecute         (STMT * stmt);
 SQLRETURN SQL_API my_SQLFreeStmt        (SQLHSTMT hstmt,SQLUSMALLINT fOption);
 SQLRETURN SQL_API my_SQLFreeStmtExtended(SQLHSTMT hstmt,
@@ -409,7 +410,8 @@ char *        get_string  (STMT *stmt, ulong column_number, char *value,
 long double   get_double  (STMT *stmt, ulong column_number, char *value,
                           ulong length);
 BOOL          is_null     (STMT *stmt, ulong column_number, char *value);
-SQLRETURN     prepare     (STMT *stmt, char * query, SQLINTEGER query_length);
+SQLRETURN     prepare     (STMT *stmt, char * query, SQLINTEGER query_length,
+                           bool reset_sql_limit);
 
 
 inline

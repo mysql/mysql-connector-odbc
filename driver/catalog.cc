@@ -596,7 +596,8 @@ SQLRETURN list_table_priv_i_s(SQLHSTMT    hstmt,
 
   assert(pos - buff < sizeof(buff));
 
-  if( !SQL_SUCCEEDED(rc= MySQLPrepare(hstmt, (SQLCHAR *)buff, (SQLINTEGER)(pos - buff), FALSE)))
+  if( !SQL_SUCCEEDED(rc= MySQLPrepare(hstmt, (SQLCHAR *)buff,
+                          (SQLINTEGER)(pos - buff), false, true)))
     return rc;
 
   return my_SQLExecute(stmt);
@@ -683,7 +684,8 @@ static SQLRETURN list_column_priv_i_s(HSTMT       hstmt,
 
   assert(pos - buff < sizeof(buff));
 
-  if( !SQL_SUCCEEDED(rc= MySQLPrepare(hstmt, (SQLCHAR *)buff, SQL_NTS, FALSE)))
+  if( !SQL_SUCCEEDED(rc= MySQLPrepare(hstmt, (SQLCHAR *)buff, SQL_NTS,
+                                      false, true)))
     return rc;
 
   return my_SQLExecute(stmt);
@@ -978,7 +980,8 @@ SQLRETURN foreign_keys_i_s(SQLHSTMT hstmt,
 
   assert(buff - query < sizeof(query));
 
-  rc= MySQLPrepare(hstmt, (SQLCHAR *)query, (SQLINTEGER)(buff - query), FALSE);
+  rc= MySQLPrepare(hstmt, (SQLCHAR *)query, (SQLINTEGER)(buff - query),
+                   false, true);
 
   if (!SQL_SUCCEEDED(rc))
     return rc;
@@ -1106,7 +1109,7 @@ MySQLProcedures(SQLHSTMT hstmt,
                           "NULL AS NUM_RESULT_SETS,"
                           "'' AS REMARKS,"
                           "0 AS PROCEDURE_TYPE "
-                          "FROM DUAL WHERE 1=0", SQL_NTS, FALSE)))
+                          "FROM DUAL WHERE 1=0", SQL_NTS, false, true)))
       return rc;
 
     return my_SQLExecute((STMT*)hstmt);
@@ -1130,7 +1133,7 @@ MySQLProcedures(SQLHSTMT hstmt,
                        "IF(ROUTINE_TYPE= 'PROCEDURE', 1, 0)) AS PROCEDURE_TYPE"
                      "  FROM INFORMATION_SCHEMA.ROUTINES"
                      " WHERE ROUTINE_NAME LIKE ? AND ROUTINE_SCHEMA = ?",
-                     SQL_NTS, FALSE);
+                     SQL_NTS, false, true);
   else if (proc_name)
     rc= MySQLPrepare(hstmt, (SQLCHAR *)
                      "SELECT ROUTINE_SCHEMA AS PROCEDURE_CAT,"
@@ -1145,7 +1148,7 @@ MySQLProcedures(SQLHSTMT hstmt,
                      "  FROM INFORMATION_SCHEMA.ROUTINES"
                      " WHERE ROUTINE_NAME LIKE ?"
                      " AND ROUTINE_SCHEMA = DATABASE()",
-                     SQL_NTS, FALSE);
+                     SQL_NTS, false, true);
   else
     rc= MySQLPrepare(hstmt, (SQLCHAR *)
                      "SELECT ROUTINE_SCHEMA AS PROCEDURE_CAT,"
@@ -1159,7 +1162,7 @@ MySQLProcedures(SQLHSTMT hstmt,
                        "IF(ROUTINE_TYPE= 'PROCEDURE', 1, 0)) AS PROCEDURE_TYPE"
                      " FROM INFORMATION_SCHEMA.ROUTINES"
                      " WHERE ROUTINE_SCHEMA = DATABASE()",
-                     SQL_NTS, FALSE);
+                     SQL_NTS, false, true);
   if (!SQL_SUCCEEDED(rc))
     return rc;
 

@@ -544,7 +544,8 @@ static MYSQL_ROW fetch_varlength_columns(STMT *stmt, MYSQL_ROW values)
         stmt->result_bind[i].buffer_length = stmt->lengths[i];
       }
 
-      mysql_stmt_fetch_column(stmt->ssps, &stmt->result_bind[i], i, 0);
+      if (reallocated_buffers)
+        mysql_stmt_fetch_column(stmt->ssps, &stmt->result_bind[i], i, 0);
 
     }
   }
@@ -627,7 +628,7 @@ long STMT::compute_cur_row(unsigned fFetchType, SQLLEN irow)
     cur_row = (current_row < 0 ? 0 : current_row + rows_found_in_set);
     break;
   case SQL_FETCH_PRIOR:
-    cur_row = (current_row <= 0 ? -1 : 
+    cur_row = (current_row <= 0 ? -1 :
       (long)(current_row - ard->array_size));
     break;
   case SQL_FETCH_FIRST:
@@ -696,7 +697,7 @@ long STMT::compute_cur_row(unsigned fFetchType, SQLLEN irow)
       {
       case SQL_NO_DATA:
         throw MYERROR(SQL_NO_DATA_FOUND);
-      case SQL_ERROR:   
+      case SQL_ERROR:
         set_error(MYERR_S1000, mysql_error(&dbc->mysql), 0);
         throw error;
       }

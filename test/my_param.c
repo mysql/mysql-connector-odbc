@@ -57,7 +57,7 @@ DECLARE_TEST(my_param_data)
   {
     c3.length = (c1 % 2) ? 944 : 3312;
     org_data[c1 - 1] = calloc(c3.length + 100, 1);
-    
+
     SQLLEN indic1 = sizeof(long);
     SQLLEN indic2 = sizeof(long);
     SQLLEN indic3 = SQL_LEN_DATA_AT_EXEC(c3.length);
@@ -185,7 +185,7 @@ DECLARE_TEST(t_bug31373948)
     {
       is (buf[i] == 'A' + i / 1000);
     }
-    
+
     ++rnum;
     memset(buf, 0, 16000);
   }
@@ -996,6 +996,85 @@ DECLARE_TEST(paramarray_select)
 #undef STMTS_TO_EXEC
 }
 
+/*
+  Bug #31678876/100329 ODBC Driver overwriting memory causes process dead
+  when parameterized query on
+*/
+DECLARE_TEST(t_bug31678876)
+{
+  int i = 0;
+  char buf2[128] = {'0','1','2','3','4','5','6','7','8','9','a','b','c','d','e'};
+  char buf3[128] = {'0','1','2','3','4','5','6','7','8','9','A','B','C','D','E',
+                    'F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T'};
+  ok_sql(hstmt, "DROP TABLE IF EXISTS bug31678876");
+  ok_sql(hstmt, "CREATE TABLE bug31678876 (id int primary key auto_increment,"\
+                "col2 VARCHAR(255), col3 VARCHAR(255))");
+
+  ok_stmt(hstmt, SQLPrepare(hstmt, "INSERT INTO bug31678876 "\
+                                   "(col2, col3) VALUES (?,?)", SQL_NTS));
+
+  ok_stmt(hstmt, SQLBindParameter(hstmt, 1, SQL_PARAM_INPUT,
+                                  SQL_C_CHAR, SQL_CHAR, 0, 0, &buf2,
+                                  15, NULL));
+
+  ok_stmt(hstmt, SQLBindParameter(hstmt, 2, SQL_PARAM_INPUT,
+                                  SQL_C_CHAR, SQL_CHAR, 0, 0, &buf3,
+                                  32, NULL));
+
+  for (i = 0; i < 100; ++i)
+    ok_stmt(hstmt, SQLExecute(hstmt));
+
+  wchar_t sel[] = L"select distinct `pa11`.`id` `id`,"\
+  "CONCAT(`a12`.`col3`, `a12`.`col2`) `CustCol_12`,"\
+  "CONCAT((Case when `pa11`.`MYCOL` = ? then ? else ? end), `pa11`.`MYCOL`) `MYCOL`"\
+  "from (select `a11`.`id` `id`,"\
+  " max(CONCAT(`a11`.`col3`, `a11`.`col2`)) `MYCOL`"\
+  " from `bug31678876` `a11`"\
+  " group by `a11`.`id`"\
+  " ) `pa11`"\
+  " join `bug31678876` `a12`"\
+  " on (`pa11`.`id` = `a12`.`id`)";
+
+  SQLWCHAR p1[] = {0x014e, 0xe452, 0xc56b};
+  SQLWCHAR p2[] = {0x1f77};
+  SQLWCHAR p3[] = {0x4750};
+
+  SQLULEN len1 = sizeof(p1);
+  SQLULEN len2 = sizeof(p2);
+  SQLULEN len3 = sizeof(p3);
+
+  ok_stmt(hstmt, SQLPrepareW(hstmt, W(sel), SQL_NTS));
+  ok_stmt(hstmt, SQLBindParameter(hstmt, 1, SQL_PARAM_INPUT,
+                                  SQL_C_WCHAR, SQL_WCHAR, 0, 0, &p1,
+                                  sizeof(p1), &len1));
+
+  ok_stmt(hstmt, SQLBindParameter(hstmt, 2, SQL_PARAM_INPUT,
+                                  SQL_C_WCHAR, SQL_WCHAR, 0, 0, &p2,
+                                  sizeof(p2), &len2));
+
+  ok_stmt(hstmt, SQLBindParameter(hstmt, 3, SQL_PARAM_INPUT,
+                                  SQL_C_WCHAR, SQL_WCHAR, 0, 0, &p3,
+                                  sizeof(p3), &len3));
+
+  ok_stmt(hstmt, SQLExecute(hstmt));
+  int rnum = 0;
+
+  while(SQLFetch(hstmt) == SQL_SUCCESS)
+  {
+    int col1;
+    SQLULEN col1_len = 0, col2_len = 0, col3_len = 0;
+    SQLWCHAR col2[128];
+    SQLWCHAR col3[128];
+    ok_stmt(hstmt, SQLGetData(hstmt, 1, SQL_C_LONG, &col1, sizeof(int), &col1_len));
+    ok_stmt(hstmt, SQLGetData(hstmt, 2, SQL_C_WCHAR, &col2, sizeof(col2), &col2_len));
+    ok_stmt(hstmt, SQLGetData(hstmt, 3, SQL_C_WCHAR, &col3, sizeof(col3), &col3_len));
+    ++rnum;
+    // Crash happens when the local buffers go out of scope
+  }
+  printf("Fetched %d rows\n", rnum);
+  return OK;
+}
+
 
 /*
   Bug #49029 - Server with sql mode NO_BACKSLASHES_ESCAPE obviously
@@ -1016,11 +1095,30 @@ DECLARE_TEST(t_bug49029)
 
   ok_stmt(hstmt, SQLFetch(hstmt));
   ok_stmt(hstmt, SQLGetData(hstmt, 1, SQL_BINARY, (SQLPOINTER)buff, 6, &len));
+  expect_stmt(hstmt, SQLFetch(hstmt), SQL_NO_DATA);
 
   is(memcmp((const void*) buff, (const void*)bData, 5)==0);
 
+  SQLCHAR *bData128K = (SQLCHAR*)calloc(128000, 1);
+  SQLCHAR *rData128K = (SQLCHAR*)calloc(128000, 1);
+  SQLULEN b_len= 1020, r_len = 0;
+
+  memcpy(bData128K, "\x01\x80\x00\x80\x01", 5);
+
+  ok_stmt(hstmt, SQLBindParameter(hstmt, 1, SQL_PARAM_INPUT, SQL_C_BINARY, SQL_BINARY,
+    0, 0, (SQLPOINTER)bData128K, 0, &b_len));
+
+  ok_stmt(hstmt, SQLExecDirect(hstmt, "select ?", SQL_NTS));
+
+  ok_stmt(hstmt, SQLFetch(hstmt));
+  ok_stmt(hstmt, SQLGetData(hstmt, 1, SQL_BINARY, (SQLPOINTER)rData128K, 80000, &r_len));
+
+  is(memcmp((const void*)bData128K, (const void*)rData128K, b_len)==0);
+  free(bData128K);
+  free(rData128K);
   return OK;
 }
+
 
 
 /*
@@ -2161,6 +2259,7 @@ BEGIN_TESTS
   ADD_TEST(paramarray_ignore_paramset)
   ADD_TEST(paramarray_select)
   ADD_TEST(t_bug56804)
+  ADD_TEST(t_bug31678876)
 #endif
   ADD_TEST(t_param_offset)
   ADD_TEST(t_bug49029)
@@ -2181,4 +2280,3 @@ END_TESTS
 
 
 RUN_TESTS
-  

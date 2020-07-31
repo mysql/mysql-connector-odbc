@@ -212,16 +212,17 @@ MYSQL_ROW fetch_row(STMT *stmt)
       return NULL;
     }
 
-    if ((error= mysql_stmt_fetch(stmt->ssps)))
+    error= mysql_stmt_fetch(stmt->ssps);
+
     {
-      if (error == MYSQL_DATA_TRUNCATED && ssps_buffers_need_extending(stmt))
+
+      if (error == MYSQL_NO_DATA)
+        return nullptr;
+
+      if (stmt->fix_fields)
       {
-        if (stmt->fix_fields)
-        {
-          return stmt->fix_fields(stmt, nullptr); // it returns stmt->array
-        }
+        return stmt->fix_fields(stmt, nullptr); // it returns stmt->array
       }
-      return NULL;
     }
 
     return stmt->array;
@@ -370,7 +371,8 @@ BOOL is_null(STMT *stmt, ulong column_number, char *value)
 /* Prepares statement depending on connection option either on a client or
    on a server. Returns SQLRETURN result code since preparing on client or
    server can produce errors, memory allocation to name one.  */
-SQLRETURN prepare(STMT *stmt, char * query, SQLINTEGER query_length)
+SQLRETURN prepare(STMT *stmt, char * query, SQLINTEGER query_length,
+          bool reset_sql_limit)
 {
   /* TODO: I guess we always have to have query length here */
   if (query_length <= 0)
@@ -402,7 +404,15 @@ SQLRETURN prepare(STMT *stmt, char * query, SQLINTEGER query_length)
        it at the moment */
     if (!get_cursor_name(&stmt->query))
     {
-      if (mysql_stmt_prepare(stmt->ssps, query, query_length))
+     myodbc_mutex_lock(&stmt->dbc->lock);
+
+     if (reset_sql_limit)
+        set_sql_select_limit(stmt->dbc, 0, false);
+
+     int prep_res = mysql_stmt_prepare(stmt->ssps, query, query_length);
+     myodbc_mutex_unlock(&stmt->dbc->lock);
+
+     if (prep_res)
       {
         MYLOG_QUERY(stmt, mysql_error(&stmt->dbc->mysql));
 
