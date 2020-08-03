@@ -1008,7 +1008,8 @@ DECLARE_TEST(t_bug31678876)
                     'F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T'};
   ok_sql(hstmt, "DROP TABLE IF EXISTS bug31678876");
   ok_sql(hstmt, "CREATE TABLE bug31678876 (id int primary key auto_increment,"\
-                "col2 VARCHAR(255), col3 VARCHAR(255))");
+                "col2 VARCHAR(255), col3 VARCHAR(255)) "\
+                "DEFAULT CHARACTER SET = utf8;");
 
   ok_stmt(hstmt, SQLPrepare(hstmt, "INSERT INTO bug31678876 "\
                                    "(col2, col3) VALUES (?,?)", SQL_NTS));
@@ -1096,6 +1097,7 @@ DECLARE_TEST(t_bug49029)
   ok_stmt(hstmt, SQLFetch(hstmt));
   ok_stmt(hstmt, SQLGetData(hstmt, 1, SQL_BINARY, (SQLPOINTER)buff, 6, &len));
   expect_stmt(hstmt, SQLFetch(hstmt), SQL_NO_DATA);
+  ok_stmt(hstmt, SQLFreeStmt(hstmt, SQL_CLOSE));
 
   is(memcmp((const void*) buff, (const void*)bData, 5)==0);
 
