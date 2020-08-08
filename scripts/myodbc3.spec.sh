@@ -65,6 +65,11 @@ Vendor:		%{mysql_vendor}
 Packager:	%{mysql_vendor} Product Engineering Team <mysql-build@oss.oracle.com>
 BuildRequires:	cmake 
 %{?shared_mysqlclient:BuildRequires: mysql-community-devel}
+%if 0%{?commercial}
+Requires: mysql-commercial-client-plugins = %{version}
+%else
+Requires: mysql-community-client-plugins = %{version}
+%endif
 BuildRequires:	unixODBC-devel
 BuildRoot:	%(mktemp -ud %{_tmppath}/%{name}-%{version}-%{release}-XXXXXX)
 
