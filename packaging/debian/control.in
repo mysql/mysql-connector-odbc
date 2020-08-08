@@ -15,7 +15,9 @@ Package: mysql-connector-odbc@PRODUCT_SUFFIX@
 Section: libs
 Architecture: any
 Multi-Arch: same
-Depends: ${misc:Depends}, ${shlibs:Depends}
+Depends: mysql-@DEB_SERVERPRODUCT@-client-plugins,
+         ${misc:Depends},
+         ${shlibs:Depends}
 Recommends: libodbc1 | libiodbc2
 Conflicts: mysql-connector-odbc@NOT_PRODUCT_SUFFIX@
 Breaks: libiodbc2 (<< 3.52.7-2~),
