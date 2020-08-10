@@ -1280,6 +1280,7 @@ DECLARE_TEST(t_bug31667091)
   ok_stmt(hstmt, SQLExecute(hstmt));
   is_num(my_print_non_format_result(hstmt), 3);
   ok_sql(hstmt,"DROP TABLE bug31667091");
+  return OK;
 }
 
 BEGIN_TESTS
