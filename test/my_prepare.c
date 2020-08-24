@@ -1304,7 +1304,7 @@ BEGIN_TESTS
   ADD_TEST(t_bug67702)
   ADD_TEST(t_bug68243)
   ADD_TEST(t_bug67920)
-  // ADD_TODO(t_bug31667091) Re-enable when server fixes sql_select_limit
+  ADD_TODO(t_bug31667091)
 END_TESTS
 
 
