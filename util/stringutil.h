@@ -111,7 +111,7 @@ size_t sqlwcharncat2(SQLWCHAR *dest, const SQLWCHAR *src, size_t *n);
 SQLWCHAR *sqlwcharncpy(SQLWCHAR *dest, const SQLWCHAR *src, size_t n);
 SQLWCHAR *wchar_t_as_sqlwchar(wchar_t *from, SQLWCHAR *to, size_t len);
 
-char * myodbc_strlwr(char *target, size_t len);
+char * myodbc_strlwr(char *target, int len);
 SQLCHAR* sqlwchar_as_utf8_simple(SQLWCHAR *s);
 char *myodbc_stpmov(char *dst, const char *src);
 char *myodbc_ll2str(longlong val, char *dst, int radix);
@@ -120,10 +120,9 @@ typedef int(*qsort_cmp)(const void *, const void *);
 
 void myodbc_qsort(void *base_ptr, size_t count, size_t size, qsort_cmp cmp);
 char *myodbc_int10_to_str(long int val, char *dst, int radix);
-bool myodbc_init_dynamic_string(DYNAMIC_STRING *str, const char *init_str,
-                         size_t init_alloc, size_t alloc_increment);
-bool myodbc_append_mem(DYNAMIC_STRING *str, const char *append, size_t length);
-bool myodbc_append_os_quoted(DYNAMIC_STRING *str, const char *append, ...);
+bool myodbc_append_mem_std(std::string &str, const char *append, size_t length);
+
+bool myodbc_append_os_quoted_std(std::string &str, const char *append, ...);
 void myodbc_dynstr_free(DYNAMIC_STRING *str);
 bool myodbc_dynstr_realloc(DYNAMIC_STRING *str, size_t additional_size);
 #ifdef __cplusplus

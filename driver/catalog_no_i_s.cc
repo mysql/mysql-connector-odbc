@@ -110,7 +110,7 @@ static MYSQL_RES *server_list_dbkeys(STMT *stmt,
                                      SQLSMALLINT table_len)
 {
     DBC   *dbc = stmt->dbc;
-    MYSQL *mysql= &dbc->mysql;
+    MYSQL *mysql= dbc->mysql;
     char  buff[255 + 4 * NAME_LEN], *to;
 
     to= myodbc_stpmov(buff, "SHOW KEYS FROM `");
@@ -192,7 +192,7 @@ server_list_dbcolumns(STMT *stmt,
                       SQLCHAR *szColumn, SQLSMALLINT cbColumn)
 {
   DBC *dbc= stmt->dbc;
-  MYSQL *mysql= &dbc->mysql;
+  MYSQL *mysql= dbc->mysql;
   MYSQL_RES *result;
   char buff[NAME_LEN * 2 + 64], column_buff[NAME_LEN * 2 + 64];
 
@@ -227,9 +227,9 @@ server_list_dbcolumns(STMT *stmt,
   result= mysql_list_fields(mysql, buff, column_buff);
 
   /* If before this call no database were selected - we cannot revert that */
-  if (cbCatalog && dbc->database)
+  if (cbCatalog && !dbc->database.empty())
   {
-    if (mysql_select_db( mysql, dbc->database))
+    if (mysql_select_db( mysql, dbc->database.c_str()))
     {
       /* Well, probably have to return error here */
       mysql_free_result(result);
@@ -273,7 +273,7 @@ columns_no_i_s(STMT * stmt, SQLCHAR *szCatalog, SQLSMALLINT cbCatalog,
 
   if (cbColumn > NAME_LEN || cbTable > NAME_LEN || cbCatalog > NAME_LEN)
   {
-    return set_stmt_error(stmt, "HY090", "Invalid string or buffer length", 4001);
+    return stmt->set_error("HY090", "Invalid string or buffer length", 4001);
   }
 
   /* Get the list of tables that match szCatalog and szTable */
@@ -281,7 +281,7 @@ columns_no_i_s(STMT * stmt, SQLCHAR *szCatalog, SQLSMALLINT cbCatalog,
   res= table_status(stmt, szCatalog, cbCatalog, szTable, cbTable, TRUE,
                     TRUE, TRUE);
 
-  if (!res && mysql_errno(&stmt->dbc->mysql))
+  if (!res && mysql_errno(stmt->dbc->mysql))
   {
     SQLRETURN rc= handle_connection_error(stmt);
     myodbc_mutex_unlock(&stmt->dbc->lock);
@@ -331,7 +331,7 @@ columns_no_i_s(STMT * stmt, SQLCHAR *szCatalog, SQLSMALLINT cbCatalog,
                                             MYF(MY_ALLOW_ZERO_PTR));
     if (!stmt->result_array)
     {
-      set_mem_error(&stmt->dbc->mysql);
+      set_mem_error(stmt->dbc->mysql);
       return handle_connection_error(stmt);
     }
 
@@ -533,7 +533,7 @@ static MYSQL_RES *table_privs_raw_data( STMT *      stmt,
                                         SQLSMALLINT table_len)
 {
   DBC *dbc= stmt->dbc;
-  MYSQL *mysql= &dbc->mysql;
+  MYSQL *mysql= dbc->mysql;
   char   buff[255+2*NAME_LEN+1], *pos;
 
   pos= strxmov(buff,
@@ -624,7 +624,7 @@ list_table_priv_no_i_s(SQLHSTMT hstmt,
 
     if (!stmt->result_array)
     {
-      set_mem_error(&stmt->dbc->mysql);
+      set_mem_error(stmt->dbc->mysql);
       return handle_connection_error(stmt);
     }
 
@@ -685,7 +685,7 @@ static MYSQL_RES *column_privs_raw_data(STMT *      stmt,
                                         SQLSMALLINT column_len)
 {
   DBC   *dbc = stmt->dbc;
-  MYSQL *mysql = &dbc->mysql;
+  MYSQL *mysql = dbc->mysql;
 
   char buff[400+6*NAME_LEN+1], *pos;
 
@@ -778,7 +778,7 @@ list_column_priv_no_i_s(SQLHSTMT hstmt,
     MYF(MY_ZEROFILL));
   if (!stmt->result_array)
   {
-    set_mem_error(&stmt->dbc->mysql);
+    set_mem_error(stmt->dbc->mysql);
     return handle_connection_error(stmt);
   }
   alloc= &stmt->alloc_root;
@@ -830,7 +830,7 @@ Lengths may not be SQL_NTS.
 @param[in] wildcard       Whether the table name is a wildcard
 
 @return Result of SHOW TABLE STATUS, or NULL if there is an error
-or empty result (check mysql_errno(&stmt->dbc->mysql) != 0)
+or empty result (check mysql_errno(stmt->dbc->mysql) != 0)
 */
 MYSQL_RES *table_status_no_i_s(STMT        *stmt,
                                SQLCHAR     *catalog,
@@ -839,7 +839,7 @@ MYSQL_RES *table_status_no_i_s(STMT        *stmt,
                                SQLSMALLINT  table_length,
                                my_bool      wildcard)
 {
-	MYSQL *mysql= &stmt->dbc->mysql;
+	MYSQL *mysql= stmt->dbc->mysql;
 	/** @todo determine real size for buffer */
 	char buff[36 + 4*NAME_LEN + 1], *to;
 
@@ -895,7 +895,7 @@ Lengths may not be SQL_NTS.
 @param[in] table_length   Length of table name
 
 @return Result of SHOW CREATE TABLE , or NULL if there is an error
-or empty result (check mysql_errno(&stmt->dbc->mysql) != 0)
+or empty result (check mysql_errno(stmt->dbc->mysql) != 0)
 */
 MYSQL_RES *server_show_create_table(STMT        *stmt,
                                     SQLCHAR     *catalog,
@@ -903,7 +903,7 @@ MYSQL_RES *server_show_create_table(STMT        *stmt,
                                     SQLCHAR     *table,
                                     SQLSMALLINT  table_length)
 {
-  MYSQL *mysql= &stmt->dbc->mysql;
+  MYSQL *mysql= stmt->dbc->mysql;
   /** @todo determine real size for buffer */
   char buff[36 + 4*NAME_LEN + 1], *to;
 
@@ -1110,7 +1110,7 @@ SQLRETURN foreign_keys_no_i_s(SQLHSTMT hstmt,
   myodbc_mutex_lock(&stmt->dbc->lock);
   local_res= table_status(stmt, szFkCatalogName, cbFkCatalogName, szFkTableName,
                     cbFkTableName, FALSE, TRUE, TRUE);
-  if (!local_res && mysql_errno(&stmt->dbc->mysql))
+  if (!local_res && mysql_errno(stmt->dbc->mysql))
   {
     rc= handle_connection_error(stmt);
     goto unlock_and_free;
@@ -1135,7 +1135,7 @@ SQLRETURN foreign_keys_no_i_s(SQLHSTMT hstmt,
 
     if (!stmt->result)
     {
-      if (mysql_errno(&stmt->dbc->mysql))
+      if (mysql_errno(stmt->dbc->mysql))
       {
         rc= handle_connection_error(stmt);
         goto unlock_and_free;
@@ -1255,12 +1255,12 @@ SQLRETURN foreign_keys_no_i_s(SQLHSTMT hstmt,
                     myodbc_stpmov(fkRows->FKTABLE_NAME, row[0]);
                     myodbc_stpmov(fkRows->FKTABLE_CAT, (szFkCatalogName ?
                             strdup_root(alloc, (char *)szFkCatalogName) :
-                            strdup_root(alloc, stmt->dbc->database ?
-                            stmt->dbc->database : "null")));
+                            strdup_root(alloc, !stmt->dbc->database.empty() ?
+                            stmt->dbc->database.c_str() : "null")));
                     myodbc_stpmov(fkRows->PKTABLE_CAT, (szPkCatalogName ?
                             strdup_root(alloc, (char *)szPkCatalogName) :
-                            strdup_root(alloc, stmt->dbc->database ?
-                            stmt->dbc->database : "null")));
+                            strdup_root(alloc, !stmt->dbc->database.empty() ?
+                            stmt->dbc->database.c_str() : "null")));
                     /* key_seq incremented once for each PK column */
                     fkRows->KEY_SEQ= ++key_seq;
                   }
@@ -1284,12 +1284,12 @@ SQLRETURN foreign_keys_no_i_s(SQLHSTMT hstmt,
                     myodbc_stpmov(fkRows->FKTABLE_NAME, row[0]);
                     myodbc_stpmov(fkRows->FKTABLE_CAT, (szFkCatalogName ?
                             strdup_root(alloc, (char *)szFkCatalogName) :
-                            strdup_root(alloc, stmt->dbc->database ?
-                            stmt->dbc->database : "null")));
+                            strdup_root(alloc, !stmt->dbc->database.empty() ?
+                            stmt->dbc->database.c_str() : "null")));
                     myodbc_stpmov(fkRows->PKTABLE_CAT, (szPkCatalogName ?
                             strdup_root(alloc, (char *)szPkCatalogName) :
-                            strdup_root(alloc, stmt->dbc->database ?
-                            stmt->dbc->database : "null")));
+                            strdup_root(alloc, !stmt->dbc->database.empty() ?
+                            stmt->dbc->database.c_str() : "null")));
                     /* key_seq incremented once for each PK column */
                     fkRows->KEY_SEQ= ++key_seq;
                   }
@@ -1389,7 +1389,7 @@ SQLRETURN foreign_keys_no_i_s(SQLHSTMT hstmt,
                                          MYF(MY_ZEROFILL));
     if (!tempdata)
     {
-      set_mem_error(&stmt->dbc->mysql);
+      set_mem_error(stmt->dbc->mysql);
       rc= handle_connection_error(stmt);
       goto free_and_return;
     }
@@ -1450,7 +1450,7 @@ SQLRETURN foreign_keys_no_i_s(SQLHSTMT hstmt,
 
   if (!stmt->result_array)
   {
-    set_mem_error(&stmt->dbc->mysql);
+    set_mem_error(stmt->dbc->mysql);
     return handle_connection_error(stmt);
   }
 
@@ -1558,7 +1558,7 @@ primary_keys_no_i_s(SQLHSTMT hstmt,
                                             MYF(MY_ZEROFILL));
     if (!stmt->result_array)
     {
-      set_mem_error(&stmt->dbc->mysql);
+      set_mem_error(stmt->dbc->mysql);
       return handle_connection_error(stmt);
     }
 
@@ -1566,7 +1566,7 @@ primary_keys_no_i_s(SQLHSTMT hstmt,
 
     if (!stmt->lengths)
     {
-      set_mem_error(&stmt->dbc->mysql);
+      set_mem_error(stmt->dbc->mysql);
       return handle_connection_error(stmt);
     }
 
@@ -1650,10 +1650,10 @@ static MYSQL_RES *server_list_proc_params(STMT *stmt,
                                           SQLSMALLINT proc_name_len)
 {
   DBC   *dbc = stmt->dbc;
-  MYSQL *mysql= &dbc->mysql;
+  MYSQL *mysql= dbc->mysql;
   char   buff[1024+4*NAME_LEN+1], *pos;
 
-  if((is_minimum_version(dbc->mysql.server_version, "8.0")))
+  if((is_minimum_version(dbc->mysql->server_version, "8.0")))
   {
     pos= myodbc_stpmov(buff, "select SPECIFIC_NAME, GROUP_CONCAT(IF(ISNULL(PARAMETER_NAME), "
                              "concat('RETURN_VALUE ', DTD_IDENTIFIER), "
@@ -1770,22 +1770,19 @@ procedure_columns_no_i_s(SQLHSTMT hstmt,
   STMT *stmt= (STMT *)hstmt;
   LIST *params= 0, *params_r, *cur_params= 0;
   SQLRETURN nReturn= SQL_SUCCESS;
-  DYNAMIC_STRING  dynQuery;
   MYSQL_ROW row;
   MYSQL_RES *proc_list_res, *columns_res= 0;
   char **tempdata;
   int params_num= 0, return_params_num= 0;
   unsigned int i, j, total_params_num= 0;
 
-  if (myodbc_init_dynamic_string(&dynQuery, "SELECT 1", 1024,1024))
-    return set_stmt_error(stmt, "HY001", "Not enough memory", 4001);
+  std::string query("SELECT 1");
 
   params_r= params= (LIST *) myodbc_malloc(sizeof(LIST), MYF(MY_ZEROFILL));
 
   if (params_r == NULL)
   {
-    myodbc_dynstr_free(&dynQuery);
-    set_mem_error(&stmt->dbc->mysql);
+    set_mem_error(stmt->dbc->mysql);
     return handle_connection_error(stmt);
   }
 
@@ -1797,8 +1794,8 @@ procedure_columns_no_i_s(SQLHSTMT hstmt,
   {
     myodbc_mutex_unlock(&stmt->dbc->lock);
 
-    nReturn= stmt->set_error( MYERR_S1000, mysql_error(&stmt->dbc->mysql),
-                      mysql_errno(&stmt->dbc->mysql));
+    nReturn= stmt->set_error( MYERR_S1000, mysql_error(stmt->dbc->mysql),
+                      mysql_errno(stmt->dbc->mysql));
     goto clean_exit;
   }
 
@@ -1853,7 +1850,7 @@ procedure_columns_no_i_s(SQLHSTMT hstmt,
 
       if (data ==  NULL)
       {
-        set_mem_error(&stmt->dbc->mysql);
+        set_mem_error(stmt->dbc->mysql);
         nReturn= handle_connection_error(stmt);
         goto exit_with_free;
       }
@@ -1879,10 +1876,10 @@ procedure_columns_no_i_s(SQLHSTMT hstmt,
 
       if (cbColumnName)
       {
-        myodbc_append_mem(&dynQuery, ",", 1);
-        myodbc_append_os_quoted(&dynQuery, (char *)param_name, NullS);
-        myodbc_append_mem(&dynQuery, " LIKE ", 6);
-        myodbc_append_os_quoted(&dynQuery, (char *)szColumnName, NullS);
+        query.append(",", 1);
+        myodbc_append_os_quoted_std(query, (char *)param_name, NullS);
+        query.append(" LIKE ", 6);
+        myodbc_append_os_quoted_std(query, (char *)szColumnName, NullS);
       }
 
       if (param_ordinal_position == 0)
@@ -1971,7 +1968,7 @@ procedure_columns_no_i_s(SQLHSTMT hstmt,
 
         if (new_elem == NULL)
         {
-          set_mem_error(&stmt->dbc->mysql);
+          set_mem_error(stmt->dbc->mysql);
           nReturn= handle_connection_error(stmt);
           goto exit_with_free;
         }
@@ -1992,13 +1989,13 @@ procedure_columns_no_i_s(SQLHSTMT hstmt,
   if (cbColumnName)
   {
     myodbc_mutex_lock(&stmt->dbc->lock);
-    if (exec_stmt_query(stmt, dynQuery.str, (unsigned long)dynQuery.length, FALSE) ||
-        !(columns_res= mysql_store_result(&stmt->dbc->mysql)))
+    if (exec_stmt_query_std(stmt, query, false) ||
+        !(columns_res= mysql_store_result(stmt->dbc->mysql)))
     {
       myodbc_mutex_unlock(&stmt->dbc->lock);
 
-      nReturn= stmt->set_error( MYERR_S1000, mysql_error(&stmt->dbc->mysql),
-                mysql_errno(&stmt->dbc->mysql));
+      nReturn= stmt->set_error( MYERR_S1000, mysql_error(stmt->dbc->mysql),
+                mysql_errno(stmt->dbc->mysql));
       goto exit_with_free;
     }
 
@@ -2009,8 +2006,8 @@ procedure_columns_no_i_s(SQLHSTMT hstmt,
 
     if (row == NULL)
     {
-      nReturn= stmt->set_error( MYERR_S1000, mysql_error(&stmt->dbc->mysql),
-                mysql_errno(&stmt->dbc->mysql));
+      nReturn= stmt->set_error( MYERR_S1000, mysql_error(stmt->dbc->mysql),
+                mysql_errno(stmt->dbc->mysql));
       goto exit_with_free;
     }
 
@@ -2099,7 +2096,6 @@ clean_exit:
     mysql_free_result(columns_res);
   }
 
-  myodbc_dynstr_free(&dynQuery);
   x_free(params_r);
 
   return nReturn;
@@ -2176,7 +2172,7 @@ special_columns_no_i_s(SQLHSTMT hstmt, SQLUSMALLINT fColType,
         if ( !(stmt->result_array= (char**) myodbc_malloc(sizeof(char*)*SQLSPECIALCOLUMNS_FIELDS*
                                                       result->field_count, MYF(MY_ZEROFILL))) )
         {
-          set_mem_error(&stmt->dbc->mysql);
+          set_mem_error(stmt->dbc->mysql);
           return handle_connection_error(stmt);
         }
 
@@ -2259,7 +2255,7 @@ special_columns_no_i_s(SQLHSTMT hstmt, SQLUSMALLINT fColType,
     if ( !(stmt->result_array= (char**) myodbc_malloc(sizeof(char*)*SQLSPECIALCOLUMNS_FIELDS*
                                                   result->field_count, MYF(MY_ZEROFILL))) )
     {
-      set_mem_error(&stmt->dbc->mysql);
+      set_mem_error(stmt->dbc->mysql);
       return handle_connection_error(stmt);
     }
 
@@ -2356,7 +2352,7 @@ statistics_no_i_s(SQLHSTMT hstmt,
                   SQLUSMALLINT fAccuracy __attribute__((unused)))
 {
     STMT *stmt= (STMT *)hstmt;
-    MYSQL *mysql= &stmt->dbc->mysql;
+    MYSQL *mysql= stmt->dbc->mysql;
     DBC *dbc= stmt->dbc;
 
     if (!table_len)
@@ -2380,7 +2376,7 @@ statistics_no_i_s(SQLHSTMT hstmt,
                                        sizeof(SQLSTAT_values),MYF(0));
     if (!stmt->array)
     {
-      set_mem_error(&stmt->dbc->mysql);
+      set_mem_error(stmt->dbc->mysql);
       return handle_connection_error(stmt);
     }
 
@@ -2483,12 +2479,12 @@ tables_no_i_s(SQLHSTMT hstmt,
       {
         char buff[32 + NAME_LEN * 2], *to;
         to= myodbc_stpmov(buff, "SHOW DATABASES LIKE '");
-        to+= mysql_real_escape_string(&stmt->dbc->mysql, to,
+        to+= mysql_real_escape_string(stmt->dbc->mysql, to,
                                       (char *)catalog, catalog_len);
         to= myodbc_stpmov(to, "'");
         MYLOG_QUERY(stmt, buff);
-        if (!mysql_query(&stmt->dbc->mysql, buff))
-          catalog_res= mysql_store_result(&stmt->dbc->mysql);
+        if (!mysql_query(stmt->dbc->mysql, buff))
+          catalog_res= mysql_store_result(stmt->dbc->mysql);
       }
       myodbc_mutex_unlock(&stmt->dbc->lock);
 
@@ -2519,7 +2515,7 @@ tables_no_i_s(SQLHSTMT hstmt,
       stmt->result= catalog_res;
       if (!stmt->array)
       {
-        set_mem_error(&stmt->dbc->mysql);
+        set_mem_error(stmt->dbc->mysql);
         return handle_connection_error(stmt);
       }
       myodbc_link_fields(stmt, SQLTABLES_fields, SQLTABLES_FIELDS);
@@ -2618,10 +2614,10 @@ tables_no_i_s(SQLHSTMT hstmt,
                                      user_tables, views);
         }
 
-        if (!stmt->result && mysql_errno(&stmt->dbc->mysql))
+        if (!stmt->result && mysql_errno(stmt->dbc->mysql))
         {
           /* unknown DB will return empty set from SQLTables */
-          switch (mysql_errno(&stmt->dbc->mysql))
+          switch (mysql_errno(stmt->dbc->mysql))
           {
           case ER_BAD_DB_ERROR:
             myodbc_mutex_unlock(&stmt->dbc->lock);
@@ -2661,7 +2657,7 @@ tables_no_i_s(SQLHSTMT hstmt,
                                        SQLTABLES_FIELDS * row_count,
                                        MYF(MY_ZEROFILL))))
           {
-            set_mem_error(&stmt->dbc->mysql);
+            set_mem_error(stmt->dbc->mysql);
             rc = handle_connection_error(stmt);
             goto free_and_return;
           }
@@ -2680,8 +2676,8 @@ tables_no_i_s(SQLHSTMT hstmt,
             {
               if (!reget_current_catalog(stmt->dbc))
               {
-                const char *dbname= stmt->dbc->database ? stmt->dbc->database
-                                                        : "null";
+                const char *dbname= !stmt->dbc->database.empty() ?
+                                    stmt->dbc->database.c_str() : "null";
                 db= strmake_root(&stmt->alloc_root,
                                  dbname, strlen(dbname));
               }

@@ -176,17 +176,17 @@ SQLRETURN set_dbc_error(DBC *dbc, char *state,
   conversion
 */
 
-SQLRETURN myodbc_set_stmt_error( STMT       *  stmt,
-                          const char *  state,
-                          const char *  message,
-                          uint          errcode )
-{
-    myodbc_stpmov(stmt->error.sqlstate, state);
-    strxmov(stmt->error.message, stmt->dbc->st_error_prefix, message, NullS);
-    stmt->error.native_error = errcode;
-
-    return SQL_ERROR;
-}
+//SQLRETURN myodbc_set_stmt_error( STMT       *  stmt,
+//                          const char *  state,
+//                          const char *  message,
+//                          uint          errcode )
+//{
+//    myodbc_stpmov(stmt->error.sqlstate, state);
+//    strxmov(stmt->error.message, stmt->dbc->st_error_prefix, message, NullS);
+//    stmt->error.native_error = errcode;
+//
+//    return SQL_ERROR;
+//}
 
 
 /*
@@ -323,7 +323,7 @@ SQLRETURN set_conn_error(DBC *dbc, myodbc_errid errid, const char *errtext,
 
 
 MYERROR::MYERROR(myodbc_errid errid, const char *errtext, SQLINTEGER errcode,
-                 char *prefix)
+                 const char *prefix)
 {
   SQLCHAR     *errmsg;
 
@@ -336,6 +336,14 @@ MYERROR::MYERROR(myodbc_errid errid, const char *errtext, SQLINTEGER errcode,
   strxmov(message, prefix, errmsg, NullS);           /* MESSAGE */
 }
 
+
+MYERROR::MYERROR(const char *state, const char *msg, SQLINTEGER errcode,
+                 const char *prefix)
+{
+  myodbc_stpmov(sqlstate, state);
+  strxmov(message, prefix, msg, NullS);
+  native_error = errcode;
+}
 
 
 /*
@@ -357,19 +365,19 @@ void set_mem_error(MYSQL *mysql)
 */
 SQLRETURN handle_connection_error(STMT *stmt)
 {
-  unsigned int err= mysql_errno(&stmt->dbc->mysql);
+  unsigned int err= mysql_errno(stmt->dbc->mysql);
   switch (err) {
   case 0:  /* no error */
     return SQL_SUCCESS;
   case CR_SERVER_GONE_ERROR:
   case CR_SERVER_LOST:
-    return set_stmt_error(stmt, "08S01", mysql_error(&stmt->dbc->mysql), err);
+    return stmt->set_error("08S01", mysql_error(stmt->dbc->mysql), err);
   case CR_OUT_OF_MEMORY:
-    return set_stmt_error(stmt, "HY001", mysql_error(&stmt->dbc->mysql), err);
+    return stmt->set_error("HY001", mysql_error(stmt->dbc->mysql), err);
   case CR_COMMANDS_OUT_OF_SYNC:
   case CR_UNKNOWN_ERROR:
   default:
-    return set_stmt_error(stmt, "HY000", mysql_error(&stmt->dbc->mysql), err);
+    return stmt->set_error("HY000", mysql_error(stmt->dbc->mysql), err);
   }
 }
 

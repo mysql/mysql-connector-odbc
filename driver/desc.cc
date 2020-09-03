@@ -1,30 +1,30 @@
-// Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved. 
-// 
-// This program is free software; you can redistribute it and/or modify 
-// it under the terms of the GNU General Public License, version 2.0, as 
-// published by the Free Software Foundation. 
-// 
-// This program is also distributed with certain software (including 
-// but not limited to OpenSSL) that is licensed under separate terms, 
-// as designated in a particular file or component or in included license 
-// documentation. The authors of MySQL hereby grant you an 
-// additional permission to link the program and your derivative works 
-// with the separately licensed software that they have included with 
-// MySQL. 
-// 
-// Without limiting anything contained in the foregoing, this file, 
-// which is part of MySQL Connector/ODBC, is also subject to the 
-// Universal FOSS Exception, version 1.0, a copy of which can be found at 
-// http://oss.oracle.com/licenses/universal-foss-exception. 
-// 
-// This program is distributed in the hope that it will be useful, but 
-// WITHOUT ANY WARRANTY; without even the implied warranty of 
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-// See the GNU General Public License, version 2.0, for more details. 
-// 
-// You should have received a copy of the GNU General Public License 
-// along with this program; if not, write to the Free Software Foundation, Inc., 
-// 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA 
+// Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+//
+// This program is free software; you can redistribute it and/or modify
+// it under the terms of the GNU General Public License, version 2.0, as
+// published by the Free Software Foundation.
+//
+// This program is also distributed with certain software (including
+// but not limited to OpenSSL) that is licensed under separate terms,
+// as designated in a particular file or component or in included license
+// documentation. The authors of MySQL hereby grant you an
+// additional permission to link the program and your derivative works
+// with the separately licensed software that they have included with
+// MySQL.
+//
+// Without limiting anything contained in the foregoing, this file,
+// which is part of MySQL Connector/ODBC, is also subject to the
+// Universal FOSS Exception, version 1.0, a copy of which can be found at
+// http://oss.oracle.com/licenses/universal-foss-exception.
+//
+// This program is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+// See the GNU General Public License, version 2.0, for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program; if not, write to the Free Software Foundation, Inc.,
+// 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 
 /**
   @file  desc.c
@@ -39,12 +39,14 @@
  ****************************************************************************/
 
 #include "driver.h"
+#include <algorithm>
 
 /* Utility macros for defining descriptor fields */
 #define HDR_FLD(field, perm, type) \
   static desc_field HDR_##field= \
     {(perm), (type), DESC_HDR, offsetof(DESC, field)}
     /* parens around field in offsetof() confuse GCC */
+
 
 #define REC_FLD(field, perm, type) \
   static desc_field REC_##field= \
@@ -59,40 +61,10 @@
 DESC *desc_alloc(STMT *stmt, SQLSMALLINT alloc_type,
                  desc_ref_type ref_type, desc_desc_type desc_type)
 {
-  DESC *desc= (DESC *)myodbc_malloc(sizeof(DESC), MYF(MY_ZEROFILL));
+  DESC *desc= new DESC(stmt, alloc_type, ref_type, desc_type);
   if (!desc)
     return NULL;
-  /*
-     We let the dynamic array handle the memory for the whole DESCREC,
-     but in desc_get_rec we manually get a pointer to it. This avoids
-     having to call set_dynamic after modifying the DESCREC.
-  */
-  if (myodbc_init_dynamic_array(&desc->records, sizeof(DESCREC), 0, 0))
-  {
-    x_free((char *)desc);
-    return NULL;
-  }
 
-  if (myodbc_init_dynamic_array(&desc->bookmark, sizeof(DESCREC), 0, 0))
-  {
-    delete_dynamic(&desc->records);
-    x_free((char *)desc);
-    return NULL;
-  }
-
-  desc->desc_type= desc_type;
-  desc->alloc_type= alloc_type;
-  desc->ref_type= ref_type;
-  desc->stmt= stmt;
-  /* spec-defined defaults/initialization */
-  desc->array_size= 1;
-  desc->array_status_ptr= NULL;
-  desc->bind_offset_ptr= NULL;
-  desc->bind_type= SQL_BIND_BY_COLUMN;
-  desc->count= 0;
-  desc->bookmark_count= 0;
-  desc->rows_processed_ptr= NULL;
-  desc->exp.stmts= NULL;
   return desc;
 }
 
@@ -103,108 +75,115 @@ DESC *desc_alloc(STMT *stmt, SQLSMALLINT alloc_type,
 void desc_free(DESC *desc)
 {
   assert(desc);
-  if (IS_APD(desc))
-    desc_free_paramdata(desc);
-  delete_dynamic(&desc->records);
-  delete_dynamic(&desc->bookmark);
-  x_free(desc);
+  delete desc;
 }
 
 
-/*
-  Free any memory allocated for SQLPutData(). This is only useful
-  for APDs.
-*/
-void desc_free_paramdata(DESC *desc)
+void DESC::reset()
 {
-  SQLLEN i;
-  for (i= 0; i < desc->count; ++i)
-  {
-    DESCREC *aprec= desc_get_rec(desc, i, FALSE);
-    assert(aprec);
-    if (aprec->par.alloced)
-    {
-      aprec->par.alloced= FALSE;
-      x_free(aprec->par.value);
-    }
-  }
+  records2.clear();
+}
+
+void DESC::free_paramdata()
+{
+  for (auto &r : records2)
+    r.par.reset();
 }
 
 
 /*
  * Initialize APD
  */
-void desc_rec_init_apd(DESCREC *rec)
+void DESCREC::desc_rec_init_apd()
 {
-  memset(rec, 0, sizeof(DESCREC));
   /* ODBC defaults */
-  rec->concise_type= SQL_C_DEFAULT;
-  rec->data_ptr= NULL;
-  rec->indicator_ptr= NULL;
-  rec->octet_length_ptr= NULL;
-  rec->type= SQL_C_DEFAULT;
+  concise_type= SQL_C_DEFAULT;
+  data_ptr= NULL;
+  indicator_ptr= NULL;
+  octet_length_ptr= NULL;
+  type= SQL_C_DEFAULT;
 
   /* internal */
-  rec->par.alloced= FALSE;
-  rec->par.value= NULL;
+  par.reset();
 }
 
 
 /*
  * Initialize IPD
  */
-void desc_rec_init_ipd(DESCREC *rec)
+void DESCREC::desc_rec_init_ipd()
 {
-  memset(rec, 0, sizeof(DESCREC));
   /* ODBC defaults */
-  rec->fixed_prec_scale= SQL_TRUE;
-  rec->local_type_name= (SQLCHAR *)"";
-  rec->nullable= SQL_NULLABLE;
-  rec->parameter_type= SQL_PARAM_INPUT;
-  rec->type_name= (SQLCHAR *)"VARCHAR";
-  rec->is_unsigned= SQL_FALSE;
+  fixed_prec_scale= SQL_TRUE;
+  local_type_name= (SQLCHAR *)"";
+  nullable= SQL_NULLABLE;
+  parameter_type= SQL_PARAM_INPUT;
+  type_name= (SQLCHAR *)"VARCHAR";
+  is_unsigned= SQL_FALSE;
 
   /* driver defaults */
-  rec->name= (SQLCHAR *)"";
+  name= (SQLCHAR *)"";
 }
 
 
 /*
  * Initialize ARD
  */
-void desc_rec_init_ard(DESCREC *rec)
+void DESCREC::desc_rec_init_ard()
 {
-  memset(rec, 0, sizeof(DESCREC));
   /* ODBC defaults */
-  rec->concise_type= SQL_C_DEFAULT;
-  rec->data_ptr= NULL;
-  rec->indicator_ptr= NULL;
-  rec->octet_length_ptr= NULL;
-  rec->type= SQL_C_DEFAULT;
+  concise_type= SQL_C_DEFAULT;
+  data_ptr= NULL;
+  indicator_ptr= NULL;
+  octet_length_ptr= NULL;
+  type= SQL_C_DEFAULT;
 }
 
 
 /*
  * Initialize IRD
  */
-void desc_rec_init_ird(DESCREC *rec)
+void DESCREC::desc_rec_init_ird()
 {
-  memset(rec, 0, sizeof(DESCREC));
   /* ODBC defaults */
   /* driver defaults */
-  rec->auto_unique_value= SQL_FALSE;
-  rec->case_sensitive= SQL_TRUE;
-  rec->concise_type= SQL_VARCHAR;
-  rec->display_size= 100;/*?*/
-  rec->fixed_prec_scale= SQL_TRUE;
-  rec->length= 100;/*?*/
-  rec->nullable= SQL_NULLABLE_UNKNOWN;
-  rec->type= SQL_VARCHAR;
-  rec->type_name= (SQLCHAR *)"VARCHAR";
-  rec->unnamed= SQL_UNNAMED;
-  rec->is_unsigned= SQL_FALSE;
+  auto_unique_value= SQL_FALSE;
+  case_sensitive= SQL_TRUE;
+  concise_type= SQL_VARCHAR;
+  display_size= 100;/*?*/
+  fixed_prec_scale= SQL_TRUE;
+  length= 100;/*?*/
+  nullable= SQL_NULLABLE_UNKNOWN;
+  type= SQL_VARCHAR;
+  type_name= (SQLCHAR *)"VARCHAR";
+  unnamed= SQL_UNNAMED;
+  is_unsigned= SQL_FALSE;
 }
 
+void DESCREC::reset_to_defaults()
+{
+  par.reset();
+  row.reset();
+
+  if (m_desc_type == DESC_PARAM && m_ref_type == DESC_APP)
+    desc_rec_init_apd();
+  else if (m_desc_type == DESC_PARAM && m_ref_type == DESC_IMP)
+    desc_rec_init_ipd();
+  else if (m_desc_type == DESC_ROW && m_ref_type == DESC_APP)
+    desc_rec_init_ard();
+  else if (m_desc_type == DESC_ROW && m_ref_type == DESC_IMP)
+    desc_rec_init_ird();
+
+}
+
+void DESCREC::par_struct::add_param_data(const char *chunk,
+                                         unsigned long length)
+{
+    tempbuf.add_to_buffer(chunk, length);
+
+    // TODO: do the memory errors
+    //  return stmt->set_error(MYERR_S1001, NULL, 4001);
+}
 
 /*
  * Get a record from the descriptor.
@@ -227,30 +206,18 @@ DESCREC *desc_get_rec(DESC *desc, int recnum, my_bool expand)
     {
       if (!desc->bookmark_count)
       {
-        rec= (DESCREC *)alloc_dynamic(&desc->bookmark);
-        if (!rec)
-          return NULL;
+        desc->bookmark2.emplace_back(desc->desc_type, desc->ref_type);
+        rec = &desc->bookmark2.back();
 
-        memset(rec, 0, sizeof(DESCREC));
         ++desc->bookmark_count;
-
-        /* record initialization */
-        if (IS_APD(desc))
-            desc_rec_init_apd(rec);
-        else if (IS_IPD(desc))
-            desc_rec_init_ipd(rec);
-        else if (IS_ARD(desc))
-            desc_rec_init_ard(rec);
-        else if (IS_IRD(desc))
-            desc_rec_init_ird(rec);
       }
     }
 
-    rec= (DESCREC *)desc->bookmark.buffer;
+    rec= &desc->bookmark2.back();
   }
   else if (recnum < 0)
   {
-    set_stmt_error(desc->stmt, "07009", "Invalid descriptor index", MYERR_07009);
+    desc->stmt->set_error("07009", "Invalid descriptor index", MYERR_07009);
     return NULL;
   }
   else
@@ -259,74 +226,30 @@ DESCREC *desc_get_rec(DESC *desc, int recnum, my_bool expand)
     /* expand if needed */
     if (expand)
     {
-      for (i= desc->count; expand && i <= recnum; ++i)
+      for (i= desc->rcount(); expand && i <= recnum; ++i)
       {
         /* we might have used records lying around from before if
          * SQLFreeStmt() was called with SQL_UNBIND or SQL_FREE_PARAMS
          */
-        if ((uint)i < desc->records.elements)
+        if ((uint)i < desc->records2.size())
         {
-          rec= ((DESCREC *)desc->records.buffer) + recnum;
+          rec= &desc->records2[recnum];
         }
         else
         {
-          rec= (DESCREC *)alloc_dynamic(&desc->records);
-          if (!rec)
-            return NULL;
+          desc->records2.emplace_back(desc->desc_type, desc->ref_type);
+          rec = &desc->records2.back();
         }
-        memset(rec, 0, sizeof(DESCREC));
-        ++desc->count;
-
-        /* record initialization */
-        if (IS_APD(desc))
-            desc_rec_init_apd(rec);
-        else if (IS_IPD(desc))
-            desc_rec_init_ipd(rec);
-        else if (IS_ARD(desc))
-            desc_rec_init_ard(rec);
-        else if (IS_IRD(desc))
-            desc_rec_init_ird(rec);
+        rec->reset_to_defaults();
       }
     }
-    if (recnum < desc->count)
-      rec= ((DESCREC *)desc->records.buffer) + recnum;
+    if (recnum < desc->rcount())
+      rec = &desc->records2[recnum];
   }
 
   if (expand)
     assert(rec);
   return rec;
-}
-
-
-/*
- * Disassociate a statement from an explicitly allocated
- * descriptor.
- *
- * @param desc The descriptor
- * @param stmt The statement
- */
-void desc_remove_stmt(DESC *desc, STMT *stmt)
-{
-  LIST *lstmt;
-
-  if (desc->alloc_type != SQL_DESC_ALLOC_USER)
-    return;
-
-  for (lstmt= desc->exp.stmts; lstmt; lstmt= lstmt->next)
-  {
-    if (lstmt->data == stmt)
-    {
-      desc->exp.stmts= list_delete(desc->exp.stmts, lstmt);
-      /* Free only if it was the last element */
-      //if(!lstmt->next && !lstmt->prev)
-      {
-        x_free(lstmt);
-      }
-      return;
-    }
-  }
-
-  assert(!"Statement was not associated with descriptor");
 }
 
 
@@ -339,7 +262,7 @@ int desc_find_dae_rec(DESC *desc)
   int i;
   DESCREC *rec;
   SQLLEN *octet_length_ptr;
-  for (i= 0; i < desc->count; ++i)
+  for (i= 0; i < desc->rcount(); ++i)
   {
     rec= desc_get_rec(desc, i, FALSE);
     assert(rec);
@@ -369,7 +292,7 @@ DESCREC * desc_find_outstream_rec(STMT *stmt, uint *recnum, uint *res_col_num)
 
 /* No streams in iODBC */
 #ifndef USE_IODBC
-  for (i= start; i < stmt->ipd->count; ++i)
+  for (i= start; i < stmt->ipd->rcount(); ++i)
   {
     rec= desc_get_rec(stmt->ipd, i, FALSE);
     assert(rec);
@@ -465,7 +388,7 @@ apply_desc_val(void *dest, SQLSMALLINT dest_type, void *src, SQLINTEGER buflen)
  * Get a descriptor field based on the constant.
  */
 static desc_field *
-getfield(SQLSMALLINT fldid)
+getfield(SQLSMALLINT fldid, DESC *desc)
 {
   /* all field descriptions are immutable */
   /* See: SQLSetDescField() documentation
@@ -612,8 +535,8 @@ SQLRETURN
 MySQLGetDescField(SQLHDESC hdesc, SQLSMALLINT recnum, SQLSMALLINT fldid,
                   SQLPOINTER valptr, SQLINTEGER buflen, SQLINTEGER *outlen)
 {
-  desc_field *fld= getfield(fldid);
   DESC *desc= (DESC *)hdesc;
+  desc_field *fld = getfield(fldid, desc);
   void *src_struct;
   void *src;
 
@@ -666,12 +589,21 @@ MySQLGetDescField(SQLHDESC hdesc, SQLSMALLINT recnum, SQLSMALLINT fldid,
     src_struct= desc;
   else
   {
-    if (recnum < 1 || recnum > desc->count)
+    if (recnum < 1 || recnum > desc->rcount())
       return set_desc_error(desc, "07009",
                 "Invalid descriptor index",
                 MYERR_07009);
     src_struct= desc_get_rec(desc, recnum - 1, FALSE);
     assert(src_struct);
+  }
+
+  if (fldid == SQL_DESC_COUNT)
+  {
+    /*
+      This requires special treatment because the field is dynamically
+      obtained from the function
+    */
+    desc->rcount();
   }
 
   src= ((char *)src_struct) + fld->offset;
@@ -797,8 +729,8 @@ SQLRETURN
 MySQLSetDescField(SQLHDESC hdesc, SQLSMALLINT recnum, SQLSMALLINT fldid,
                   SQLPOINTER val, SQLINTEGER buflen)
 {
-  desc_field *fld= getfield(fldid);
   DESC *desc= (DESC *)hdesc;
+  desc_field *fld = getfield(fldid, desc);
   void *dest_struct;
   void *dest;
 
@@ -1002,27 +934,30 @@ SQLRETURN MySQLCopyDesc(SQLHDESC SourceDescHandle, SQLHDESC TargetDescHandle)
               "Associated statement is not prepared",
               MYERR_S1007);
 
-  /* copy the records */
-  delete_dynamic(&dest->records);
-  if (myodbc_init_dynamic_array(&dest->records, sizeof(DESCREC),
-                            src->records.max_element,
-                            src->records.alloc_increment))
-  {
-    return set_desc_error(dest, "HY001",
-              "Memory allocation error",
-              MYERR_S1001);
-  }
-  memcpy(dest->records.buffer, src->records.buffer,
-         src->records.max_element * src->records.size_of_element);
+  /* copy the records, copy constructors should take care of everything */
+  *dest = *src;
 
-  /* copy all fields */
-  dest->array_size= src->array_size;
-  dest->array_status_ptr= src->array_status_ptr;
-  dest->bind_offset_ptr= src->bind_offset_ptr;
-  dest->bind_type= src->bind_type;
-  dest->count= src->count;
-  dest->rows_processed_ptr= src->rows_processed_ptr;
-  memcpy(&dest->error, &src->error, sizeof(MYERROR));
+
+  //delete_dynamic(&dest->records);
+  //if (myodbc_init_dynamic_array(&dest->records, sizeof(DESCREC),
+  //                          src->records.max_element,
+  //                          src->records.alloc_increment))
+  //{
+  //  return set_desc_error(dest, "HY001",
+  //            "Memory allocation error",
+  //            MYERR_S1001);
+  //}
+  //memcpy(dest->records.buffer, src->records.buffer,
+  //       src->records.max_element * src->records.size_of_element);
+
+  ///* copy all fields */
+  //dest->array_size= src->array_size;
+  //dest->array_status_ptr= src->array_status_ptr;
+  //dest->bind_offset_ptr= src->bind_offset_ptr;
+  //dest->bind_type= src->bind_type;
+  //dest->count= src->count;
+  //dest->rows_processed_ptr= src->rows_processed_ptr;
+  //memcpy(&dest->error, &src->error, sizeof(MYERROR));
 
   /* TODO consistency check on target, if needed (apd) */
 

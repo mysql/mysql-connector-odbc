@@ -43,13 +43,12 @@
   Utility macros
 */
 
-#define if_dynamic_cursor(st) ((st)->stmt_options.cursor_type == SQL_CURSOR_DYNAMIC)
 #define if_forward_cache(st) ((st)->stmt_options.cursor_type == SQL_CURSOR_FORWARD_ONLY && \
            (st)->dbc->ds->dont_cache_result)
-#define is_connected(dbc)    ((dbc)->mysql.net.vio)
-#define trans_supported(db) ((db)->mysql.server_capabilities & CLIENT_TRANSACTIONS)
-#define autocommit_on(db) ((db)->mysql.server_status & SERVER_STATUS_AUTOCOMMIT)
-#define is_no_backslashes_escape_mode(db) ((db)->mysql.server_status & SERVER_STATUS_NO_BACKSLASH_ESCAPES)
+#define is_connected(dbc)    ((dbc)->mysql && (dbc)->mysql->net.vio)
+#define trans_supported(db) ((db)->mysql->server_capabilities & CLIENT_TRANSACTIONS)
+#define autocommit_on(db) ((db)->mysql->server_status & SERVER_STATUS_AUTOCOMMIT)
+#define is_no_backslashes_escape_mode(db) ((db)->mysql->server_status & SERVER_STATUS_NO_BACKSLASH_ESCAPES)
 #define reset_ptr(x) {if (x) x= 0;}
 #define digit(A) ((int) (A - '0'))
 
@@ -143,10 +142,11 @@ void      fix_row_lengths   (STMT *stmt, const long* fix_rules, uint row, uint f
 void      fix_result_types  (STMT *stmt);
 char *    fix_str           (char *to,const char *from,int length);
 char *    dupp_str          (char *from,int length);
-SQLRETURN my_pos_delete (STMT *stmt,STMT *stmtParam,
-                        SQLUSMALLINT irow,DYNAMIC_STRING *dynStr);
-SQLRETURN my_pos_update (STMT *stmt,STMT *stmtParam,
-                        SQLUSMALLINT irow,DYNAMIC_STRING *dynStr);
+SQLRETURN my_pos_delete_std (STMT *stmt,STMT *stmtParam,
+                        SQLUSMALLINT irow, std::string &str);
+SQLRETURN my_pos_update_std (STMT *stmt,STMT *stmtParam,
+                        SQLUSMALLINT irow, std::string &str);
+
 char *    check_if_positioned_cursor_exists (STMT *stmt, STMT **stmtNew);
 SQLRETURN insert_param  (STMT *stmt, MYSQL_BIND *bind, DESC *apd,
                         DESCREC *aprec, DESCREC *iprec, SQLULEN row);
@@ -157,10 +157,9 @@ SQLRETURN set_sql_select_limit(DBC *dbc, SQLULEN new_value, my_bool reqLock);
 SQLRETURN exec_stmt_query(STMT *stmt, const char *query, SQLULEN query_length,
                            my_bool reqLock);
 
-uint32
-copy_and_convert(char *to, uint32 to_length, CHARSET_INFO *to_cs,
-                 const char *from, uint32 from_length, CHARSET_INFO *from_cs,
-                 uint32 *used_bytes, uint32 *used_chars, uint *errors);
+SQLRETURN exec_stmt_query_std(STMT *stmt, const std::string &str,
+                              bool reqLock);
+
 SQLRETURN
 copy_ansi_result(STMT *stmt,
                  SQLCHAR *result, SQLLEN result_bytes, SQLLEN *used_bytes,
@@ -185,8 +184,8 @@ SQLRETURN copy_wchar_result(STMT *stmt,
                             long src_length);
 
 SQLRETURN set_dbc_error   (DBC *dbc, char *state,const char *message,uint errcode);
-#define   set_stmt_error  myodbc_set_stmt_error
-SQLRETURN myodbc_set_stmt_error  (STMT *stmt, const char *state, const char *message, uint errcode);
+// #define   set_stmt_error  myodbc_set_stmt_error
+// SQLRETURN myodbc_set_stmt_error  (STMT *stmt, const char *state, const char *message, uint errcode);
 SQLRETURN set_desc_error  (DESC *desc, char *state,
                           const char *message, uint errcode);
 SQLRETURN handle_connection_error (STMT *stmt);
@@ -262,7 +261,8 @@ void  myodbc_sqlstate2_init     (void);
 void  myodbc_sqlstate3_init     (void);
 int   check_if_server_is_alive  (DBC *dbc);
 
-my_bool   myodbc_append_quoted_name (DYNAMIC_STRING *str, const char *name);
+bool   myodbc_append_quoted_name_std(std::string &str, const char *name);
+
 SQLRETURN set_handle_error          (SQLSMALLINT HandleType, SQLHANDLE handle,
                                     myodbc_errid errid, const char *errtext, SQLINTEGER errcode);
 SQLRETURN set_conn_error(DBC *dbc,myodbc_errid errid, const char *errtext,
@@ -292,11 +292,7 @@ DESCREC*  desc_get_rec            (DESC *desc, int recnum, my_bool expand);
 
 DESC*     desc_alloc              (STMT *stmt, SQLSMALLINT alloc_type,
                                   desc_ref_type ref_type, desc_desc_type desc_type);
-void      desc_free_paramdata     (DESC *desc);
 void      desc_free               (DESC *desc);
-void      desc_rec_init_apd       (DESCREC *rec);
-void      desc_rec_init_ipd       (DESCREC *rec);
-void      desc_remove_stmt        (DESC *desc, STMT *stmt);
 int       desc_find_dae_rec       (DESC *desc);
 DESCREC * desc_find_outstream_rec (STMT *stmt, uint *recnum, uint *res_col_num);
 SQLRETURN
@@ -380,7 +376,7 @@ long long     binary2numeric        (long long *dst, char *src, uint srcLen);
 void          fill_ird_data_lengths (DESC *ird, ulong *lengths, uint fields);
 
 /* Functions to work with prepared and regular statements  */
-#define IS_PS_OUT_PARAMS(_stmt) ((_stmt)->dbc->mysql.server_status & SERVER_PS_OUT_PARAMS)
+#define IS_PS_OUT_PARAMS(_stmt) ((_stmt)->dbc->mysql->server_status & SERVER_PS_OUT_PARAMS)
 /* my_stmt.c */
 BOOL              ssps_used           (STMT *stmt);
 BOOL              returned_result     (STMT *stmt);
@@ -519,16 +515,16 @@ void free_connection_stmts(DBC *dbc);
 
 #define GET_NAME_LEN(S, N, L) L = (L == SQL_NTS ? (N ? (SQLSMALLINT)strlen((char *)N) : 0) : L); \
   if (L > NAME_LEN) \
-    return set_stmt_error(S, "HY090", \
+    return S->set_error("HY090", \
            "One or more parameters exceed the maximum allowed name length", 0);
 
 #define CHECK_HANDLE(h) if (h == NULL) return SQL_INVALID_HANDLE
 
 #define CHECK_DATA_POINTER(S, D, C) if (D == NULL && C != 0 && C != SQL_DEFAULT_PARAM && C != SQL_NULL_DATA) \
-                                   return set_stmt_error(S, "HY009", "Invalid use of NULL pointer", 0);
+                                   return S->set_error("HY009", "Invalid use of NULL pointer", 0);
 
 #define CHECK_STRLEN_OR_IND(S, D, C) if (D != NULL && C < 0 && C != SQL_NTS && C != SQL_NULL_DATA) \
-                                   return set_stmt_error(S, "HY090", "Invalid string or buffer length", 0);
+                                   return S->set_error("HY090", "Invalid string or buffer length", 0);
 
 #define CHECK_ENV_OUTPUT(e) if(e == NULL) return SQL_ERROR
 

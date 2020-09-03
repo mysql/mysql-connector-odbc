@@ -1,30 +1,30 @@
-// Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved. 
-// 
-// This program is free software; you can redistribute it and/or modify 
-// it under the terms of the GNU General Public License, version 2.0, as 
-// published by the Free Software Foundation. 
-// 
-// This program is also distributed with certain software (including 
-// but not limited to OpenSSL) that is licensed under separate terms, 
-// as designated in a particular file or component or in included license 
-// documentation. The authors of MySQL hereby grant you an 
-// additional permission to link the program and your derivative works 
-// with the separately licensed software that they have included with 
-// MySQL. 
-// 
-// Without limiting anything contained in the foregoing, this file, 
-// which is part of <MySQL Product>, is also subject to the 
-// Universal FOSS Exception, version 1.0, a copy of which can be found at 
-// http://oss.oracle.com/licenses/universal-foss-exception. 
-// 
-// This program is distributed in the hope that it will be useful, but 
-// WITHOUT ANY WARRANTY; without even the implied warranty of 
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-// See the GNU General Public License, version 2.0, for more details. 
-// 
-// You should have received a copy of the GNU General Public License 
-// along with this program; if not, write to the Free Software Foundation, Inc., 
-// 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA 
+// Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+//
+// This program is free software; you can redistribute it and/or modify
+// it under the terms of the GNU General Public License, version 2.0, as
+// published by the Free Software Foundation.
+//
+// This program is also distributed with certain software (including
+// but not limited to OpenSSL) that is licensed under separate terms,
+// as designated in a particular file or component or in included license
+// documentation. The authors of MySQL hereby grant you an
+// additional permission to link the program and your derivative works
+// with the separately licensed software that they have included with
+// MySQL.
+//
+// Without limiting anything contained in the foregoing, this file,
+// which is part of <MySQL Product>, is also subject to the
+// Universal FOSS Exception, version 1.0, a copy of which can be found at
+// http://oss.oracle.com/licenses/universal-foss-exception.
+//
+// This program is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+// See the GNU General Public License, version 2.0, for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program; if not, write to the Free Software Foundation, Inc.,
+// 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 
 
 #include <time.h>
@@ -346,54 +346,45 @@ DECLARE_TEST(t_time)
   rc = tmysql_exec(hstmt,"create table t_time(tm time, ts timestamp)");
   mystmt(hstmt,rc);
 
-  rc = SQLTransact(NULL,hdbc,SQL_COMMIT);
-  mycon(hdbc,rc);
+  // Disable strict mode and no zero dates
+  ok_sql(hstmt, "set session sql_mode=''");
+
+  ok_con(hdbc, SQLTransact(NULL,hdbc,SQL_COMMIT));
 
   ok_stmt(hstmt, SQLPrepare(hstmt,
                             (SQLCHAR *)"insert into t_time values (?,?)",
                             SQL_NTS));
 
-  rc = SQLBindParameter( hstmt, 1, SQL_PARAM_INPUT, SQL_C_TIME,
-                         SQL_TIME, 0, 0, &tm, 0, NULL );
-  mystmt(hstmt,rc);
+  ok_stmt(hstmt, SQLBindParameter( hstmt, 1, SQL_PARAM_INPUT, SQL_C_TIME,
+                         SQL_TIME, 0, 0, &tm, 0, NULL ));
 
-  rc = SQLBindParameter( hstmt, 2, SQL_PARAM_INPUT, SQL_C_TIME,
-                         SQL_TIMESTAMP, 0, 0, &tm, 15, NULL );
-  mystmt(hstmt,rc);
+  ok_stmt(hstmt, SQLBindParameter( hstmt, 2, SQL_PARAM_INPUT, SQL_C_TIME,
+                         SQL_TIMESTAMP, 0, 0, &tm, 15, NULL ));
 
   tm.hour = 20;
   tm.minute = 59;
   tm.second = 45;
 
-  rc = SQLExecute(hstmt);
-  mystmt(hstmt,rc);
+  ok_stmt(hstmt, SQLExecute(hstmt));
 
-  rc = SQLFreeStmt(hstmt,SQL_RESET_PARAMS);
-  mystmt(hstmt,rc);
+  ok_stmt(hstmt, SQLFreeStmt(hstmt,SQL_RESET_PARAMS));
+  ok_stmt(hstmt, SQLFreeStmt(hstmt,SQL_CLOSE));
 
-  rc = SQLFreeStmt(hstmt,SQL_CLOSE);
-  mystmt(hstmt,rc);
-
-  rc = SQLTransact(NULL,hdbc,SQL_COMMIT);
-  mycon(hdbc,rc);
+  ok_con(hdbc, SQLTransact(NULL,hdbc,SQL_COMMIT));
 
   ok_sql(hstmt, "select tm from t_time");
 
-  rc = SQLFetch(hstmt);
-  mystmt(hstmt,rc);
+  ok_stmt(hstmt, SQLFetch(hstmt));
 
-  rc = SQLGetData(hstmt,1,SQL_C_CHAR,&str,100,NULL);
-  mystmt(hstmt,rc);
+  ok_stmt(hstmt, SQLGetData(hstmt,1,SQL_C_CHAR,&str,100,NULL));
   is_str(str, "20:59:45", 9);
 
   rc = SQLFetch(hstmt);
   my_assert(rc == SQL_NO_DATA_FOUND);
 
-  rc = SQLFreeStmt(hstmt,SQL_UNBIND);
-  mystmt(hstmt,rc);
+  ok_stmt(hstmt, SQLFreeStmt(hstmt,SQL_UNBIND));
 
-  rc = SQLFreeStmt(hstmt,SQL_CLOSE);
-  mystmt(hstmt,rc);
+  ok_stmt(hstmt, SQLFreeStmt(hstmt,SQL_CLOSE));
 
   ok_sql(hstmt, "DROP TABLE IF EXISTS t_time");
 
@@ -659,6 +650,9 @@ DECLARE_TEST(t_bug12520)
   SQLLEN len, my_time_cb;
   SQLCHAR datetime[50];
 
+  // Disable the strict SQL mode and zero date values
+  ok_sql(hstmt, "set session sql_mode='' ");
+
   ok_sql(hstmt, "DROP TABLE IF EXISTS t_bug12520");
   ok_sql(hstmt,
          "CREATE TABLE t_bug12520 (a DATETIME DEFAULT '0000-00-00 00:00',"
@@ -693,6 +687,9 @@ DECLARE_TEST(t_bug15773)
 {
   SQL_DATE_STRUCT a,b,c,d;
   SQLLEN len1;
+
+  // Disable the strict SQL mode and zero date values
+  ok_sql(hstmt, "set session sql_mode='' ");
 
   ok_sql(hstmt, "DROP TABLE IF EXISTS t_bug15773");
   ok_sql(hstmt, "CREATE TABLE t_bug15773("
@@ -736,6 +733,9 @@ DECLARE_TEST(t_bug9927)
 {
   SQLCHAR col[10];
 
+  // Disable the strict SQL mode and zero date values
+  ok_sql(hstmt, "set session sql_mode='' ");
+
   ok_sql(hstmt, "DROP TABLE IF EXISTS t_bug9927");
   ok_sql(hstmt,
          "CREATE TABLE t_bug9927 (a TIMESTAMP DEFAULT 0,"
@@ -767,6 +767,9 @@ DECLARE_TEST(t_bug30081)
 {
   if (!mysql_min_version(hdbc, "5.1.23", 6))
     skip("necessary feature added in MySQL 5.1.23");
+
+  // Disable the strict SQL mode and zero date values
+  ok_sql(hstmt, "set session sql_mode='' ");
 
   ok_sql(hstmt, "DROP TABLE IF EXISTS t_bug30081");
   ok_sql(hstmt,
@@ -860,6 +863,9 @@ DECLARE_TEST(t_bug14414)
 {
   SQLCHAR col[10];
   SQLSMALLINT nullable;
+
+  if (!mysql_min_version(hdbc, "8.0.0", 5))
+    skip("MySQL 8.0 or newer required");
 
   ok_sql(hstmt, "DROP TABLE IF EXISTS t_bug14414");
   ok_sql(hstmt, "CREATE TABLE t_bug14414(a TIMESTAMP, b TIMESTAMP NOT NULL,"
@@ -1418,6 +1424,14 @@ DECLARE_TEST(t_date_overflow)
 
 
 BEGIN_TESTS
+  // ADD_TEST(t_bug60646)
+  ADD_TEST(t_bug37342)
+  ADD_TEST(t_bug14414)
+  ADD_TEST(t_bug30081)
+  ADD_TEST(t_bug9927)
+  ADD_TEST(t_bug15773)
+  ADD_TEST(t_bug12520)
+  ADD_TEST(t_time)
   ADD_TEST(t_date_overflow)
   ADD_TEST(my_ts)
 #ifndef USE_IODBC
@@ -1429,16 +1443,8 @@ BEGIN_TESTS
   ADD_TEST(t_17613161_bookmark)
 #endif
   ADD_TEST(t_bug25846)
-  // ADD_TEST(t_time) TODO: Fix
   ADD_TEST(t_time1)
-  // ADD_TEST(t_bug12520) TODO: Fix
-  // ADD_TEST(t_bug15773) TODO: Fix
-  // ADD_TEST(t_bug9927)  TODO: Fix
-  // ADD_TEST(t_bug30081) TODO: Fix
-  // ADD_TEST(t_bug14414) TODO: Fix
   ADD_TEST(t_bug30939)
-  // ADD_TEST(t_bug37342) TODO: Fix
-  // ADD_TEST(t_bug60646) TODO: Fix
   ADD_TEST(t_bug60648)
   ADD_TEST(t_b13975271)
 END_TESTS

@@ -54,7 +54,7 @@ SQLRETURN do_query(STMT *stmt,char *query, SQLULEN query_length)
                       stmt->stmt_options.max_rows, TRUE)))
     {
       /* The error is set for DBC, copy it into STMT */
-      set_stmt_error(stmt, stmt->dbc->error.sqlstate,
+      stmt->set_error(stmt->dbc->error.sqlstate,
                      stmt->dbc->error.message,
                      stmt->dbc->error.native_error);
 
@@ -72,11 +72,12 @@ SQLRETURN do_query(STMT *stmt,char *query, SQLULEN query_length)
 
     if ( check_if_server_is_alive( stmt->dbc ) )
     {
-      set_stmt_error( stmt, "08S01" /* "HYT00" */,
-                      mysql_error(&stmt->dbc->mysql),
-                      mysql_errno(&stmt->dbc->mysql));
+      stmt->set_error("08S01" /* "HYT00" */,
+                      mysql_error(stmt->dbc->mysql),
+                      mysql_errno(stmt->dbc->mysql));
+
       translate_error(stmt->error.sqlstate, MYERR_08S01 /* S1000 */,
-                      mysql_errno(&stmt->dbc->mysql));
+                      mysql_errno(stmt->dbc->mysql));
       goto exit;
     }
 
@@ -105,7 +106,7 @@ SQLRETURN do_query(STMT *stmt,char *query, SQLULEN query_length)
       scroller_move(stmt);
       MYLOG_QUERY(stmt, stmt->scroller.query);
 
-      native_error= mysql_real_query(&stmt->dbc->mysql, stmt->scroller.query,
+      native_error= mysql_real_query(stmt->dbc->mysql, stmt->scroller.query,
                                   (unsigned long)stmt->scroller.query_len);
     }
       /* Not using ssps for scroller so far. Relaxing a bit condition
@@ -121,7 +122,7 @@ SQLRETURN do_query(STMT *stmt,char *query, SQLULEN query_length)
       }
       else
       {
-        set_stmt_error(stmt, "HY000",
+        stmt->set_error("HY000",
                        mysql_stmt_error(stmt->ssps),
                        mysql_stmt_errno(stmt->ssps));
 
@@ -138,20 +139,20 @@ SQLRETURN do_query(STMT *stmt,char *query, SQLULEN query_length)
       /* Need to close ps handler if it is open as our relsult will be generated
          by direct execution. and ps handler may create some chaos */
       ssps_close(stmt);
-      native_error= mysql_real_query(&stmt->dbc->mysql,query,query_length);
+      native_error= mysql_real_query(stmt->dbc->mysql,query,query_length);
     }
 
     MYLOG_QUERY(stmt, "query has been executed");
 
     if (native_error)
     {
-      MYLOG_QUERY(stmt, mysql_error(&stmt->dbc->mysql));
-      set_stmt_error(stmt, "HY000", mysql_error(&stmt->dbc->mysql),
-                     mysql_errno(&stmt->dbc->mysql));
+      MYLOG_QUERY(stmt, mysql_error(stmt->dbc->mysql));
+      stmt->set_error("HY000", mysql_error(stmt->dbc->mysql),
+                     mysql_errno(stmt->dbc->mysql));
 
       /* For some errors - translating to more appropriate status */
       translate_error(stmt->error.sqlstate, MYERR_S1000,
-                      mysql_errno(&stmt->dbc->mysql));
+                      mysql_errno(stmt->dbc->mysql));
       goto exit;
     }
 
@@ -160,8 +161,8 @@ SQLRETURN do_query(STMT *stmt,char *query, SQLULEN query_length)
       /* Query was supposed to return result, but result is NULL*/
       if (returned_result(stmt))
       {
-        stmt->set_error( MYERR_S1000, mysql_error(&stmt->dbc->mysql),
-                mysql_errno(&stmt->dbc->mysql));
+        stmt->set_error( MYERR_S1000, mysql_error(stmt->dbc->mysql),
+                mysql_errno(stmt->dbc->mysql));
         goto exit;
       }
       else /* Query was not supposed to return a result */
@@ -193,8 +194,8 @@ SQLRETURN do_query(STMT *stmt,char *query, SQLULEN query_length)
     {
       if (bind_result(stmt) || get_result(stmt))
       {
-          stmt->set_error( MYERR_S1000, mysql_error(&stmt->dbc->mysql),
-                  mysql_errno(&stmt->dbc->mysql));
+          stmt->set_error( MYERR_S1000, mysql_error(stmt->dbc->mysql),
+                  mysql_errno(stmt->dbc->mysql));
           goto exit;
       }
       /* Caching row counts for queries returning resultset as well */
@@ -466,7 +467,7 @@ static
 BOOL put_param_value(STMT *stmt, MYSQL_BIND *bind,
                      const char * value, unsigned long length)
 {
-  if (ssps_used(stmt))
+  if (ssps_used(stmt) && bind)
   {
     return bind_param(bind, value, length, MYSQL_TYPE_STRING);
   }
@@ -484,7 +485,7 @@ SQLRETURN check_c2sql_conversion_supported(STMT *stmt, DESCREC *aprec, DESCREC *
   if (aprec->type == SQL_DATETIME && iprec->type == SQL_INTERVAL
    || aprec->type == SQL_INTERVAL && iprec->type == SQL_DATETIME)
   {
-    return set_stmt_error(stmt, "07006", "Conversion is not supported", 0);
+    return stmt->set_error("07006", "Conversion is not supported", 0);
   }
 
   switch (aprec->concise_type)
@@ -501,7 +502,7 @@ SQLRETURN check_c2sql_conversion_supported(STMT *stmt, DESCREC *aprec, DESCREC *
     case SQL_C_INTERVAL_DAY_TO_MINUTE:
     case SQL_C_INTERVAL_DAY_TO_SECOND:
     case SQL_C_INTERVAL_MINUTE_TO_SECOND:
-      return set_stmt_error(stmt, "07006", "Conversion is not supported by driver", 0);
+      return stmt->set_error("07006", "Conversion is not supported by driver", 0);
   }
 
   return SQL_SUCCESS;
@@ -542,9 +543,9 @@ SQLRETURN convert_c_type2str(STMT *stmt, SQLSMALLINT ctype, DESCREC *iprec,
 
 
         if (has_utf8_maxlen4 &&
-            !is_minimum_version(stmt->dbc->mysql.server_version, "5.5.3"))
+            !is_minimum_version(stmt->dbc->mysql->server_version, "5.5.3"))
         {
-          return set_stmt_error(stmt, "HY000",
+          return stmt->set_error("HY000",
                                 "Server does not support 4-byte encoded "
                                 "UTF8 characters.", 0);
         }
@@ -635,7 +636,7 @@ SQLRETURN convert_c_type2str(STMT *stmt, SQLSMALLINT ctype, DESCREC *iprec,
 
         if (time->hour > 23)
         {
-          return set_stmt_error(stmt, "22008", "Not a valid time value supplied", 0);
+          return stmt->set_error("22008", "Not a valid time value supplied", 0);
         }
 
         *length= sprintf(buff, "%02d:%02d:%02d",
@@ -703,7 +704,7 @@ SQLRETURN convert_c_type2str(STMT *stmt, SQLSMALLINT ctype, DESCREC *iprec,
         /* TODO no way to return an error here? */
         if (trunc == SQLNUM_TRUNC_FRAC)
         {/* 01S07 SQL_SUCCESS_WITH_INFO */
-          set_stmt_error(stmt, "01S07", "Fractional truncation", 0);
+          stmt->set_error("01S07", "Fractional truncation", 0);
           return SQL_SUCCESS_WITH_INFO;
         }
         else if (trunc == SQLNUM_TRUNC_WHOLE)
@@ -753,13 +754,50 @@ SQLRETURN convert_c_type2str(STMT *stmt, SQLSMALLINT ctype, DESCREC *iprec,
       }
     /* If we are missing processing of some valid C type. Probably means a bug elsewhere */
     default:
-      return set_stmt_error(stmt, "07006",
+      return stmt->set_error("07006",
                "Conversion is not supported", 0);
   }
   return SQL_SUCCESS;
 }
 
 #define TIME_FIELDS_NONZERO(ts) (ts.hour||ts.minute||ts.second||ts.fraction)
+
+inline bool is_ts_char(char c)
+{
+  const char ts_chars[] = {"0123456789-:\0"};
+  int i = 0;
+  while(ts_chars[i] && c != ts_chars[i])
+    ++i;
+  return ts_chars[i] > 0;
+}
+
+
+/*
+  Returns the date-time component of ODBC string like
+  {dt yyyy-mm-dd hh:mm:ss}
+*/
+const char *get_date_time_substr(const char *data, long &len)
+{
+  const char* d_start = data;
+  long idx = 0;
+  while(len && !is_ts_char(*d_start))
+  {
+    --len;
+    ++d_start;
+  }
+
+  if (!len)
+    return nullptr;
+
+  const char* d_end = d_start + len - 1;
+  while(d_start < d_end && !is_ts_char(*d_end))
+  {
+    --len;
+    --d_end;
+  }
+
+  return d_start;
+}
 
 /*
   Add the value of parameter to a string buffer.
@@ -853,15 +891,15 @@ SQLRETURN insert_param(STMT *stmt, MYSQL_BIND *bind, DESC* apd,
              /* empty values mean it's an unbound column */
              (*octet_length_ptr == 0 &&
               aprec->concise_type == SQL_C_DEFAULT &&
-              aprec->par.value == NULL))
+              aprec->par.val() == NULL))
     {
       put_default_value(stmt, bind);
       return SQL_SUCCESS;
     }
     else if (IS_DATA_AT_EXEC(octet_length_ptr))
     {
-        length= aprec->par.value_length;
-        if ( !(data= aprec->par.value) )
+        length= aprec->par.val_length();
+        if ( !(data= aprec->par.val()) )
         {
           put_default_value(stmt, bind);
           return SQL_SUCCESS;
@@ -910,8 +948,12 @@ SQLRETURN insert_param(STMT *stmt, MYSQL_BIND *bind, DESC* apd,
           /* TODO: check if we need to check for truncation here as well? */
           if (bind != NULL && ssps_used(stmt))
           {
-            if (bind_param(bind, data, length,
-                        map_sql2mysql_type(iprec->concise_type)))
+            /* First the datetime has to be filtered out of the brackets
+               and other stuff. The validity of the format is up to the
+               user.
+            */
+            const char *tt = get_date_time_substr(data, length);
+            if (bind_param(bind, tt, length, MYSQL_TYPE_STRING))
             {
               goto memerror;
             }
@@ -948,7 +990,7 @@ SQLRETURN insert_param(STMT *stmt, MYSQL_BIND *bind, DESC* apd,
             */
           if (!stmt->dbc->ds->no_date_overflow && TIME_FIELDS_NONZERO(ts))
           {
-            return set_stmt_error(stmt, "22008", "Date overflow", 0);
+            return stmt->set_error("22008", "Date overflow", 0);
           }
         }
         /* else _binary introducer for binary data */
@@ -1026,7 +1068,7 @@ SQLRETURN insert_param(STMT *stmt, MYSQL_BIND *bind, DESC* apd,
             aprec->concise_type != SQL_C_INTERVAL_HOUR_TO_SECOND)
         {
           /* Allow only interval to interval conversion */
-          set_stmt_error(stmt, "07006", "Conversion is not supported", 0);
+          stmt->set_error("07006", "Conversion is not supported", 0);
         }
         else
         {
@@ -1046,14 +1088,14 @@ SQLRETURN insert_param(STMT *stmt, MYSQL_BIND *bind, DESC* apd,
 
           if (time->hour > 23)
           {
-            return set_stmt_error(stmt, "22008", "Not a valid time value supplied", 0);
+            return stmt->set_error("22008", "Not a valid time value supplied", 0);
           }
           if (time->fraction)
           {
             /* fractional seconds truncated, need to set correct sqlstate 22008
             http://msdn.microsoft.com/en-us/library/ms709385%28v=vs.85%29.aspx */
 
-            return set_stmt_error(stmt, "22008", "Fractional truncation", 0);
+            return stmt->set_error("22008", "Fractional truncation", 0);
           }
 
           if (bind != NULL && ssps_used(stmt))
@@ -1083,7 +1125,7 @@ SQLRETURN insert_param(STMT *stmt, MYSQL_BIND *bind, DESC* apd,
           if (fraction)
           {
             /* truncation need SQL_ERROR and sqlstate 22008*/
-            return set_stmt_error(stmt, "22008", "Fractional truncation", 0);
+            return stmt->set_error("22008", "Fractional truncation", 0);
           }
 
           time= str_to_time_as_long(data,length);
@@ -1091,7 +1133,7 @@ SQLRETURN insert_param(STMT *stmt, MYSQL_BIND *bind, DESC* apd,
 
           if (hours > 23)
           {
-            return set_stmt_error(stmt, "22008", "Not a valid time value supplied", 0);
+            return stmt->set_error("22008", "Not a valid time value supplied", 0);
           }
 
           if (bind != NULL && ssps_used(stmt))
@@ -1218,7 +1260,7 @@ SQLRETURN insert_param(STMT *stmt, MYSQL_BIND *bind, DESC* apd,
           goto memerror;
         }
 
-        size_t added = mysql_real_escape_string(&dbc->mysql, stmt->endbuf(), data, length);
+        size_t added = mysql_real_escape_string(dbc->mysql, stmt->endbuf(), data, length);
         stmt->buf_add_pos(added);
         stmt->add_to_buffer("'", 1);
       }
@@ -1246,30 +1288,30 @@ memerror:
   @purpose : positioned cursor update/delete
 */
 
-SQLRETURN do_my_pos_cursor( STMT *pStmt, STMT *pStmtCursor )
+
+SQLRETURN do_my_pos_cursor_std( STMT *pStmt, STMT *pStmtCursor )
 {
   char *          pszQuery= GET_QUERY(&pStmt->query);
-  DYNAMIC_STRING  dynQuery;
+  std::string     query;
   SQLRETURN       nReturn;
 
   if ( pStmt->error.native_error == ER_INVALID_CURSOR_NAME )
   {
-      return set_stmt_error( pStmt, "HY000", "ER_INVALID_CURSOR_NAME", 0 );
+      return pStmt->set_error("HY000", "ER_INVALID_CURSOR_NAME", 0 );
   }
 
   while ( isspace( *pszQuery ) )
       ++pszQuery;
 
-  if ( myodbc_init_dynamic_string( &dynQuery, pszQuery, 1024, 1024 ) )
-      return pStmt->set_error(MYERR_S1001, NULL, 4001 );
+  query = pszQuery;
 
   if ( !myodbc_casecmp( pszQuery, "delete", 6 ) )
   {
-      nReturn = my_pos_delete( pStmtCursor, pStmt, 1, &dynQuery );
+      nReturn = my_pos_delete_std( pStmtCursor, pStmt, 1, query );
   }
   else if ( !myodbc_casecmp( pszQuery, "update", 6 ) )
   {
-      nReturn = my_pos_update( pStmtCursor, pStmt, 1, &dynQuery );
+      nReturn = my_pos_update_std( pStmtCursor, pStmt, 1, query );
   }
   else
   {
@@ -1278,8 +1320,6 @@ SQLRETURN do_my_pos_cursor( STMT *pStmt, STMT *pStmtCursor )
 
   if ( SQL_SUCCEEDED( nReturn ) )
       pStmt->state = ST_EXECUTED;
-
-  myodbc_dynstr_free( &dynQuery );
 
   return( nReturn );
 }
@@ -1338,7 +1378,7 @@ SQLRETURN my_SQLExecute( STMT *pStmt )
   int         dae_rec, is_select_stmt, one_of_params_not_succeded= 0;
   int         connection_failure= 0;
   STMT       *pStmtCursor = pStmt;
-  SQLRETURN   rc;
+  SQLRETURN   rc = 0;
   SQLULEN     row, length= 0;
 
   SQLUSMALLINT *param_operation_ptr= NULL, *param_status_ptr= NULL, *lastError= NULL;
@@ -1379,7 +1419,7 @@ SQLRETURN my_SQLExecute( STMT *pStmt )
     /* Chop off the 'WHERE CURRENT OF ...' - doing it a hard way...*/
     *cursor_pos= '\0';
 
-    return do_my_pos_cursor(pStmt, pStmtCursor);
+    return do_my_pos_cursor_std(pStmt, pStmtCursor);
   }
 
   my_SQLFreeStmt((SQLHSTMT)pStmt,MYSQL_RESET_BUFFERS);
@@ -1460,7 +1500,7 @@ SQLRETURN my_SQLExecute( STMT *pStmt )
       {
         if (pStmt->apd->array_size > 1)
         {
-          rc= set_stmt_error(pStmt, "HYC00", "Parameter arrays "
+          rc= pStmt->set_error("HYC00", "Parameter arrays "
                               "with data at execution are not supported", 0);
           lastError= param_status_ptr;
 
@@ -1640,10 +1680,10 @@ static SQLRETURN select_dae_param_desc(STMT *stmt, DESC **apd, unsigned int *par
     case DAE_SETPOS_INSERT:
     case DAE_SETPOS_UPDATE:
       *apd= stmt->setpos_apd;
-      *param_count= stmt->ard->count;
+      *param_count= stmt->ard->rcount();
       break;
     default:
-      return set_stmt_error(stmt, "HY010",
+      return stmt->set_error("HY010",
         "Invalid data at exec state", 0);
   }
 
@@ -1683,8 +1723,7 @@ static SQLRETURN find_next_dae_param(STMT *stmt,  SQLPOINTER *token)
                                       apd->bind_type,
                                       default_size, 0);
       }
-      aprec->par.value= NULL;
-      aprec->par.alloced= FALSE;
+      aprec->par.reset();
       aprec->par.is_dae= 1;
 
       return SQL_NEED_DATA;
@@ -1801,7 +1840,7 @@ SQLRETURN SQL_API SQLParamData(SQLHSTMT hstmt, SQLPOINTER *prbgValue)
 
       if (mysql_stmt_bind_param(stmt->ssps, (MYSQL_BIND*)stmt->param_bind->buffer))
       {
-        set_stmt_error(stmt, "HY000", mysql_stmt_error(stmt->ssps),
+        stmt->set_error("HY000", mysql_stmt_error(stmt->ssps),
                       mysql_stmt_errno(stmt->ssps));
 
         /* For some errors - translating to more appropriate status */
@@ -1877,12 +1916,7 @@ SQLRETURN SQL_API SQLPutData( SQLHSTMT      hstmt,
 
   if ( cbValue == SQL_NULL_DATA )
   {
-    if ( aprec->par.alloced )
-    {
-      x_free(aprec->par.value);
-    }
-    aprec->par.alloced= FALSE;
-    aprec->par.value= NULL;
+    aprec->par.reset();
     return SQL_SUCCESS;
   }
 
@@ -1919,7 +1953,7 @@ SQLRETURN SQL_API SQLCancel(SQLHSTMT hstmt)
 
   /* If we got a non-BUSY error, it's just an error. */
   if (error != EBUSY)
-    return set_stmt_error((STMT *)hstmt, "HY000",
+    return ((STMT *)hstmt)->set_error("HY000",
                           "Unable to get connection mutex status", error);
 
   /*
@@ -1941,7 +1975,7 @@ SQLRETURN SQL_API SQLCancel(SQLHSTMT hstmt)
   {
     char buff[40];
     /* buff is always big enough because max length of %lu is 15 */
-    sprintf(buff, "KILL /*!50000 QUERY */ %lu", mysql_thread_id(&dbc->mysql));
+    sprintf(buff, "KILL /*!50000 QUERY */ %lu", mysql_thread_id(dbc->mysql));
     if (mysql_real_query(second, buff, strlen(buff)))
     {
       mysql_close(second);

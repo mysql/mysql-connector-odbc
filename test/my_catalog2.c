@@ -1,30 +1,30 @@
-// Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved. 
-// 
-// This program is free software; you can redistribute it and/or modify 
-// it under the terms of the GNU General Public License, version 2.0, as 
-// published by the Free Software Foundation. 
-// 
-// This program is also distributed with certain software (including 
-// but not limited to OpenSSL) that is licensed under separate terms, 
-// as designated in a particular file or component or in included license 
-// documentation. The authors of MySQL hereby grant you an 
-// additional permission to link the program and your derivative works 
-// with the separately licensed software that they have included with 
-// MySQL. 
-// 
-// Without limiting anything contained in the foregoing, this file, 
-// which is part of <MySQL Product>, is also subject to the 
-// Universal FOSS Exception, version 1.0, a copy of which can be found at 
-// http://oss.oracle.com/licenses/universal-foss-exception. 
-// 
-// This program is distributed in the hope that it will be useful, but 
-// WITHOUT ANY WARRANTY; without even the implied warranty of 
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-// See the GNU General Public License, version 2.0, for more details. 
-// 
-// You should have received a copy of the GNU General Public License 
-// along with this program; if not, write to the Free Software Foundation, Inc., 
-// 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA 
+// Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+//
+// This program is free software; you can redistribute it and/or modify
+// it under the terms of the GNU General Public License, version 2.0, as
+// published by the Free Software Foundation.
+//
+// This program is also distributed with certain software (including
+// but not limited to OpenSSL) that is licensed under separate terms,
+// as designated in a particular file or component or in included license
+// documentation. The authors of MySQL hereby grant you an
+// additional permission to link the program and your derivative works
+// with the separately licensed software that they have included with
+// MySQL.
+//
+// Without limiting anything contained in the foregoing, this file,
+// which is part of <MySQL Product>, is also subject to the
+// Universal FOSS Exception, version 1.0, a copy of which can be found at
+// http://oss.oracle.com/licenses/universal-foss-exception.
+//
+// This program is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+// See the GNU General Public License, version 2.0, for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program; if not, write to the Free Software Foundation, Inc.,
+// 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 
 #include "odbctap.h"
 #include "../VersionInfo.h"
@@ -46,7 +46,7 @@ DECLARE_TEST(t_bug37621)
 /*
   Check column properties for the REMARKS column
 */
-  ok_stmt(hstmt, SQLDescribeCol(hstmt, 5, szColName, sizeof(szColName), 
+  ok_stmt(hstmt, SQLDescribeCol(hstmt, 5, szColName, sizeof(szColName),
           &iName, &iType, &uiDef, &iScale, &iNullable));
 
   is_str(szColName, "REMARKS", 8);
@@ -108,7 +108,7 @@ DECLARE_TEST(t_bug34272)
 DECLARE_TEST(t_bug49660)
 {
   SQLLEN rowsCount;
-  
+
   ok_sql(hstmt, "drop database if exists bug49660");
   ok_sql(hstmt, "drop table if exists t_bug49660");
   ok_sql(hstmt, "drop table if exists t_bug49660_r");
@@ -147,7 +147,7 @@ DECLARE_TEST(t_bug49660)
 DECLARE_TEST(t_bug51422)
 {
   SQLLEN rowsCount;
-  
+
   ok_sql(hstmt, "drop table if exists t_bug51422");
   ok_sql(hstmt, "drop table if exists t_bug51422_r");
 
@@ -170,7 +170,7 @@ DECLARE_TEST(t_bug51422)
 
 
 /*
-  Bug #36441 - SQLPrimaryKeys returns mangled strings 
+  Bug #36441 - SQLPrimaryKeys returns mangled strings
 */
 DECLARE_TEST(t_bug36441)
 {
@@ -268,11 +268,20 @@ DECLARE_TEST(t_bug50195)
   SQLCHAR     priv[12];
   SQLLEN      len;
 
-  (void)SQLExecDirect(hstmt, (SQLCHAR *)"DROP USER bug50195@127.0.0.1", SQL_NTS);
-  (void)SQLExecDirect(hstmt, (SQLCHAR *)"DROP USER bug50195@localhost", SQL_NTS);
+  /*
+    The patch for this issue can only work with Information_Schema.
+    Therefore skipping it for NO_IS=1 case
+  */
+  if (myoption && (1 << 30))
+    return OK;
 
-  ok_sql(hstmt, "grant all on *.* to bug50195@127.0.0.1 IDENTIFIED BY 'a'");
-  ok_sql(hstmt, "grant all on *.* to bug50195@localhost IDENTIFIED BY 'a'");
+  (void)SQLExecDirect(hstmt, (SQLCHAR *)"DROP USER `bug50195`@`127.0.0.1`", SQL_NTS);
+  (void)SQLExecDirect(hstmt, (SQLCHAR *)"DROP USER `bug50195`@`localhost`", SQL_NTS);
+
+  ok_sql(hstmt, "CREATE USER `bug50195`@`127.0.0.1` IDENTIFIED BY 'a'");
+  ok_sql(hstmt, "CREATE USER `bug50195`@`localhost` IDENTIFIED BY 'a'");
+  ok_sql(hstmt, "grant all on *.* to `bug50195`@`127.0.0.1`");
+  ok_sql(hstmt, "grant all on *.* to `bug50195`@`localhost`");
 
   ok_sql(hstmt, "revoke select on *.* from bug50195@127.0.0.1");
   ok_sql(hstmt, "revoke select on *.* from bug50195@localhost");
@@ -286,7 +295,7 @@ DECLARE_TEST(t_bug50195)
 
   ok_sql(hstmt, "FLUSH PRIVILEGES");
 
-  is(OK == alloc_basic_handles_with_opt(&henv1, &hdbc1, &hstmt1, NULL, 
+  is(OK == alloc_basic_handles_with_opt(&henv1, &hdbc1, &hstmt1, NULL,
                                         "bug50195", "a", NULL, NULL));
 
   ok_stmt(hstmt1, SQLTablePrivileges(hstmt1, "mysql", SQL_NTS, 0, 0, "tables_priv", SQL_NTS));
@@ -299,14 +308,14 @@ DECLARE_TEST(t_bug50195)
     ok_stmt(hstmt1, SQLGetData(hstmt1, 6, SQL_C_CHAR, priv, sizeof(priv), &len));
     is_str(priv, expected_privs[i], len);
   }
-  
+
   expect_stmt(hstmt1, SQLFetch(hstmt1),100);
 
   free_basic_handles(&henv1, &hdbc1, &hstmt1);
 
   ok_sql(hstmt, "DROP USER bug50195@127.0.0.1");
   ok_sql(hstmt, "DROP USER bug50195@localhost");
-  
+
   return OK;
 }
 
@@ -316,7 +325,7 @@ DECLARE_TEST(t_sqlprocedurecolumns)
   SQLRETURN rc= 0;
   SQLCHAR szName[255]= {0};
 
-  typedef struct 
+  typedef struct
   {
     char *c01_procedure_cat;
     char *c02_procedure_schem;
@@ -512,7 +521,7 @@ DECLARE_TEST(t_sqlprocedurecolumns)
     /*size buf_len  dec radix  nullable      rem def sql_data_type sub octet pos nullable*/
       7,   7,       0,  0,     SQL_NULLABLE, "", 0,  SQL_CHAR,     0,  7,    2,  "YES"},
   };
-  
+
   ok_sql(hstmt, "drop procedure if exists procedure_columns_test1");
   ok_sql(hstmt, "drop procedure if exists procedure_columns_test2");
   ok_sql(hstmt, "drop procedure if exists procedure_columns_test2_noparam");
@@ -536,7 +545,7 @@ DECLARE_TEST(t_sqlprocedurecolumns)
   ok_sql(hstmt, "create procedure procedure_columns_test2_noparam()"\
                 "begin end;"
                 );
-  
+
   ok_sql(hstmt, "create procedure procedure_columns_test3(IN re_param_00 datetime,"\
                 "OUT re_param_01 date, OUT re_param_02 time, INOUT re_param_03 timestamp,"\
                 "re_param_04 year)" \
@@ -557,7 +566,7 @@ DECLARE_TEST(t_sqlprocedurecolumns)
                 );
 
   ok_stmt(hstmt, SQLProcedureColumns(hstmt, NULL, 0, NULL, 0,
-                                     "procedure_columns_test%", SQL_NTS, 
+                                     "procedure_columns_test%", SQL_NTS,
                                      "re_%", SQL_NTS));
 
   while(SQLFetch(hstmt) == SQL_SUCCESS)
@@ -566,23 +575,23 @@ DECLARE_TEST(t_sqlprocedurecolumns)
     SQLUINTEGER col_size, buf_len, octet_len;
 
     param_cat= (SQLCHAR*)my_fetch_str(hstmt, buff, 1);
-    is_str(param_cat, data_to_check[iter].c01_procedure_cat, 
+    is_str(param_cat, data_to_check[iter].c01_procedure_cat,
            strlen(data_to_check[iter].c01_procedure_cat) + 1);
 
-    is_str(my_fetch_str(hstmt, buff, 3), 
-           data_to_check[iter].c03_procedure_name, 
+    is_str(my_fetch_str(hstmt, buff, 3),
+           data_to_check[iter].c03_procedure_name,
            strlen(data_to_check[iter].c03_procedure_name) + 1);
 
     param_name= (SQLCHAR*)my_fetch_str(hstmt, buff, 4);
-    is_str(param_name, data_to_check[iter].c04_column_name, 
+    is_str(param_name, data_to_check[iter].c04_column_name,
            strlen(data_to_check[iter].c04_column_name) + 1);
 
     is_num(my_fetch_int(hstmt, 5), data_to_check[iter].c05_column_type);
 
     is_num(my_fetch_int(hstmt, 6), data_to_check[iter].c06_data_type);
 
-    is_str(my_fetch_str(hstmt, buff, 7), 
-           data_to_check[iter].c07_type_name, 
+    is_str(my_fetch_str(hstmt, buff, 7),
+           data_to_check[iter].c07_type_name,
            strlen(data_to_check[iter].c07_type_name) + 1);
 
     col_size= my_fetch_uint(hstmt, 8);
@@ -592,7 +601,7 @@ DECLARE_TEST(t_sqlprocedurecolumns)
     is_num(buf_len, data_to_check[iter].c09_buffer_length);
 
     is_num(my_fetch_int(hstmt, 10), data_to_check[iter].c10_decimal_digits);
-    
+
     is_num(my_fetch_int(hstmt, 11), data_to_check[iter].c11_num_prec_radix);
 
     is_num(my_fetch_int(hstmt, 15), data_to_check[iter].c15_sql_data_type);
@@ -604,8 +613,8 @@ DECLARE_TEST(t_sqlprocedurecolumns)
 
     is_num(my_fetch_int(hstmt, 18), data_to_check[iter].c18_ordinal_position);
 
-    is_str(my_fetch_str(hstmt, buff, 19), 
-           data_to_check[iter].c19_is_nullable, 
+    is_str(my_fetch_str(hstmt, buff, 19),
+           data_to_check[iter].c19_is_nullable,
            strlen(data_to_check[iter].c19_is_nullable + 1));
 
     ++iter;
@@ -620,7 +629,7 @@ DECLARE_TEST(t_sqlprocedurecolumns)
   ok_sql(hstmt, "drop function if exists procedure_columns_test4_func");
   ok_sql(hstmt, "drop function if exists procedure_columns_test4_func_noparam");
   ok_sql(hstmt, "drop procedure if exists procedure_columns_test5");
-  
+
 
   return OK;
 }
@@ -637,15 +646,19 @@ DECLARE_TEST(t_bug57182)
     "  insert into simp values (id, name);"
     "END");
 
+  ok_sql(hstmt, "select SPECIFIC_NAME, GROUP_CONCAT(IF(ISNULL(PARAMETER_NAME), concat('RETURN_VALUE ', DTD_IDENTIFIER), concat(PARAMETER_MODE, ' ', PARAMETER_NAME, ' ', DTD_IDENTIFIER)) ORDER BY ORDINAL_POSITION ASC SEPARATOR ', ') PARAMS_LIST, SPECIFIC_SCHEMA, ROUTINE_TYPE FROM information_schema.parameters WHERE SPECIFIC_SCHEMA = 'test' AND SPECIFIC_NAME = 'bug57182' GROUP BY SPECIFIC_NAME, SPECIFIC_SCHEMA, ROUTINE_TYPE");
+
+  my_print_non_format_result(hstmt);
+
   ok_stmt(hstmt, SQLProcedureColumns(hstmt, "test", SQL_NTS, NULL, 0,
-    "bug57182", SQL_NTS, 
+    "bug57182", SQL_NTS,
     NULL, 0));
 
   ok_stmt(hstmt, SQLRowCount(hstmt, &nRowCount));
   is_num(2, nRowCount);
-  
+
   ok_stmt(hstmt, SQLFetch(hstmt));
-  
+
   is_str(my_fetch_str(hstmt, buff, 3), "bug57182", 9);
   is_str(my_fetch_str(hstmt, buff, 4), "id", 3);
   is_str(my_fetch_str(hstmt, buff, 7), "int", 4);
@@ -658,12 +671,12 @@ DECLARE_TEST(t_bug57182)
   is_num(my_fetch_int(hstmt, 8), 20);
 
   expect_stmt(hstmt, SQLFetch(hstmt), SQL_NO_DATA);
-  
+
   ok_stmt(hstmt, SQLFreeStmt(hstmt, SQL_CLOSE));
 
   /* Almost the same thing but with column specified */
   ok_stmt(hstmt, SQLProcedureColumns(hstmt, "test", SQL_NTS, NULL, 0,
-    "bug57182", SQL_NTS, 
+    "bug57182", SQL_NTS,
     "id", SQL_NTS));
 
   ok_stmt(hstmt, SQLRowCount(hstmt, &nRowCount));
@@ -681,7 +694,7 @@ DECLARE_TEST(t_bug57182)
 
   /* And testing impossible column condition - expecting to get no rows */
   ok_stmt(hstmt, SQLProcedureColumns(hstmt, "test", SQL_NTS, NULL, 0,
-    "bug57182", SQL_NTS, 
+    "bug57182", SQL_NTS,
     "non_existing_column%", SQL_NTS));
 
   ok_stmt(hstmt, SQLRowCount(hstmt, &nRowCount));
@@ -719,7 +732,7 @@ DECLARE_TEST(t_bug55870)
      not using I_S. SQlStatistics doesn't have I_S version, but it ma change at certain point.
      Thus let's test it on NO_I_S connection too */
 
-  is(OK == alloc_basic_handles_with_opt(&henv1, &hdbc1, &hstmt1, NULL, NULL, 
+  is(OK == alloc_basic_handles_with_opt(&henv1, &hdbc1, &hstmt1, NULL, NULL,
                                         NULL, "", "NO_I_S=1"));
 
 
@@ -777,11 +790,11 @@ DECLARE_TEST(t_bug55870)
   sprintf(query, "revoke select (c),insert (c),update (c) on bug55870 from '%s'@'localhost'", myuid);
   ok_stmt(hstmt, SQLExecDirect(hstmt, query, SQL_NTS));
 
-  
+
   ok_sql(hstmt, "drop table if exists bug55870r");
   ok_sql(hstmt, "drop table if exists bug55870_2");
   ok_sql(hstmt, "drop table if exists bug55870");
-  
+
   free_basic_handles(&henv1, &hdbc1, &hstmt1);
 
   return OK;
@@ -879,7 +892,7 @@ DECLARE_TEST(sqlcolumns_nodbselected)
   ok_sql(hstmt, "DROP TABLE IF EXISTS sqlcolumns_nodbselected");
   ok_sql(hstmt, "CREATE TABLE sqlcolumns_nodbselected (id int)");
 
-  is(OK == alloc_basic_handles_with_opt(&henv1, &hdbc1, &hstmt1, USE_DRIVER, 
+  is(OK == alloc_basic_handles_with_opt(&henv1, &hdbc1, &hstmt1, USE_DRIVER,
                                         NULL, NULL, "", NULL));
 
   ok_con(hdbc1, SQLGetInfo(hdbc1, SQL_DATABASE_NAME,
@@ -938,7 +951,7 @@ DECLARE_TEST(t_bug14085211_part1)
 
   /* Lets check if SQLTables can get these long names  */
   ok_stmt(hstmt, SQLTables(hstmt, (SQLCHAR *)db_64_name, SQL_NTS, NULL, SQL_NTS,
-                                  (SQLCHAR *)tab_64_name, SQL_NTS, 
+                                  (SQLCHAR *)tab_64_name, SQL_NTS,
                                   "TABLE,VIEW", SQL_NTS));
 
   ok_stmt(hstmt, SQLFetch(hstmt));
@@ -947,7 +960,7 @@ DECLARE_TEST(t_bug14085211_part1)
 
   /* check the table name */
   is_str(my_fetch_str(hstmt, buff, 3), tab_64_name, 64);
-  
+
   /* only one db/table match, so nothing should be in the results */
   expect_stmt(hstmt, SQLFetch(hstmt), SQL_NO_DATA_FOUND);
 
@@ -955,7 +968,7 @@ DECLARE_TEST(t_bug14085211_part1)
 
   /* Lets check if SQLTables can ignore 1024-characters for table name */
   expect_stmt(hstmt, SQLTables(hstmt, (SQLCHAR *)tab_1024_name, SQL_NTS, NULL, SQL_NTS,
-                                  (SQLCHAR *)tab_1024_name, SQL_NTS, 
+                                  (SQLCHAR *)tab_1024_name, SQL_NTS,
                                   "TABLE,VIEW", SQL_NTS), SQL_ERROR);
   is_num(check_sqlstate(hstmt, "HY090"), OK);
 
@@ -970,9 +983,9 @@ DECLARE_TEST(t_bug14085211_part1)
 
 DECLARE_TEST(t_bug14085211_part2)
 {
-  /* 
+  /*
     TODO: test all catalog functions for extreme lengths of
-          database, table and column names     
+          database, table and column names
   */
   return OK;
 }
@@ -1025,7 +1038,7 @@ DECLARE_TEST(t_bug14555713)
                 end");
 
   ok_stmt(hstmt, SQLProcedureColumns(hstmt, NULL, 0, NULL, 0,
-                                     "b14555713", SQL_NTS, 
+                                     "b14555713", SQL_NTS,
                                      "p%", SQL_NTS));
 
   ok_stmt(hstmt, SQLFetch(hstmt));
@@ -1043,20 +1056,20 @@ DECLARE_TEST(t_bug14555713)
 }
 
 
-/* 
-  Bug #69448 MySQL ODBC drivers incorrectly quotes TableName when 
+/*
+  Bug #69448 MySQL ODBC drivers incorrectly quotes TableName when
   calling SQLPrimaryKeys
 */
 DECLARE_TEST(t_bug69448)
 {
- 
+
   SQLCHAR buff[255];
 
   ok_sql(hstmt, "DROP TABLE IF EXISTS `table``69448`");
 
   ok_sql(hstmt, "CREATE TABLE `table``69448`(id int primary key)");
 
-  ok_stmt(hstmt, SQLPrimaryKeys(hstmt, NULL, SQL_NTS, NULL, SQL_NTS, 
+  ok_stmt(hstmt, SQLPrimaryKeys(hstmt, NULL, SQL_NTS, NULL, SQL_NTS,
                                "table`69448", SQL_NTS));
 
   ok_stmt(hstmt, SQLFetch(hstmt));
@@ -1064,6 +1077,9 @@ DECLARE_TEST(t_bug69448)
   /* check the table name and PK name */
   is_str(my_fetch_str(hstmt, buff, 3), "table`69448", 11);
   is_str(my_fetch_str(hstmt, buff, 4), "id", 2);
+
+  expect_stmt(hstmt, SQLFetch(hstmt), SQL_NO_DATA);
+  ok_stmt(hstmt, SQLFreeStmt(hstmt, SQL_CLOSE));
 
   ok_sql(hstmt, "DROP TABLE IF EXISTS `table``69448`");
 
@@ -1075,7 +1091,7 @@ DECLARE_TEST(t_bug69448)
 
 /*
   Bug #69554: SQL_ATTR_MAX_ROWS applies to all result sets on the statement,
-  and not connection, which is currently there as 
+  and not connection, which is currently there as
   'set @@sql_select_limit' for whole session.
 */
 DECLARE_TEST(t_bug69554)
@@ -1101,7 +1117,7 @@ DECLARE_TEST(t_bug69554)
 
   ok_sql(hstmt, "INSERT INTO table69554a(id, id2) VALUES (1, 1), (2, 2), (3, 3)");
 
-  ok_stmt(hstmt, SQLSetStmtAttr(hstmt, SQL_ATTR_MAX_ROWS, 
+  ok_stmt(hstmt, SQLSetStmtAttr(hstmt, SQL_ATTR_MAX_ROWS,
                                 (SQLPOINTER)1, 0));
 
   ok_sql(hstmt, "SELECT * FROM table69554a");
@@ -1152,8 +1168,8 @@ DECLARE_TEST(t_bug69554)
 
 
 /**
-  Bug#14005343: SQLTABLES PATCH (BUG 13914518) HAS TO BE EXTENDED 
-  FOR NO_I_S CASE 
+  Bug#14005343: SQLTABLES PATCH (BUG 13914518) HAS TO BE EXTENDED
+  FOR NO_I_S CASE
   Verify database returned should not be '%' for SQL_ALL_CATALOGS input.
   Also verify total tables in all databases in case of no information schema
   and in case of information schema should match.
@@ -1212,7 +1228,7 @@ DECLARE_TEST(t_bug_14005343)
     /* the table catalog in the results must not be '%' */
     is(database[0] != '%');
   }
-  
+
   ok_stmt(hstmt, SQLFreeStmt(hstmt, SQL_CLOSE));
   ok_sql(hstmt, "SELECT TABLE_NAME, TABLE_COMMENT, TABLE_TYPE, TABLE_SCHEMA "
                 " FROM (SELECT *  FROM INFORMATION_SCHEMA.TABLES ) TABLES "
@@ -1266,26 +1282,27 @@ DECLARE_TEST(t_bug_14005343)
 
 
 BEGIN_TESTS
+  ADD_TEST(t_sqlprocedurecolumns)
+  ADD_TEST(t_bug57182)
   ADD_TEST(t_bug_14005343)
   ADD_TEST(t_bug69554)
   ADD_TEST(t_bug37621)
   ADD_TEST(t_bug34272)
   ADD_TEST(t_bug49660)
-  // ADD_TEST(t_bug51422)            TODO: Fix NO_IS
   ADD_TEST(t_bug36441)
   ADD_TEST(t_bug53235)
-  // ADD_TEST(t_bug50195)            TODO: Fix NO_IS
-  // ADD_TEST(t_sqlprocedurecolumns) TODO: Fix 
-  // ADD_TEST(t_bug57182)            TODO: Fix
+  ADD_TEST(t_bug50195)
+  // ADD_TEST(t_bug51422) Fix NO_IS when FK table is given, it should only
+  //                      return keys that are PRIMARY, not UNIQUE
   ADD_TEST(t_bug55870)
   ADD_TEST(t_bug31067)
   ADD_TEST(bug12824839)
   ADD_TEST(sqlcolumns_nodbselected)
   ADD_TEST(t_bug14085211_part1)
-  // ADD_TODO(t_bug14085211_part2) TODO: Fix
+  ADD_TODO(t_bug14085211_part2)
   ADD_TEST(t_sqlcolumns_after_select)
-  // ADD_TEST(t_bug14555713) TODO: Fix
-  // ADD_TODO(t_bug69448) TODO: Fix
+  ADD_TEST(t_bug14555713)
+  ADD_TEST(t_bug69448)
 END_TESTS
 
 myoption &= ~(1 << 30);

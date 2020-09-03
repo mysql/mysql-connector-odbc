@@ -479,6 +479,7 @@ DECLARE_TEST(my_param_delete)
 DECLARE_TEST(tmysql_fix)
 {
   SQLRETURN rc;
+  ok_sql(hstmt, "set session sql_mode=''");
 
   ok_sql(hstmt, "DROP TABLE IF EXISTS tmysql_err");
 
@@ -2241,13 +2242,25 @@ DECLARE_TEST(t_bug30591722)
 
 
 BEGIN_TESTS
+  ADD_TEST(tmysql_fix)
   ADD_TEST(my_param_data)
   ADD_TEST(t_bug31373948)
   ADD_TEST(t_bug30591722)
   ADD_TEST(t_sp_return)
-  // ADD_TEST(t_bug28175772) the libmysqlclient SERVER_PS_OUT_PARAMS flag
-  //                         is not working the test should be re-enabled
-  //                         after bug 30566136 is fixed
+  /*
+    the libmysqlclient SERVER_PS_OUT_PARAMS flag
+    is not working the test should be re-enabled
+    after bug 30566136 is fixed
+
+    ADD_TEST(t_bug14501952)
+    ADD_TEST(t_bug14563386)
+    ADD_TEST(t_bug28175772)
+    ADD_TEST(t_bug14551229)
+    ADD_TEST(t_bug14560916)
+    ADD_TEST(t_bug14586094)
+    ADD_TEST(t_odbcoutparams)
+    ADD_TEST(t_longtextoutparam)
+*/
   ADD_TEST(t_bug30428851)
   ADD_TEST(my_init_table)
 #ifndef USE_IODBC
@@ -2255,7 +2268,6 @@ BEGIN_TESTS
   ADD_TEST(my_param_insert)
   ADD_TEST(my_param_update)
   ADD_TEST(my_param_delete)
-  // ADD_TEST(tmysql_fix) TODO: Fix
   ADD_TEST(paramarray_by_row)
   ADD_TEST(paramarray_by_column)
   ADD_TEST(paramarray_ignore_paramset)
@@ -2265,13 +2277,6 @@ BEGIN_TESTS
 #endif
   ADD_TEST(t_param_offset)
   ADD_TEST(t_bug49029)
-  // ADD_TEST(t_odbcoutparams) TODO: Fix
-  // ADD_TEST(t_bug14501952) TODO: Fix
-  // ADD_TEST(t_bug14563386) TODO: Fix
-  // ADD_TEST(t_bug14551229) TODO: Fix
-  // ADD_TEST(t_bug14560916) TODO: Fix
-  // ADD_TEST(t_bug14586094) TODO: Fix
-  // ADD_TEST(t_longtextoutparam)  TODO: Fix
   ADD_TEST(t_bug53891)
 #if USE_UNIXODBC
   ADD_TEST(t_odbc_outstream_params)

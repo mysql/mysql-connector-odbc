@@ -134,17 +134,11 @@ SQLRETURN SQL_API my_SQLBindParameter( SQLHSTMT     StatementHandle,
         return SQL_ERROR;
     }
 
-    if (aprec->par.alloced)
-    {
-        aprec->par.alloced= FALSE;
-        assert(aprec->par.value);
-        x_free(aprec->par.value);
-        aprec->par.value = NULL;
-    }
+    aprec->par.reset();
 
     /* reset all param fields */
-    desc_rec_init_apd(aprec);
-    desc_rec_init_ipd(iprec);
+    aprec->reset_to_defaults();
+    iprec->reset_to_defaults();
 
     /* first, set apd fields */
     if (ValueType == SQL_C_DEFAULT)

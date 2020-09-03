@@ -49,7 +49,7 @@
 /* Sets affected rows everewhere where SQLRowCOunt could look for */
 void global_set_affected_rows(STMT * stmt, my_ulonglong rows)
 {
-  stmt->affected_rows= stmt->dbc->mysql.affected_rows= rows;
+  stmt->affected_rows= stmt->dbc->mysql->affected_rows= rows;
 
   /* Dirty hack. But not dirtier than the one above */
   if (ssps_used(stmt))
@@ -67,49 +67,39 @@ void global_set_affected_rows(STMT * stmt, my_ulonglong rows)
 static const char *find_used_table(STMT *stmt)
 {
     MYSQL_FIELD  *field, *end;
-    char *table_name;
+    char *table_name = nullptr;
     MYSQL_RES *result= stmt->result;
 
-    if ( stmt->table_name && stmt->table_name[0] )
-        return stmt->table_name;
+    if ( stmt->table_name.size() )
+        return stmt->table_name.c_str();
 
-    table_name= 0;
     for ( field= result->fields, end= field+ result->field_count;
         field < end ; ++field )
     {
 
-#if MYSQL_VERSION_ID >= 40100
-        if ( field->org_table )
+      if ( field->org_table )
+      {
+        if ( !table_name )
+            table_name= field->org_table;
+        if ( strcmp(field->org_table, table_name) )
         {
-            if ( !table_name )
-                table_name= field->org_table;
-            if ( strcmp(field->org_table, table_name) )
-            {
-                stmt->set_error(MYERR_S1000,
-                          "Can't modify a row from a statement that uses more than one table",0);
-                return NULL;
-            }
+            stmt->set_error(MYERR_S1000,
+                      "Can't modify a row from a statement that uses more than one table",0);
+            return NULL;
         }
-#else
-        if ( field->table )
-        {
-            if ( !table_name )
-                table_name= field->table;
-            if ( strcmp(field->table, table_name) )
-            {
-                stmt->set_error(MYERR_S1000,
-                          "Can't modify a row from a statement that uses more than one table",0);
-                return NULL;
-            }
-        }
-#endif
+      }
     }
     /*
       We have to copy the strings as we may have to re-issue the query
       while using cursors.
     */
-    stmt->table_name= dupp_str(table_name,SQL_NTS);
-    return stmt->table_name;
+    if (table_name)
+    {
+      stmt->table_name= table_name;
+      return stmt->table_name.c_str();
+    }
+
+    return nullptr;
 }
 
 
@@ -129,7 +119,6 @@ char *check_if_positioned_cursor_exists(STMT *pStmt, STMT **pStmtCursor)
   if (cursorName != NULL)
   {
 
-    LIST *list_element;
     DBC  *dbc= (DBC *)pStmt->dbc;
     char * wherePos= get_token(&pStmt->query, TOKEN_COUNT(&pStmt->query)- 4);
 
@@ -145,19 +134,21 @@ char *check_if_positioned_cursor_exists(STMT *pStmt, STMT **pStmtCursor)
       can find the cursor name this statement is referring to - it
       must have a result set to count.
     */
-    for (list_element= dbc->statements;
-         list_element;
-         list_element= list_element->next)
+
+    //for (list_element= dbc->statements;
+    //     list_element;
+    //     list_element= list_element->next)
+    for (STMT *stmt : dbc->stmt_list)
     {
-      *pStmtCursor= (STMT*)list_element->data;
+      *pStmtCursor= stmt; //(STMT*)list_element->data;
 
       /*
         Even if the cursor name matches, the statement must have a
         result set to count.
       */
       if ((*pStmtCursor)->result &&
-          (*pStmtCursor)->cursor.name &&
-          !myodbc_strcasecmp((*pStmtCursor)->cursor.name,
+          (*pStmtCursor)->cursor.name.size() &&
+          !myodbc_strcasecmp((*pStmtCursor)->cursor.name.c_str(),
                              cursorName))
       {
         return (char *)wherePos;
@@ -165,12 +156,12 @@ char *check_if_positioned_cursor_exists(STMT *pStmt, STMT **pStmtCursor)
     }
 
     /* Did we run out of statements without finding a viable cursor? */
-    if (!list_element)
+    //if (!list_element)
     {
       char buff[200];
       strxmov(buff,"Cursor '", cursorName,
               "' does not exist or does not have a result set.", NullS);
-      set_stmt_error(pStmt, "34000", buff, ER_INVALID_CURSOR_NAME);
+      pStmt->set_error("34000", buff, ER_INVALID_CURSOR_NAME);
     }
 
     return (char *)wherePos;
@@ -237,17 +228,17 @@ static my_bool check_if_usable_unique_key_exists(STMT *stmt)
 
   /* Use SHOW KEYS FROM table to check for keys. */
   pos= myodbc_stpmov(buff, "SHOW KEYS FROM `");
-  pos+= mysql_real_escape_string(&stmt->dbc->mysql, pos, table, strlen(table));
+  pos+= mysql_real_escape_string(stmt->dbc->mysql, pos, table, strlen(table));
   pos= myodbc_stpmov(pos, "`");
 
   MYLOG_QUERY(stmt, buff);
 
   myodbc_mutex_lock(&stmt->dbc->lock);
   if (exec_stmt_query(stmt, buff, strlen(buff), FALSE) ||
-      !(res= mysql_store_result(&stmt->dbc->mysql)))
+      !(res= mysql_store_result(stmt->dbc->mysql)))
   {
-    stmt->set_error( MYERR_S1000, mysql_error(&stmt->dbc->mysql),
-              mysql_errno(&stmt->dbc->mysql));
+    stmt->set_error( MYERR_S1000, mysql_error(stmt->dbc->mysql),
+              mysql_errno(stmt->dbc->mysql));
     myodbc_mutex_unlock(&stmt->dbc->lock);
     return FALSE;
   }
@@ -344,8 +335,7 @@ void set_current_cursor_data(STMT *stmt, SQLUINTEGER irow)
 
 static void set_dynamic_cursor_name(STMT *stmt)
 {
-    stmt->cursor.name= (char*) myodbc_malloc(MYSQL_MAX_CURSOR_LEN,MYF(MY_ZEROFILL));
-    sprintf((char*) stmt->cursor.name,"SQL_CUR%d",stmt->dbc->cursor_count++);
+  stmt->cursor.name = "SQL_CUR" + std::to_string(stmt->dbc->cursor_count++);
 }
 
 
@@ -455,12 +445,14 @@ static SQLRETURN copy_rowdata(STMT *stmt, DESCREC *aprec,
   @purpose : copies field data to statement
 */
 
-static my_bool insert_field(STMT *stmt, MYSQL_RES *result,
-                            DYNAMIC_STRING *dynQuery,
-                            SQLUSMALLINT nSrcCol)
+static bool insert_field_std(STMT *stmt, MYSQL_RES *result,
+                             std::string &str,
+                             SQLUSMALLINT nSrcCol)
 {
-  DESCREC aprec_, iprec_;
+  DESCREC aprec_(DESC_PARAM, DESC_APP),
+          iprec_(DESC_PARAM, DESC_IMP);
   DESCREC *aprec= &aprec_, *iprec= &iprec_;
+
   MYSQL_FIELD *field= mysql_fetch_field_direct(result,nSrcCol);
   MYSQL_ROW   row_data;
   SQLLEN      length;
@@ -475,9 +467,6 @@ static my_bool insert_field(STMT *stmt, MYSQL_RES *result,
   {
     row_data= result->data_cursor->data + nSrcCol;
   }
-
-  desc_rec_init_apd(aprec);
-  desc_rec_init_ipd(iprec);
 
   /* Copy row buffer data to statement */
   iprec->concise_type= get_sql_data_type(stmt, field, 0);
@@ -499,16 +488,17 @@ static my_bool insert_field(STMT *stmt, MYSQL_RES *result,
       return (my_bool)stmt->set_error( MYERR_S1001, NULL, 4001);
     }
 
-    myodbc_append_mem(dynQuery, stmt->buf(), stmt->buf_pos());
+    str.append(stmt->buf(), stmt->buf_pos());
     stmt->buf_set_pos(0); // Buffer is used, can be reset
   }
   else
   {
-    --dynQuery->length;
-    myodbc_append_mem(dynQuery, " IS NULL AND ",13);
+    str.resize(str.length()-1);
+    str.append(" IS NULL AND ");
   }
   return 0;
 }
+
 
 
 /*
@@ -517,7 +507,7 @@ static my_bool insert_field(STMT *stmt, MYSQL_RES *result,
   if it is, copy that data to query, else we can't find the right row
 */
 
-static SQLRETURN insert_pk_fields(STMT *stmt, DYNAMIC_STRING *dynQuery)
+static SQLRETURN insert_pk_fields_std(STMT *stmt, std::string &str)
 {
     MYSQL_RES    *result= stmt->result;
     MYSQL_FIELD  *field;
@@ -535,9 +525,9 @@ static SQLRETURN insert_pk_fields(STMT *stmt, DYNAMIC_STRING *dynQuery)
         if (!myodbc_strcasecmp(cursor->pkcol[index].name, field->org_name))
         {
           /* PK data exists...*/
-          myodbc_append_quoted_name(dynQuery, field->org_name);
-          myodbc_append_mem(dynQuery, "=", 1);
-          if (insert_field(stmt, result, dynQuery, ncol))
+          myodbc_append_quoted_name_std(str, field->org_name);
+          str.append(1, '=');
+          if (insert_field_std(stmt, result, str, ncol))
             return SQL_ERROR;
           cursor->pkcol[index].bind_done= TRUE;
           ++pk_count;
@@ -551,7 +541,7 @@ static SQLRETURN insert_pk_fields(STMT *stmt, DYNAMIC_STRING *dynQuery)
      we can't build a correct WHERE clause.
     */
     if (pk_count != cursor->pk_count)
-      return set_stmt_error(stmt, "HY000",
+      return stmt->set_error("HY000",
                             "Not all components of primary key are available, "
                             "so row to modify cannot be identified", 0);
 
@@ -564,11 +554,12 @@ static SQLRETURN insert_pk_fields(STMT *stmt, DYNAMIC_STRING *dynQuery)
   @purpose : generate a WHERE clause based on the fields in the result set
 */
 
-static SQLRETURN append_all_fields(STMT *stmt, DYNAMIC_STRING *dynQuery)
+
+static SQLRETURN append_all_fields_std(STMT *stmt, std::string &str)
 {
   MYSQL_RES    *result= stmt->result;
   MYSQL_RES    *presultAllColumns;
-  char          select[NAME_LEN+30];
+  std::string  select;
   unsigned int  i,j;
   BOOL          found_field;
 
@@ -584,14 +575,15 @@ static SQLRETURN append_all_fields(STMT *stmt, DYNAMIC_STRING *dynQuery)
     Get the list of all of the columns of the underlying table by using
     SELECT * FROM <table> LIMIT 0.
   */
-  strxmov(select, "SELECT * FROM `", stmt->table_name, "` LIMIT 0", NullS);
-  MYLOG_QUERY(stmt, select);
+
+  select = "SELECT * FROM `" + stmt->table_name + "` LIMIT 0";
+  MYLOG_QUERY(stmt, select.c_str());
   myodbc_mutex_lock(&stmt->dbc->lock);
-  if (exec_stmt_query(stmt, select, strlen(select), FALSE) ||
-      !(presultAllColumns= mysql_store_result(&stmt->dbc->mysql)))
+  if (exec_stmt_query_std(stmt, select, false) ||
+      !(presultAllColumns= mysql_store_result(stmt->dbc->mysql)))
   {
-    stmt->set_error( MYERR_S1000, mysql_error(&stmt->dbc->mysql),
-              mysql_errno(&stmt->dbc->mysql));
+    stmt->set_error( MYERR_S1000, mysql_error(stmt->dbc->mysql),
+              mysql_errno(stmt->dbc->mysql));
     myodbc_mutex_unlock(&stmt->dbc->lock);
     return SQL_ERROR;
   }
@@ -637,9 +629,9 @@ static SQLRETURN append_all_fields(STMT *stmt, DYNAMIC_STRING *dynQuery)
       if (cursor_field->org_name &&
           !strcmp(cursor_field->org_name, table_field->name))
       {
-        myodbc_append_quoted_name(dynQuery, table_field->name);
-        myodbc_append_mem(dynQuery, "=", 1);
-        if (insert_field(stmt, result, dynQuery, j))
+        myodbc_append_quoted_name_std(str, table_field->name);
+        str.append("=");
+        if (insert_field_std(stmt, result, str, j))
         {
           mysql_free_result(presultAllColumns);
           return SQL_ERROR;
@@ -663,20 +655,21 @@ static SQLRETURN append_all_fields(STMT *stmt, DYNAMIC_STRING *dynQuery)
   return SQL_SUCCESS;
 }
 
+
 /*
   @type    : myodbc3 internal
   @purpose : build the where clause
 */
 
-static SQLRETURN build_where_clause( STMT * pStmt,
-                                     DYNAMIC_STRING * dynQuery,
+static SQLRETURN build_where_clause_std( STMT * pStmt,
+                                     std::string &str,
                                      SQLUSMALLINT     irow )
 {
     /* set our cursor to irow - we call assuming irow is valid */
     set_current_cursor_data( pStmt, irow );
 
     /* simply append WHERE to our statement */
-    myodbc_append_mem( dynQuery, " WHERE ", 7 );
+    str.append(" WHERE ");
 
     /*
       If a suitable key exists, then we'll use those columns, otherwise
@@ -684,32 +677,32 @@ static SQLRETURN build_where_clause( STMT * pStmt,
     */
     if (check_if_usable_unique_key_exists(pStmt))
     {
-      if (insert_pk_fields(pStmt, dynQuery) != SQL_SUCCESS)
+      if (insert_pk_fields_std(pStmt, str) != SQL_SUCCESS)
         return SQL_ERROR;
     }
     else
     {
-      if (append_all_fields(pStmt, dynQuery) != SQL_SUCCESS)
-        return set_stmt_error(pStmt, "HY000",
+      if (append_all_fields_std(pStmt, str) != SQL_SUCCESS)
+        return pStmt->set_error("HY000",
                               "Build WHERE -> insert_fields() failed.",
                               0);
     }
+
     /* Remove the trailing ' AND ' */
-    dynQuery->length -= 5;
+    size_t sz = str.size();
+    if (sz > 5)
+      str.erase(sz - 5);
 
     /* IF irow = 0 THEN delete all rows in the rowset ELSE specific (as in one) row */
     if ( irow == 0 )
     {
-        char buff[32];
-
-        sprintf( buff, " LIMIT %lu",
-                 (unsigned long)pStmt->ard->array_size );
-        myodbc_append_mem( dynQuery, buff , (uint)strlen(buff));
+        str.append(" LIMIT ").append(std::to_string((size_t)pStmt->ard->array_size));
     }
     else
     {
-        myodbc_append_mem( dynQuery, " LIMIT 1", 8 );
+        str.append(" LIMIT 1");
     }
+
 
     return SQL_SUCCESS;
 }
@@ -720,21 +713,19 @@ static SQLRETURN build_where_clause( STMT * pStmt,
   @purpose : set clause building..
 */
 
-static SQLRETURN build_set_clause(STMT *stmt, SQLULEN irow,
-                                  DYNAMIC_STRING *dynQuery)
+static SQLRETURN build_set_clause_std(STMT *stmt, SQLULEN irow,
+                                      std::string &query)
 {
-    DESCREC aprec_, iprec_;
-    DESCREC *aprec= &aprec_, *iprec= &iprec_;
+    DESCREC aprec_(DESC_PARAM, DESC_APP),
+            iprec_(DESC_PARAM, DESC_IMP);
+    DESCREC *aprec = &aprec_, *iprec = &iprec_;
     SQLLEN        length= 0;
     uint          ncol, ignore_count= 0;
     MYSQL_FIELD *field;
     MYSQL_RES   *result= stmt->result;
     DESCREC *arrec, *irrec;
 
-    myodbc_append_mem(dynQuery," SET ",5);
-
-    desc_rec_init_apd(aprec);
-    desc_rec_init_ipd(iprec);
+    query.append(" SET ");
 
     /*
       To make sure, it points to correct row in the
@@ -795,8 +786,8 @@ static SQLRETURN build_set_clause(STMT *stmt, SQLULEN irow,
             }
         }
 
-        myodbc_append_quoted_name(dynQuery,field->org_name);
-        myodbc_append_mem(dynQuery,"=",1);
+        myodbc_append_quoted_name_std(query, field->org_name);
+        query.append("=");
 
         iprec->concise_type= get_sql_data_type(stmt, field, NULL);
         aprec->concise_type= arrec->concise_type;
@@ -804,7 +795,7 @@ static SQLRETURN build_set_clause(STMT *stmt, SQLULEN irow,
         iprec->precision= arrec->precision;
         iprec->scale= arrec->scale;
         if (stmt->dae_type && aprec->par.is_dae)
-          aprec->data_ptr= aprec->par.value;
+          aprec->data_ptr= aprec->par.val();
         else
           aprec->data_ptr= ptr_offset_adjust(arrec->data_ptr,
                                              stmt->ard->bind_offset_ptr,
@@ -822,15 +813,15 @@ static SQLRETURN build_set_clause(STMT *stmt, SQLULEN irow,
         if ( copy_rowdata(stmt,aprec,iprec) != SQL_SUCCESS )
             return(SQL_ERROR);
 
-        myodbc_append_mem(dynQuery, stmt->buf(), stmt->buf_pos());
+        query.append(stmt->buf(), stmt->buf_pos());
         stmt->buf_set_pos(0); // Buffer is used, can be reset
     }
 
     if (ignore_count == result->field_count)
       return ER_ALL_COLUMNS_IGNORED;
 
-    dynQuery->str[--dynQuery->length]='\0';
-    return(SQL_SUCCESS);
+    query.erase(query.size()-1);
+    return SQL_SUCCESS;
 }
 
 
@@ -839,21 +830,22 @@ static SQLRETURN build_set_clause(STMT *stmt, SQLULEN irow,
   @purpose : deletes the positioned cursor row
 */
 
-SQLRETURN my_pos_delete(STMT *stmt, STMT *stmtParam,
-                        SQLUSMALLINT irow, DYNAMIC_STRING *dynQuery)
+
+SQLRETURN my_pos_delete_std(STMT *stmt, STMT *stmtParam,
+                        SQLUSMALLINT irow, std::string &str)
 {
     SQLRETURN nReturn;
 
     /* Delete only the positioned row, by building where clause */
-    nReturn = build_where_clause( stmt, dynQuery, irow );
+    nReturn = build_where_clause_std( stmt, str, irow );
     if ( !SQL_SUCCEEDED( nReturn ) )
         return nReturn;
 
     /* DELETE the row(s) */
-    nReturn= exec_stmt_query(stmt, dynQuery->str, dynQuery->length, FALSE);
+    nReturn= exec_stmt_query_std(stmt, str, false);
     if ( nReturn == SQL_SUCCESS || nReturn == SQL_SUCCESS_WITH_INFO )
     {
-        stmtParam->affected_rows= mysql_affected_rows(&stmt->dbc->mysql);
+        stmtParam->affected_rows= mysql_affected_rows(stmt->dbc->mysql);
         nReturn= update_status(stmtParam,SQL_ROW_DELETED);
     }
     return nReturn;
@@ -865,16 +857,18 @@ SQLRETURN my_pos_delete(STMT *stmt, STMT *stmtParam,
   @purpose : updates the positioned cursor row
 */
 
-SQLRETURN my_pos_update( STMT *             pStmtCursor,
+
+
+SQLRETURN my_pos_update_std( STMT *             pStmtCursor,
                          STMT *             pStmt,
                          SQLUSMALLINT       nRow,
-                         DYNAMIC_STRING *   dynQuery )
+                         std::string        &query)
 {
     SQLRETURN   rc;
     SQLHSTMT    hStmtTemp;
     STMT        * pStmtTemp;
 
-    rc = build_where_clause( pStmtCursor, dynQuery, nRow );
+    rc = build_where_clause_std( pStmtCursor, query, nRow );
     if ( !SQL_SUCCEEDED( rc ) )
         return rc;
 
@@ -884,16 +878,16 @@ SQLRETURN my_pos_update( STMT *             pStmtCursor,
     */
     if ( my_SQLAllocStmt( pStmt->dbc, &hStmtTemp ) != SQL_SUCCESS )
     {
-        return set_stmt_error( pStmt, "HY000", "my_SQLAllocStmt() failed.", 0 );
+        return pStmt->set_error("HY000", "my_SQLAllocStmt() failed.", 0 );
     }
 
     pStmtTemp = (STMT *)hStmtTemp;
 
-    if (my_SQLPrepare(pStmtTemp, (SQLCHAR *)dynQuery->str, dynQuery->length,
+    if (my_SQLPrepare(pStmtTemp, (SQLCHAR *)query.c_str(), query.size(),
                       false, true) != SQL_SUCCESS)
     {
         my_SQLFreeStmt( pStmtTemp, SQL_DROP );
-        return set_stmt_error( pStmt, "HY000", "my_SQLPrepare() failed.", 0 );
+        return pStmt->set_error("HY000", "my_SQLPrepare() failed.", 0 );
     }
     if ( pStmtTemp->param_count )      /* SET clause has parameters */
     {
@@ -908,7 +902,7 @@ SQLRETURN my_pos_update( STMT *             pStmtCursor,
     rc = my_SQLExecute( pStmtTemp );
     if ( SQL_SUCCEEDED( rc ) )
     {
-        pStmt->affected_rows = mysql_affected_rows( &pStmtTemp->dbc->mysql );
+        pStmt->affected_rows = mysql_affected_rows( pStmtTemp->dbc->mysql );
         rc = update_status( pStmt, SQL_ROW_UPDATED );
     }
     else if (rc == SQL_NEED_DATA)
@@ -918,7 +912,7 @@ SQLRETURN my_pos_update( STMT *             pStmtCursor,
         statement that is a non-positioned update.
         To check: do we really need that?
       */
-      if (my_SQLPrepare(pStmt, (SQLCHAR *)dynQuery->str, dynQuery->length,
+      if (my_SQLPrepare(pStmt, (SQLCHAR *)query.c_str(), query.size(),
                         false, true) != SQL_SUCCESS)
         return SQL_ERROR;
       pStmt->dae_type= DAE_NORMAL;
@@ -950,7 +944,7 @@ static SQLRETURN fetch_bookmark(STMT *stmt)
 
   if (!ARD_IS_BOUND(arrec))
   {
-      set_stmt_error(stmt, "21S02",
+      stmt->set_error("21S02",
                      "Degree of derived table does not match column list",
                      0);
       return SQL_ERROR;
@@ -994,7 +988,8 @@ static SQLRETURN fetch_bookmark(STMT *stmt)
   @type    : myodbc3 internal
   @purpose : deletes the positioned cursor row for bookmark in bound array
 */
-static SQLRETURN setpos_delete_bookmark(STMT *stmt, DYNAMIC_STRING *dynQuery)
+
+static SQLRETURN setpos_delete_bookmark_std(STMT *stmt, std::string &query)
 {
   SQLUINTEGER  rowset_pos,rowset_end;
   my_ulonglong affected_rows= 0;
@@ -1015,15 +1010,15 @@ static SQLRETURN setpos_delete_bookmark(STMT *stmt, DYNAMIC_STRING *dynQuery)
   }
 
   /* appened our table name to our DELETE statement */
-  myodbc_append_quoted_name(dynQuery,table_name);
-  query_length= dynQuery->length;
+  myodbc_append_quoted_name_std(query, table_name);
+  query_length= query.size();
 
   IS_BOOKMARK_VARIABLE(stmt);
   arrec= desc_get_rec(stmt->ard, -1, FALSE);
 
   if (!ARD_IS_BOUND(arrec))
   {
-    set_stmt_error(stmt, "21S02",
+    stmt->set_error("21S02",
                    "Degree of derived table does not match column list",
                    0);
     return SQL_ERROR;
@@ -1044,19 +1039,19 @@ static SQLRETURN setpos_delete_bookmark(STMT *stmt, DYNAMIC_STRING *dynQuery)
     }
 
     curr_bookmark_index= atol((const char*) TargetValuePtr);
-    dynQuery->length= query_length;
+    query.erase(query_length);
 
     /* append our WHERE clause to our DELETE statement */
-    nReturn = build_where_clause( stmt, dynQuery, (SQLUSMALLINT)curr_bookmark_index );
+    nReturn = build_where_clause_std(stmt, query, (SQLUSMALLINT)curr_bookmark_index);
     if (!SQL_SUCCEEDED( nReturn ))
     {
       return nReturn;
     }
 
     /* execute our DELETE statement */
-    if ( !(nReturn= exec_stmt_query(stmt, dynQuery->str, dynQuery->length, FALSE)) )
+    if (!(nReturn= exec_stmt_query_std(stmt, query, false)))
     {
-      affected_rows+= stmt->dbc->mysql.affected_rows;
+      affected_rows+= stmt->dbc->mysql->affected_rows;
     }
     if (stmt->stmt_options.rowStatusPtr_ex)
     {
@@ -1071,7 +1066,7 @@ static SQLRETURN setpos_delete_bookmark(STMT *stmt, DYNAMIC_STRING *dynQuery)
 
   global_set_affected_rows(stmt, affected_rows);
   /* fix-up so fetching next rowset is correct */
-  if (if_dynamic_cursor(stmt))
+  if (stmt->is_dynamic_cursor())
   {
     stmt->rows_found_in_set-= (uint) affected_rows;
   }
@@ -1085,8 +1080,8 @@ static SQLRETURN setpos_delete_bookmark(STMT *stmt, DYNAMIC_STRING *dynQuery)
   @purpose : deletes the positioned cursor row - will del all rows in rowset if irow = 0
 */
 
-static SQLRETURN setpos_delete(STMT *stmt, SQLUSMALLINT irow,
-                               DYNAMIC_STRING *dynQuery)
+static SQLRETURN setpos_delete_std(STMT *stmt, SQLUSMALLINT irow,
+                                   std::string &query)
 {
   SQLUINTEGER  rowset_pos,rowset_end;
   my_ulonglong affected_rows= 0;
@@ -1101,8 +1096,8 @@ static SQLRETURN setpos_delete(STMT *stmt, SQLUSMALLINT irow,
   }
 
   /* appened our table name to our DELETE statement */
-  myodbc_append_quoted_name(dynQuery,table_name);
-  query_length= dynQuery->length;
+  myodbc_append_quoted_name_std(query, table_name);
+  query_length= query.size();
 
   /* IF irow == 0 THEN delete all rows in the current rowset ELSE specific (as in one) row */
   if ( irow == 0 )
@@ -1118,19 +1113,19 @@ static SQLRETURN setpos_delete(STMT *stmt, SQLUSMALLINT irow,
   /* process all desired rows in the rowset - we assume rowset_pos is valid */
   do
   {
-    dynQuery->length= query_length;
-
+    /* Each time we need a string without WHERE */
+    query.erase(query_length);
     /* append our WHERE clause to our DELETE statement */
-    nReturn = build_where_clause( stmt, dynQuery, (SQLUSMALLINT)rowset_pos );
+    nReturn = build_where_clause_std( stmt, query, (SQLUSMALLINT)rowset_pos );
     if (!SQL_SUCCEEDED( nReturn ))
     {
       return nReturn;
     }
 
     /* execute our DELETE statement */
-    if ( !(nReturn= exec_stmt_query(stmt, dynQuery->str, dynQuery->length, FALSE)) )
+    if (!(nReturn= exec_stmt_query_std(stmt, query, false)))
     {
-      affected_rows+= stmt->dbc->mysql.affected_rows;
+      affected_rows+= stmt->dbc->mysql->affected_rows;
     }
 
   } while ( ++rowset_pos <= rowset_end );
@@ -1141,7 +1136,7 @@ static SQLRETURN setpos_delete(STMT *stmt, SQLUSMALLINT irow,
   }
 
   /* fix-up so fetching next rowset is correct */
-  if (if_dynamic_cursor(stmt))
+  if (stmt->is_dynamic_cursor())
   {
     stmt->rows_found_in_set-= (uint) affected_rows;
   }
@@ -1150,11 +1145,12 @@ static SQLRETURN setpos_delete(STMT *stmt, SQLUSMALLINT irow,
 }
 
 
+
 /*
 @type    : myodbc3 internal
 @purpose : updates the positioned cursor row for bookmark in bound array
 */
-static SQLRETURN setpos_update_bookmark(STMT *stmt, DYNAMIC_STRING *dynQuery)
+static SQLRETURN setpos_update_bookmark_std(STMT *stmt, std::string &query)
 {
   SQLUINTEGER  rowset_pos,rowset_end;
   my_ulonglong affected= 0;
@@ -1170,15 +1166,15 @@ static SQLRETURN setpos_update_bookmark(STMT *stmt, DYNAMIC_STRING *dynQuery)
     return SQL_ERROR;
   }
 
-  myodbc_append_quoted_name(dynQuery,table_name);
-  query_length= dynQuery->length;
+  myodbc_append_quoted_name_std(query, table_name);
+  query_length= query.size();
 
   IS_BOOKMARK_VARIABLE(stmt);
   arrec= desc_get_rec(stmt->ard, -1, FALSE);
 
   if (!ARD_IS_BOUND(arrec))
   {
-    set_stmt_error(stmt, "21S02",
+    stmt->set_error("21S02",
                    "Degree of derived table does not match column list",
                    0);
     return SQL_ERROR;
@@ -1200,11 +1196,11 @@ static SQLRETURN setpos_update_bookmark(STMT *stmt, DYNAMIC_STRING *dynQuery)
 
     curr_bookmark_index= atol((const char*) TargetValuePtr);
 
-    dynQuery->length= query_length;
-    nReturn= build_set_clause(stmt, curr_bookmark_index, dynQuery);
+    query.erase(query_length);
+    nReturn= build_set_clause_std(stmt, curr_bookmark_index, query);
     if (nReturn == ER_ALL_COLUMNS_IGNORED)
     {
-      set_stmt_error(stmt, "21S02",
+      stmt->set_error("21S02",
                      "Degree of derived table does not match column list",
                      0);
       return SQL_ERROR;
@@ -1213,13 +1209,14 @@ static SQLRETURN setpos_update_bookmark(STMT *stmt, DYNAMIC_STRING *dynQuery)
     {
       return SQL_ERROR;
     }
-    nReturn= build_where_clause(stmt, dynQuery, (SQLUSMALLINT)curr_bookmark_index);
+    nReturn= build_where_clause_std(stmt, query,
+                                   (SQLUSMALLINT)curr_bookmark_index);
     if (!SQL_SUCCEEDED(nReturn))
       return nReturn;
 
-    if ( !(nReturn= exec_stmt_query(stmt, dynQuery->str, dynQuery->length, FALSE)) )
+    if (!(nReturn= exec_stmt_query_std(stmt, query, false)))
     {
-      affected+= mysql_affected_rows(&stmt->dbc->mysql);
+      affected+= mysql_affected_rows(stmt->dbc->mysql);
     }
     if (stmt->stmt_options.rowStatusPtr_ex)
     {
@@ -1243,8 +1240,8 @@ static SQLRETURN setpos_update_bookmark(STMT *stmt, DYNAMIC_STRING *dynQuery)
 @purpose : updates the positioned cursor row.
 */
 
-static SQLRETURN setpos_update(STMT *stmt, SQLUSMALLINT irow,
-                             DYNAMIC_STRING *dynQuery)
+static SQLRETURN setpos_update_std(STMT *stmt, SQLUSMALLINT irow,
+                                   std::string &query)
 {
   SQLUINTEGER  rowset_pos,rowset_end;
   my_ulonglong affected= 0;
@@ -1255,8 +1252,8 @@ static SQLRETURN setpos_update(STMT *stmt, SQLUSMALLINT irow,
   if ( !(table_name= find_used_table(stmt)) )
       return SQL_ERROR;
 
-  myodbc_append_quoted_name(dynQuery,table_name);
-  query_length= dynQuery->length;
+  myodbc_append_quoted_name_std(query, table_name);
+  query_length= query.size();
 
   if ( !irow )
   {
@@ -1271,8 +1268,9 @@ static SQLRETURN setpos_update(STMT *stmt, SQLUSMALLINT irow,
 
   do /* UPDATE, irow from current row set */
   {
-      dynQuery->length= query_length;
-      nReturn= build_set_clause(stmt,rowset_pos,dynQuery);
+    /* Each time we need a string without WHERE */
+      query.erase(query_length);
+      nReturn= build_set_clause_std(stmt, rowset_pos, query);
       if (nReturn == ER_ALL_COLUMNS_IGNORED)
       {
         /*
@@ -1286,7 +1284,7 @@ static SQLRETURN setpos_update(STMT *stmt, SQLUSMALLINT irow,
         }
         else
         {
-          set_stmt_error(stmt, "21S02",
+          stmt->set_error("21S02",
                          "Degree of derived table does not match column list",
                          0);
           return SQL_ERROR;
@@ -1295,13 +1293,13 @@ static SQLRETURN setpos_update(STMT *stmt, SQLUSMALLINT irow,
       else if (nReturn == SQL_ERROR)
         return SQL_ERROR;
 
-      nReturn= build_where_clause(stmt, dynQuery, (SQLUSMALLINT)rowset_pos);
+      nReturn= build_where_clause_std(stmt, query, (SQLUSMALLINT)rowset_pos);
       if (!SQL_SUCCEEDED(nReturn))
         return nReturn;
 
-      if ( !(nReturn= exec_stmt_query(stmt, dynQuery->str, dynQuery->length, FALSE)) )
+      if (!(nReturn= exec_stmt_query_std(stmt, query, false)))
       {
-        affected+= mysql_affected_rows(&stmt->dbc->mysql);
+        affected+= mysql_affected_rows(stmt->dbc->mysql);
       }
 
   } while ( ++rowset_pos <= rowset_end );
@@ -1335,7 +1333,7 @@ static SQLRETURN setpos_update(STMT *stmt, SQLUSMALLINT irow,
     \retval SQL_SUCCESS     Success!
 */
 
-static SQLRETURN batch_insert( STMT *stmt, SQLULEN irow, DYNAMIC_STRING *ext_query )
+static SQLRETURN batch_insert_std( STMT *stmt, SQLULEN irow, std::string &query )
 {
     MYSQL_RES    *result= stmt->result;     /* result set we are working with */
     SQLULEN      insert_count= 1;           /* num rows to insert - will be real value when row is 0 (all)  */
@@ -1346,11 +1344,11 @@ static SQLRETURN batch_insert( STMT *stmt, SQLULEN irow, DYNAMIC_STRING *ext_que
     ulong        query_length= 0;           /* our original query len so we can reset pos if break_insert   */
     my_bool      break_insert= FALSE;       /* true if we are to exceed max data size for transmission
                                                but this seems to be misused */
-    DESCREC aprec_, iprec_;
+    DESCREC aprec_(DESC_PARAM, DESC_APP),
+            iprec_(DESC_PARAM, DESC_IMP);
+
     DESCREC *aprec= &aprec_, *iprec= &iprec_;
     SQLRETURN res;
-
-    desc_rec_init_ipd(iprec);
 
     stmt->stmt_options.bookmark_insert= FALSE;
 
@@ -1358,7 +1356,7 @@ static SQLRETURN batch_insert( STMT *stmt, SQLULEN irow, DYNAMIC_STRING *ext_que
     if ( !irow && stmt->ard->array_size > 1 ) /* batch wise */
     {
         insert_count= stmt->ard->array_size;
-        query_length= ext_query->length;
+        query_length= query.size();
     }
 
     do
@@ -1367,18 +1365,17 @@ static SQLRETURN batch_insert( STMT *stmt, SQLULEN irow, DYNAMIC_STRING *ext_que
            so then we need to reset the pos. and start building a new statement. */
         if ( break_insert )
         {
-            ext_query->length= query_length;
-            /* "break_insert=FALSE" here? */
+            query.erase(query_length);
         }
 
         /* For each row, build the value list from its columns */
         while (count < insert_count)
         {
             /* Append values for each column. */
-            myodbc_append_mem(ext_query,"(", 1);
+            query.append("(");
             for ( ncol= 0; ncol < result->field_count; ++ncol )
             {
-                MYSQL_FIELD *field= mysql_fetch_field_direct(result,ncol);
+                MYSQL_FIELD *field= mysql_fetch_field_direct(result, ncol);
                 DESCREC     *arrec;
                 SQLLEN       ind_or_len= 0;
 
@@ -1387,12 +1384,12 @@ static SQLRETURN batch_insert( STMT *stmt, SQLULEN irow, DYNAMIC_STRING *ext_que
                 if (stmt->setpos_apd)
                   aprec= desc_get_rec(stmt->setpos_apd, ncol, FALSE);
                 else
-                  desc_rec_init_apd(aprec);
+                  aprec->reset_to_defaults();
 
                 if (arrec)
                 {
                   if (aprec->par.is_dae)
-                    ind_or_len= aprec->par.value_length;
+                    ind_or_len= aprec->par.val_length();
                   else if (arrec->octet_length_ptr)
                     ind_or_len= *(SQLLEN *)
                                 ptr_offset_adjust(arrec->octet_length_ptr,
@@ -1420,7 +1417,7 @@ static SQLRETURN batch_insert( STMT *stmt, SQLULEN irow, DYNAMIC_STRING *ext_que
 
                   if (stmt->dae_type && aprec->par.is_dae)
                     /* arrays or offsets are not supported for data-at-exec */
-                    aprec->data_ptr= aprec->par.value;
+                    aprec->data_ptr= aprec->par.val();
                   else
                     aprec->data_ptr= ptr_offset_adjust(arrec->data_ptr,
                                                        stmt->ard->bind_offset_ptr,
@@ -1456,16 +1453,16 @@ static SQLRETURN batch_insert( STMT *stmt, SQLULEN irow, DYNAMIC_STRING *ext_que
             } /* END OF for (ncol= 0; ncol < result->field_count; ++ncol) */
 
             length = stmt->buf_pos();
-            myodbc_append_mem(ext_query, stmt->buf(), length - 1);
+            query.append(stmt->buf(), length - 1);
             stmt->buf_set_pos(0); // Buffer is used, can be reset
-            myodbc_append_mem(ext_query, "),", 2);
+            query.append("),");
             ++count;
 
             /*
               We have a limited capacity to shove data across the wire, but
               we handle this by sending in multiple calls to exec_stmt_query()
             */
-            if (ext_query->length + length >= (SQLULEN) stmt->buf_len())
+            if (query.size() + length >= (SQLULEN) stmt->buf_len())
             {
                 break_insert= TRUE;
                 break;
@@ -1473,8 +1470,8 @@ static SQLRETURN batch_insert( STMT *stmt, SQLULEN irow, DYNAMIC_STRING *ext_que
 
         }  /* END OF while(count < insert_count) */
 
-        ext_query->str[--ext_query->length]= '\0';
-        if ( exec_stmt_query(stmt, ext_query->str, ext_query->length, FALSE) !=
+        query.erase(query.size() - 1);
+        if ( exec_stmt_query_std(stmt, query, false) !=
              SQL_SUCCESS )
             return(SQL_ERROR);
 
@@ -1573,15 +1570,15 @@ static SQLRETURN setpos_dae_check_and_init(STMT *stmt, SQLSETPOSIROW irow,
       (dae_rec= desc_find_dae_rec(stmt->ard)) > -1)
   {
     if (!irow && stmt->ard->array_size > 1)
-      return set_stmt_error(stmt, "HYC00", "Multiple row insert "
+      return stmt->set_error("HYC00", "Multiple row insert "
                             "with data at execution not supported",
                             0);
 
     /* create APD, and copy ARD to it */
-    stmt->setpos_apd= desc_alloc(stmt, SQL_DESC_ALLOC_AUTO,
-                                 DESC_APP, DESC_PARAM);
+    stmt->setpos_apd= new DESC(stmt, SQL_DESC_ALLOC_AUTO,
+                               DESC_APP, DESC_PARAM);
     if (!stmt->setpos_apd)
-      return set_stmt_error(stmt, "S1001", "Not enough memory",
+      return stmt->set_error("S1001", "Not enough memory",
                             4001);
     if(rc= stmt_SQLCopyDesc(stmt, stmt->ard, stmt->setpos_apd))
       return rc;
@@ -1673,7 +1670,7 @@ SQLRETURN SQL_API my_SQLSetPos(SQLHSTMT hstmt, SQLSETPOSIROW irow,
                     return stmt->set_error(MYERR_S1107,NULL,0);
 
                 /* If Dynamic cursor, fetch the latest resultset */
-                if ( if_dynamic_cursor(stmt) && set_dynamic_result(stmt) )
+                if ( stmt->is_dynamic_cursor() && set_dynamic_result(stmt) )
                 {
                     return stmt->set_error(MYERR_S1000, alloc_error, 0);
                 }
@@ -1699,33 +1696,28 @@ SQLRETURN SQL_API my_SQLSetPos(SQLHSTMT hstmt, SQLSETPOSIROW irow,
 
         case SQL_DELETE:
             {
-                DYNAMIC_STRING dynQuery;
-
                 if ( irow > stmt->rows_found_in_set )
                     return stmt->set_error(MYERR_S1107,NULL,0);
 
                 /* IF dynamic cursor THEN rerun query to refresh resultset */
-                if ( if_dynamic_cursor(stmt) && set_dynamic_result(stmt) )
+                if ( stmt->is_dynamic_cursor() && set_dynamic_result(stmt) )
                     return stmt->set_error(MYERR_S1000, alloc_error, 0);
 
                 /* start building our DELETE statement */
-                if ( myodbc_init_dynamic_string(&dynQuery, "DELETE FROM ", 1024, 1024) )
-                    return stmt->set_error(MYERR_S1001,NULL,4001);
+                std::string del_query("DELETE FROM ");
+                del_query.reserve(1024);
 
-                sqlRet = setpos_delete( stmt, irow, &dynQuery );
-                myodbc_dynstr_free(&dynQuery);
+                sqlRet = setpos_delete_std( stmt, irow, del_query );
                 break;
             }
 
         case SQL_UPDATE:
             {
-                DYNAMIC_STRING dynQuery;
-
                 if ( irow > stmt->rows_found_in_set )
                     return stmt->set_error(MYERR_S1107,NULL,0);
 
                 /* IF dynamic cursor THEN rerun query to refresh resultset */
-                if (!stmt->dae_type && if_dynamic_cursor(stmt) &&
+                if (!stmt->dae_type && stmt->is_dynamic_cursor() &&
                     set_dynamic_result(stmt))
                   return stmt->set_error(MYERR_S1000, alloc_error, 0);
 
@@ -1733,21 +1725,19 @@ SQLRETURN SQL_API my_SQLSetPos(SQLHSTMT hstmt, SQLSETPOSIROW irow,
                                                   DAE_SETPOS_UPDATE))
                   return rc;
 
-                if ( myodbc_init_dynamic_string(&dynQuery, "UPDATE ", 1024, 1024) )
-                    return stmt->set_error(MYERR_S1001,NULL,4001);
+                std::string upd_query("UPDATE ");
+                upd_query.reserve(1024);
 
-                sqlRet= setpos_update(stmt,irow,&dynQuery);
-                myodbc_dynstr_free(&dynQuery);
+                sqlRet= setpos_update_std(stmt, irow, upd_query);
                 break;
             }
 
         case SQL_ADD:
             {
                 const char  *   table_name;
-                DYNAMIC_STRING  dynQuery;
                 SQLUSMALLINT    nCol        = 0;
 
-                if (!stmt->dae_type && if_dynamic_cursor(stmt) &&
+                if (!stmt->dae_type && stmt->is_dynamic_cursor() &&
                     set_dynamic_result(stmt))
                   return stmt->set_error(MYERR_S1000, alloc_error, 0);
                 result= stmt->result;
@@ -1759,34 +1749,33 @@ SQLRETURN SQL_API my_SQLSetPos(SQLHSTMT hstmt, SQLSETPOSIROW irow,
                                                   DAE_SETPOS_INSERT))
                   return rc;
 
-                if ( myodbc_init_dynamic_string(&dynQuery, "INSERT INTO ", 1024,1024) )
-                    return set_stmt_error(stmt, "S1001", "Not enough memory",
-                                          4001);
+                std::string ins_query("INSERT INTO ");
+                ins_query.reserve(1024);
 
                 /* Append the table's DB name if exists */
                 if (result->fields && result->fields[0].db_length)
                 {
-                  myodbc_append_quoted_name(&dynQuery, result->fields[0].db);
-                  myodbc_append_mem(&dynQuery,".",1);
+                  myodbc_append_quoted_name_std(ins_query, result->fields[0].db);
+                  ins_query.append(".");
                 }
 
-                myodbc_append_quoted_name(&dynQuery,table_name);
-                myodbc_append_mem(&dynQuery,"(",1);
+                myodbc_append_quoted_name_std(ins_query, table_name);
+                ins_query.append("(");
 
                 /* build list of column names */
                 for (nCol= 0; nCol < result->field_count; ++nCol)
                 {
                     MYSQL_FIELD *field= mysql_fetch_field_direct(result, nCol);
-                    myodbc_append_quoted_name(&dynQuery, field->org_name);
-                    myodbc_append_mem(&dynQuery, ",", 1);
+                    myodbc_append_quoted_name_std(ins_query, field->org_name);
+                    if (nCol + 1 < result->field_count)
+                      ins_query.append(",");
                 }
-                --dynQuery.length;        /* Remove last ',' */
-                myodbc_append_mem(&dynQuery,") VALUES ",9);
+
+                ins_query.append(") VALUES ");
 
                 /* process row(s) using our INSERT as base */
-                sqlRet= batch_insert(stmt, irow, &dynQuery);
+                sqlRet= batch_insert_std(stmt, irow, ins_query);
 
-                myodbc_dynstr_free(&dynQuery);
                 break;
             }
 
@@ -1835,9 +1824,7 @@ MySQLSetCursorName(SQLHSTMT hstmt, SQLCHAR *name, SQLSMALLINT len)
       myodbc_casecmp((char *)name, "SQL_CUR", 7) == 0)
     return stmt->set_error( MYERR_34000, NULL, 0);
 
-  x_free(stmt->cursor.name);
-  stmt->cursor.name= dupp_str((char*)name, len);
-
+  stmt->cursor.name= std::string((char*)name, len);
   return SQL_SUCCESS;
 }
 
@@ -1853,10 +1840,10 @@ SQLCHAR *MySQLGetCursorName(HSTMT hstmt)
 {
   STMT *stmt= (STMT *)hstmt;
 
-  if (!stmt->cursor.name)
+  if (stmt->cursor.name.empty())
     set_dynamic_cursor_name(stmt);
 
-  return (SQLCHAR *)stmt->cursor.name;
+  return (SQLCHAR *)stmt->cursor.name.c_str();
 }
 
 
@@ -1913,8 +1900,6 @@ SQLRETURN SQL_API SQLBulkOperations(SQLHSTMT  Handle, SQLSMALLINT Operation)
 
   case SQL_UPDATE_BY_BOOKMARK:
     {
-      DYNAMIC_STRING dynQuery;
-
       /* If no rows provided for update return with SQL_SUCCESS. */
       if (stmt->rows_found_in_set == 0)
       {
@@ -1922,7 +1907,7 @@ SQLRETURN SQL_API SQLBulkOperations(SQLHSTMT  Handle, SQLSMALLINT Operation)
       }
 
       /* IF dynamic cursor THEN rerun query to refresh resultset */
-      if (!stmt->dae_type && if_dynamic_cursor(stmt) &&
+      if (!stmt->dae_type && stmt->is_dynamic_cursor() &&
           set_dynamic_result(stmt))
       {
         return stmt->set_error(MYERR_S1000, alloc_error, 0);
@@ -1934,29 +1919,24 @@ SQLRETURN SQL_API SQLBulkOperations(SQLHSTMT  Handle, SQLSMALLINT Operation)
         return rc;
       }
 
-      if ( myodbc_init_dynamic_string(&dynQuery, "UPDATE ", 1024, 1024) )
-      {
-        return stmt->set_error(MYERR_S1001,NULL,4001);
-      }
 
-      sqlRet= setpos_update_bookmark(stmt, &dynQuery);
-      myodbc_dynstr_free(&dynQuery);
+      std::string upd_query("UPDATE ");
+      upd_query.reserve(1024);
+      sqlRet= setpos_update_bookmark_std(stmt, upd_query);
       break;
     }
   case SQL_DELETE_BY_BOOKMARK:
     {
-      DYNAMIC_STRING dynQuery;
 
       /* IF dynamic cursor THEN rerun query to refresh resultset */
-      if ( if_dynamic_cursor(stmt) && set_dynamic_result(stmt) )
+      if ( stmt->is_dynamic_cursor() && set_dynamic_result(stmt) )
           return stmt->set_error(MYERR_S1000, alloc_error, 0);
 
       /* start building our DELETE statement */
-      if ( myodbc_init_dynamic_string(&dynQuery, "DELETE FROM ", 1024, 1024) )
-          return stmt->set_error(MYERR_S1001,NULL,4001);
+      std::string del_query("DELETE FROM ");
+      del_query.reserve(1024);
 
-      sqlRet = setpos_delete_bookmark(stmt, &dynQuery);
-      myodbc_dynstr_free(&dynQuery);
+      sqlRet = setpos_delete_bookmark_std(stmt, del_query);
       break;
     }
   case SQL_FETCH_BY_BOOKMARK:

@@ -58,6 +58,79 @@ void myodbc_thread_key_create()
   pthread_key_create (&myodbc_thread_counter_key, 0);
 }
 #endif
+
+void ENV::add_dbc(DBC* dbc)
+{
+  myodbc_mutex_lock(&lock);
+  conn_list.emplace_back(dbc);
+  myodbc_mutex_unlock(&lock);
+}
+
+void ENV::remove_dbc(DBC* dbc)
+{
+  myodbc_mutex_lock(&lock);
+  conn_list.remove(dbc);
+  myodbc_mutex_unlock(&lock);
+}
+
+bool ENV::has_connections()
+{
+  return conn_list.size() > 0;
+}
+
+DBC::DBC(ENV *p_env)  : env(p_env), mysql(nullptr),
+                        txn_isolation(DEFAULT_TXN_ISOLATION),
+                        last_query_time((time_t) time((time_t*) 0))
+{
+  //mysql->net.vio = nullptr;
+  myodbc_mutex_init(&lock, NULL);
+  myodbc_ov_init(env->odbc_ver);
+  env->add_dbc(this);
+}
+
+void DBC::add_desc(DESC* desc)
+{
+  desc_list.emplace_back(desc);
+}
+
+void DBC::remove_desc(DESC* desc)
+{
+  desc_list.remove(desc);
+}
+
+
+void DBC::free_explicit_descriptors()
+{
+
+  /* free any remaining explicitly allocated descriptors */
+  for (auto it = desc_list.begin(); it != desc_list.end();)
+  {
+    DESC *desc = *it;
+    it = desc_list.erase(it);
+    delete desc;
+  }
+}
+
+void DBC::close()
+{
+  if (mysql)
+    mysql_close(mysql);
+  mysql = nullptr;
+}
+
+DBC::~DBC()
+{
+  env->remove_dbc(this);
+
+  if (ds)
+    ds_delete(ds);
+
+  myodbc_mutex_destroy(&lock);
+  free_explicit_descriptors();
+}
+
+
+
 /*
   @type    : myodbc3 internal
   @purpose : to allocate the environment handle and to maintain
@@ -66,39 +139,20 @@ void myodbc_thread_key_create()
 
 SQLRETURN SQL_API my_SQLAllocEnv(SQLHENV *phenv)
 {
-  ENV **env= (ENV **) phenv;
+  ENV *env;
 #ifdef _UNIX_
   /* Init thread key just once for all threads */
   pthread_once(&myodbc_thread_key_inited, myodbc_thread_key_create);
   myodbc_init();
 #endif
 
-#ifndef _UNIX_
-    {
-        HGLOBAL henv= GlobalAlloc(GMEM_MOVEABLE | GMEM_ZEROINIT, sizeof (ENV));
-        if (henv == NULL || (*phenv= (SQLHENV)GlobalLock(henv)) == NULL)
-        {
-            GlobalFree (henv);      /* Free it if lock fails */
-            *phenv= SQL_NULL_HENV;
-            return SQL_ERROR;
-        }
-    }
-#else
-    if (!(*phenv= (SQLHENV) myodbc_malloc(sizeof(ENV),MYF(MY_ZEROFILL))))
-    {
-        *phenv= SQL_NULL_HENV;
-        return SQL_ERROR;
-    }
-#endif /* _UNIX_ */
-    myodbc_mutex_init(&(*env)->lock,NULL);
-
 #ifndef USE_IODBC
-    ((ENV *) *phenv)->odbc_ver= SQL_OV_ODBC3_80;
+    env = new ENV(SQL_OV_ODBC3_80);
 #else
-    ((ENV *) *phenv)->odbc_ver= SQL_OV_ODBC3;
+    env = new ENV(SQL_OV_ODBC3);
 #endif
-
-    return SQL_SUCCESS;
+  *phenv = (SQLHENV)env;
+  return SQL_SUCCESS;
 }
 
 
@@ -123,12 +177,9 @@ SQLRETURN SQL_API SQLAllocEnv(SQLHENV *phenv)
 SQLRETURN SQL_API my_SQLFreeEnv(SQLHENV henv)
 {
     ENV *env= (ENV *) henv;
-    myodbc_mutex_destroy(&env->lock);
+    delete env;
 #ifndef _UNIX_
-    GlobalUnlock(GlobalHandle((HGLOBAL) henv));
-    GlobalFree(GlobalHandle((HGLOBAL) henv));
 #else
-    x_free(henv);
     myodbc_end();
 #endif /* _UNIX_ */
     return(SQL_SUCCESS);
@@ -212,64 +263,17 @@ SQLRETURN SQL_API my_SQLAllocConnect(SQLHENV henv, SQLHDBC *phdbc)
                              "until ODBC version specified.", 0);
     }
 
-#ifndef _UNIX_
+    try
     {
-        HGLOBAL hdbc= GlobalAlloc(GMEM_MOVEABLE | GMEM_ZEROINIT, sizeof (DBC));
-        if (!hdbc)
-        {
-            *phdbc= SQL_NULL_HENV;
-            return(my_GetLastError((ENV*)henv));
-        }
-
-        if ((*phdbc= (SQLHDBC)GlobalLock(hdbc)) == SQL_NULL_HDBC)
-        {
-            *phdbc= SQL_NULL_HENV;
-            return(my_GetLastError((ENV*)henv));
-        }
+      dbc = new DBC(penv);
+      *phdbc = (SQLHDBC)dbc;
     }
-#else
-    if (!(*phdbc= (SQLHDBC) myodbc_malloc(sizeof(DBC),MYF(MY_ZEROFILL))))
+    catch(...)
     {
-        *phdbc= SQL_NULL_HDBC;
-        return(set_env_error((ENV*)henv,MYERR_S1001,NULL,0));
+      *phdbc = nullptr;
+      return SQL_ERROR;
     }
-#endif /* _UNIX_ */
 
-/* --- if OS=WIN32, set default env option for SQL_ATTR_ODBC_VERSION */
-#ifdef WIN32
-/* This was a fix for BDE (and or Crystal Reports) but messes other apps up. see BUG 8363. */
-/* penv->odbc_ver= SQL_OV_ODBC3; */
-#endif /* WIN32 */
-
-    dbc= (DBC *) *phdbc;
-    dbc->mysql.net.vio= 0;     /* Marker if open */
-    dbc->commit_flag= 0;
-    dbc->stmt_options.max_rows= dbc->stmt_options.max_length= 0L;
-    dbc->stmt_options.cursor_type= SQL_CURSOR_FORWARD_ONLY;  /* ODBC default */
-    /*
-      Query timeout is unknown, assign with the first request in
-      get_constmt_attr. It might never be needed, so we are not getting it
-      at the connect stage
-    */
-    dbc->stmt_options.query_timeout= (SQLULEN)-1;
-    dbc->stmt_options.bookmark_insert= FALSE;
-    dbc->stmt_options.retrieve_data= TRUE;
-    dbc->login_timeout= 0;
-    dbc->last_query_time= (time_t) time((time_t*) 0);
-    dbc->txn_isolation= DEFAULT_TXN_ISOLATION;
-    dbc->env= penv;
-    myodbc_mutex_lock(&penv->lock);
-    penv->connections= list_add(penv->connections,&dbc->list);
-    myodbc_mutex_unlock(&penv->lock);
-    dbc->list.data= dbc;
-    dbc->unicode= 0;
-    dbc->ansi_charset_info= dbc->cxn_charset_info= NULL;
-    dbc->exp_desc= NULL;
-    dbc->sql_select_limit= (SQLULEN) -1;
-    myodbc_mutex_init(&dbc->lock,NULL);
-    myodbc_mutex_lock(&dbc->lock);
-    myodbc_ov_init(penv->odbc_ver); /* Initialize based on ODBC version */
-    myodbc_mutex_unlock(&dbc->lock);
     return(SQL_SUCCESS);
 }
 
@@ -290,27 +294,13 @@ SQLRETURN SQL_API SQLAllocConnect(SQLHENV henv, SQLHDBC *phdbc)
 }
 
 
-void free_explicit_descriptors(DBC *dbc)
-{
-  LIST *ldesc;
-  LIST *next;
-
-  /* free any remaining explicitly allocated descriptors */
-  for (ldesc= dbc->exp_desc; ldesc; ldesc= next)
-  {
-    next= ldesc->next;
-    desc_free((DESC *) ldesc->data);
-    x_free(ldesc);
-  }
-}
-
 
 /* ODBC specs suggest(and that actually makes sense) to do jobs that require communication with server
    when connection is taken from pool, i.e. at "wakeup" time */
 int reset_connection(DBC *dbc)
 {
-  free_connection_stmts(dbc);
-  free_explicit_descriptors(dbc);
+  dbc->free_connection_stmts();
+  dbc->free_explicit_descriptors();
 
   return 0;
 }
@@ -320,7 +310,7 @@ int wakeup_connection(DBC *dbc)
 {
   DataSource *ds= dbc->ds;
 
-  if (mysql_change_user(&dbc->mysql, ds_get_utf8attr(ds->uid, &ds->uid8),
+  if (mysql_change_user(dbc->mysql, ds_get_utf8attr(ds->uid, &ds->uid8),
                                      ds_get_utf8attr(ds->pwd, &ds->pwd8),
                                      ds_get_utf8attr(ds->database, &ds->database8)))
   {
@@ -341,24 +331,13 @@ int wakeup_connection(DBC *dbc)
 SQLRETURN SQL_API my_SQLFreeConnect(SQLHDBC hdbc)
 {
     DBC *dbc= (DBC *) hdbc;
-
-    myodbc_mutex_lock(&dbc->env->lock);
-    dbc->env->connections= list_delete(dbc->env->connections,&dbc->list);
-    myodbc_mutex_unlock(&dbc->env->lock);
-    x_free(dbc->database);
-    if (dbc->ds)
-    {
-      ds_delete(dbc->ds);
-    }
-    myodbc_mutex_destroy(&dbc->lock);
-
-    free_explicit_descriptors(dbc);
+    delete dbc;
 
 #ifndef _UNIX_
-    GlobalUnlock(GlobalHandle((HGLOBAL) hdbc));
-    GlobalFree(GlobalHandle((HGLOBAL) hdbc));
+    //GlobalUnlock(GlobalHandle((HGLOBAL) hdbc));
+    //GlobalFree(GlobalHandle((HGLOBAL) hdbc));
 #else
-    x_free(hdbc);
+    //x_free(hdbc);
 
     {
       long *thread_count;
@@ -403,23 +382,24 @@ SQLRETURN SQL_API SQLFreeConnect(SQLHDBC hdbc)
 
 /* allocates dynamic array for param bind.
    returns TRUE on allocation errors */
-BOOL allocate_param_bind(DYNAMIC_ARRAY **param_bind, uint elements)
+void STMT::allocate_param_bind(uint elements)
 {
-  if (*param_bind == NULL)
-  {
-    *param_bind= (DYNAMIC_ARRAY*)myodbc_malloc(sizeof(DYNAMIC_ARRAY), MYF(0));
+  if (dbc->ds->no_ssps)
+    return;
 
-    if (*param_bind == NULL)
+  if (param_bind == NULL)
+  {
+    param_bind= (DYNAMIC_ARRAY*)myodbc_malloc(sizeof(DYNAMIC_ARRAY), MYF(0));
+
+    if (param_bind == NULL)
     {
-      return TRUE;
+      throw;
     }
   }
 
-  myodbc_init_dynamic_array(*param_bind, sizeof(MYSQL_BIND), elements, 10);
-  memset((*param_bind)->buffer, 0, sizeof(MYSQL_BIND) *
-											(*param_bind)->max_element);
-
-  return FALSE;
+  myodbc_init_dynamic_array(param_bind, sizeof(MYSQL_BIND), elements, 10);
+  memset(param_bind->buffer, 0, sizeof(MYSQL_BIND) *
+				 param_bind->max_element);
 }
 
 
@@ -479,55 +459,18 @@ SQLRETURN SQL_API my_SQLAllocStmt(SQLHDBC hdbc,SQLHSTMT *phstmt)
     Keeping the check here to stay on the safe side */
   WAKEUP_CONN_IF_NEEDED(dbc);
 
-  stmt = new STMT();
-  stmt->dbc= dbc;
-  *phstmt = (SQLHSTMT*)stmt;
-
-  myodbc_mutex_lock(&stmt->dbc->lock);
-  dbc->statements= list_add(dbc->statements,&stmt->list);
-  myodbc_mutex_unlock(&stmt->dbc->lock);
-  stmt->list.data= stmt;
-  stmt->stmt_options= dbc->stmt_options;
-  stmt->state= ST_UNKNOWN;
-  stmt->dummy_state= ST_DUMMY_UNKNOWN;
-  stmt->ssps= NULL;
-  stmt->setpos_op = 0;
-  myodbc_stpmov(stmt->error.sqlstate, "00000");
-  init_parsed_query(&stmt->query);
-  init_parsed_query(&stmt->orig_query);
-
-  if (!dbc->ds->no_ssps && allocate_param_bind(&stmt->param_bind, 10))
+  try
   {
-    goto error;
+    stmt = new STMT(dbc);
+    *phstmt = (SQLHSTMT*)stmt;
+  }
+  catch (...)
+  {
+    delete stmt;
+    return set_dbc_error(dbc, "HY001", "Memory allocation error", MYERR_S1001);
   }
 
-  if (!(stmt->ard= desc_alloc(stmt, SQL_DESC_ALLOC_AUTO,
-                              DESC_APP, DESC_ROW)))
-    goto error;
-  if (!(stmt->ird= desc_alloc(stmt, SQL_DESC_ALLOC_AUTO,
-                              DESC_IMP, DESC_ROW)))
-    goto error;
-  if (!(stmt->apd= desc_alloc(stmt, SQL_DESC_ALLOC_AUTO,
-                              DESC_APP, DESC_PARAM)))
-    goto error;
-  if (!(stmt->ipd= desc_alloc(stmt, SQL_DESC_ALLOC_AUTO,
-                              DESC_IMP, DESC_PARAM)))
-    goto error;
-  stmt->imp_ard= stmt->ard;
-  stmt->imp_apd= stmt->apd;
-
   return SQL_SUCCESS;
-
-error:
-  x_free(stmt->ard);
-  x_free(stmt->ird);
-  x_free(stmt->apd);
-  x_free(stmt->ipd);
-  delete_parsed_query(&stmt->query);
-  delete_parsed_query(&stmt->orig_query);
-  delete_param_bind(stmt->param_bind);
-
-  return set_dbc_error(dbc, "HY001", "Memory allocation error", MYERR_S1001);
 }
 
 
@@ -592,67 +535,19 @@ SQLRETURN SQL_API my_SQLFreeStmtExtended(SQLHSTMT hstmt,SQLUSMALLINT fOption,
 
     if (fOption == SQL_UNBIND)
     {
-      stmt->ard->records.elements= 0;
-      stmt->ard->count= 0;
+      stmt->free_unbind();
       return SQL_SUCCESS;
     }
 
-    if (stmt->out_params_state == OPS_STREAMS_PENDING)
-    {
-      /* Magical out params fetch */
-      mysql_stmt_fetch(stmt->ssps);
-    }
-
-    stmt->out_params_state= OPS_UNKNOWN;
-
-    desc_free_paramdata(stmt->apd);
-    /* reset data-at-exec state */
-    stmt->dae_type= 0;
-
-    scroller_reset(stmt);
+    stmt->free_reset_out_params();
 
     if (fOption == SQL_RESET_PARAMS)
     {
-      if (stmt->param_bind != NULL)
-      {
-        reset_dynamic(stmt->param_bind);
-      }
-      if (ssps_used(stmt))
-      {
-        mysql_stmt_reset(stmt->ssps);
-      }
-      /* remove all params and reset count to 0 (per spec) */
-      /* http://msdn2.microsoft.com/en-us/library/ms709284.aspx */
-      stmt->apd->count= 0;
+      stmt->free_reset_params();
       return SQL_SUCCESS;
     }
 
-    if (!stmt->fake_result)
-    {
-      if (clearAllResults)
-      {
-        /* We seiously CLOSEing statement for preparing handle object for
-           new query */
-        free_internal_result_buffers(stmt);
-        while (!next_result(stmt))
-        {
-          get_result_metadata(stmt, TRUE);
-        }
-      }
-    }
-    else
-    {
-      if(stmt->result && stmt->result->field_alloc
-#if (!MYSQL8)
-         && stmt->result->field_alloc->pre_alloc
-#endif
-         )
-      {
-        free_root(stmt->result->field_alloc, MYF(0));
-      }
-
-      stmt_result_free(stmt);
-    }
+    stmt->free_fake_result(clearAllResults);
 
     x_free(stmt->fields);   // TODO: Looks like STMT::fields is not used anywhere
     x_free(stmt->result_array);
@@ -667,7 +562,7 @@ SQLRETURN SQL_API my_SQLFreeStmtExtended(SQLHSTMT hstmt,SQLUSMALLINT fOption,
     stmt->current_row= stmt->rows_found_in_set= 0;
     stmt->cursor_row= -1;
     stmt->dae_type= 0;
-    stmt->ird->count= 0;
+    stmt->ird->reset();
 
     if (fOption == MYSQL_RESET_BUFFERS)
     {
@@ -680,15 +575,10 @@ SQLRETURN SQL_API my_SQLFreeStmtExtended(SQLHSTMT hstmt,SQLUSMALLINT fOption,
 
     stmt->state= ST_UNKNOWN;
 
-    x_free(stmt->table_name);
-    stmt->table_name= 0;
+    stmt->table_name.clear();
     stmt->dummy_state= ST_DUMMY_UNKNOWN;
     stmt->cursor.pk_validated= FALSE;
-    if (stmt->setpos_apd)
-    {
-      desc_free(stmt->setpos_apd);
-    }
-    stmt->setpos_apd= NULL;
+    stmt->reset_setpos_apd();
 
     for (i= stmt->cursor.pk_count; i--;)
     {
@@ -735,26 +625,9 @@ SQLRETURN SQL_API my_SQLFreeStmtExtended(SQLHSTMT hstmt,SQLUSMALLINT fOption,
     }
 
     /* explicitly allocated descriptors are affected up until this point */
-    desc_remove_stmt(stmt->apd, stmt);
-    desc_remove_stmt(stmt->ard, stmt);
-    desc_free(stmt->imp_apd);
-    desc_free(stmt->imp_ard);
-    desc_free(stmt->ipd);
-    desc_free(stmt->ird);
+    stmt->apd->stmt_list_remove(stmt);
+    stmt->ard->stmt_list_remove(stmt);
 
-    x_free(stmt->cursor.name);
-    if (stmt->ssps != NULL)
-    {
-      mysql_stmt_close(stmt->ssps);
-      stmt->ssps = NULL;
-    }
-    delete_parsed_query(&stmt->query);
-    delete_parsed_query(&stmt->orig_query);
-    delete_param_bind(stmt->param_bind);
-
-    myodbc_mutex_lock(&stmt->dbc->lock);
-    stmt->dbc->statements= list_delete(stmt->dbc->statements,&stmt->list);
-    myodbc_mutex_unlock(&stmt->dbc->lock);
     delete stmt;
     return SQL_SUCCESS;
 }
@@ -766,19 +639,20 @@ SQLRETURN SQL_API my_SQLFreeStmtExtended(SQLHSTMT hstmt,SQLUSMALLINT fOption,
 SQLRETURN my_SQLAllocDesc(SQLHDBC hdbc, SQLHANDLE *pdesc)
 {
   DBC *dbc= (DBC *) hdbc;
-  DESC *desc= desc_alloc(NULL, SQL_DESC_ALLOC_USER, DESC_APP, DESC_UNKNOWN);
-  LIST *e;
+  DESC *desc= new DESC(NULL, SQL_DESC_ALLOC_USER, DESC_APP, DESC_UNKNOWN);
+  // LIST *e;
 
   if (!desc)
     return set_dbc_error(dbc, "HY001", "Memory allocation error", MYERR_S1001);
 
-  desc->exp.dbc= dbc;
+  desc->dbc= dbc;
 
   /* add to this connection's list of explicit descriptors */
-  e= (LIST *) myodbc_malloc(sizeof(LIST), MYF(0));
-  e->data= desc;
+  // e= (LIST *) myodbc_malloc(sizeof(LIST), MYF(0));
+  // e->data= desc;
   myodbc_mutex_lock(&dbc->lock);
-  dbc->exp_desc= list_add(dbc->exp_desc, e);
+  dbc->add_desc(desc);
+  //dbc->exp_desc= list_add(dbc->exp_desc, e);
   myodbc_mutex_unlock(&dbc->lock);
 
   *pdesc= desc;
@@ -793,10 +667,7 @@ SQLRETURN my_SQLAllocDesc(SQLHDBC hdbc, SQLHANDLE *pdesc)
 SQLRETURN my_SQLFreeDesc(SQLHANDLE hdesc)
 {
   DESC *desc= (DESC *) hdesc;
-  DBC *dbc= desc->exp.dbc;
-  LIST *lstmt;
-  LIST *ldesc;
-  LIST *next;
+  DBC *dbc= desc->dbc;
 
   if (!desc)
     return SQL_ERROR;
@@ -805,31 +676,19 @@ SQLRETURN my_SQLFreeDesc(SQLHANDLE hdesc)
                           "allocated descriptor handle.", MYERR_S1017);
 
   /* remove from DBC */
-  for (ldesc= dbc->exp_desc; ldesc; ldesc= ldesc->next)
-  {
-    if (ldesc->data == desc)
-    {
-      myodbc_mutex_lock(&dbc->lock);
-      dbc->exp_desc= list_delete(dbc->exp_desc, ldesc);
-      myodbc_mutex_unlock(&dbc->lock);
-      x_free(ldesc);
-      break;
-    }
-  }
+  myodbc_mutex_lock(&dbc->lock);
+  dbc->remove_desc(desc);
+  myodbc_mutex_unlock(&dbc->lock);
 
-  /* reset all stmts it was on - to their implicit desc */
-  for (lstmt= desc->exp.stmts; lstmt; lstmt= next)
+  for (auto s : desc->stmt_list)
   {
-    STMT *stmt= (STMT*)lstmt->data;
-    next= lstmt->next;
     if (IS_APD(desc))
-      stmt->apd= stmt->imp_apd;
+      s->apd= s->imp_apd;
     else if (IS_ARD(desc))
-      stmt->ard= stmt->imp_ard;
-    x_free(lstmt);
+      s->ard= s->imp_ard;
   }
 
-  desc_free(desc);
+  delete desc;
   return SQL_SUCCESS;
 }
 

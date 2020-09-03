@@ -52,6 +52,7 @@
 # define CLIENT_NO_SCHEMA      16
 #endif
 
+
 typedef BOOL (*PromptFunc)(SQLHWND, SQLWCHAR *, SQLUSMALLINT,
                            SQLWCHAR *, SQLSMALLINT, SQLSMALLINT *);
 
@@ -116,26 +117,26 @@ SQLRETURN myodbc_set_initial_character_set(DBC *dbc, const char *charset)
 
   if (charset && charset[0])
   {
-    if (mysql_set_character_set(&dbc->mysql, charset))
+    if (mysql_set_character_set(dbc->mysql, charset))
     {
-      set_dbc_error(dbc, "HY000", mysql_error(&dbc->mysql),
-                    mysql_errno(&dbc->mysql));
+      set_dbc_error(dbc, "HY000", mysql_error(dbc->mysql),
+                    mysql_errno(dbc->mysql));
       return SQL_ERROR;
     }
   }
   else
   {
-    if (mysql_set_character_set(&dbc->mysql, dbc->ansi_charset_info->csname))
+    if (mysql_set_character_set(dbc->mysql, dbc->ansi_charset_info->csname))
     {
-      set_dbc_error(dbc, "HY000", mysql_error(&dbc->mysql),
-                    mysql_errno(&dbc->mysql));
+      set_dbc_error(dbc, "HY000", mysql_error(dbc->mysql),
+                    mysql_errno(dbc->mysql));
       return SQL_ERROR;
     }
   }
 
   {
     MY_CHARSET_INFO my_charset;
-    mysql_get_character_set_info(&dbc->mysql, &my_charset);
+    mysql_get_character_set_info(dbc->mysql, &my_charset);
     dbc->cxn_charset_info= get_charset(my_charset.number, MYF(0));
   }
 
@@ -146,7 +147,7 @@ SQLRETURN myodbc_set_initial_character_set(DBC *dbc, const char *charset)
     We always set character_set_results to NULL so we can do our own
     conversion to the ANSI character set or Unicode.
   */
-  if (is_minimum_version(dbc->mysql.server_version, "4.1.1")
+  if (is_minimum_version(dbc->mysql->server_version, "4.1.1")
       && odbc_stmt(dbc, "SET character_set_results = NULL", SQL_NTS, TRUE) != SQL_SUCCESS)
   {
     return SQL_ERROR;
@@ -353,7 +354,7 @@ std::vector<Srv_host_detail> parse_host_list(const char* hosts_str,
 SQLRETURN myodbc_do_connect(DBC *dbc, DataSource *ds)
 {
   SQLRETURN rc= SQL_SUCCESS;
-  MYSQL *mysql= &dbc->mysql;
+  MYSQL *mysql;
   unsigned long flags;
   /* Use 'int' and fill all bits to avoid alignment Bug#25920 */
   unsigned int opt_ssl_verify_server_cert = ~0;
@@ -374,7 +375,8 @@ SQLRETURN myodbc_do_connect(DBC *dbc, DataSource *ds)
     ds->default_bigint_bind_str= 1;
 #endif
 
-  mysql_init(mysql);
+  mysql = mysql_init(nullptr);
+  dbc->mysql = mysql;
 
   flags= get_client_flags(ds);
 
@@ -491,7 +493,7 @@ SQLRETURN myodbc_do_connect(DBC *dbc, DataSource *ds)
       Get the ANSI charset info before we change connection to UTF-8.
     */
     MY_CHARSET_INFO my_charset;
-    mysql_get_character_set_info(&dbc->mysql, &my_charset);
+    mysql_get_character_set_info(dbc->mysql, &my_charset);
     dbc->ansi_charset_info= get_charset(my_charset.number, MYF(0));
     /*
       We always use utf8 for the connection, and change it afterwards if needed.
@@ -515,7 +517,7 @@ SQLRETURN myodbc_do_connect(DBC *dbc, DataSource *ds)
     }
 #else
     MY_CHARSET_INFO my_charset;
-    mysql_get_character_set_info(&dbc->mysql, &my_charset);
+    mysql_get_character_set_info(dbc->mysql, &my_charset);
     dbc->ansi_charset_info= get_charset(my_charset.number, MYF(0));
 #endif
 }
@@ -797,9 +799,9 @@ SQLRETURN myodbc_do_connect(DBC *dbc, DataSource *ds)
     }
   }
 
-  if (!is_minimum_version(dbc->mysql.server_version, "4.1.1"))
+  if (!is_minimum_version(dbc->mysql->server_version, "4.1.1"))
   {
-    mysql_close(mysql);
+    dbc->close();
     set_dbc_error(dbc, "08001", "Driver does not support server versions under 4.1.1", 0);
     return SQL_ERROR;
   }
@@ -834,9 +836,8 @@ SQLRETURN myodbc_do_connect(DBC *dbc, DataSource *ds)
   ds_get_utf8attr(ds->socket, &ds->socket8);
   if (ds->database)
   {
-    x_free(dbc->database);
-    dbc->database= myodbc_strdup(ds_get_utf8attr(ds->database, &ds->database8),
-                             MYF(MY_WME));
+
+    dbc->database= ds_get_utf8attr(ds->database, &ds->database8);
   }
 
   if (ds->save_queries && !dbc->query_log)
@@ -922,7 +923,7 @@ SQLRETURN myodbc_do_connect(DBC *dbc, DataSource *ds)
   return rc;
 
 error:
-  mysql_close(mysql);
+  dbc->close();
   return SQL_ERROR;
 }
 
@@ -1273,7 +1274,7 @@ SQLRETURN SQL_API MySQLDriverConnect(SQLHDBC hdbc, SQLHWND hwnd,
   if (ds->savefile)
   {
     /* We must disconnect if File DSN is created */
-    mysql_close(&dbc->mysql);
+    dbc->close();
   }
 
 connected:
@@ -1334,15 +1335,15 @@ error:
 }
 
 
-void free_connection_stmts(DBC *dbc)
+void DBC::free_connection_stmts()
 {
-  LIST *list_element, *next_element;
-
-  for (list_element= dbc->statements; list_element; list_element= next_element)
+  for (auto it = stmt_list.begin(); it != stmt_list.end(); )
   {
-      next_element= list_element->next;
-      my_SQLFreeStmt((SQLHSTMT)list_element->data, SQL_DROP);
+      STMT *stmt = *it;
+      it = stmt_list.erase(it);
+      my_SQLFreeStmt((SQLHSTMT)stmt, SQL_DROP);
   }
+  stmt_list.clear();
 }
 
 
@@ -1362,23 +1363,21 @@ SQLRETURN SQL_API SQLDisconnect(SQLHDBC hdbc)
 
   CHECK_HANDLE(hdbc);
 
-  free_connection_stmts(dbc);
+  dbc->free_connection_stmts();
 
-  mysql_close(&dbc->mysql);
+  dbc->close();
 
   if (dbc->ds && dbc->ds->save_queries)
     end_query_log(dbc->query_log);
 
   /* free allocated packet buffer */
 
-  x_free(dbc->database);
-
   if(dbc->ds)
   {
     ds_delete(dbc->ds);
   }
   dbc->ds= NULL;
-  dbc->database= NULL;
+  dbc->database.clear();
 
   return SQL_SUCCESS;
 }
