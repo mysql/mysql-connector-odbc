@@ -745,10 +745,10 @@ SQLWCHAR *sqlwcharncpy(SQLWCHAR *dest, const SQLWCHAR *src, size_t n)
 
 
 /* Converts all characters in string to lowercase */
-char * myodbc_strlwr(char *target, int len)
+char * myodbc_strlwr(char *target, size_t len)
 {
   unsigned char *c= (unsigned char *)target;
-  if (len <= 0)
+  if (-1 == len)
     len= (int)strlen(target);
 
   while (len-- > 0)

@@ -110,7 +110,6 @@ end_transaction(SQLSMALLINT HandleType,
   case SQL_HANDLE_ENV:
     henv= (ENV *)Handle;
     myodbc_mutex_lock(&henv->lock);
-    //for (current= henv->connections; current; current= current->next)
     for (DBC *dbc : henv->conn_list)
     {
         my_transact(dbc, CompletionType);

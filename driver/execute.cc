@@ -762,13 +762,11 @@ SQLRETURN convert_c_type2str(STMT *stmt, SQLSMALLINT ctype, DESCREC *iprec,
 
 #define TIME_FIELDS_NONZERO(ts) (ts.hour||ts.minute||ts.second||ts.fraction)
 
+static const std::string ts_chars{"0123456789-:"};
+
 inline bool is_ts_char(char c)
 {
-  const char ts_chars[] = {"0123456789-:\0"};
-  int i = 0;
-  while(ts_chars[i] && c != ts_chars[i])
-    ++i;
-  return ts_chars[i] > 0;
+  return std::string::npos != ts_chars.find(c);
 }
 
 
@@ -953,6 +951,9 @@ SQLRETURN insert_param(STMT *stmt, MYSQL_BIND *bind, DESC* apd,
                user.
             */
             const char *tt = get_date_time_substr(data, length);
+
+            /* The length parameter is changed by get_date_time_substr()
+               because it is passed as a reference */
             if (bind_param(bind, tt, length, MYSQL_TYPE_STRING))
             {
               goto memerror;
@@ -1679,7 +1680,7 @@ static SQLRETURN select_dae_param_desc(STMT *stmt, DESC **apd, unsigned int *par
       break;
     case DAE_SETPOS_INSERT:
     case DAE_SETPOS_UPDATE:
-      *apd= stmt->setpos_apd;
+      *apd= stmt->setpos_apd.get();
       *param_count= stmt->ard->rcount();
       break;
     default:
@@ -1751,14 +1752,12 @@ static SQLRETURN execute_dae(STMT *stmt)
   case DAE_SETPOS_INSERT:
     stmt->dae_type= DAE_SETPOS_DONE;
     rc= my_SQLSetPos((HSTMT)stmt, stmt->setpos_row, SQL_ADD, stmt->setpos_lock);
-    desc_free(stmt->setpos_apd);
-    stmt->setpos_apd= NULL;
+    stmt->setpos_apd.reset();
     break;
   case DAE_SETPOS_UPDATE:
     stmt->dae_type= DAE_SETPOS_DONE;
     rc= my_SQLSetPos((HSTMT)stmt, stmt->setpos_row, SQL_UPDATE, stmt->setpos_lock);
-    desc_free(stmt->setpos_apd);
-    stmt->setpos_apd= NULL;
+    stmt->setpos_apd.reset();
     break;
   }
 
@@ -1894,7 +1893,7 @@ SQLRETURN SQL_API SQLPutData( SQLHSTMT      hstmt,
   }
   else
   {
-    aprec= desc_get_rec(stmt->setpos_apd, stmt->current_param - 1, FALSE);
+    aprec= desc_get_rec(stmt->setpos_apd.get(), stmt->current_param - 1, FALSE);
   }
 
   if (!aprec)

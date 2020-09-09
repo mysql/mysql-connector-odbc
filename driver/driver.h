@@ -685,7 +685,7 @@ struct STMT
   MEM_ROOT          alloc_root;
   my_bool           fake_result;
   MYSQL_ROW	        array, result_array, current_values;
-  MYSQL_ROW(*fix_fields)(STMT *stmt, MYSQL_ROW row);
+  MYSQL_ROW         (*fix_fields)(STMT *stmt, MYSQL_ROW row);
   MYSQL_FIELD	      *fields;
   MYSQL_ROW_OFFSET  end_of_set;
   tempBuf           tempbuf;
@@ -718,7 +718,8 @@ struct STMT
   enum MY_DUMMY_STATE dummy_state;
 
   /* APD for data-at-exec on SQLSetPos() */
-  DESC *setpos_apd;
+  std::unique_ptr<DESC> setpos_apd;
+  DESC *setpos_apd2;
   SQLSETPOSIROW setpos_row;
   SQLUSMALLINT setpos_lock;
   SQLUSMALLINT setpos_op;
@@ -779,7 +780,6 @@ struct STMT
     order(NULL), order_count(0), param_count(0), current_param(0),
     rows_found_in_set(0),
     state(ST_UNKNOWN), dummy_state(ST_DUMMY_UNKNOWN),
-    setpos_apd(NULL),
     setpos_row(0), setpos_lock(0), setpos_op(0),
     ssps(NULL), result_bind(NULL), param_place_bind(NULL),
     out_params_state(OPS_UNKNOWN),

@@ -74,8 +74,8 @@ DECLARE_TEST(bug13766_result)
   }
   for (i= 0; i < EL_NUM; ++i)
   {
-    ok_stmt(hstmt1, SQLGetData(hstmt1, 6+i+1, SQL_C_TYPE_TIMESTAMP,
-                               &xts[i], 0, &isNull[6+i]));
+    ok_stmt(hstmt1, SQLGetData(hstmt1, EL_NUM+i+1, SQL_C_TYPE_TIMESTAMP,
+                               &xts[i], 0, &isNull[EL_NUM+i]));
   }
 
   i= 0;

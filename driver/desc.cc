@@ -74,7 +74,6 @@ DESC *desc_alloc(STMT *stmt, SQLSMALLINT alloc_type,
 */
 void desc_free(DESC *desc)
 {
-  assert(desc);
   delete desc;
 }
 
@@ -388,7 +387,7 @@ apply_desc_val(void *dest, SQLSMALLINT dest_type, void *src, SQLINTEGER buflen)
  * Get a descriptor field based on the constant.
  */
 static desc_field *
-getfield(SQLSMALLINT fldid, DESC *desc)
+getfield(SQLSMALLINT fldid)
 {
   /* all field descriptions are immutable */
   /* See: SQLSetDescField() documentation
@@ -536,7 +535,7 @@ MySQLGetDescField(SQLHDESC hdesc, SQLSMALLINT recnum, SQLSMALLINT fldid,
                   SQLPOINTER valptr, SQLINTEGER buflen, SQLINTEGER *outlen)
 {
   DESC *desc= (DESC *)hdesc;
-  desc_field *fld = getfield(fldid, desc);
+  desc_field *fld = getfield(fldid);
   void *src_struct;
   void *src;
 
@@ -730,7 +729,7 @@ MySQLSetDescField(SQLHDESC hdesc, SQLSMALLINT recnum, SQLSMALLINT fldid,
                   SQLPOINTER val, SQLINTEGER buflen)
 {
   DESC *desc= (DESC *)hdesc;
-  desc_field *fld = getfield(fldid, desc);
+  desc_field *fld = getfield(fldid);
   void *dest_struct;
   void *dest;
 
@@ -936,28 +935,6 @@ SQLRETURN MySQLCopyDesc(SQLHDESC SourceDescHandle, SQLHDESC TargetDescHandle)
 
   /* copy the records, copy constructors should take care of everything */
   *dest = *src;
-
-
-  //delete_dynamic(&dest->records);
-  //if (myodbc_init_dynamic_array(&dest->records, sizeof(DESCREC),
-  //                          src->records.max_element,
-  //                          src->records.alloc_increment))
-  //{
-  //  return set_desc_error(dest, "HY001",
-  //            "Memory allocation error",
-  //            MYERR_S1001);
-  //}
-  //memcpy(dest->records.buffer, src->records.buffer,
-  //       src->records.max_element * src->records.size_of_element);
-
-  ///* copy all fields */
-  //dest->array_size= src->array_size;
-  //dest->array_status_ptr= src->array_status_ptr;
-  //dest->bind_offset_ptr= src->bind_offset_ptr;
-  //dest->bind_type= src->bind_type;
-  //dest->count= src->count;
-  //dest->rows_processed_ptr= src->rows_processed_ptr;
-  //memcpy(&dest->error, &src->error, sizeof(MYERROR));
 
   /* TODO consistency check on target, if needed (apd) */
 

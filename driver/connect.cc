@@ -341,6 +341,17 @@ std::vector<Srv_host_detail> parse_host_list(const char* hosts_str,
 }
 
 
+class dbc_guard
+{
+  DBC *m_dbc;
+  bool m_success = false;
+  public:
+
+  dbc_guard(DBC *dbc) : m_dbc(dbc) {}
+  void set_success(bool success) { m_success = success; }
+  ~dbc_guard() { if (!m_success) m_dbc->close(); }
+};
+
 /**
   Try to establish a connection to a MySQL server based on the data source
   configuration.
@@ -361,6 +372,8 @@ SQLRETURN myodbc_do_connect(DBC *dbc, DataSource *ds)
   const my_bool on= 1;
   unsigned int on_int = 1;
   unsigned long max_long = ~0L;
+
+  dbc_guard guard(dbc);
 
 #ifdef WIN32
   /*
@@ -920,10 +933,10 @@ SQLRETURN myodbc_do_connect(DBC *dbc, DataSource *ds)
   // for older versions just use net_buffer_length() macro
   dbc->net_buffer_len = net_buffer_length;
 #endif
+  guard.set_success(rc == SQL_SUCCESS || rc == SQL_SUCCESS_WITH_INFO);
   return rc;
 
 error:
-  dbc->close();
   return SQL_ERROR;
 }
 

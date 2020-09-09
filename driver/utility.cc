@@ -362,9 +362,6 @@ void fix_result_types(STMT *stmt)
     else
       irrec->updatable= SQL_ATTR_READONLY;
   }
-
-  // This should not be here
-  //stmt->ird->count= result->field_count;
 }
 
 
@@ -437,6 +434,7 @@ copy_binary_result(STMT *stmt,
   if (!result_bytes)
     result= 0;       /* Don't copy anything! */
 
+  assert(stmt);
   /* Apply max length to source data, if one was specified. */
   if (stmt->stmt_options.max_length &&
       src_bytes > stmt->stmt_options.max_length)
@@ -2718,8 +2716,6 @@ void sqlnum_scale(unsigned *ary, int s)
   /* multiply out all pieces */
   while (s--)
   {
-//    if (ary[7] > >> 16)
-
     ary[0] *= 10;
     ary[1] *= 10;
     ary[2] *= 10;
@@ -3260,7 +3256,7 @@ char* proc_get_param_dbtype(char *proc, int len, char *ptype)
     *(ptype++)= *(proc++);
 
   /* remove the character set definition */
-  if (trim_str= strstr( myodbc_strlwr(start_pos, 0),
+  if (trim_str= strstr( myodbc_strlwr(start_pos, (size_t)-1),
                         " charset "))
   {
     ptype= trim_str;
@@ -3963,7 +3959,6 @@ char *tempBuf::extend_buffer(size_t len)
   if (len > buf_len - cur_pos)
   {
     buf = (char*)realloc(buf, buf_len + len);
-    // printf("-- ALLOCATED: %d bytes: %p\n", (int)(buf_len+len), buf);
 
     // TODO: smarter processing for Out-of-Memory
     if (buf == NULL)
@@ -4020,7 +4015,6 @@ tempBuf::~tempBuf()
 {
   if (buf_len && buf)
   {
-    // printf("-- FREED: %p\n", buf);
     free(buf);
   }
 }

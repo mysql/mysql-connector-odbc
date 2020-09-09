@@ -120,7 +120,8 @@ void DBC::close()
 
 DBC::~DBC()
 {
-  env->remove_dbc(this);
+  if (env)
+    env->remove_dbc(this);
 
   if (ds)
     ds_delete(ds);
@@ -333,11 +334,7 @@ SQLRETURN SQL_API my_SQLFreeConnect(SQLHDBC hdbc)
     DBC *dbc= (DBC *) hdbc;
     delete dbc;
 
-#ifndef _UNIX_
-    //GlobalUnlock(GlobalHandle((HGLOBAL) hdbc));
-    //GlobalFree(GlobalHandle((HGLOBAL) hdbc));
-#else
-    //x_free(hdbc);
+#ifdef _UNIX_
 
     {
       long *thread_count;
@@ -452,7 +449,7 @@ SQLRETURN SQL_API my_SQLAllocStmt(SQLHDBC hdbc,SQLHSTMT *phstmt)
 #ifndef _UNIX_
   HGLOBAL  hstmt;
 #endif
-  STMT  *stmt = NULL;
+  std::unique_ptr<STMT> stmt;
   DBC   *dbc= (DBC*) hdbc;
 
   /* In fact it should be awaken when DM checks whether connection is alive before taking it from pool.
@@ -461,15 +458,14 @@ SQLRETURN SQL_API my_SQLAllocStmt(SQLHDBC hdbc,SQLHSTMT *phstmt)
 
   try
   {
-    stmt = new STMT(dbc);
-    *phstmt = (SQLHSTMT*)stmt;
+    stmt.reset (new STMT(dbc));
   }
   catch (...)
   {
-    delete stmt;
     return set_dbc_error(dbc, "HY001", "Memory allocation error", MYERR_S1001);
   }
 
+  *phstmt = (SQLHSTMT*)stmt.release();
   return SQL_SUCCESS;
 }
 
@@ -639,8 +635,8 @@ SQLRETURN SQL_API my_SQLFreeStmtExtended(SQLHSTMT hstmt,SQLUSMALLINT fOption,
 SQLRETURN my_SQLAllocDesc(SQLHDBC hdbc, SQLHANDLE *pdesc)
 {
   DBC *dbc= (DBC *) hdbc;
-  DESC *desc= new DESC(NULL, SQL_DESC_ALLOC_USER, DESC_APP, DESC_UNKNOWN);
-  // LIST *e;
+  std::unique_ptr<DESC> desc(new DESC(NULL, SQL_DESC_ALLOC_USER,
+                                      DESC_APP, DESC_UNKNOWN));
 
   if (!desc)
     return set_dbc_error(dbc, "HY001", "Memory allocation error", MYERR_S1001);
@@ -648,14 +644,11 @@ SQLRETURN my_SQLAllocDesc(SQLHDBC hdbc, SQLHANDLE *pdesc)
   desc->dbc= dbc;
 
   /* add to this connection's list of explicit descriptors */
-  // e= (LIST *) myodbc_malloc(sizeof(LIST), MYF(0));
-  // e->data= desc;
   myodbc_mutex_lock(&dbc->lock);
-  dbc->add_desc(desc);
-  //dbc->exp_desc= list_add(dbc->exp_desc, e);
+  dbc->add_desc(desc.get());
   myodbc_mutex_unlock(&dbc->lock);
 
-  *pdesc= desc;
+  *pdesc= desc.release();
   return SQL_SUCCESS;
 }
 

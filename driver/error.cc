@@ -176,18 +176,6 @@ SQLRETURN set_dbc_error(DBC *dbc, char *state,
   conversion
 */
 
-//SQLRETURN myodbc_set_stmt_error( STMT       *  stmt,
-//                          const char *  state,
-//                          const char *  message,
-//                          uint          errcode )
-//{
-//    myodbc_stpmov(stmt->error.sqlstate, state);
-//    strxmov(stmt->error.message, stmt->dbc->st_error_prefix, message, NullS);
-//    stmt->error.native_error = errcode;
-//
-//    return SQL_ERROR;
-//}
-
 
 /*
   @type    : myodbc3 internal

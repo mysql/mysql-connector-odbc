@@ -135,12 +135,9 @@ char *check_if_positioned_cursor_exists(STMT *pStmt, STMT **pStmtCursor)
       must have a result set to count.
     */
 
-    //for (list_element= dbc->statements;
-    //     list_element;
-    //     list_element= list_element->next)
     for (STMT *stmt : dbc->stmt_list)
     {
-      *pStmtCursor= stmt; //(STMT*)list_element->data;
+      *pStmtCursor= stmt;
 
       /*
         Even if the cursor name matches, the statement must have a
@@ -156,7 +153,6 @@ char *check_if_positioned_cursor_exists(STMT *pStmt, STMT **pStmtCursor)
     }
 
     /* Did we run out of statements without finding a viable cursor? */
-    //if (!list_element)
     {
       char buff[200];
       strxmov(buff,"Cursor '", cursorName,
@@ -748,7 +744,7 @@ static SQLRETURN build_set_clause_std(STMT *stmt, SQLULEN irow,
         assert(irrec->row.field);
 
         if (stmt->setpos_apd)
-          aprec= desc_get_rec(stmt->setpos_apd, ncol, FALSE);
+          aprec= desc_get_rec(stmt->setpos_apd.get(), ncol, FALSE);
 
         if (!arrec || !ARD_IS_BOUND(arrec) || !irrec->row.field)
         {
@@ -1382,7 +1378,7 @@ static SQLRETURN batch_insert_std( STMT *stmt, SQLULEN irow, std::string &query 
                 arrec= desc_get_rec(stmt->ard, ncol, FALSE);
                 /* if there's a separate APD for this (dae), use it */
                 if (stmt->setpos_apd)
-                  aprec= desc_get_rec(stmt->setpos_apd, ncol, FALSE);
+                  aprec= desc_get_rec(stmt->setpos_apd.get(), ncol, FALSE);
                 else
                   aprec->reset_to_defaults();
 
@@ -1575,12 +1571,12 @@ static SQLRETURN setpos_dae_check_and_init(STMT *stmt, SQLSETPOSIROW irow,
                             0);
 
     /* create APD, and copy ARD to it */
-    stmt->setpos_apd= new DESC(stmt, SQL_DESC_ALLOC_AUTO,
-                               DESC_APP, DESC_PARAM);
+    stmt->setpos_apd.reset(new DESC(stmt, SQL_DESC_ALLOC_AUTO,
+                               DESC_APP, DESC_PARAM));
     if (!stmt->setpos_apd)
       return stmt->set_error("S1001", "Not enough memory",
                             4001);
-    if(rc= stmt_SQLCopyDesc(stmt, stmt->ard, stmt->setpos_apd))
+    if(rc= stmt_SQLCopyDesc(stmt, stmt->ard, stmt->setpos_apd.get()))
       return rc;
 
     stmt->current_param= dae_rec;

@@ -464,41 +464,6 @@ SQLRETURN prepare(STMT *stmt, char * query, SQLINTEGER query_length,
 }
 
 
-SQLRETURN append2param_value(STMT *stmt, DESCREC * aprec, const char *chunk, unsigned long length)
-{
-  aprec->par.add_param_data(chunk, length);
-  //{
-  //  /* Append to old value */
-  //  assert(aprec->par.alloced);
-  //  if ( !(aprec->par.value= (char*)myodbc_realloc(aprec->par.value,
-  //                                      aprec->par.value_length + length + 1,
-  //                                      MYF(0))) )
-  //  {
-  //    return stmt->set_error(MYERR_S1001,NULL,4001);
-  //  }
-
-  //  memcpy(aprec->par.value+aprec->par.value_length,chunk,length);
-  //  aprec->par.value_length+= length;
-  //  aprec->par.value[aprec->par.value_length]= 0;
-  //  aprec->par.alloced = TRUE;
-  //}
-  //else
-  //{
-  //  /* New value */
-  //  if ( !(aprec->par.value= (char*)myodbc_malloc(length+1,MYF(0))) )
-  //  {
-  //    return stmt->set_error(MYERR_S1001,NULL,4001);
-  //  }
-  //  memcpy(aprec->par.value,chunk,length);
-  //  aprec->par.value_length= length;
-  //  aprec->par.value[aprec->par.value_length]= 0;
-  //  aprec->par.alloced = TRUE;
-  //}
-
-  return SQL_SUCCESS;
-}
-
-
 SQLRETURN send_long_data (STMT *stmt, unsigned int param_num, DESCREC * aprec, const char *chunk,
                           unsigned long length)
 {
@@ -526,7 +491,8 @@ SQLRETURN send_long_data (STMT *stmt, unsigned int param_num, DESCREC * aprec, c
   else
 #endif
   {
-    return append2param_value(stmt, aprec, chunk, length);
+    aprec->par.add_param_data(chunk, length);
+    return SQL_SUCCESS;
   }
 }
 
@@ -607,7 +573,6 @@ void scroller_create(STMT * stmt, char *query, SQLULEN query_len)
 
   stmt->scroller.next_offset= myodbc_max(limit.offset, 0);
 
-  /*extend_buffer(stmt->dbc->mysql.net, stmt->query_end, len2add);*/
   stmt->scroller.query_len= query_len + len2add;
   stmt->scroller.query= (char*)myodbc_malloc((size_t)stmt->scroller.query_len + 1,
                                           MYF(MY_ZEROFILL));

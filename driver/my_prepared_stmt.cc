@@ -597,9 +597,7 @@ void STMT::alloc_lengths(size_t num)
 
 void STMT::reset_setpos_apd()
 {
-  if (setpos_apd)
-    delete setpos_apd;
-  setpos_apd = nullptr;
+  setpos_apd.reset();
 }
 
 bool STMT::is_dynamic_cursor()
