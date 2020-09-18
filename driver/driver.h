@@ -51,10 +51,6 @@
 /* Needed for offsetof() CPP macro */
 #include <stddef.h>
 
-#ifdef __cplusplus
-extern "C"
-{
-#endif
 #ifdef RC_INVOKED
 #define stdin
 #endif
@@ -67,12 +63,11 @@ extern "C"
  typedef unsigned int class_id_t;
 #endif
 
-#ifdef __cplusplus
-}
-#endif
 
 #include "error.h"
 #include "parse.h"
+#include <vector>
+#include <list>
 
 #if defined(_WIN32) || defined(WIN32)
 # define INTFUNC  __stdcall
@@ -192,12 +187,12 @@ typedef enum { DESC_HDR, DESC_REC } fld_loc;
 
 /* get the dbc from a descriptor */
 #define DESC_GET_DBC(X) (((X)->alloc_type == SQL_DESC_ALLOC_USER) ? \
-                         (X)->exp.dbc : (X)->stmt->dbc)
+                         (X)->dbc : (X)->stmt->dbc)
 
 #define IS_BOOKMARK_VARIABLE(S) if (S->stmt_options.bookmarks != \
                                     SQL_UB_VARIABLE) \
   { \
-    set_stmt_error(stmt, "HY092", "Invalid attribute identifier", 0); \
+    stmt->set_error("HY092", "Invalid attribute identifier", 0); \
     return SQL_ERROR; \
   }
 
@@ -273,52 +268,38 @@ typedef struct {
   size_t offset; /* offset of field in struct */
 } desc_field;
 
+struct tempBuf
+{
+	char *buf;
+	size_t buf_len;
+  size_t cur_pos;
+
+	tempBuf(size_t size = 16384);
+
+  tempBuf(const tempBuf& b);
+
+  char* extend_buffer(char *to, size_t len);
+  char* extend_buffer(size_t len);
+
+  // Append data to the current buffer
+  char* add_to_buffer(const char *from, size_t len);
+
+  char* add_to_buffer(char *to, const char *from, size_t len);
+  void remove_trail_zeroes();
+  void reset();
+
+  operator bool();
+
+  void operator =(const tempBuf& b);
+
+	~tempBuf();
+};
+
 /* descriptor */
 struct STMT;
-struct tagDBC;
-typedef struct {
-  /* header fields */
-  SQLSMALLINT   alloc_type;
-  SQLULEN       array_size;
-  SQLUSMALLINT *array_status_ptr;
-  /* NOTE: This field is defined as SQLINTEGER* in the descriptor
-   * documentation, but corresponds to SQL_ATTR_ROW_BIND_OFFSET_PTR or
-   * SQL_ATTR_PARAM_BIND_OFFSET_PTR when set via SQLSetStmtAttr(). The
-   * 64-bit ODBC addendum says that when set via SQLSetStmtAttr(), this
-   * is now a 64-bit value. These two are conflicting, so we opt for
-   * the 64-bit value.
-   */
-  SQLULEN      *bind_offset_ptr;
-  SQLINTEGER    bind_type;
-  SQLLEN        count;
-  SQLLEN        bookmark_count;
-  /* Everywhere(http://msdn.microsoft.com/en-us/library/ms713560(VS.85).aspx
-     http://msdn.microsoft.com/en-us/library/ms712631(VS.85).aspx) I found
-     it's referred as SQLULEN* */
-  SQLULEN      *rows_processed_ptr;
 
-  /* internal fields */
-  desc_desc_type  desc_type;
-  desc_ref_type   ref_type;
-  DYNAMIC_ARRAY   bookmark;
-  DYNAMIC_ARRAY   records;
-  MYERROR         error;
-  STMT *stmt;
 
-  /* SQL_DESC_ALLOC_USER-specific */
-  struct {
-    /*
-      We keep a list of all statements we've been set on because we need
-      to put the implicit descriptor back if this one is freed.
-    */
-    LIST *stmts;
-    /* connection we were allocated on */
-    struct tagDBC *dbc;
-  } exp;
-} DESC;
-
-/* descriptor record */
-typedef struct {
+struct DESCREC{
   /* ODBC spec fields */
   SQLINTEGER  auto_unique_value; /* row only */
   SQLCHAR *   base_column_name; /* row only */
@@ -355,14 +336,17 @@ typedef struct {
   SQLSMALLINT is_unsigned;
   SQLSMALLINT updatable; /* row only */
 
+  desc_desc_type m_desc_type;
+  desc_ref_type m_ref_type;
+
   /* internal descriptor fields */
 
   /* parameter-specific */
-  struct {
+  struct par_struct {
     /* value, value_length, and alloced are used for data
      * at exec parameters */
-    char *value;
-    SQLINTEGER value_length;
+
+    tempBuf tempbuf;
     /*
       this parameter is data-at-exec. this is needed as cursor updates
       in ADO change the bind_offset_ptr between SQLSetPos() and the
@@ -370,85 +354,242 @@ typedef struct {
       know any longer it was a data-at-exec param.
     */
     char is_dae;
-    my_bool alloced;
+    //my_bool alloced;
     /* Whether this parameter has been bound by the application
      * (if not, was created by dummy execution) */
     my_bool real_param_done;
-  } par;
+
+    par_struct() : tempbuf(0), is_dae(0), real_param_done(false)
+    {}
+
+    par_struct(const par_struct& p) :
+      tempbuf(p.tempbuf), is_dae(p.is_dae), real_param_done(p.real_param_done)
+    { }
+
+    void add_param_data(const char *chunk, unsigned long length);
+
+    SQLINTEGER val_length()
+    {
+      // Return the current position, not the buffer length
+      return tempbuf.cur_pos;
+    }
+
+    char *val()
+    {
+      return tempbuf.buf;
+    }
+
+    void reset()
+    {
+      tempbuf.reset();
+      is_dae = 0;
+    }
+
+  }par;
 
   /* row-specific */
-  struct {
+  struct row_struct{
     MYSQL_FIELD * field; /* Used *only* by IRD */
     ulong datalen; /* actual length, maintained for *each* row */
     /* TODO ugly, but easiest way to handle memory */
     SQLCHAR type_name[40];
-  } row;
-} DESCREC;
 
+    row_struct() : field(nullptr), datalen(0)
+    {}
+
+    void reset()
+    {
+      field = nullptr;
+      datalen = 0;
+      type_name[0] = 0;
+    }
+  }row;
+
+  void desc_rec_init_apd();
+  void desc_rec_init_ipd();
+  void desc_rec_init_ard();
+  void desc_rec_init_ird();
+  void reset_to_defaults();
+
+  DESCREC(desc_desc_type desc_type, desc_ref_type ref_type)
+          : auto_unique_value(0), base_column_name(nullptr), base_table_name(nullptr),
+            case_sensitive(0), catalog_name(nullptr), concise_type(0), data_ptr(nullptr),
+            datetime_interval_code(0), datetime_interval_precision(0), display_size(0),
+            fixed_prec_scale(0), indicator_ptr(nullptr), label(nullptr), length(0),
+            literal_prefix(nullptr), literal_suffix(nullptr), local_type_name(nullptr),
+            name(nullptr), nullable(0), num_prec_radix(0), octet_length(0),
+            octet_length_ptr(nullptr), parameter_type(0), precision(0), rowver(0),
+            scale(0), schema_name(nullptr), searchable(0), table_name(nullptr), type(0),
+            type_name(nullptr), unnamed(0), is_unsigned(0), updatable(0),
+            m_desc_type(desc_type), m_ref_type(ref_type)
+  {
+    reset_to_defaults();
+  }
+
+};
+
+struct STMT;
+struct DBC;
+
+struct DESC {
+  /* header fields */
+  SQLSMALLINT   alloc_type;
+  SQLULEN       array_size;
+  SQLUSMALLINT *array_status_ptr;
+  /* NOTE: This field is defined as SQLINTEGER* in the descriptor
+   * documentation, but corresponds to SQL_ATTR_ROW_BIND_OFFSET_PTR or
+   * SQL_ATTR_PARAM_BIND_OFFSET_PTR when set via SQLSetStmtAttr(). The
+   * 64-bit ODBC addendum says that when set via SQLSetStmtAttr(), this
+   * is now a 64-bit value. These two are conflicting, so we opt for
+   * the 64-bit value.
+   */
+  SQLULEN      *bind_offset_ptr;
+  SQLINTEGER    bind_type;
+  SQLLEN        count;  // Only used for SQLGetDescField()
+  SQLLEN        bookmark_count;
+  /* Everywhere(http://msdn.microsoft.com/en-us/library/ms713560(VS.85).aspx
+     http://msdn.microsoft.com/en-us/library/ms712631(VS.85).aspx) I found
+     it's referred as SQLULEN* */
+  SQLULEN      *rows_processed_ptr;
+
+  /* internal fields */
+  desc_desc_type  desc_type;
+  desc_ref_type   ref_type;
+
+  std::vector<DESCREC> bookmark2;
+  std::vector<DESCREC> records2;
+
+  MYERROR         error;
+  STMT *stmt;
+  DBC *dbc;
+
+  void free_paramdata();
+  void reset();
+
+  DESC(STMT *p_stmt, SQLSMALLINT p_alloc_type,
+    desc_ref_type p_ref_type, desc_desc_type p_desc_type) :
+    alloc_type(p_alloc_type), array_size(1), array_status_ptr(nullptr),
+    bind_offset_ptr(nullptr), bind_type(SQL_BIND_BY_COLUMN),
+    count(0), bookmark_count(0),
+    rows_processed_ptr(nullptr), desc_type(p_desc_type), ref_type(p_ref_type),
+    stmt(p_stmt)
+  {
+  }
+
+  size_t rcount()
+  {
+    count = (SQLLEN)records2.size();
+    return count;
+  }
+
+  ~DESC()
+  {
+    //if (desc_type == DESC_PARAM && ref_type == DESC_APP)
+    //  free_paramdata();
+  }
+
+  /* SQL_DESC_ALLOC_USER-specific */
+    std::list<STMT*> stmt_list;
+
+
+  void stmt_list_remove(STMT *stmt)
+  {
+    if (alloc_type == SQL_DESC_ALLOC_USER)
+      stmt_list.remove(stmt);
+  }
+
+  void stmt_list_add(STMT *stmt)
+  {
+    if (alloc_type == SQL_DESC_ALLOC_USER)
+      stmt_list.emplace_back(stmt);
+  }
+};
 
 /* Statement attributes */
 
-typedef struct stmt_options
+struct STMT_OPTIONS
 {
-  SQLUINTEGER      cursor_type;
-  SQLUINTEGER      simulateCursor;
-  SQLULEN          max_length, max_rows;
-  SQLULEN          query_timeout;
-  SQLUSMALLINT    *rowStatusPtr_ex; /* set by SQLExtendedFetch */
-  my_bool         retrieve_data;
-  SQLUINTEGER     bookmarks;
-  void            *bookmark_ptr;
-  my_bool         bookmark_insert;
-} STMT_OPTIONS;
+  SQLUINTEGER      cursor_type = 0;
+  SQLUINTEGER      simulateCursor = 0;
+  SQLULEN          max_length = 0, max_rows = 0;
+  SQLULEN          query_timeout = -1;
+  SQLUSMALLINT    *rowStatusPtr_ex = nullptr; /* set by SQLExtendedFetch */
+  bool            retrieve_data = true;
+  SQLUINTEGER     bookmarks = 0;
+  void            *bookmark_ptr = nullptr;
+  bool            bookmark_insert = false;
+};
 
 
 /* Environment handler */
 
-typedef struct	tagENV
+struct	ENV
 {
   SQLINTEGER   odbc_ver;
+  std::list<DBC*> conn_list;
   LIST	       *connections;
   MYERROR      error;
 #ifdef THREAD
   myodbc_mutex_t lock;
 #endif
-} ENV;
+  ENV(SQLINTEGER ver) : odbc_ver(ver), connections(nullptr)
+  {
+    myodbc_mutex_init(&lock,NULL);
+  }
+
+  void add_dbc(DBC* dbc);
+  void remove_dbc(DBC* dbc);
+  bool has_connections();
+
+  ~ENV()
+  {
+    myodbc_mutex_destroy(&lock);
+  }
+};
 
 
 /* Connection handler */
 
-typedef struct tagDBC
+struct DBC
 {
   ENV           *env;
-  MYSQL         mysql;
-  LIST          *statements;
-  LIST          *exp_desc; /* explicit descriptors */
-  LIST          list;
+  MYSQL         *mysql;
+  std::list<STMT*> stmt_list;
+  std::list<DESC*> desc_list; // Explicit descriptors
   STMT_OPTIONS  stmt_options;
   MYERROR       error;
-  FILE          *query_log;
-  char          st_error_prefix[255];
-  char          *database;
-  SQLUINTEGER   login_timeout;
-  time_t        last_query_time;
-  int           txn_isolation;
-  uint          port;
-  uint          cursor_count;
-  ulong         net_buffer_len;
-  uint          commit_flag;
+  FILE          *query_log = nullptr;
+  char          st_error_prefix[255] = { 0 };
+  std::string   database;
+  SQLUINTEGER   login_timeout = 0;
+  time_t        last_query_time = 0;
+  int           txn_isolation = 0;
+  uint          port = 0;
+  uint          cursor_count = 0;
+  ulong         net_buffer_len = 0;
+  uint          commit_flag = 0;
 #ifdef THREAD
   myodbc_mutex_t lock;
 #endif
 
-  my_bool       unicode;            /* Whether SQL*ConnectW was used */
-  CHARSET_INFO  *ansi_charset_info, /* 'ANSI' charset (SQL_C_CHAR) */
-                *cxn_charset_info;  /* Connection charset ('ANSI' or utf-8) */
-  MY_SYNTAX_MARKERS *syntax;
-  DataSource    *ds;                /* data source used to connect (parsed or stored) */
-  SQLULEN       sql_select_limit;   /* value of the sql_select_limit currently set for a session
+  bool          unicode = false;            /* Whether SQL*ConnectW was used */
+  CHARSET_INFO  *ansi_charset_info = nullptr, /* 'ANSI' charset (SQL_C_CHAR) */
+                *cxn_charset_info = nullptr;  /* Connection charset ('ANSI' or utf-8) */
+  MY_SYNTAX_MARKERS *syntax = nullptr;
+  DataSource    *ds = nullptr;                /* data source used to connect (parsed or stored) */
+  SQLULEN       sql_select_limit = -1;/* value of the sql_select_limit currently set for a session
                                        (SQLULEN)(-1) if wasn't set */
-  int           need_to_wakeup;      /* Connection have been put to the pool */
-} DBC;
+  int           need_to_wakeup = 0;      /* Connection have been put to the pool */
+
+  DBC(ENV *p_env);
+  void free_explicit_descriptors();
+  void free_connection_stmts();
+  void add_desc(DESC* desc);
+  void remove_desc(DESC *desc);
+  void close();
+  ~DBC();
+
+};
 
 
 /* Statement states */
@@ -499,12 +640,12 @@ struct MY_PK_COLUMN
 /* Statement cursor handler */
 struct MYCURSOR
 {
-  char        *name;
+  std::string name;
   uint	       pk_count;
   my_bool      pk_validated;
   MY_PK_COLUMN pkcol[MY_MAX_PK_PARTS];
 
-  MYCURSOR() : name(NULL), pk_count(0), pk_validated(FALSE)
+  MYCURSOR() : pk_count(0), pk_validated(FALSE)
   {}
 
 };
@@ -519,26 +660,6 @@ enum OUT_PARAM_STATE
 
 
 /* Main statement handler */
-
-struct tempBuf
-{
-	char *buf;
-	size_t buf_len;
-  size_t cur_pos;
-
-	tempBuf();
-  char* extend_buffer(char *to, size_t len);
-  char* extend_buffer(size_t len);
-
-  // Append data to the current buffer
-  char* add_to_buffer(const char *from, size_t len);
-
-  char* add_to_buffer(char *to, const char *from, size_t len);
-  void remove_trail_zeroes();
-
-	~tempBuf();
-};
-
 
 struct GETDATA{
   uint column;      /* Which column is being used with SQLGetData() */
@@ -564,16 +685,15 @@ struct STMT
   MEM_ROOT          alloc_root;
   my_bool           fake_result;
   MYSQL_ROW	        array, result_array, current_values;
-  MYSQL_ROW	        (*fix_fields)(STMT *stmt,MYSQL_ROW row);
+  MYSQL_ROW         (*fix_fields)(STMT *stmt, MYSQL_ROW row);
   MYSQL_FIELD	      *fields;
   MYSQL_ROW_OFFSET  end_of_set;
   tempBuf           tempbuf;
 
-  LIST              list;
   MYCURSOR          cursor;
   MYERROR           error;
   STMT_OPTIONS      stmt_options;
-  char              *table_name;
+  std::string       table_name;
 
   MY_PARSED_QUERY	query, orig_query;
   DYNAMIC_ARRAY     *param_bind;
@@ -581,10 +701,10 @@ struct STMT
   my_bool           lengths_allocated;
   unsigned long     *lengths; /* used to set lengths if we shuffle field values
                          of the resultset of auxiliary query or if we fix_fields. */
-  /*
-    We save a copy of the original query before we modify it for 'WHERE
-    CURRENT OF' cursor handling.
-  */
+                         /*
+                           We save a copy of the original query before we modify it for 'WHERE
+                           CURRENT OF' cursor handling.
+                         */
   my_ulonglong      affected_rows;
   long              current_row;
   long              cursor_row;
@@ -597,16 +717,9 @@ struct STMT
   enum MY_STATE state;
   enum MY_DUMMY_STATE dummy_state;
 
-  DESC *ard;
-  DESC *ird;
-  DESC *apd;
-  DESC *ipd;
-
-  /* implicit descriptors */
-  DESC *imp_ard;
-  DESC *imp_apd;
   /* APD for data-at-exec on SQLSetPos() */
-  DESC *setpos_apd;
+  std::unique_ptr<DESC> setpos_apd;
+  DESC *setpos_apd2;
   SQLSETPOSIROW setpos_row;
   SQLUSMALLINT setpos_lock;
   SQLUSMALLINT setpos_op;
@@ -619,13 +732,21 @@ struct STMT
 
   enum OUT_PARAM_STATE out_params_state;
 
+  DESC m_ard, *ard;
+  DESC m_ird, *ird;
+  DESC m_apd, *apd;
+  DESC m_ipd, *ipd;
+
+  /* implicit descriptors */
+  DESC *imp_ard;
+  DESC *imp_apd;
+
   int ssps_bind_result();
 
   char* extend_buffer(char *to, size_t len);
   char* extend_buffer(size_t len);
 
   char* add_to_buffer(const char *from, size_t len);
-  char* place_to_buffer(const char *from, size_t len);
   char* buf() { return tempbuf.buf; }
   char* endbuf() { return tempbuf.buf + tempbuf.cur_pos; }
   size_t buf_pos() { return tempbuf.cur_pos; }
@@ -636,23 +757,53 @@ struct STMT
   void alloc_lengths(size_t num);
   void free_lengths();
   void reset_getdata_position();
+  void reset_setpos_apd();
+  void allocate_param_bind(uint elements);
   long compute_cur_row(unsigned fFetchType, SQLLEN irow);
+
+  void free_unbind();
+  void free_reset_out_params();
+  void free_reset_params();
+  void free_fake_result(bool clear_all_results);
+
+  bool is_dynamic_cursor();
+
   SQLRETURN set_error(myodbc_errid errid, const char *errtext, SQLINTEGER errcode);
+  SQLRETURN set_error(const char *state, const char *errtext, SQLINTEGER errcode);
 
-
-  STMT() : dbc(NULL), result(NULL), array(NULL), result_array(NULL),
-    current_values(NULL), fields(NULL), end_of_set(NULL), table_name(NULL),
+  STMT(DBC *d) : dbc(d), result(NULL), array(NULL), result_array(NULL),
+    current_values(NULL), fields(NULL), end_of_set(NULL),
+    tempbuf(),
+    stmt_options(dbc->stmt_options),
     param_bind(NULL), lengths_allocated(FALSE), lengths(NULL), affected_rows(0),
     current_row(0), cursor_row(0), dae_type(0),
     order(NULL), order_count(0), param_count(0), current_param(0),
     rows_found_in_set(0),
     state(ST_UNKNOWN), dummy_state(ST_DUMMY_UNKNOWN),
-    ard(NULL), ird(NULL), apd(NULL), ipd(NULL),
-    imp_ard(NULL), imp_apd(NULL), setpos_apd(NULL),
-    setpos_row(0), setpos_lock(0),
+    setpos_row(0), setpos_lock(0), setpos_op(0),
     ssps(NULL), result_bind(NULL), param_place_bind(NULL),
-    out_params_state(OPS_UNKNOWN)
-  { }
+    out_params_state(OPS_UNKNOWN),
+
+    m_ard(this, SQL_DESC_ALLOC_AUTO, DESC_APP, DESC_ROW),
+    ard(&m_ard),
+    m_ird(this, SQL_DESC_ALLOC_AUTO, DESC_IMP, DESC_ROW),
+    ird(&m_ird),
+    m_apd(this, SQL_DESC_ALLOC_AUTO, DESC_APP, DESC_PARAM),
+    apd(&m_apd),
+    m_ipd(this, SQL_DESC_ALLOC_AUTO, DESC_IMP, DESC_PARAM),
+    ipd(&m_ipd),
+    imp_ard(ard), imp_apd(apd)
+  {
+    //list.data = this;
+    init_parsed_query(&query);
+    init_parsed_query(&orig_query);
+    allocate_param_bind(10);
+
+    myodbc_mutex_lock(&dbc->lock);
+    dbc->stmt_list.emplace_back(this);
+    //dbc->statements = list_add(dbc->statements, &list);
+    myodbc_mutex_unlock(&dbc->lock);
+  }
 
   ~STMT();
 };
@@ -684,18 +835,12 @@ extern myodbc_mutex_t myodbc_lock;
 #endif
 
 MY_LIMIT_CLAUSE find_position4limit(CHARSET_INFO* cs, char *query, char * query_end);
+void          delete_param_bind(DYNAMIC_ARRAY *param_bind);
 
-#ifdef __cplusplus
-extern "C"
-{
-#endif
 
 #include "myutil.h"
 #include "stringutil.h"
 
-#ifdef __cplusplus
-}
-#endif
 
 SQLRETURN SQL_API MySQLColAttribute(SQLHSTMT hstmt, SQLUSMALLINT column,
                                     SQLUSMALLINT attrib, SQLCHAR **char_attr,

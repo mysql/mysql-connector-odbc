@@ -65,7 +65,7 @@ static char * my_f_to_a(char * buf, size_t buf_size, double a)
 /* {{{ ssps_init() -I- */
 void ssps_init(STMT *stmt)
 {
-  stmt->ssps= mysql_stmt_init(&stmt->dbc->mysql);
+  stmt->ssps= mysql_stmt_init(stmt->dbc->mysql);
 
   stmt->result_bind= 0;
 }
@@ -141,7 +141,7 @@ BOOL ssps_get_out_params(STMT *stmt)
       if (out_params)
       {
         for (i= 0;
-             i < myodbc_min(stmt->ipd->count, stmt->apd->count) && counter < field_count(stmt);
+             i < myodbc_min(stmt->ipd->rcount(), stmt->apd->rcount()) && counter < field_count(stmt);
              ++i)
         {
           /* Making bit field look "normally" */
@@ -329,11 +329,11 @@ SQLRETURN ssps_fetch_chunk(STMT *stmt, char *dest, unsigned long dest_bytes, uns
     {
       case  CR_INVALID_PARAMETER_NO:
         /* Shouldn't really happen here*/
-        return set_stmt_error(stmt, "07009", "Invalid descriptor index", 0);
+        return stmt->set_error("07009", "Invalid descriptor index", 0);
 
       case CR_NO_DATA: return SQL_NO_DATA;
 
-      default: set_stmt_error(stmt, "HY000", "Internal error", 0);
+      default: stmt->set_error("HY000", "Internal error", 0);
     }
   }
   else
@@ -343,7 +343,7 @@ SQLRETURN ssps_fetch_chunk(STMT *stmt, char *dest, unsigned long dest_bytes, uns
 
     if (*bind.error)
     {
-      set_stmt_error(stmt, "01004", NULL, 0);
+      stmt->set_error("01004", NULL, 0);
       return SQL_SUCCESS_WITH_INFO;
     }
 
@@ -595,9 +595,102 @@ void STMT::alloc_lengths(size_t num)
   lengths_allocated = true;
 }
 
+void STMT::reset_setpos_apd()
+{
+  setpos_apd.reset();
+}
+
+bool STMT::is_dynamic_cursor()
+{
+  return stmt_options.cursor_type == SQL_CURSOR_DYNAMIC;
+}
+
+
+void STMT::free_unbind()
+{
+  ard->reset();
+}
+
+void STMT::free_reset_out_params()
+{
+  if (out_params_state == OPS_STREAMS_PENDING)
+  {
+    /* Magical out params fetch */
+    mysql_stmt_fetch(ssps);
+  }
+  out_params_state = OPS_UNKNOWN;
+  apd->free_paramdata();
+  /* reset data-at-exec state */
+  dae_type = 0;
+  scroller_reset(this);
+}
+
+void STMT::free_reset_params()
+{
+  if (param_bind != NULL)
+  {
+    reset_dynamic(param_bind);
+  }
+  if (ssps)
+  {
+    mysql_stmt_reset(ssps);
+  }
+  /* remove all params and reset count to 0 (per spec) */
+  /* http://msdn2.microsoft.com/en-us/library/ms709284.aspx */
+  // NOTE: check if this breaks anything
+  apd->records2.clear();
+}
+
+void STMT::free_fake_result(bool clear_all_results)
+{
+  if (!fake_result)
+  {
+    if (clear_all_results)
+    {
+      /* We seiously CLOSEing statement for preparing handle object for
+         new query */
+      free_root(&alloc_root, MYF(0));
+      while (!next_result(this))
+      {
+        get_result_metadata(this, TRUE);
+      }
+    }
+  }
+  else
+  {
+    if (result && result->field_alloc
+#if (!MYSQL8)
+      && result->field_alloc->pre_alloc
+#endif
+      )
+    {
+      free_root(result->field_alloc, MYF(0));
+    }
+
+    stmt_result_free(this);
+  }
+
+}
+
 STMT::~STMT()
 {
   free_lengths();
+
+  if (ssps != NULL)
+  {
+    mysql_stmt_close(ssps);
+    ssps = NULL;
+  }
+
+  reset_setpos_apd();
+  delete_parsed_query(&query);
+  delete_parsed_query(&orig_query);
+  delete_param_bind(param_bind);
+
+  myodbc_mutex_lock(&dbc->lock);
+  dbc->stmt_list.remove(this);
+  //dbc->statements = list_delete(dbc->statements, &list);
+  myodbc_mutex_unlock(&dbc->lock);
 }
 
 void STMT::reset_getdata_position()
@@ -616,6 +709,14 @@ SQLRETURN STMT::set_error(myodbc_errid errid, const char *errtext,
   error = MYERROR(errid, errtext, errcode, dbc->st_error_prefix);
   return error.retcode;
 }
+
+SQLRETURN STMT::set_error(const char *state, const char *msg,
+                          SQLINTEGER errcode)
+{
+    error = MYERROR(state, msg, errcode, dbc->st_error_prefix);
+    return SQL_ERROR;
+}
+
 
 long STMT::compute_cur_row(unsigned fFetchType, SQLLEN irow)
 {
@@ -698,7 +799,7 @@ long STMT::compute_cur_row(unsigned fFetchType, SQLLEN irow)
       case SQL_NO_DATA:
         throw MYERROR(SQL_NO_DATA_FOUND);
       case SQL_ERROR:
-        set_error(MYERR_S1000, mysql_error(&dbc->mysql), 0);
+        set_error(MYERR_S1000, mysql_error(dbc->mysql), 0);
         throw error;
       }
     }
@@ -1164,14 +1265,14 @@ SQLRETURN ssps_send_long_data(STMT *stmt, unsigned int param_number, const char 
       /* We can fall back to assembling parameter's value on client */
         return SQL_SUCCESS_WITH_INFO;
       case CR_SERVER_GONE_ERROR:
-        return set_stmt_error(stmt, "08S01", mysql_stmt_error(stmt->ssps), 0);
+        return stmt->set_error("08S01", mysql_stmt_error(stmt->ssps), 0);
       case CR_COMMANDS_OUT_OF_SYNC:
       case CR_UNKNOWN_ERROR:
-        return set_stmt_error(stmt, "HY000", mysql_stmt_error( stmt->ssps), 0);
+        return stmt->set_error("HY000", mysql_stmt_error( stmt->ssps), 0);
       case CR_OUT_OF_MEMORY:
-        return set_stmt_error(stmt, "HY001", mysql_stmt_error(stmt->ssps), 0);
+        return stmt->set_error("HY001", mysql_stmt_error(stmt->ssps), 0);
       default:
-        return set_stmt_error(stmt, "HY000", "unhandled error from mysql_stmt_send_long_data", 0 );
+        return stmt->set_error("HY000", "unhandled error from mysql_stmt_send_long_data", 0 );
     }
   }
 

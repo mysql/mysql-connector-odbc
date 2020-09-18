@@ -284,7 +284,7 @@ SQLDescribeColW(SQLHSTMT hstmt, SQLUSMALLINT column,
 
   if (free_value == -1)
   {
-    set_mem_error(&stmt->dbc->mysql);
+    set_mem_error(stmt->dbc->mysql);
     return handle_connection_error(stmt);
   }
 
@@ -296,7 +296,7 @@ SQLDescribeColW(SQLHSTMT hstmt, SQLUSMALLINT column,
     {
       if (free_value)
         x_free(value);
-      set_mem_error(&stmt->dbc->mysql);
+      set_mem_error(stmt->dbc->mysql);
       return handle_connection_error(stmt);
     }
 
@@ -863,7 +863,7 @@ SQLPrepareWImpl(SQLHSTMT hstmt, SQLWCHAR *str, SQLINTEGER str_len)
   if (errors)
   {
     x_free(conv);
-    return set_stmt_error(stmt, "22018", NULL, 0);
+    return stmt->set_error("22018", NULL, 0);
   }
 
   return MySQLPrepare(hstmt, conv, str_len, true, false);
@@ -1066,7 +1066,7 @@ SQLSetCursorNameW(SQLHSTMT hstmt, SQLWCHAR *name, SQLSMALLINT name_len)
   /* Character conversion problems are not tolerated. */
   if (errors)
   {
-    return set_stmt_error((STMT *)hstmt, "HY000",
+    return ((STMT *)hstmt)->set_error("HY000",
                           "Cursor name included characters that could not "
                           "be converted to connection character set", 0);
   }

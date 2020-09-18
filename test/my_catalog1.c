@@ -1,30 +1,30 @@
-// Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved. 
-// 
-// This program is free software; you can redistribute it and/or modify 
-// it under the terms of the GNU General Public License, version 2.0, as 
-// published by the Free Software Foundation. 
-// 
-// This program is also distributed with certain software (including 
-// but not limited to OpenSSL) that is licensed under separate terms, 
-// as designated in a particular file or component or in included license 
-// documentation. The authors of MySQL hereby grant you an 
-// additional permission to link the program and your derivative works 
-// with the separately licensed software that they have included with 
-// MySQL. 
-// 
-// Without limiting anything contained in the foregoing, this file, 
-// which is part of <MySQL Product>, is also subject to the 
-// Universal FOSS Exception, version 1.0, a copy of which can be found at 
-// http://oss.oracle.com/licenses/universal-foss-exception. 
-// 
-// This program is distributed in the hope that it will be useful, but 
-// WITHOUT ANY WARRANTY; without even the implied warranty of 
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-// See the GNU General Public License, version 2.0, for more details. 
-// 
-// You should have received a copy of the GNU General Public License 
-// along with this program; if not, write to the Free Software Foundation, Inc., 
-// 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA 
+// Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+//
+// This program is free software; you can redistribute it and/or modify
+// it under the terms of the GNU General Public License, version 2.0, as
+// published by the Free Software Foundation.
+//
+// This program is also distributed with certain software (including
+// but not limited to OpenSSL) that is licensed under separate terms,
+// as designated in a particular file or component or in included license
+// documentation. The authors of MySQL hereby grant you an
+// additional permission to link the program and your derivative works
+// with the separately licensed software that they have included with
+// MySQL.
+//
+// Without limiting anything contained in the foregoing, this file,
+// which is part of <MySQL Product>, is also subject to the
+// Universal FOSS Exception, version 1.0, a copy of which can be found at
+// http://oss.oracle.com/licenses/universal-foss-exception.
+//
+// This program is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+// See the GNU General Public License, version 2.0, for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program; if not, write to the Free Software Foundation, Inc.,
+// 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 
 #include "odbctap.h"
 #include "../VersionInfo.h"
@@ -85,7 +85,7 @@ DECLARE_TEST(my_table_dbs)
     SQLINTEGER nrows= 0 ;
     SQLLEN lenOrNull, rowCount= 0;
 
-    
+
     ok_sql(hstmt, "DROP DATABASE IF EXISTS my_all_db_test1");
     ok_sql(hstmt, "DROP DATABASE IF EXISTS my_all_db_test2");
     ok_sql(hstmt, "DROP DATABASE IF EXISTS my_all_db_test3");
@@ -891,7 +891,7 @@ DECLARE_TEST(my_information_schema)
   /* We need to have istest__ as the default DB */
   is(OK == alloc_basic_handles_with_opt(&henv1, &hdbc1, &hstmt1, NULL,
                                         NULL, NULL, "istest__", NULL));
-  
+
   ok_stmt(hstmt1, SQLTables(hstmt1, "istest__", SQL_NTS, "", 0, "istab%",
                             SQL_NTS, NULL, 0));
 
@@ -1421,11 +1421,11 @@ DECLARE_TEST(t_bug12805)
 {
   DECLARE_BASIC_HANDLES(henv1, hdbc1, hstmt1);
   SQLCHAR     dummy[10];
-  SQLULEN     length;  
+  SQLULEN     length;
   SQLUINTEGER len2;
 
-  is(OK == alloc_basic_handles_with_opt(&henv1, &hdbc1, &hstmt1, NULL, 
-                                        NULL, NULL, NULL, 
+  is(OK == alloc_basic_handles_with_opt(&henv1, &hdbc1, &hstmt1, NULL,
+                                        NULL, NULL, NULL,
                                         "COLUMN_SIZE_S32=1"));
 
   ok_sql(hstmt1, "DROP TABLE IF EXISTS bug12805");
@@ -1492,11 +1492,14 @@ DECLARE_TEST(t_bug30770)
   is(OK == alloc_basic_handles_with_opt(&henv1, &hdbc1, &hstmt1, USE_DRIVER,
                                         NULL, NULL, "", NULL));
 
+  sprintf((char *)buff, "USE %s;", mydb);
+  ok_stmt(hstmt1, SQLExecDirect(hstmt1, buff, SQL_NTS));
+
   /* Get the info from just one table.  */
   ok_stmt(hstmt1, SQLColumns(hstmt1, NULL, SQL_NTS, NULL, SQL_NTS,
                              (SQLCHAR *)"bug30770", SQL_NTS, NULL, 0));
 
-  expect_stmt(hstmt1, SQLFetch(hstmt1), SQL_NO_DATA_FOUND);
+  ok_stmt(hstmt1, SQLFetch(hstmt1));
 
   is_str(my_fetch_str(hstmt1, buff, 3), "bug30770", 9);
   is_str(my_fetch_str(hstmt1, buff, 4), "a", 1);
@@ -1557,11 +1560,11 @@ DECLARE_TEST(t_bug39957)
 
 
 BEGIN_TESTS
+  ADD_TEST(t_sqlprocedures)
   ADD_TEST(my_columns_null)
   ADD_TEST(my_drop_table)
-  // ADD_TEST(my_table_dbs) TODO: Fix
+  ADD_TEST(my_table_dbs)
   ADD_TEST(my_colpriv)
-  ADD_TEST(t_sqlprocedures)
   ADD_TEST(t_catalog)
   ADD_TEST(tmysql_specialcols)
   ADD_TEST(t_columns)
@@ -1576,7 +1579,7 @@ BEGIN_TESTS
   ADD_TEST(t_bug12805)
 #endif
   ADD_TEST(tmysql_showkeys)
-  // ADD_TEST(my_information_schema) TODO: Fix NO_IS
+  ADD_TEST(my_information_schema)
   ADD_TEST(t_bug4518)
   ADD_TEST(empty_set)
   ADD_TEST(t_bug23031)
@@ -1587,7 +1590,7 @@ BEGIN_TESTS
   ADD_TEST(t_bug19923)
   ADD_TEST(t_bug32864)
   ADD_TEST(t_bug33298)
-  // ADD_TEST(t_bug30770) TODO: Fix NO_IS
+  ADD_TEST(t_bug30770)
   ADD_TEST(t_bug36275)
   ADD_TEST(t_bug39957)
 END_TESTS

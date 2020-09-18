@@ -1,30 +1,30 @@
-// Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved. 
-// 
-// This program is free software; you can redistribute it and/or modify 
-// it under the terms of the GNU General Public License, version 2.0, as 
-// published by the Free Software Foundation. 
-// 
-// This program is also distributed with certain software (including 
-// but not limited to OpenSSL) that is licensed under separate terms, 
-// as designated in a particular file or component or in included license 
-// documentation. The authors of MySQL hereby grant you an 
-// additional permission to link the program and your derivative works 
-// with the separately licensed software that they have included with 
-// MySQL. 
-// 
-// Without limiting anything contained in the foregoing, this file, 
-// which is part of <MySQL Product>, is also subject to the 
-// Universal FOSS Exception, version 1.0, a copy of which can be found at 
-// http://oss.oracle.com/licenses/universal-foss-exception. 
-// 
-// This program is distributed in the hope that it will be useful, but 
-// WITHOUT ANY WARRANTY; without even the implied warranty of 
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-// See the GNU General Public License, version 2.0, for more details. 
-// 
-// You should have received a copy of the GNU General Public License 
-// along with this program; if not, write to the Free Software Foundation, Inc., 
-// 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA 
+// Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+//
+// This program is free software; you can redistribute it and/or modify
+// it under the terms of the GNU General Public License, version 2.0, as
+// published by the Free Software Foundation.
+//
+// This program is also distributed with certain software (including
+// but not limited to OpenSSL) that is licensed under separate terms,
+// as designated in a particular file or component or in included license
+// documentation. The authors of MySQL hereby grant you an
+// additional permission to link the program and your derivative works
+// with the separately licensed software that they have included with
+// MySQL.
+//
+// Without limiting anything contained in the foregoing, this file,
+// which is part of <MySQL Product>, is also subject to the
+// Universal FOSS Exception, version 1.0, a copy of which can be found at
+// http://oss.oracle.com/licenses/universal-foss-exception.
+//
+// This program is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+// See the GNU General Public License, version 2.0, for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program; if not, write to the Free Software Foundation, Inc.,
+// 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 
 
 #include "odbctap.h"
@@ -525,7 +525,7 @@ DECLARE_TEST(t_max_rows)
     ok_stmt(hstmt1, SQLSetStmtAttr(hstmt1,SQL_ATTR_MAX_ROWS,(SQLPOINTER)12,0));
 
     ok_sql(hstmt1,"select * from t_max_rows");
-  
+
     is_num(10, myrowcount(hstmt1));
 
     SQLFreeStmt(hstmt1,SQL_CLOSE);
@@ -535,7 +535,7 @@ DECLARE_TEST(t_max_rows)
     ok_stmt(hstmt1, SQLSetStmtAttr(hstmt1,SQL_ATTR_MAX_ROWS,(SQLPOINTER)10,0));
 
     ok_sql(hstmt1,"select * from t_max_rows");
-  
+
     is_num(10, myrowcount(hstmt1));
 
     SQLFreeStmt(hstmt1,SQL_CLOSE);
@@ -1177,7 +1177,6 @@ DECLARE_TEST(t_desccolext)
         ts timestamp,\
         ti  time,\
         yr1 year,\
-        yr2 year(2),\
         yr3 year(4),\
         c1 char(10),\
         c2 char(10) binary,\
@@ -1348,7 +1347,6 @@ DECLARE_TEST(t_colattributes)
          "ts TIMESTAMP,"
          "ti  TIME,"
          "yr1 YEAR,"
-         "yr2 YEAR(2),"
          "yr3 YEAR(4),"
          "c1 CHAR(10),"
          "c2 CHAR(10) BINARY,"
@@ -1372,7 +1370,7 @@ DECLARE_TEST(t_colattributes)
 
   ok_stmt(hstmt, SQLColAttribute(hstmt, 1, SQL_COLUMN_COUNT, NULL, 0, NULL,
                                  &count));
-  is(count == 54);
+  is(count == 53);
 
   ok_stmt(hstmt, SQLColAttribute(hstmt, 1, SQL_COLUMN_AUTO_INCREMENT, NULL, 0,
                                  NULL, &isauto));
@@ -2256,6 +2254,8 @@ DECLARE_TEST(t_bug34429)
 
 
 BEGIN_TESTS
+  ADD_TEST(t_colattributes)
+  ADD_TEST(t_desccolext)
   ADD_TEST(my_resultset)
   ADD_TEST(t_convert_type)
   ADD_TEST(t_desc_col)
@@ -2274,9 +2274,8 @@ BEGIN_TESTS
   ADD_TEST(t_cache_bug)
   ADD_TEST(t_non_cache_bug)
   ADD_TEST(t_desccol)
-  // ADD_TEST(t_desccolext) TODO: Fix
   ADD_TEST(t_desccol1)
-  // ADD_TEST(t_colattributes) TODO: Fix
+  ADD_TEST(t_colattributes)
   ADD_TEST(t_exfetch)
   ADD_TEST(t_true_length)
   ADD_TEST(t_bug16817)

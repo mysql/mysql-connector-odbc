@@ -61,7 +61,7 @@ BOOL returned_result(STMT *stmt)
   }
   else
   {
-    return mysql_field_count(&stmt->dbc->mysql) > 0 ;
+    return mysql_field_count(stmt->dbc->mysql) > 0 ;
   }
 }
 
@@ -94,11 +94,11 @@ MYSQL_RES * stmt_get_result(STMT *stmt, BOOL force_use)
   /* We can't use USE_RESULT because SQLRowCount will fail in this case! */
   if (if_forward_cache(stmt) || force_use)
   {
-    return mysql_use_result(&stmt->dbc->mysql);
+    return mysql_use_result(stmt->dbc->mysql);
   }
   else
   {
-    return mysql_store_result(&stmt->dbc->mysql);
+    return mysql_store_result(stmt->dbc->mysql);
   }
 }
 
@@ -156,7 +156,7 @@ unsigned int field_count(STMT *stmt)
   {
     return stmt->result && stmt->result->field_count > 0 ?
       stmt->result->field_count :
-      mysql_field_count(&stmt->dbc->mysql);
+      mysql_field_count(stmt->dbc->mysql);
   }
 }
 
@@ -170,7 +170,7 @@ my_ulonglong affected_rows(STMT *stmt)
   else
   {
     /* In some cases in c/odbc it cannot be used instead of mysql_num_rows */
-    return mysql_affected_rows(&stmt->dbc->mysql);
+    return mysql_affected_rows(stmt->dbc->mysql);
   }
 }
 
@@ -296,7 +296,7 @@ int next_result(STMT *stmt)
   }
   else
   {
-    return mysql_next_result(&stmt->dbc->mysql);
+    return mysql_next_result(stmt->dbc->mysql);
   }
 }
 
@@ -395,7 +395,7 @@ SQLRETURN prepare(STMT *stmt, char * query, SQLINTEGER query_length,
   /* Trusting our parsing we are not using prepared statments unsless there are
      actually parameter markers in it */
   if (!stmt->dbc->ds->no_ssps && PARAM_COUNT(&stmt->query) && !IS_BATCH(&stmt->query)
-    && preparable_on_server(&stmt->query, stmt->dbc->mysql.server_version))
+    && preparable_on_server(&stmt->query, stmt->dbc->mysql->server_version))
   {
     MYLOG_QUERY(stmt, "Using prepared statement");
     ssps_init(stmt);
@@ -414,12 +414,12 @@ SQLRETURN prepare(STMT *stmt, char * query, SQLINTEGER query_length,
 
      if (prep_res)
       {
-        MYLOG_QUERY(stmt, mysql_error(&stmt->dbc->mysql));
+        MYLOG_QUERY(stmt, mysql_error(stmt->dbc->mysql));
 
-        set_stmt_error(stmt,"HY000",mysql_error(&stmt->dbc->mysql),
-                       mysql_errno(&stmt->dbc->mysql));
+        stmt->set_error("HY000",mysql_error(stmt->dbc->mysql),
+                       mysql_errno(stmt->dbc->mysql));
         translate_error(stmt->error.sqlstate,MYERR_S1000,
-                        mysql_errno(&stmt->dbc->mysql));
+                        mysql_errno(stmt->dbc->mysql));
 
         return SQL_ERROR;
       }
@@ -464,41 +464,6 @@ SQLRETURN prepare(STMT *stmt, char * query, SQLINTEGER query_length,
 }
 
 
-SQLRETURN append2param_value(STMT *stmt, DESCREC * aprec, const char *chunk, unsigned long length)
-{
-  if ( aprec->par.value )
-  {
-    /* Append to old value */
-    assert(aprec->par.alloced);
-    if ( !(aprec->par.value= (char*)myodbc_realloc(aprec->par.value,
-                                        aprec->par.value_length + length + 1,
-                                        MYF(0))) )
-    {
-      return stmt->set_error(MYERR_S1001,NULL,4001);
-    }
-
-    memcpy(aprec->par.value+aprec->par.value_length,chunk,length);
-    aprec->par.value_length+= length;
-    aprec->par.value[aprec->par.value_length]= 0;
-    aprec->par.alloced= TRUE;
-  }
-  else
-  {
-    /* New value */
-    if ( !(aprec->par.value= (char*)myodbc_malloc(length+1,MYF(0))) )
-    {
-      return stmt->set_error(MYERR_S1001,NULL,4001);
-    }
-    memcpy(aprec->par.value,chunk,length);
-    aprec->par.value_length= length;
-    aprec->par.value[aprec->par.value_length]= 0;
-    aprec->par.alloced= TRUE;
-  }
-
-  return SQL_SUCCESS;
-}
-
-
 SQLRETURN send_long_data (STMT *stmt, unsigned int param_num, DESCREC * aprec, const char *chunk,
                           unsigned long length)
 {
@@ -526,7 +491,8 @@ SQLRETURN send_long_data (STMT *stmt, unsigned int param_num, DESCREC * aprec, c
   else
 #endif
   {
-    return append2param_value(stmt, aprec, chunk, length);
+    aprec->par.add_param_data(chunk, length);
+    return SQL_SUCCESS;
   }
 }
 
@@ -607,7 +573,6 @@ void scroller_create(STMT * stmt, char *query, SQLULEN query_len)
 
   stmt->scroller.next_offset= myodbc_max(limit.offset, 0);
 
-  /*extend_buffer(&stmt->dbc->mysql.net, stmt->query_end, len2add);*/
   stmt->scroller.query_len= query_len + len2add;
   stmt->scroller.query= (char*)myodbc_malloc((size_t)stmt->scroller.query_len + 1,
                                           MYF(MY_ZEROFILL));

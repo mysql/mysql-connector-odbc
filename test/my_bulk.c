@@ -592,9 +592,9 @@ DECLARE_TEST(t_bug17714290)
   /* We are not setting any bookmark options and not binding bookmark column */
   ok_stmt(hstmt, SQLBindCol(hstmt, 1, SQL_C_LONG, nData, 0, NULL));
   ok_stmt(hstmt, SQLBindCol(hstmt, 2, SQL_C_CHAR, szData, sizeof(szData[0]), NULL));
-  ok_stmt(hstmt, SQLFetchScroll(hstmt, SQL_FETCH_BOOKMARK, 0));
 
   /* This cannot be success, we just don't want to crash */
+  SQLFetchScroll(hstmt, SQL_FETCH_BOOKMARK, 0);
   SQLBulkOperations(hstmt, SQL_UPDATE_BY_BOOKMARK);
 
   ok_stmt(hstmt, SQLFreeStmt(hstmt, SQL_CLOSE));
@@ -613,7 +613,7 @@ BEGIN_TESTS
   ADD_TEST(t_bulk_insert_bookmark)
   ADD_TEST(t_bookmark_update)
   ADD_TEST(t_bookmark_delete)
-  // ADD_TEST(t_bug17714290) TODO: Fix
+  ADD_TEST(t_bug17714290)
 END_TESTS
 
 

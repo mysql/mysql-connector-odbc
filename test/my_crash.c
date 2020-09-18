@@ -57,7 +57,7 @@ DECLARE_TEST(t_bug18641824)
                 "fi1d int,CONSTRAINT Constraint_1 FOREIGN KEY(fi1d) REFERENCES tab_pk(i1d)," \
                 "fi2d int,CONSTRAINT Constraint_2 FOREIGN KEY(fi2d) REFERENCES tab_pk(i2d))");
   ok_stmt(hstmt1, SQLForeignKeys(hstmt1, NULL, 0, NULL, 0, (SQLCHAR*)"tab_pk", SQL_NTS,
-                                NULL, 0, NULL, 0, (SQLCHAR*)"tab_fk", SQL_NTS));
+                                NULL, 0, NULL, 0, NULL, 0));
 
   while (SQLFetch(hstmt1) == SQL_SUCCESS)
   {
@@ -511,7 +511,7 @@ DECLARE_TEST(t_bookmark_update_zero_rec)
 {
   SQLLEN len= 0;
   SQLUSMALLINT rowStatus[4];
-  SQLUINTEGER numRowsFetched;
+  SQLULEN numRowsFetched;
   SQLINTEGER nData[4];
   SQLCHAR szData[4][16];
   SQLCHAR bData[4][10];
@@ -653,7 +653,7 @@ DECLARE_TEST(t_bug18286366)
   len= sprintf(buff, "CREATE TABLE t_bug18286366a ( ");
   for (i= 0; i < 20; i++)
   {
-    len+= sprintf(buff + len, "`id%d` INT, UNIQUE(`id%d`),", i, i);
+    len+= sprintf(buff + len, "`id%02d` INT, UNIQUE(`id%02d`),", i, i);
   }
   len= sprintf(buff + len - 1, ")");
   ok_stmt(hstmt, SQLExecDirect(hstmt, (SQLCHAR*)buff, SQL_NTS));
@@ -661,9 +661,9 @@ DECLARE_TEST(t_bug18286366)
   len= sprintf(buff, "CREATE TABLE t_bug18286366b ( ");
   for (i= 0; i < 20; i++)
   {
-    len+= sprintf(buff + len, "`id%d` INT, "
-                              "CONSTRAINT `cons%d` FOREIGN KEY "
-                              "(`id%d`) REFERENCES `t_bug18286366a` (`id%d`),",
+    len+= sprintf(buff + len, "`id%02d` INT, "
+                              "CONSTRAINT `cons%02d` FOREIGN KEY "
+                              "(`id%02d`) REFERENCES `t_bug18286366a` (`id%02d`),",
                               i, i, i, i);
   }
   len= sprintf(buff + len - 1, ")");
@@ -676,13 +676,13 @@ DECLARE_TEST(t_bug18286366)
 
   for (i= 0; i < 20; i++)
   {
-    len= sprintf(tmp_buff, "id%d", i);
+    len= sprintf(tmp_buff, "id%02d", i);
     ok_stmt(hstmt1, SQLFetch(hstmt1));
     is_str(my_fetch_str(hstmt1, buff, 3), "t_bug18286366a", 14);
     is_str(my_fetch_str(hstmt1, buff, 4), tmp_buff, len);
     is_str(my_fetch_str(hstmt1, buff, 7), "t_bug18286366b", 14);
     is_str(my_fetch_str(hstmt1, buff, 8), tmp_buff, len);
-    len= sprintf(tmp_buff, "cons%d", i);
+    len= sprintf(tmp_buff, "cons%02d", i);
     is_str(my_fetch_str(hstmt1, buff, 12), tmp_buff, len);
   }
 
@@ -710,7 +710,7 @@ DECLARE_TEST(t_bug18286366_2)
   len= sprintf(buff, "CREATE TABLE t_bug182863662a ( ");
   for (i= 0; i < MAX_18286366_KEYS; i++)
   {
-    len+= sprintf(buff + len, "`id%d` INT, UNIQUE(`id%d`),", i, i);
+    len+= sprintf(buff + len, "`id%03d` INT, UNIQUE(`id%03d`),", i, i);
   }
   len= sprintf(buff + len - 1, ")");
   ok_stmt(hstmt, SQLExecDirect(hstmt, (SQLCHAR*)buff, SQL_NTS));
@@ -718,9 +718,9 @@ DECLARE_TEST(t_bug18286366_2)
   len= sprintf(buff, "CREATE TABLE t_bug182863662b ( ");
   for (i= 0; i < MAX_18286366_KEYS; i++)
   {
-    len+= sprintf(buff + len, "`id%d` INT, "
+    len+= sprintf(buff + len, "`id%03d` INT, "
                               "CONSTRAINT `consb%d` FOREIGN KEY "
-                              "(`id%d`) REFERENCES `t_bug182863662a` (`id%d`),",
+                              "(`id%03d`) REFERENCES `t_bug182863662a` (`id%03d`),",
                               i, i, i, i);
   }
   len= sprintf(buff + len - 1, ")");
@@ -729,9 +729,9 @@ DECLARE_TEST(t_bug18286366_2)
   len= sprintf(buff, "CREATE TABLE t_bug182863662c ( ");
   for (i= 0; i < MAX_18286366_KEYS; i++)
   {
-    len+= sprintf(buff + len, "`id%d` INT, "
-                              "CONSTRAINT `consc%d` FOREIGN KEY "
-                              "(`id%d`) REFERENCES `t_bug182863662a` (`id%d`),",
+    len+= sprintf(buff + len, "`id%03d` INT, "
+                              "CONSTRAINT `consc%03d` FOREIGN KEY "
+                              "(`id%03d`) REFERENCES `t_bug182863662a` (`id%03d`),",
                               i, i, i, i);
   }
   len= sprintf(buff + len - 1, ")");
@@ -947,6 +947,7 @@ DECLARE_TEST(t_bug18796005)
 
 
 BEGIN_TESTS
+  ADD_TEST(t_setpos_update_no_ssps)
   ADD_TEST(t_bug18641824)
   ADD_TEST(t_bug18805392)
   ADD_TEST(t_bug19148246)
@@ -958,17 +959,16 @@ BEGIN_TESTS
   ADD_TEST(t_bug17854697)
   ADD_TEST(t_bug17999659)
   ADD_TEST(t_bug17966018)
-  // ADD_TEST(t_bug17841121) TODO: Fix
-  // ADD_TEST(t_bookmark_update_zero_rec) TODO: Fix
   ADD_TEST(t_bug17085344)
+  ADD_TEST(t_bookmark_update_zero_rec)
+  ADD_TEST(t_bug18286366)
+  ADD_TEST(t_bug18286366_2)
 #ifndef USE_IODBC
+  ADD_TEST(t_bug17841121)
   ADD_TEST(t_bug18165197)
   ADD_TEST(t_bug18286118)
 #endif
   ADD_TEST(t_bug18325878)
-  // ADD_TEST(t_bug18286366)  TODO: Fix
-  // ADD_TEST(t_bug18286366_2)  TODO: Fix
-  // ADD_TEST(t_setpos_update_no_ssps) TODO: Fix
   ADD_TEST(t_bug18796005)
 END_TESTS
 

@@ -212,7 +212,7 @@ SQLDescribeCol(SQLHSTMT hstmt, SQLUSMALLINT column,
 
   if (free_value == -1)
   {
-    set_mem_error(&stmt->dbc->mysql);
+    set_mem_error(stmt->dbc->mysql);
     return handle_connection_error(stmt);
   }
 

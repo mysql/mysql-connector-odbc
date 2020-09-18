@@ -1,30 +1,30 @@
-// Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved. 
-// 
-// This program is free software; you can redistribute it and/or modify 
-// it under the terms of the GNU General Public License, version 2.0, as 
-// published by the Free Software Foundation. 
-// 
-// This program is also distributed with certain software (including 
-// but not limited to OpenSSL) that is licensed under separate terms, 
-// as designated in a particular file or component or in included license 
-// documentation. The authors of MySQL hereby grant you an 
-// additional permission to link the program and your derivative works 
-// with the separately licensed software that they have included with 
-// MySQL. 
-// 
-// Without limiting anything contained in the foregoing, this file, 
-// which is part of <MySQL Product>, is also subject to the 
-// Universal FOSS Exception, version 1.0, a copy of which can be found at 
-// http://oss.oracle.com/licenses/universal-foss-exception. 
-// 
-// This program is distributed in the hope that it will be useful, but 
-// WITHOUT ANY WARRANTY; without even the implied warranty of 
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-// See the GNU General Public License, version 2.0, for more details. 
-// 
-// You should have received a copy of the GNU General Public License 
-// along with this program; if not, write to the Free Software Foundation, Inc., 
-// 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA 
+// Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+//
+// This program is free software; you can redistribute it and/or modify
+// it under the terms of the GNU General Public License, version 2.0, as
+// published by the Free Software Foundation.
+//
+// This program is also distributed with certain software (including
+// but not limited to OpenSSL) that is licensed under separate terms,
+// as designated in a particular file or component or in included license
+// documentation. The authors of MySQL hereby grant you an
+// additional permission to link the program and your derivative works
+// with the separately licensed software that they have included with
+// MySQL.
+//
+// Without limiting anything contained in the foregoing, this file,
+// which is part of <MySQL Product>, is also subject to the
+// Universal FOSS Exception, version 1.0, a copy of which can be found at
+// http://oss.oracle.com/licenses/universal-foss-exception.
+//
+// This program is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+// See the GNU General Public License, version 2.0, for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program; if not, write to the Free Software Foundation, Inc.,
+// 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 
 /**
   @file  options.c
@@ -129,7 +129,7 @@ static SQLRETURN set_constmt_attr(SQLSMALLINT  HandleType,
           if (ValuePtr == (SQLPOINTER) SQL_UB_VARIABLE ||
               ValuePtr == (SQLPOINTER) SQL_UB_ON)
             options->bookmarks= (SQLUINTEGER) SQL_UB_VARIABLE;
-          else 
+          else
             options->bookmarks= (SQLUINTEGER) SQL_UB_OFF;
           break;
 
@@ -317,7 +317,7 @@ MySQLSetConnectAttr(SQLHDBC hdbc, SQLINTEGER Attribute,
       break;
 
       /*
-        If this is done before connect (I would say a function 
+        If this is done before connect (I would say a function
         sequence but .NET IDE does this) then we store the value but
         it is quite likely that it will get replaced by DATABASE in
         a DSN or connect string.
@@ -325,12 +325,12 @@ MySQLSetConnectAttr(SQLHDBC hdbc, SQLINTEGER Attribute,
     case SQL_ATTR_CURRENT_CATALOG:
       {
         char ldb[NAME_LEN+1], *db;
-        int cat_len= StringLengthPtr == SQL_NTS ? 
+        int cat_len= StringLengthPtr == SQL_NTS ?
                      strlen((char *)ValuePtr) : StringLengthPtr;
 
         if (cat_len > NAME_LEN)
         {
-          return set_conn_error((DBC*)hdbc, MYERR_01004, 
+          return set_conn_error((DBC*)hdbc, MYERR_01004,
                                 "Invalid string or buffer length", 0);
         }
 
@@ -340,15 +340,14 @@ MySQLSetConnectAttr(SQLHDBC hdbc, SQLINTEGER Attribute,
         myodbc_mutex_lock(&dbc->lock);
         if (is_connected(dbc))
         {
-          if (mysql_select_db(&dbc->mysql,(char*) db))
+          if (mysql_select_db(dbc->mysql,(char*) db))
           {
-            set_conn_error(dbc,MYERR_S1000,mysql_error(&dbc->mysql),mysql_errno(&dbc->mysql));
+            set_conn_error(dbc,MYERR_S1000,mysql_error(dbc->mysql),mysql_errno(dbc->mysql));
             myodbc_mutex_unlock(&dbc->lock);
             return SQL_ERROR;
           }
         }
-        x_free(dbc->database);
-        dbc->database= myodbc_strdup(db,MYF(MY_WME));
+        dbc->database = db ? db : "";
         myodbc_mutex_unlock(&dbc->lock);
       }
       break;
@@ -488,9 +487,9 @@ MySQLGetConnectAttr(SQLHDBC hdbc, SQLINTEGER attrib, SQLCHAR **char_attr,
   case SQL_ATTR_CONNECTION_DEAD:
     /* If waking up fails - we return "connection is dead", no matter what really the reason is */
     if (dbc->need_to_wakeup != 0 && wakeup_connection(dbc)
-      || dbc->need_to_wakeup == 0 && mysql_ping(&dbc->mysql) &&
-        (mysql_errno(&dbc->mysql) == CR_SERVER_LOST ||
-         mysql_errno(&dbc->mysql) == CR_SERVER_GONE_ERROR))
+      || dbc->need_to_wakeup == 0 && mysql_ping(dbc->mysql) &&
+        (mysql_errno(dbc->mysql) == CR_SERVER_LOST ||
+         mysql_errno(dbc->mysql) == CR_SERVER_GONE_ERROR))
       *((SQLUINTEGER *)num_attr)= SQL_CD_TRUE;
     else
       *((SQLUINTEGER *)num_attr)= SQL_CD_FALSE;
@@ -509,7 +508,7 @@ MySQLGetConnectAttr(SQLHDBC hdbc, SQLINTEGER attrib, SQLCHAR **char_attr,
     }
     else if (is_connected(dbc))
     {
-      *char_attr= (SQLCHAR *)(dbc->database ? dbc->database : "null");
+      *char_attr= (SQLCHAR *)(!dbc->database.empty() ? dbc->database.c_str() : "null");
     }
     else
     {
@@ -531,7 +530,7 @@ MySQLGetConnectAttr(SQLHDBC hdbc, SQLINTEGER attrib, SQLCHAR **char_attr,
     break;
 
   case SQL_ATTR_PACKET_SIZE:
-    *((SQLUINTEGER *)num_attr)= dbc->mysql.net.max_packet;
+    *((SQLUINTEGER *)num_attr)= dbc->mysql->net.max_packet;
     break;
 
   case SQL_ATTR_TXN_ISOLATION:
@@ -550,8 +549,8 @@ MySQLGetConnectAttr(SQLHDBC hdbc, SQLINTEGER attrib, SQLCHAR **char_attr,
         *((SQLINTEGER *)num_attr)= SQL_TRANSACTION_REPEATABLE_READ;
         break;
       }
-      
-      if (is_minimum_version(dbc->mysql.server_version, "8.0"))
+
+      if (is_minimum_version(dbc->mysql->server_version, "8.0"))
         result = odbc_stmt(dbc, "SELECT @@transaction_isolation", SQL_NTS, TRUE);
       else
         result = odbc_stmt(dbc, "SELECT @@tx_isolation", SQL_NTS, TRUE);
@@ -566,7 +565,7 @@ MySQLGetConnectAttr(SQLHDBC hdbc, SQLINTEGER attrib, SQLCHAR **char_attr,
         MYSQL_RES *res;
         MYSQL_ROW  row;
 
-        if ((res= mysql_store_result(&dbc->mysql)) &&
+        if ((res= mysql_store_result(dbc->mysql)) &&
             (row= mysql_fetch_row(res)))
         {
           if (strncmp(row[0], "READ-UNCOMMITTED", 16) == 0) {
@@ -631,6 +630,19 @@ MySQLSetStmtAttr(SQLHSTMT hstmt, SQLINTEGER Attribute, SQLPOINTER ValuePtr,
               DESC **dest= NULL;
               desc_desc_type desc_type;
 
+              if (Attribute == SQL_ATTR_APP_PARAM_DESC)
+              {
+                dest= &stmt->apd;
+                desc_type= DESC_PARAM;
+              }
+              else if (Attribute == SQL_ATTR_APP_ROW_DESC)
+              {
+                dest= &stmt->ard;
+                desc_type= DESC_ROW;
+              }
+
+              (*dest)->stmt_list_remove(stmt);
+
               /* reset to implicit if null */
               if (desc == SQL_NULL_HANDLE)
               {
@@ -648,20 +660,9 @@ MySQLSetStmtAttr(SQLHSTMT hstmt, SQLINTEGER Attribute, SQLPOINTER ValuePtr,
                                  "descriptor handle",0);
 
               if (desc->alloc_type == SQL_DESC_ALLOC_USER &&
-                  stmt->dbc != desc->exp.dbc)
+                  stmt->dbc != desc->dbc)
                 return ((STMT*)hstmt)->set_error(MYERR_S1024,
                                  "Invalid attribute value",0);
-
-              if (Attribute == SQL_ATTR_APP_PARAM_DESC)
-              {
-                dest= &stmt->apd;
-                desc_type= DESC_PARAM;
-              }
-              else if (Attribute == SQL_ATTR_APP_ROW_DESC)
-              {
-                dest= &stmt->ard;
-                desc_type= DESC_ROW;
-              }
 
               if (desc->desc_type != DESC_UNKNOWN &&
                   desc->desc_type != desc_type)
@@ -673,25 +674,7 @@ MySQLSetStmtAttr(SQLHSTMT hstmt, SQLINTEGER Attribute, SQLPOINTER ValuePtr,
               assert(desc);
               assert(dest);
 
-              if (desc->alloc_type == SQL_DESC_ALLOC_AUTO &&
-                  (*dest)->alloc_type == SQL_DESC_ALLOC_USER)
-              {
-                /*
-                  If we're setting back the original implicit
-                  descriptor, we must disassociate this statement
-                  from the explicit descriptor.
-                */
-                desc_remove_stmt(*dest, stmt);
-                
-              }
-              else if (desc->alloc_type == SQL_DESC_ALLOC_USER)
-              {
-                /* otherwise, associate this statement with the desc */
-                LIST *e= (LIST *) myodbc_malloc(sizeof(LIST), MYF(0));
-                e->data= stmt;
-                /* No need to lock */
-                desc->exp.stmts= list_add(desc->exp.stmts, e);
-              }
+              desc->stmt_list_add(stmt);
 
               desc->desc_type= desc_type;
               *dest= desc;
@@ -933,7 +916,7 @@ SQLSetEnvAttr(SQLHENV    henv,
 {
   CHECK_HANDLE(henv);
 
-  if (((ENV *)henv)->connections)
+  if (((ENV *)henv)->has_connections())
       return set_env_error((ENV*)henv, MYERR_S1010, NULL, 0);
 
   switch (Attribute)

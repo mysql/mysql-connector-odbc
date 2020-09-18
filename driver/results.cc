@@ -192,7 +192,7 @@ sql_get_bookmark_data(STMT *stmt, SQLSMALLINT fCType, uint column_number,
 
   if (cbValueMax < sizeof(long))
   {
-    return set_stmt_error(stmt, "HY090", "Invalid string or buffer length", 0);
+    return stmt->set_error("HY090", "Invalid string or buffer length", 0);
   }
 
   /* get the exact type if we don't already have it */
@@ -209,7 +209,7 @@ sql_get_bookmark_data(STMT *stmt, SQLSMALLINT fCType, uint column_number,
   {
     if (!arrec)
     {
-      return set_stmt_error(stmt, "07009", "Invalid descriptor index", 0);
+      return stmt->set_error("07009", "Invalid descriptor index", 0);
     }
 
     fCType= arrec->concise_type;
@@ -250,7 +250,7 @@ sql_get_bookmark_data(STMT *stmt, SQLSMALLINT fCType, uint column_number,
                         (SQLCHAR *)value, length);
         if (!ret)
         {
-          set_stmt_error(stmt, "01004", NULL, 0);
+          stmt->set_error("01004", NULL, 0);
           return SQL_SUCCESS_WITH_INFO;
         }
       }
@@ -401,7 +401,7 @@ sql_get_data(STMT *stmt, SQLSMALLINT fCType, uint column_number,
   {
     if (!arrec)
     {
-      return set_stmt_error(stmt, "07009", "Invalid descriptor index", 0);
+      return stmt->set_error("07009", "Invalid descriptor index", 0);
     }
 
     fCType= arrec->concise_type;
@@ -429,7 +429,7 @@ sql_get_data(STMT *stmt, SQLSMALLINT fCType, uint column_number,
     /* pcbValue must be available if its NULL */
     if (!pcbValue)
     {
-      return set_stmt_error(stmt,"22002",
+      return stmt->set_error("22002",
                             "Indicator variable required but not supplied",0);
     }
     *pcbValue = SQL_NULL_DATA;
@@ -442,7 +442,7 @@ sql_get_data(STMT *stmt, SQLSMALLINT fCType, uint column_number,
       /*The state 07009 was incorrect
       (http://msdn.microsoft.com/en-us/library/ms715441%28v=VS.85%29.aspx)
       */
-      return set_stmt_error(stmt, "07006", "Conversion is not possible", 0);
+      return stmt->set_error("07006", "Conversion is not possible", 0);
     }
 
     if (!pcbValue)
@@ -722,7 +722,7 @@ sql_get_data(STMT *stmt, SQLSMALLINT fCType, uint column_number,
             else if(ts.second > 0)
             {
               /* Truncation */
-              set_stmt_error(stmt, "01S07", NULL, 0);
+              stmt->set_error("01S07", NULL, 0);
               result= SQL_SUCCESS_WITH_INFO;
             }
 
@@ -749,7 +749,7 @@ sql_get_data(STMT *stmt, SQLSMALLINT fCType, uint column_number,
                           TRUE))
         {
         case SQLTS_BAD_DATE:
-          return set_stmt_error(stmt, "22018", "Data value is not a valid time(stamp) value", 0);
+          return stmt->set_error("22018", "Data value is not a valid time(stamp) value", 0);
         case SQLTS_NULL_DATE:
           *pcbValue= SQL_NULL_DATA;
           break;
@@ -765,7 +765,7 @@ sql_get_data(STMT *stmt, SQLSMALLINT fCType, uint column_number,
 
               if (ts.fraction > 0)
               {
-                set_stmt_error(stmt, "01S07", NULL, 0);
+                stmt->set_error("01S07", NULL, 0);
                 result= SQL_SUCCESS_WITH_INFO;
               }
             }
@@ -801,7 +801,7 @@ sql_get_data(STMT *stmt, SQLSMALLINT fCType, uint column_number,
 
           if (ts.hour > 23)
           {
-            return set_stmt_error(stmt, "22007",
+            return stmt->set_error("22007",
                            "Invalid time(hours) format. Use interval types instead", 0);
           }
           if (time_info)
@@ -820,7 +820,7 @@ sql_get_data(STMT *stmt, SQLSMALLINT fCType, uint column_number,
             /* http://msdn.microsoft.com/en-us/library/ms713346%28v=VS.85%29.aspx
                We are loosing fractional part - thus we have to set correct sqlstate
                and return SQL_SUCCESS_WITH_INFO */
-            set_stmt_error(stmt, "01S07", NULL, 0);
+            stmt->set_error("01S07", NULL, 0);
             result= SQL_SUCCESS_WITH_INFO;
           }
         }
@@ -873,7 +873,7 @@ sql_get_data(STMT *stmt, SQLSMALLINT fCType, uint column_number,
                       stmt->dbc->ds->zero_date_to_min, TRUE))
         {
         case SQLTS_BAD_DATE:
-          return set_stmt_error(stmt, "22018", "Data value is not a valid date/time(stamp) value", 0);
+          return stmt->set_error("22018", "Data value is not a valid date/time(stamp) value", 0);
 
         case SQLTS_NULL_DATE:
           *pcbValue= SQL_NULL_DATA;
@@ -931,11 +931,11 @@ sql_get_data(STMT *stmt, SQLSMALLINT fCType, uint column_number,
         }
 
         if (overflow == 1)
-          return set_stmt_error(stmt, "22003",
+          return stmt->set_error("22003",
                                 "Numeric value out of range", 0);
         else if (overflow == 2)
         {
-          set_stmt_error(stmt, "01S07", "Fractional truncation", 0);
+          stmt->set_error("01S07", "Fractional truncation", 0);
           result = SQL_SUCCESS_WITH_INFO;
         }
       }
@@ -969,7 +969,7 @@ static SQLRETURN check_result(STMT *stmt)
   switch (stmt->state)
   {
     case ST_UNKNOWN:
-      error= set_stmt_error(stmt,"24000","Invalid cursor state",0);
+      error= stmt->set_error("24000","Invalid cursor state",0);
       break;
     case ST_PREPARED:
       /*TODO: introduce state for statements prepared on the server side */
@@ -1059,7 +1059,7 @@ SQLRETURN SQL_API SQLNumResultCols(SQLHSTMT  hstmt, SQLSMALLINT *pccol)
     }
   }
 
-  *pccol= (SQLSMALLINT) stmt->ird->count;
+  *pccol= (SQLSMALLINT) stmt->ird->rcount();
 
   return SQL_SUCCESS;
 }
@@ -1102,12 +1102,12 @@ MySQLDescribeCol(SQLHSTMT hstmt, SQLUSMALLINT column,
     if ((error= check_result(stmt)) != SQL_SUCCESS)
       return error;
     if (!stmt->result)
-      return set_stmt_error(stmt, "07005", "No result set", 0);
+      return stmt->set_error("07005", "No result set", 0);
   }
 
-  if (column == 0 || column > stmt->ird->count)
+  if (column == 0 || column > stmt->ird->rcount())
   {
-    return set_stmt_error(stmt, "07009", "Invalid descriptor index", 0);
+    return stmt->set_error("07009", "Invalid descriptor index", 0);
   }
 
   irrec= desc_get_rec(stmt->ird, column - 1, FALSE);
@@ -1188,7 +1188,7 @@ MySQLColAttribute(SQLHSTMT hstmt, SQLUSMALLINT column,
 
   if (!stmt->result)
   {
-    return set_stmt_error(stmt, "07005", "No result set", 0);
+    return stmt->set_error("07005", "No result set", 0);
   }
 
   /* we report bookmark type if requested, nothing else */
@@ -1198,7 +1198,7 @@ MySQLColAttribute(SQLHSTMT hstmt, SQLUSMALLINT column,
     return SQL_SUCCESS;
   }
 
-  if (column == 0 || column > stmt->ird->count)
+  if (column == 0 || column > stmt->ird->rcount())
     return ((STMT*)hstmt)->set_error(MYERR_07009, NULL, 0);
 
   if (!num_attr)
@@ -1209,7 +1209,7 @@ MySQLColAttribute(SQLHSTMT hstmt, SQLUSMALLINT column,
 
   if (attrib == SQL_DESC_COUNT || attrib == SQL_COLUMN_COUNT)
   {
-    *num_attr= stmt->ird->count;
+    *num_attr= stmt->ird->rcount();
     return SQL_SUCCESS;
   }
 
@@ -1327,7 +1327,7 @@ MySQLColAttribute(SQLHSTMT hstmt, SQLUSMALLINT column,
     break;
 
   default:
-    return set_stmt_error(stmt, "HY091",
+    return stmt->set_error("HY091",
                           "Invalid descriptor field identifier",0);
   }
 
@@ -1362,17 +1362,16 @@ SQLRETURN SQL_API SQLBindCol(SQLHSTMT      StatementHandle,
        If unbinding the last bound column, we reduce the
        ARD records until the highest remaining bound column.
     */
-    if (ColumnNumber == stmt->ard->count)
+    if (ColumnNumber == stmt->ard->rcount())
     {
-      int i;
-      --stmt->ard->count;
-      for (i= (int)stmt->ard->count - 1; i >= 0; --i)
+      stmt->ard->records2.pop_back(); // Remove the last
+      while (stmt->ard->rcount())
       {
-        arrec= desc_get_rec(stmt->ard, i, FALSE);
+        arrec= desc_get_rec(stmt->ard, stmt->ard->rcount() - 1, FALSE);
         if (ARD_IS_BOUND(arrec))
           break;
         else
-          --stmt->ard->count;
+          stmt->ard->records2.pop_back();  // TODO: do it more gracefully
       }
     }
     else
@@ -1388,9 +1387,9 @@ SQLRETURN SQL_API SQLBindCol(SQLHSTMT      StatementHandle,
   }
 
   if ((ColumnNumber == 0 && stmt->stmt_options.bookmarks == SQL_UB_OFF) ||
-      (stmt->state == ST_EXECUTED && ColumnNumber > stmt->ird->count))
+      (stmt->state == ST_EXECUTED && ColumnNumber > stmt->ird->rcount()))
   {
-    return set_stmt_error(stmt, "07009", "Invalid descriptor index",
+    return stmt->set_error("07009", "Invalid descriptor index",
                           MYERR_07009);
   }
 
@@ -1476,21 +1475,21 @@ SQLRETURN SQL_API SQLGetData(SQLHSTMT      StatementHandle,
 
     if (!stmt->result || (!stmt->current_values && stmt->out_params_state != OPS_STREAMS_PENDING))
     {
-      set_stmt_error(stmt,"24000","SQLGetData without a preceding SELECT",0);
+      stmt->set_error("24000","SQLGetData without a preceding SELECT",0);
       return SQL_ERROR;
     }
 
     if ((sColNum < 1
          && stmt->stmt_options.bookmarks == (SQLUINTEGER) SQL_UB_OFF)
-        || ColumnNumber > stmt->ird->count )
+        || ColumnNumber > stmt->ird->rcount() )
     {
-      return set_stmt_error(stmt, "07009", "Invalid descriptor index", MYERR_07009);
+      return stmt->set_error("07009", "Invalid descriptor index", MYERR_07009);
     }
 
     if (sColNum == 0 && TargetType != SQL_C_BOOKMARK
         && TargetType != SQL_C_VARBOOKMARK)
     {
-      return set_stmt_error(stmt, "HY003", "Program type out of range", 0);
+      return stmt->set_error("HY003", "Program type out of range", 0);
     }
 
     --sColNum;     /* Easier code if start from 0 which will make bookmark column -1 */
@@ -1504,7 +1503,7 @@ SQLRETURN SQL_API SQLGetData(SQLHSTMT      StatementHandle,
           SQLParamData */
       if (sColNum != stmt->current_param)
       {
-        return set_stmt_error(stmt, "07009", "The parameter number value was not equal to \
+        return stmt->set_error("07009", "The parameter number value was not equal to \
                                             the ordinal of the parameter that is available.",
                               MYERR_07009);
       }
@@ -1516,7 +1515,7 @@ SQLRETURN SQL_API SQLGetData(SQLHSTMT      StatementHandle,
 
       if (TargetType != SQL_C_BINARY)
       {
-        return set_stmt_error(stmt, "HYC00", "Stream output parameters supported for SQL_C_BINARY"
+        return stmt->set_error("HYC00", "Stream output parameters supported for SQL_C_BINARY"
                                       " only", 0);
       }
     }
@@ -1574,15 +1573,15 @@ SQLRETURN SQL_API SQLGetData(SQLHSTMT      StatementHandle,
 
 SQLRETURN SQL_API SQLMoreResults( SQLHSTMT hStmt )
 {
-  STMT *  pStmt   = (STMT *)hStmt;
+  STMT *  stmt   = (STMT *)hStmt;
   int         nRetVal;
   SQLRETURN   nReturn = SQL_SUCCESS;
 
   CHECK_HANDLE(hStmt);
 
-  myodbc_mutex_lock( &pStmt->dbc->lock );
+  myodbc_mutex_lock( &stmt->dbc->lock );
 
-  CLEAR_STMT_ERROR( pStmt );
+  CLEAR_STMT_ERROR( stmt );
 
   /*
     http://msdn.microsoft.com/en-us/library/ms714673%28v=vs.85%29.aspx
@@ -1592,32 +1591,32 @@ SQLRETURN SQL_API SQLMoreResults( SQLHSTMT hStmt )
     drivers, output parameters and return values become available when
     SQLMoreResults returns SQL_NO_DATA.
   */
-  if ( pStmt->state != ST_EXECUTED )
+  if ( stmt->state != ST_EXECUTED )
   {
     nReturn = SQL_NO_DATA;
     goto exitSQLMoreResults;
   }
 
   /* try to get next resultset */
-  nRetVal = next_result(pStmt);
+  nRetVal = next_result(stmt);
 
   /* call to mysql_next_result() failed */
   if (nRetVal > 0)
   {
-    nRetVal= mysql_errno(&pStmt->dbc->mysql);
+    nRetVal= mysql_errno(stmt->dbc->mysql);
 
     switch ( nRetVal )
     {
       case CR_SERVER_GONE_ERROR:
       case CR_SERVER_LOST:
-        nReturn = set_stmt_error( pStmt, "08S01", mysql_error( &pStmt->dbc->mysql ), nRetVal );
+        nReturn = stmt->set_error("08S01", mysql_error( stmt->dbc->mysql ), nRetVal );
         goto exitSQLMoreResults;
       case CR_COMMANDS_OUT_OF_SYNC:
       case CR_UNKNOWN_ERROR:
-        nReturn = set_stmt_error( pStmt, "HY000", mysql_error( &pStmt->dbc->mysql ), nRetVal );
+        nReturn = stmt->set_error("HY000", mysql_error( stmt->dbc->mysql ), nRetVal );
         goto exitSQLMoreResults;
       default:
-        nReturn = set_stmt_error( pStmt, "HY000", "unhandled error from mysql_next_result()", nRetVal );
+        nReturn = stmt->set_error("HY000", "unhandled error from mysql_next_result()", nRetVal );
         goto exitSQLMoreResults;
     }
   }
@@ -1630,42 +1629,42 @@ SQLRETURN SQL_API SQLMoreResults( SQLHSTMT hStmt )
   }
 
   /* cleanup existing resultset */
-  nReturn = my_SQLFreeStmtExtended((SQLHSTMT)pStmt,SQL_CLOSE,0);
+  nReturn = my_SQLFreeStmtExtended((SQLHSTMT)stmt,SQL_CLOSE,0);
   if (!SQL_SUCCEEDED( nReturn ))
   {
     goto exitSQLMoreResults;
   }
 
   /* start using the new resultset */
-  pStmt->result = get_result_metadata(pStmt, FALSE);
+  stmt->result = get_result_metadata(stmt, FALSE);
 
-  if (!pStmt->result)
+  if (!stmt->result)
   {
     /* no fields means; INSERT, UPDATE or DELETE so no resultset is fine */
-    if (!field_count(pStmt))
+    if (!field_count(stmt))
     {
-      pStmt->state = ST_EXECUTED;
-      pStmt->affected_rows = affected_rows(pStmt);
+      stmt->state = ST_EXECUTED;
+      stmt->affected_rows = affected_rows(stmt);
       goto exitSQLMoreResults;
     }
     /* we have fields but no resultset (not even an empty one) - this is bad */
-    nReturn = set_stmt_error(pStmt, "HY000", mysql_error( &pStmt->dbc->mysql ),
-                              mysql_errno(&pStmt->dbc->mysql));
+    nReturn = stmt->set_error("HY000", mysql_error( stmt->dbc->mysql ),
+                              mysql_errno(stmt->dbc->mysql));
     goto exitSQLMoreResults;
   }
 
   /* checking if next result is SP OUT params and fetch them if needed */
-  if (IS_PS_OUT_PARAMS(pStmt))
+  if (IS_PS_OUT_PARAMS(stmt))
   {
-    int out_params= got_out_parameters(pStmt);
+    int out_params= got_out_parameters(stmt);
 
-    fix_result_types(pStmt);
+    fix_result_types(stmt);
 
     /* We prefetch out params row even if application did not specify any out parameter.
        In this way we can do the "magical" fetch safely right after that */
       /* This server status(SERVER_PS_OUT_PARAMS) can be only if we used PS
         - thus calling ssps_ without check */
-    ssps_get_out_params(pStmt);
+    ssps_get_out_params(stmt);
 
     if (out_params & GOT_OUT_STREAM_PARAMETERS)
     {
@@ -1674,18 +1673,18 @@ SQLRETURN SQL_API SQLMoreResults( SQLHSTMT hStmt )
   }
   else
   {
-    free_result_bind(pStmt);
-    if (bind_result(pStmt) || get_result(pStmt))
+    free_result_bind(stmt);
+    if (bind_result(stmt) || get_result(stmt))
     {
-      nReturn= set_stmt_error(pStmt, "HY000", mysql_error( &pStmt->dbc->mysql ),
-                            mysql_errno(&pStmt->dbc->mysql));
+      nReturn= stmt->set_error("HY000", mysql_error( stmt->dbc->mysql ),
+                            mysql_errno(stmt->dbc->mysql));
     }
 
-    fix_result_types(pStmt);
+    fix_result_types(stmt);
   }
 
 exitSQLMoreResults:
-  myodbc_mutex_unlock( &pStmt->dbc->lock );
+  myodbc_mutex_unlock( &stmt->dbc->lock );
   return nReturn;
 }
 
@@ -1731,7 +1730,7 @@ void fill_ird_data_lengths(DESC *ird, ulong *lengths, uint fields)
   uint i;
   DESCREC *irrec;
 
-  assert(fields == ird->count);
+  assert(fields == ird->rcount());
 
   /* This will be NULL for catalog functions with "fake" results */
   if (!lengths)
@@ -1828,7 +1827,7 @@ fill_fetch_buffers(STMT *stmt, MYSQL_ROW values, uint rownum)
   ulong length= 0;
   DESCREC *irrec, *arrec;
 
-  for (i= 0; i < myodbc_min(stmt->ird->count, stmt->ard->count); ++i, ++values)
+  for (i= 0; i < myodbc_min(stmt->ird->rcount(), stmt->ard->rcount()); ++i, ++values)
   {
     irrec= desc_get_rec(stmt->ird, i, FALSE);
     arrec= desc_get_rec(stmt->ard, i, FALSE);
@@ -1915,7 +1914,7 @@ SQLRETURN SQL_API myodbc_single_fetch( SQLHSTMT             hstmt,
     DECLARE_LOCALE_HANDLE
 
     if ( !stmt->result )
-      return set_stmt_error(stmt, "24000", "Fetch without a SELECT", 0);
+      return stmt->set_error("24000", "Fetch without a SELECT", 0);
 
     cur_row = stmt->current_row;
 
@@ -2007,7 +2006,7 @@ SQLRETURN SQL_API myodbc_single_fetch( SQLHSTMT             hstmt,
       stmt->current_row= -1;  /* Before first row */
       stmt->rows_found_in_set= 0;
       data_seek(stmt, 0L);
-      set_stmt_error(stmt, "01S07", "One or more row has error.", 0);
+      stmt->set_error("01S07", "One or more row has error.", 0);
       return SQL_SUCCESS_WITH_INFO; //SQL_NO_DATA_FOUND
     }
     if ( cur_row > max_row )
@@ -2019,10 +2018,10 @@ SQLRETURN SQL_API myodbc_single_fetch( SQLHSTMT             hstmt,
         switch (scroller_prefetch(stmt))
         {
           case SQL_NO_DATA:
-            set_stmt_error(stmt, "01S07", "One or more row has error.", 0);
+            stmt->set_error("01S07", "One or more row has error.", 0);
             return SQL_SUCCESS_WITH_INFO; //SQL_NO_DATA_FOUND
           case SQL_ERROR:   return stmt->set_error(MYERR_S1000,
-                                            mysql_error(&stmt->dbc->mysql), 0);
+                                            mysql_error(stmt->dbc->mysql), 0);
         }
       }
       else
@@ -2075,7 +2074,7 @@ SQLRETURN SQL_API myodbc_single_fetch( SQLHSTMT             hstmt,
           *stmt->ird->rows_processed_ptr= 0;
         }
 
-        set_stmt_error(stmt, "01S07", "One or more row has error.", 0);
+        stmt->set_error("01S07", "One or more row has error.", 0);
         return SQL_SUCCESS_WITH_INFO; //SQL_NO_DATA_FOUND
       }
     }
@@ -2168,7 +2167,7 @@ exitSQLSingleFetch:
     stmt->rows_found_in_set= 1;
     *pcrow= cur_row;
 
-    disconnected= is_connection_lost(mysql_errno(&stmt->dbc->mysql))
+    disconnected= is_connection_lost(mysql_errno(stmt->dbc->mysql))
       && handle_connection_error(stmt);
 
     if ( upd_status && stmt->ird->rows_processed_ptr )
@@ -2208,7 +2207,7 @@ exitSQLSingleFetch:
       }
       else if (stmt->rows_found_in_set == 0)
       {
-        set_stmt_error(stmt, "01S07", "One or more row has error.", 0);
+        stmt->set_error("01S07", "One or more row has error.", 0);
         return SQL_SUCCESS_WITH_INFO; //SQL_NO_DATA_FOUND
       }
     }
@@ -2245,7 +2244,7 @@ SQLRETURN SQL_API my_SQLExtendedFetch( SQLHSTMT             hstmt,
     DECLARE_LOCALE_HANDLE
 
     if ( !stmt->result )
-      return set_stmt_error(stmt, "24000", "Fetch without a SELECT", 0);
+      return stmt->set_error("24000", "Fetch without a SELECT", 0);
 
     if (stmt->out_params_state != OPS_UNKNOWN)
     {
@@ -2273,7 +2272,7 @@ SQLRETURN SQL_API my_SQLExtendedFetch( SQLHSTMT             hstmt,
                           "Wrong fetchtype with FORWARD ONLY cursor", 0);
     }
 
-    if ( if_dynamic_cursor(stmt) && set_dynamic_result(stmt) )
+    if ( stmt->is_dynamic_cursor() && set_dynamic_result(stmt) )
       return stmt->set_error(MYERR_S1000,
                        "Driver Failed to set the internal dynamic result", 0);
 
@@ -2462,7 +2461,7 @@ SQLRETURN SQL_API my_SQLExtendedFetch( SQLHSTMT             hstmt,
     stmt->rows_found_in_set= i;
     *pcrow= i;
 
-    disconnected= is_connection_lost(mysql_errno(&stmt->dbc->mysql))
+    disconnected= is_connection_lost(mysql_errno(stmt->dbc->mysql))
       && handle_connection_error(stmt);
 
     if ( upd_status && stmt->ird->rows_processed_ptr )

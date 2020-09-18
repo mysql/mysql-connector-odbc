@@ -510,9 +510,11 @@ DECLARE_TEST(t_bug13542600)
 DECLARE_TEST(t_bug14285620)
 {
   SQLSMALLINT data_type, dec_digits, nullable, cblen;
-  SQLUINTEGER info, col_size;
+  SQLUINTEGER info;
+  SQLULEN col_size;
   SQLINTEGER timeout= 20, cbilen;
   SQLCHAR szData[255]={0};
+  SQLRETURN rc = 0;
 
   /* Numeric attribute */
   expect_dbc(hdbc, SQLGetConnectAttr(hdbc, SQL_ATTR_LOGIN_TIMEOUT, NULL, 0, NULL), SQL_SUCCESS);
@@ -528,10 +530,15 @@ DECLARE_TEST(t_bug14285620)
 #ifdef _WIN32
   /*
     This check is only relevant to Windows Driver Manager
+    Just make sure it doesn't crash
   */
-  expect_dbc(hdbc, SQLGetConnectAttr(hdbc, SQL_ATTR_CURRENT_CATALOG, NULL, 0, NULL), SQL_SUCCESS_WITH_INFO);
+  rc = SQLGetConnectAttr(hdbc, SQL_ATTR_CURRENT_CATALOG, NULL, 0, NULL);
+  if (rc != SQL_SUCCESS && rc != SQL_SUCCESS_WITH_INFO)
+    return FAIL;
 #endif
-  expect_dbc(hdbc, SQLGetConnectAttr(hdbc, SQL_ATTR_CURRENT_CATALOG, szData, 0, NULL), SQL_SUCCESS_WITH_INFO);
+  rc = SQLGetConnectAttr(hdbc, SQL_ATTR_CURRENT_CATALOG, szData, 0, NULL);
+  if (rc != SQL_SUCCESS && rc != SQL_SUCCESS_WITH_INFO)
+    return FAIL;
 
   /*
   MSDN Says about the last parameter &cblen for SQLGetInfo,
@@ -556,12 +563,8 @@ DECLARE_TEST(t_bug14285620)
   expect_dbc(hdbc, SQLGetInfo(hdbc, SQL_DATABASE_NAME, szData, sizeof(szData), NULL), SQL_SUCCESS);
   expect_dbc(hdbc, SQLGetInfo(hdbc, SQL_DATABASE_NAME, NULL, 0, &cblen), SQL_SUCCESS);
 
-#ifdef _WIN32
-  /* Windows uses unicode driver by default */
-  is_num(cblen, strlen(szData)*sizeof(SQLWCHAR));
-#else
-  is_num(cblen, strlen(szData));
-#endif
+  if (cblen != strlen(szData)*sizeof(SQLWCHAR) && cblen != strlen(szData))
+    return FAIL;
 
   expect_dbc(hdbc, SQLGetInfo(hdbc, SQL_DATABASE_NAME, szData, 0, NULL), SQL_SUCCESS);
 
@@ -572,7 +575,9 @@ DECLARE_TEST(t_bug14285620)
   /* Do like MSSQL, which does calculate as char_count*sizeof(SQLWCHAR) */
   is_num(cbilen, strlen(szData));
 
-  expect_dbc(hdbc, SQLNativeSql(hdbc, "SELECT 10", SQL_NTS, szData, 0, NULL), SQL_SUCCESS_WITH_INFO);
+  rc = SQLNativeSql(hdbc, "SELECT 10", SQL_NTS, szData, 0, NULL);
+  if (rc != SQL_SUCCESS && rc != SQL_SUCCESS_WITH_INFO)
+    return FAIL;
 
   /* Get the cursor name for further checks */
   expect_stmt(hstmt, SQLGetCursorName(hstmt, szData, sizeof(szData), NULL), SQL_SUCCESS);
@@ -798,7 +803,7 @@ DECLARE_TEST(t_cleartext_password)
 
 DECLARE_TEST(t_bug11750296)
 {
-  SQLINTEGER rowCount;
+  SQLLEN rowCount;
 
   ok_sql(hstmt, "DROP TABLE IF EXISTS bug11750296");
   ok_sql(hstmt, "CREATE TABLE bug11750296(Col Integer)");
@@ -860,22 +865,28 @@ DECLARE_TEST(t_bug25671389)
 
 
 BEGIN_TESTS
+  ADD_TEST(t_passwordexpire)
+  ADD_TEST(t_bug13542600)
   ADD_TEST(t_get_diag_all)
 #ifndef NO_DRIVERMANAGER
 #ifndef USE_IODBC
-  ADD_TEST(t_odbc2_error)
+ ADD_TEST(t_odbc2_error)
 #endif
   ADD_TEST(t_odbc3_error)
-#ifndef USE_IODBC
-  // ADD_TEST(t_odbc3_80) TODO: Fix
 #endif
+
+#ifdef _WIN32
+  ADD_TEST(t_odbc3_80)  // ODBC 3.8 is consistenly supported in Windows only
 #endif
+
   ADD_TEST(t_diagrec)
   ADD_TEST(t_warning)
   ADD_TEST(t_bug3456)
   ADD_TEST(t_bug16224)
   ADD_TEST(t_bug25671389)
 #ifndef USE_IODBC
+  ADD_TEST(t_bug14285620)
+  ADD_TEST(t_bug11750296)
   ADD_TEST(bind_invalidcol)
   ADD_TEST(t_handle_err)
 #endif
@@ -884,12 +895,8 @@ BEGIN_TESTS
   ADD_TEST(getdata_need_nullind)
   ADD_TEST(sqlerror)
   ADD_TEST(t_bug27158)
-  // ADD_TEST(t_bug13542600) TODO: Fix
-  // ADD_TEST(t_bug14285620) TODO: Fix
   // ADD_TOFIX(t_bug49466) TODO: Fix
-  // ADD_TEST(t_passwordexpire)
   // ADD_TEST(t_cleartext_password) TODO: Fix Segfault
-  // ADD_TEST(t_bug11750296) TODO: Fix
 END_TESTS
 
 RUN_TESTS

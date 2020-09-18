@@ -65,6 +65,20 @@ SQLRETURN exec_stmt_query(STMT *stmt, const char *query,
 }
 
 
+SQLRETURN exec_stmt_query_std(STMT *stmt, const std::string &query,
+                              bool req_lock)
+{
+  SQLRETURN rc;
+  if(!SQL_SUCCEEDED(rc= set_sql_select_limit(stmt->dbc,
+                          stmt->stmt_options.max_rows, req_lock)))
+  {
+    /* if setting sql_select_limit fails, the query will probably fail anyway too */
+    return rc;
+  }
+  stmt->buf_set_pos(0);
+  return odbc_stmt(stmt->dbc, query.c_str(), query.size(), req_lock);
+}
+
 /**
 
 
@@ -92,10 +106,10 @@ SQLRETURN odbc_stmt(DBC *dbc, const char *query,
   }
 
   if ( check_if_server_is_alive(dbc) ||
-       mysql_real_query(&dbc->mysql, query, query_length) )
+       mysql_real_query(dbc->mysql, query, query_length) )
   {
-    result= set_conn_error(dbc,MYERR_S1000,mysql_error(&dbc->mysql),
-                           mysql_errno(&dbc->mysql));
+    result= set_conn_error(dbc,MYERR_S1000,mysql_error(dbc->mysql),
+                           mysql_errno(dbc->mysql));
   }
 
   if (req_lock)
@@ -263,7 +277,7 @@ void fix_result_types(STMT *stmt)
     }
     else
     {
-      irrec->catalog_name= (SQLCHAR *)(stmt->dbc->database ? stmt->dbc->database : "");
+      irrec->catalog_name= (SQLCHAR *)(stmt->dbc->database.c_str());
     }
 
     irrec->fixed_prec_scale= SQL_FALSE;
@@ -348,8 +362,6 @@ void fix_result_types(STMT *stmt)
     else
       irrec->updatable= SQL_ATTR_READONLY;
   }
-
-  stmt->ird->count= result->field_count;
 }
 
 
@@ -422,6 +434,7 @@ copy_binary_result(STMT *stmt,
   if (!result_bytes)
     result= 0;       /* Don't copy anything! */
 
+  assert(stmt);
   /* Apply max length to source data, if one was specified. */
   if (stmt->stmt_options.max_length &&
       src_bytes > stmt->stmt_options.max_length)
@@ -452,7 +465,7 @@ copy_binary_result(STMT *stmt,
 
   if (src_bytes > (unsigned long)result_bytes)
   {
-    set_stmt_error(stmt, "01004", NULL, 0);
+    stmt->set_error("01004", NULL, 0);
     rc= SQL_SUCCESS_WITH_INFO;
   }
 
@@ -494,7 +507,7 @@ copy_ansi_result(STMT *stmt,
                                      MYF(0));
 
   if (!from_cs)
-    return set_stmt_error(stmt, "07006", "Source character set not "
+    return stmt->set_error("07006", "Source character set not "
     "supported by client", 0);
 
   if (!result_bytes)
@@ -513,7 +526,7 @@ copy_ansi_result(STMT *stmt,
     if (!result_bytes && !stmt->getdata.source)
     {
       *avail_bytes= src_bytes;
-      set_stmt_error(stmt, "01004", NULL, 0);
+      stmt->set_error("01004", NULL, 0);
       return SQL_SUCCESS_WITH_INFO;
     }
 
@@ -611,7 +624,7 @@ copy_ansi_result(STMT *stmt,
       wc= '?';
     }
     else if (cnvres < 0)
-      return set_stmt_error(stmt, "HY000",
+      return stmt->set_error("HY000",
                             "Unknown failure when converting character "
                             "from server character set.", 0);
 
@@ -693,7 +706,7 @@ convert_to_out:
       goto convert_to_out;
     }
     else
-      return set_stmt_error(stmt, "HY000",
+      return stmt->set_error("HY000",
                             "Unknown failure when converting character "
                             "to result character set.", 0);
   }
@@ -722,14 +735,14 @@ convert_to_out:
   /* Did we truncate the data? */
   if (!result_bytes || stmt->getdata.dst_bytes > stmt->getdata.dst_offset)
   {
-    set_stmt_error(stmt, "01004", NULL, 0);
+    stmt->set_error("01004", NULL, 0);
     rc= SQL_SUCCESS_WITH_INFO;
   }
 
   /* Did we encounter any character conversion problems? */
   if (error_count)
   {
-    set_stmt_error(stmt, "22018", NULL, 0);
+    stmt->set_error("22018", NULL, 0);
     rc= SQL_SUCCESS_WITH_INFO;
   }
 
@@ -765,7 +778,7 @@ copy_wchar_result(STMT *stmt,
                                      MYF(0));
 
   if (!from_cs)
-    return set_stmt_error(stmt, "07006", "Source character set not "
+    return stmt->set_error("07006", "Source character set not "
     "supported by client", 0);
 
   if (!result_len)
@@ -839,7 +852,7 @@ copy_wchar_result(STMT *stmt,
       wc= '?';
     }
     else if (cnvres < 0)
-      return set_stmt_error(stmt, "HY000",
+      return stmt->set_error("HY000",
                             "Unknown failure when converting character "
                             "from server character set.", 0);
 
@@ -922,7 +935,7 @@ convert_to_out:
       goto convert_to_out;
     }
     else
-      return set_stmt_error(stmt, "HY000",
+      return stmt->set_error("HY000",
                             "Unknown failure when converting character "
                             "to result character set.", 0);
   }
@@ -951,14 +964,14 @@ convert_to_out:
   /* Did we truncate the data? */
   if (!result_len || stmt->getdata.dst_bytes > stmt->getdata.dst_offset)
   {
-    set_stmt_error(stmt, "01004", NULL, 0);
+    stmt->set_error("01004", NULL, 0);
     rc= SQL_SUCCESS_WITH_INFO;
   }
 
   /* Did we encounter any character conversion problems? */
   if (error_count)
   {
-    set_stmt_error(stmt, "22018", NULL, 0);
+    stmt->set_error("22018", NULL, 0);
     rc= SQL_SUCCESS_WITH_INFO;
   }
 
@@ -1018,7 +1031,7 @@ SQLRETURN copy_binhex_result(STMT *stmt,
     if ( (ulong) cbValueMax > length*2 )
         return SQL_SUCCESS;
 
-    set_stmt_error(stmt, "01004", NULL, 0);
+    stmt->set_error("01004", NULL, 0);
     return SQL_SUCCESS_WITH_INFO;
 }
 
@@ -2350,7 +2363,7 @@ int check_if_server_is_alive( DBC *dbc )
 
     if ( (ulong)(seconds - dbc->last_query_time) >= CHECK_IF_ALIVE )
     {
-        if ( mysql_ping( &dbc->mysql ) )
+        if ( mysql_ping( dbc->mysql ) )
         {
             /*  BUG: 14639
 
@@ -2367,7 +2380,7 @@ int check_if_server_is_alive( DBC *dbc )
                 PAH - 9.MAR.06
             */
 
-            if ( mysql_errno( &dbc->mysql ) == CR_SERVER_LOST )
+            if ( mysql_errno( dbc->mysql ) == CR_SERVER_LOST )
                 result = 1;
         }
     }
@@ -2382,19 +2395,12 @@ int check_if_server_is_alive( DBC *dbc )
   @purpose : appends quoted string to dynamic string
 */
 
-my_bool myodbc_append_quoted_name(DYNAMIC_STRING *str, const char *name)
+bool myodbc_append_quoted_name_std(std::string &str, const char *name)
 {
-    uint tmp= strlen(name);
-    char *pos;
-    if ( myodbc_dynstr_realloc(str,tmp+3) )
-        return 1;
-    pos= str->str+str->length;
-    *pos='`';
-    memcpy(pos+1,name,tmp);
-    pos[tmp+1]='`';
-    pos[tmp+2]= 0;        /* Safety */
-    str->length+= tmp+2;
-    return 0;
+  size_t namelen = strlen(name);
+  str.reserve(str.length() + namelen + 4);
+  str.append(1, '`').append(name).append(1, '`');
+  return false;
 }
 
 
@@ -2405,8 +2411,7 @@ my_bool myodbc_append_quoted_name(DYNAMIC_STRING *str, const char *name)
 
 my_bool reget_current_catalog(DBC *dbc)
 {
-    x_free(dbc->database);
-    dbc->database= NULL;
+    dbc->database.clear();
 
     if ( odbc_stmt(dbc, "select database()", SQL_NTS, TRUE) )
     {
@@ -2417,18 +2422,14 @@ my_bool reget_current_catalog(DBC *dbc)
         MYSQL_RES *res;
         MYSQL_ROW row;
 
-        if ( (res= mysql_store_result(&dbc->mysql)) &&
+        if ( (res= mysql_store_result(dbc->mysql)) &&
              (row= mysql_fetch_row(res)) )
         {
 /*            if (cmp_database(row[0], dbc->database)) */
             {
                 if ( row[0] )
                 {
-                    dbc->database = myodbc_strdup(row[0], MYF(MY_WME));
-                }
-                else
-                {
-                    dbc->database = NULL;
+                    dbc->database = row[0];
                 }
             }
         }
@@ -2715,8 +2716,6 @@ void sqlnum_scale(unsigned *ary, int s)
   /* multiply out all pieces */
   while (s--)
   {
-//    if (ary[7] > >> 16)
-
     ary[0] *= 10;
     ary[1] *= 10;
     ary[2] *= 10;
@@ -3257,7 +3256,7 @@ char* proc_get_param_dbtype(char *proc, int len, char *ptype)
     *(ptype++)= *(proc++);
 
   /* remove the character set definition */
-  if (trim_str= strstr( myodbc_strlwr(start_pos, 0),
+  if (trim_str= strstr( myodbc_strlwr(start_pos, (size_t)-1),
                         " charset "))
   {
     ptype= trim_str;
@@ -3757,7 +3756,7 @@ void set_row_count(STMT *stmt, my_ulonglong rows)
   if (stmt != NULL && stmt->result != NULL)
   {
     stmt->result->row_count= rows;
-    stmt->dbc->mysql.affected_rows= rows;
+    stmt->dbc->mysql->affected_rows= rows;
   }
 }
 
@@ -3940,10 +3939,17 @@ long double myodbc_strtold(const char *nptr, char **endptr)
 }
 
 
-tempBuf::tempBuf() : buf(NULL), buf_len(0), cur_pos(0)
+tempBuf::tempBuf(size_t size) : buf(nullptr), buf_len(0), cur_pos(0)
 {
-  extend_buffer(16384);
+  if (size)
+    extend_buffer(size);
 }
+
+tempBuf::tempBuf(const tempBuf& b)
+{
+  *this = b;
+}
+
 
 char *tempBuf::extend_buffer(size_t len)
 {
@@ -3953,6 +3959,7 @@ char *tempBuf::extend_buffer(size_t len)
   if (len > buf_len - cur_pos)
   {
     buf = (char*)realloc(buf, buf_len + len);
+
     // TODO: smarter processing for Out-of-Memory
     if (buf == NULL)
       throw "Not enough memory for buffering";
@@ -3999,12 +4006,37 @@ void tempBuf::remove_trail_zeroes()
   while (cur_pos && buf[cur_pos-1] == '\0') --cur_pos;
 }
 
-tempBuf::~tempBuf()
+void tempBuf::reset()
 {
-  free(buf);
+  cur_pos = 0;
 }
 
+tempBuf::~tempBuf()
+{
+  if (buf_len && buf)
+  {
+    free(buf);
+  }
+}
 
+tempBuf::operator bool()
+{
+  return buf != nullptr;
+}
+
+void tempBuf::operator=(const tempBuf& b)
+{
+  buf_len = 0;
+  cur_pos = 0;
+  buf = nullptr;
+  if (b.buf_len)
+  {
+    extend_buffer(b.buf_len);
+    memcpy(buf, b.buf, b.cur_pos);
+  }
+  // setting to the same position as the original
+  cur_pos = b.cur_pos;
+}
 
 /*
   Get the offset and row numbers from a string with LIMIT
@@ -4221,7 +4253,7 @@ int get_session_variable(STMT *stmt, const char *var, char *result)
       return 0;
     }
 
-    res= mysql_store_result(&stmt->dbc->mysql);
+    res= mysql_store_result(stmt->dbc->mysql);
     if (!res)
       return 0;
 
@@ -4254,7 +4286,7 @@ SQLRETURN set_query_timeout(STMT *stmt, SQLULEN new_value)
   SQLRETURN rc= SQL_SUCCESS;
 
   if (new_value == stmt->stmt_options.query_timeout ||
-      !is_minimum_version(stmt->dbc->mysql.server_version, "5.7.8"))
+      !is_minimum_version(stmt->dbc->mysql->server_version, "5.7.8"))
   {
     /* Do nothing if setting same timeout or MySQL server older than 5.7.8 */
     return SQL_SUCCESS;
@@ -4284,7 +4316,7 @@ SQLULEN get_query_timeout(STMT *stmt)
 {
   SQLULEN query_timeout= SQL_QUERY_TIMEOUT_DEFAULT; /* 0 */
 
-  if (is_minimum_version(stmt->dbc->mysql.server_version, "5.7.8"))
+  if (is_minimum_version(stmt->dbc->mysql->server_version, "5.7.8"))
   {
     /* Be cautious with very long values even if they don't make sense */
     char query_timeout_char[32]= {0};
@@ -4303,7 +4335,7 @@ const char get_identifier_quote(STMT *stmt)
 {
   const char tick= '`', quote= '"', empty= ' ';
 
-  if (is_minimum_version(stmt->dbc->mysql.server_version, "3.23.06"))
+  if (is_minimum_version(stmt->dbc->mysql->server_version, "3.23.06"))
   {
     /*
       The full list of all SQL modes takes over 512 symbols, so we reserve

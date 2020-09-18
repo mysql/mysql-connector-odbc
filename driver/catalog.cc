@@ -46,7 +46,7 @@ my_bool server_has_i_s(DBC *dbc)
     According to the server ChangeLog INFORMATION_SCHEMA was introduced
     in the 5.0.2
   */
-  return is_minimum_version(dbc->mysql.server_version, "5.0.2");
+  return is_minimum_version(dbc->mysql->server_version, "5.0.2");
 }
 /*
   @type    : internal
@@ -110,7 +110,7 @@ create_fake_resultset(STMT *stmt, MYSQL_ROW rowval, size_t rowsize,
     x_free(stmt->result);
     x_free(stmt->result_array);
 
-    set_mem_error(&stmt->dbc->mysql);
+    set_mem_error(stmt->dbc->mysql);
     return handle_connection_error(stmt);
   }
   stmt->fake_result= 1;
@@ -155,7 +155,7 @@ create_empty_fake_resultset(STMT *stmt, MYSQL_ROW rowval, size_t rowsize,
   @param[in] wildcard       Whether the table name is a wildcard
 
   @return Result of SHOW TABLE STATUS, or NULL if there is an error
-          or empty result (check mysql_errno(&stmt->dbc->mysql) != 0)
+          or empty result (check mysql_errno(stmt->dbc->mysql) != 0)
 */
 static MYSQL_RES *table_status_i_s(STMT        *stmt,
                                          SQLCHAR     *catalog_name,
@@ -166,7 +166,7 @@ static MYSQL_RES *table_status_i_s(STMT        *stmt,
                                          my_bool      show_tables,
                                          my_bool      show_views)
 {
-  MYSQL *mysql= &stmt->dbc->mysql;
+  MYSQL *mysql= stmt->dbc->mysql;
   /** the buffer size should count possible escapes */
   char buff[300+8*NAME_CHAR_LEN], *to;
   my_bool clause_added= FALSE;
@@ -256,7 +256,7 @@ static MYSQL_RES *table_status_i_s(STMT        *stmt,
   @param[in] wildcard       Whether the table name is a wildcard
 
   @return Result of SHOW TABLE STATUS, or NULL if there is an error
-          or empty result (check mysql_errno(&stmt->dbc->mysql) != 0)
+          or empty result (check mysql_errno(stmt->dbc->mysql) != 0)
 */
 MYSQL_RES *table_status(STMT        *stmt,
                         SQLCHAR     *catalog_name,
@@ -306,7 +306,7 @@ int add_name_condition_oa_id(HSTMT hstmt, char ** pos, SQLCHAR * name,
       *pos= myodbc_stpmov(*pos, "= BINARY ");
 
     *pos= myodbc_stpmov(*pos, "'");
-    *pos+= mysql_real_escape_string(&stmt->dbc->mysql, *pos, (char *)name, name_len);
+    *pos+= mysql_real_escape_string(stmt->dbc->mysql, *pos, (char *)name, name_len);
     *pos= myodbc_stpmov(*pos, "' ");
   }
   else
@@ -350,7 +350,7 @@ int add_name_condition_pv_id(HSTMT hstmt, char ** pos, SQLCHAR * name,
       *pos= myodbc_stpmov(*pos, " LIKE BINARY ");
 
     *pos= myodbc_stpmov(*pos, "'");
-    *pos+= mysql_real_escape_string(&stmt->dbc->mysql, *pos, (char *)name, name_len);
+    *pos+= mysql_real_escape_string(stmt->dbc->mysql, *pos, (char *)name, name_len);
     *pos= myodbc_stpmov(*pos, "' ");
   }
   else
@@ -574,7 +574,7 @@ SQLRETURN list_table_priv_i_s(SQLHSTMT    hstmt,
                               SQLSMALLINT table_len)
 {
   STMT *stmt=(STMT *) hstmt;
-  MYSQL *mysql= &stmt->dbc->mysql;
+  MYSQL *mysql= stmt->dbc->mysql;
   char   buff[300+6*NAME_LEN+1], *pos;
   SQLRETURN rc;
 
@@ -655,7 +655,7 @@ static SQLRETURN list_column_priv_i_s(HSTMT       hstmt,
                                       SQLSMALLINT column_len)
 {
   STMT *stmt=(STMT *) hstmt;
-  MYSQL *mysql= &stmt->dbc->mysql;
+  MYSQL *mysql= stmt->dbc->mysql;
   /* 3 names theorethically can have all their characters escaped - thus 6*NAME_LEN  */
   char   buff[400+6*NAME_LEN+1], *pos;
   SQLRETURN rc;
@@ -669,7 +669,7 @@ static SQLRETURN list_column_priv_i_s(HSTMT       hstmt,
     "WHERE TABLE_NAME");
 
   if(add_name_condition_oa_id(hstmt, &pos, table_name, table_len, NULL))
-    return set_stmt_error(stmt, "HY009", "Invalid use of NULL pointer(table is required parameter)", 0);
+    return stmt->set_error("HY009", "Invalid use of NULL pointer(table is required parameter)", 0);
 
   pos= myodbc_stpmov(pos, " AND TABLE_SCHEMA");
   add_name_condition_oa_id(hstmt, &pos, catalog_name, catalog_len, "=DATABASE()");
@@ -864,7 +864,7 @@ SQLRETURN foreign_keys_i_s(SQLHSTMT hstmt,
                            SQLSMALLINT fk_table_len)
 {
   STMT *stmt=(STMT *) hstmt;
-  MYSQL *mysql= &stmt->dbc->mysql;
+  MYSQL *mysql= stmt->dbc->mysql;
   char query[3062], *buff; /* This should be big enough. */
   char *update_rule, *delete_rule, *ref_constraints_join;
   SQLRETURN rc;
@@ -872,7 +872,7 @@ SQLRETURN foreign_keys_i_s(SQLHSTMT hstmt,
   /*
      With 5.1, we can use REFERENTIAL_CONSTRAINTS to get even more info.
   */
-  if (is_minimum_version(stmt->dbc->mysql.server_version, "5.1"))
+  if (is_minimum_version(stmt->dbc->mysql->server_version, "5.1"))
   {
     update_rule= "CASE"
                  " WHEN R.UPDATE_RULE = 'CASCADE' THEN 0"
@@ -924,7 +924,11 @@ SQLRETURN foreign_keys_i_s(SQLHSTMT hstmt,
                 " ON (D.TABLE_SCHEMA=A.REFERENCED_TABLE_SCHEMA AND D.TABLE_NAME=A.REFERENCED_TABLE_NAME"
                     " AND D.COLUMN_NAME=A.REFERENCED_COLUMN_NAME)",
                 ref_constraints_join,
-                " WHERE D.CONSTRAINT_NAME IS NOT NULL ",
+                " WHERE D.CONSTRAINT_NAME",
+                // For given FK table name the constraint must only be PRIMARY, not UNIQUE
+                (fk_table_name && fk_table_name[0] ?
+                  "='PRIMARY' " : " IS NOT NULL "
+                ),
                 NullS);
 
   if (pk_table_name && pk_table_name[0])
