@@ -70,7 +70,7 @@ enum enum_server_command {
   COM_BINLOG_DUMP,    /**< See @ref page_protocol_com_binlog_dump */
   COM_TABLE_DUMP,
   COM_CONNECT_OUT,
-  COM_REGISTER_SLAVE,
+  COM_REGISTER_REPLICA,
   COM_STMT_PREPARE, /**< See @ref page_protocol_com_stmt_prepare */
   COM_STMT_EXECUTE, /**< See @ref page_protocol_com_stmt_execute */
   /** See  @ref page_protocol_com_stmt_send_long_data */

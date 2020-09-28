@@ -107,7 +107,7 @@ void set_auto_increment_offset(ulong auto_increment_offset);
 
 /**
   Returns a struct containing all server startup information needed to evaluate
-  if one has conditions to proceed executing master-master replication.
+  if one has conditions to proceed executing circular replication.
 
   @param[out] requirements
 
@@ -154,11 +154,11 @@ rpl_gno get_last_executed_gno(rpl_sidno sidno);
 rpl_sidno get_sidno_from_global_sid_map(rpl_sid sid);
 
 /**
-  Set slave thread default options.
+  Set replica thread default options.
 
   @param[in] thd  The thread
 */
-void set_slave_thread_options(THD *thd);
+void set_replica_thread_options(THD *thd);
 
 /**
   Add thread to Global_THD_manager singleton.
@@ -194,16 +194,16 @@ const char *get_write_set_algorithm_string(unsigned int algorithm);
 bool is_gtid_committed(const Gtid &gtid);
 
 /**
-  Returns the value of slave_max_allowed_packet.
+  Returns the value of replica_max_allowed_packet.
 
-  @return slave_max_allowed_packet
+  @return replica_max_allowed_packet
 */
-unsigned long get_slave_max_allowed_packet();
+unsigned long get_replica_max_allowed_packet();
 
 /**
-  @returns the maximum value of slave_max_allowed_packet.
+  @returns the maximum value of replica_max_allowed_packet.
  */
-unsigned long get_max_slave_max_allowed_packet();
+unsigned long get_max_replica_max_allowed_packet();
 
 /**
   @returns if the server is restarting after a clone

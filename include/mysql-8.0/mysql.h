@@ -374,7 +374,7 @@ typedef struct MYSQL_RPL {
   uint64_t start_position; /** Position in the binary log to      */
                            /*  start reading from                 */
   unsigned int server_id;  /** Server ID to use when identifying  */
-                           /*  with the master                    */
+                           /*  with the source                    */
   unsigned int flags;      /** Flags, e.g. MYSQL_RPL_GTID         */
 
   /** Size of gtid set data              */

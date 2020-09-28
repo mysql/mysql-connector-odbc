@@ -717,31 +717,26 @@ DECLARE_TEST(t_getkeywordinfo)
   ok_con(hdbc, SQLGetInfo(hdbc, SQL_KEYWORDS, keywords,
                           sizeof(keywords), &pccol));
 
-  /* We do not check versions older than 5.5 */
+  /* We do not check versions older than 5.7 */
   if (mysql_min_version(hdbc, "5.7", 3))
   {
     is(strstr(keywords, "NONBLOCKING"));
-  }
-  else if (mysql_min_version(hdbc, "5.6", 3))
-  {
     is(strstr(keywords, "GET"));
     is(strstr(keywords, "IO_AFTER_GTIDS"));
     is(strstr(keywords, "IO_BEFORE_GTIDS"));
-    is(strstr(keywords, "MASTER_BIND"));
     is(strstr(keywords, "ONE_SHOT"));
     is(strstr(keywords, "PARTITION"));
     is(strstr(keywords, "SQL_AFTER_GTIDS"));
     is(strstr(keywords, "SQL_BEFORE_GTIDS"));
-  }
-  else if (mysql_min_version(hdbc, "5.5", 3))
-  {
     is(strstr(keywords, "GENERAL"));
     is(strstr(keywords, "IGNORE_SERVER_IDS"));
-    is(strstr(keywords, "MASTER_HEARTBEAT_PERIOD"));
     is(strstr(keywords, "MAXVALUE"));
     is(strstr(keywords, "RESIGNAL"));
     is(strstr(keywords, "SIGNAL"));
     is(strstr(keywords, "SLOW"));
+//    TODO: Uncomment when the server had the variable names replaced
+//    is(strstr(keywords, "SOURCE_HEARTBEAT_PERIOD"));
+//    is(strstr(keywords, "SOURCE_BIND"));
   }
 
   return OK;

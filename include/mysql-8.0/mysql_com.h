@@ -209,12 +209,12 @@
 #define REFRESH_HOSTS 8    /**< Flush host cache, FLUSH HOSTS */
 #define REFRESH_STATUS 16  /**< Flush status variables, FLUSH STATUS */
 #define REFRESH_THREADS 32 /**< Flush thread cache */
-#define REFRESH_SLAVE                         \
-  64 /**< Reset master info and restart slave \
-        thread, RESET SLAVE */
-#define REFRESH_MASTER                                                 \
+#define REFRESH_REPLICA                         \
+  64 /**< Reset source info and restart slave \
+        thread, RESET REPLICA */
+#define REFRESH_SOURCE                                                 \
   128                            /**< Remove all bin logs in the index \
-                                    and truncate the index, RESET MASTER */
+                                    and truncate the index, RESET SOURCE */
 #define REFRESH_ERROR_LOG 256    /**< Rotate only the erorr log */
 #define REFRESH_ENGINE_LOG 512   /**< Flush all storage engine logs */
 #define REFRESH_BINARY_LOG 1024  /**< Flush the binary log */
@@ -854,7 +854,7 @@ typedef struct NET {
   my_socket fd; /* For Perl DBI/dbd */
   /**
     Set if we are doing several queries in one
-    command ( as in LOAD TABLE ... FROM MASTER ),
+    command ( as in LOAD TABLE ... FROM SOURCE ),
     and do not want to confuse the client with OK at the wrong time
   */
   unsigned long remain_in_buf, length, buf_length, where_b;

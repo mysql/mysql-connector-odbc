@@ -350,7 +350,7 @@ enum ha_extra_function {
   /*
     Ignore if the a tuple is not found, continue processing the
     transaction and ignore that 'row'.  Needed for idempotency
-    handling on the slave
+    handling on the replica
 
     Currently only used by NDB storage engine.
   */
