@@ -718,7 +718,12 @@ DECLARE_TEST(t_getkeywordinfo)
                           sizeof(keywords), &pccol));
 
   /* We do not check versions older than 5.7 */
-  if (mysql_min_version(hdbc, "5.7", 3))
+  if (mysql_min_version(hdbc, "8.0.22", 6))
+  {
+    is(strstr(keywords, "SOURCE_HEARTBEAT_PERIOD"));
+    is(strstr(keywords, "SOURCE_BIND"));
+  }
+  else if (mysql_min_version(hdbc, "5.7", 3))
   {
     is(strstr(keywords, "NONBLOCKING"));
     is(strstr(keywords, "GET"));
@@ -734,9 +739,8 @@ DECLARE_TEST(t_getkeywordinfo)
     is(strstr(keywords, "RESIGNAL"));
     is(strstr(keywords, "SIGNAL"));
     is(strstr(keywords, "SLOW"));
-//    TODO: Uncomment when the server had the variable names replaced
-//    is(strstr(keywords, "SOURCE_HEARTBEAT_PERIOD"));
-//    is(strstr(keywords, "SOURCE_BIND"));
+    is(strstr(keywords, "\x4D\x41\x53\x54\x45\x52_HEARTBEAT_PERIOD"));
+    is(strstr(keywords, "\x4D\x41\x53\x54\x45\x52_BIND"));
   }
 
   return OK;
