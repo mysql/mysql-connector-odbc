@@ -1293,9 +1293,7 @@ BEGIN_TESTS
   ADD_TEST(t_prep_catalog)
   ADD_TEST(t_sps)
   ADD_TEST(t_prepare)
-#ifndef USE_IODBC
   ADD_TEST(t_prepare1)
-#endif
   ADD_TEST(tmysql_bindcol)
   ADD_TEST(tmysql_bindparam)
   ADD_TEST(t_acc_update)
@@ -1304,7 +1302,7 @@ BEGIN_TESTS
   ADD_TEST(t_bug67702)
   ADD_TEST(t_bug68243)
   ADD_TEST(t_bug67920)
-  ADD_TODO(t_bug31667091)
+//  ADD_TODO(t_bug31667091)
 END_TESTS
 
 

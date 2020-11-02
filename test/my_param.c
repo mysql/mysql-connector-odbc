@@ -2263,7 +2263,6 @@ BEGIN_TESTS
 */
   ADD_TEST(t_bug30428851)
   ADD_TEST(my_init_table)
-#ifndef USE_IODBC
   ADD_TEST(t_bug59772)
   ADD_TEST(my_param_insert)
   ADD_TEST(my_param_update)
@@ -2272,9 +2271,10 @@ BEGIN_TESTS
   ADD_TEST(paramarray_by_column)
   ADD_TEST(paramarray_ignore_paramset)
   ADD_TEST(paramarray_select)
+#ifndef USE_IODBC
   ADD_TEST(t_bug56804)
-  ADD_TEST(t_bug31678876)
 #endif
+  ADD_TEST(t_bug31678876)
   ADD_TEST(t_param_offset)
   ADD_TEST(t_bug49029)
   ADD_TEST(t_bug53891)

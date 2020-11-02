@@ -887,9 +887,9 @@ BEGIN_TESTS
 #ifndef USE_IODBC
   ADD_TEST(t_bug14285620)
   ADD_TEST(t_bug11750296)
+#endif
   ADD_TEST(bind_invalidcol)
   ADD_TEST(t_handle_err)
-#endif
   ADD_TEST(bind_notenoughparam1)
   ADD_TEST(bind_notenoughparam2)
   ADD_TEST(getdata_need_nullind)

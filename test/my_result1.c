@@ -2260,15 +2260,15 @@ BEGIN_TESTS
   ADD_TEST(t_convert_type)
   ADD_TEST(t_desc_col)
   ADD_TEST(t_convert)
-#ifndef USE_IODBC
   ADD_TEST(t_max_rows)
   ADD_TEST(t_empty_str_bug)
   ADD_TEST(tmysql_rowstatus)
+#ifndef USE_IODBC
   ADD_TEST(t_bug27544)
-  ADD_TEST(bug6157)
   ADD_TEST(t_bug30958_wchar)
-  ADD_TEST(t_bug13776)
 #endif
+  ADD_TEST(bug6157)
+  ADD_TEST(t_bug13776)
   ADD_TEST(t_multistep)
   ADD_TEST(t_zerolength)
   ADD_TEST(t_cache_bug)

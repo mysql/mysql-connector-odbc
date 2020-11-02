@@ -963,8 +963,8 @@ BEGIN_TESTS
   ADD_TEST(t_bookmark_update_zero_rec)
   ADD_TEST(t_bug18286366)
   ADD_TEST(t_bug18286366_2)
-#ifndef USE_IODBC
   ADD_TEST(t_bug17841121)
+#ifndef USE_IODBC
   ADD_TEST(t_bug18165197)
   ADD_TEST(t_bug18286118)
 #endif

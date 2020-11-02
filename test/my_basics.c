@@ -1239,9 +1239,7 @@ BEGIN_TESTS
   ADD_TEST(t_bug32727)
   ADD_TEST(t_bug28820)
   ADD_TEST(t_bug31959)
-#ifndef USE_IODBC
   ADD_TEST(t_bug41256)
-#endif
   ADD_TEST(t_bug44971)
   ADD_TEST(t_bug48603)
   ADD_TEST(t_bug45378)

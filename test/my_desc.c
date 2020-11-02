@@ -656,19 +656,19 @@ DECLARE_TEST(dummy_test)
 }
 
 BEGIN_TESTS
-#ifndef USE_IODBC
   ADD_TODO(t_desc_paramset)
   ADD_TEST(t_desc_set_error)
   ADD_TEST(t_sqlbindcol_count_reset)
   ADD_TEST(t_desc_default_type)
   ADD_TEST(t_basic_explicit)
+#ifndef USE_IODBC
   ADD_TEST(t_explicit_error)
+#endif
   ADD_TEST(t_mult_stmt_free)
   ADD_TEST(t_set_null_use_implicit)
   ADD_TEST(t_free_stmt_with_exp_desc)
   ADD_TEST(t_bug41081)
   ADD_TEST(t_bug44576)
-#endif
   ADD_TEST(t_bug18641633)
   ADD_TEST(t_bug18636600)
   // ADD_TODO(t_desc_curcatalog) TODO: Fix

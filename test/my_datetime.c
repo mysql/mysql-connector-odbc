@@ -1434,12 +1434,12 @@ BEGIN_TESTS
   ADD_TEST(t_time)
   ADD_TEST(t_date_overflow)
   ADD_TEST(my_ts)
-#ifndef USE_IODBC
   ADD_TEST(t_tstotime)
   ADD_TEST(t_tstotime1)
   ADD_TEST(t_datecolumns)
   ADD_TEST(t_bug31009)
   ADD_TEST(t_17613161)
+#ifndef USE_IODBC
   ADD_TEST(t_17613161_bookmark)
 #endif
   ADD_TEST(t_bug25846)

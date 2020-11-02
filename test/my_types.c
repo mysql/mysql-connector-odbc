@@ -1324,14 +1324,12 @@ BEGIN_TESTS
   ADD_TEST(t_longlong1)
   ADD_TEST(t_decimal)
   ADD_TEST(t_bigint)
-#ifndef USE_IODBC
   ADD_TEST(t_enumset)
   ADD_TEST(t_bug27862_1)
   // ADD_TODO(t_bug27862_2) TODO: Fix
   ADD_TEST(binary_suffix)
   ADD_TEST(t_sqlnum_msdn)
   ADD_TEST(t_sqlnum_from_str)
-#endif
   ADD_TEST(t_bug16917)
   ADD_TEST(t_bug16235)
   ADD_TEST(decimal_scale)

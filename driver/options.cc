@@ -929,9 +929,9 @@ SQLSetEnvAttr(SQLHENV    henv,
           case SQL_OV_ODBC3:
 #ifndef USE_IODBC
           case SQL_OV_ODBC3_80:
+#endif
             ((ENV *)henv)->odbc_ver= (SQLINTEGER)(SQLLEN)ValuePtr;
             break;
-#endif
           default:
             return set_env_error((ENV*)henv,MYERR_S1024,NULL,0);
           }

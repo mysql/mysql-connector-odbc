@@ -817,9 +817,9 @@ BEGIN_TESTS
   ADD_TEST(t_stmt_attr_status)
   ADD_TEST(t_msdev_bug)
   ADD_TEST(t_bug28657)
-#ifndef USE_IODBC
   ADD_TEST(t_bug30626)
   ADD_TEST(t_bug14639)
+#ifndef USE_IODBC
   ADD_TEST(t_getkeywordinfo)
 #endif
   ADD_TEST(t_bug31055)

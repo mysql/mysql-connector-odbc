@@ -1456,10 +1456,8 @@ BEGIN_TESTS
   ADD_TEST_UNICODE(sqlchar)
   ADD_TEST_UNICODE(sqldriverconnect)
   // ADD_TEST(sqlnativesql) TODO: Fix
-#ifndef USE_IODBC
   ADD_TEST(sqlsetcursorname)
   ADD_TEST_UNICODE(sqlcolattribute)
-#endif
   ADD_TEST(sqlgetcursorname)
   ADD_TEST_UNICODE(sqldescribecol)
 #ifndef USE_IODBC

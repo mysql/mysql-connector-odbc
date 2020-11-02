@@ -730,10 +730,8 @@ BEGIN_TESTS
   ADD_TEST(my_position1)
   ADD_TEST(my_zero_irow_update)
   ADD_TEST(my_zero_irow_delete)
-#ifndef USE_IODBC
   ADD_TEST(my_dynamic_cursor)
-#endif
-  END_TESTS
+END_TESTS
 
 SET_DSN_OPTION(35);
 

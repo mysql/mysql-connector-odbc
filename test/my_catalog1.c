@@ -1569,7 +1569,6 @@ BEGIN_TESTS
   ADD_TEST(tmysql_specialcols)
   ADD_TEST(t_columns)
   ADD_TEST(t_tables_bug)
-#ifndef USE_IODBC
   ADD_TEST(t_current_catalog_unicode)
   ADD_TEST(t_current_catalog_ansi)
   ADD_TEST(t_sqltables)
@@ -1577,7 +1576,6 @@ BEGIN_TESTS
   ADD_TEST(t_bug29888)
   ADD_TEST(t_bug32989)
   ADD_TEST(t_bug12805)
-#endif
   ADD_TEST(tmysql_showkeys)
   ADD_TEST(my_information_schema)
   ADD_TEST(t_bug4518)
