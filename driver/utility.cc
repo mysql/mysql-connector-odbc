@@ -289,6 +289,7 @@ void fix_result_types(STMT *stmt)
     case MYSQL_TYPE_BLOB:
     case MYSQL_TYPE_VAR_STRING:
     case MYSQL_TYPE_STRING:
+    case MYSQL_TYPE_JSON:
       if (field->charsetnr == BINARY_CHARSET_NUMBER)
       {
         irrec->literal_prefix= (SQLCHAR *) "0x";
@@ -1331,6 +1332,11 @@ SQLSMALLINT get_sql_data_type(STMT *stmt, MYSQL_FIELD *field, char *buff)
     if (buff)
       (void)myodbc_stpmov(buff, "geometry");
     return SQL_LONGVARBINARY;
+
+  case MYSQL_TYPE_JSON:
+    if (buff)
+      (void)myodbc_stpmov(buff, "JSON");
+    return SQL_LONGVARCHAR;
   }
 
   if (buff)
@@ -1507,6 +1513,7 @@ SQLULEN get_column_size(STMT *stmt, MYSQL_FIELD *field)
   case MYSQL_TYPE_LONG_BLOB:
   case MYSQL_TYPE_BLOB:
   case MYSQL_TYPE_GEOMETRY:
+  case MYSQL_TYPE_JSON:
     return length;
   }
 
@@ -1645,6 +1652,7 @@ SQLLEN get_transfer_octet_length(STMT *stmt, MYSQL_FIELD *field)
   case MYSQL_TYPE_LONG_BLOB:
   case MYSQL_TYPE_BLOB:
   case MYSQL_TYPE_GEOMETRY:
+  case MYSQL_TYPE_JSON:
     if (field->charsetnr != stmt->dbc->ansi_charset_info->number &&
         field->charsetnr != BINARY_CHARSET_NUMBER)
       length *= stmt->dbc->ansi_charset_info->mbmaxlen;
@@ -1735,6 +1743,7 @@ SQLLEN get_display_size(STMT *stmt __attribute__((unused)),MYSQL_FIELD *field)
   case MYSQL_TYPE_LONG_BLOB:
   case MYSQL_TYPE_BLOB:
   case MYSQL_TYPE_GEOMETRY:
+  case MYSQL_TYPE_JSON:
     {
       unsigned long length;
       if (field->charsetnr == BINARY_CHARSET_NUMBER)
@@ -1939,6 +1948,7 @@ int unireg_to_c_datatype(MYSQL_FIELD *field)
         case MYSQL_TYPE_TINY_BLOB:
         case MYSQL_TYPE_MEDIUM_BLOB:
         case MYSQL_TYPE_LONG_BLOB:
+        case MYSQL_TYPE_JSON:
             return SQL_C_BINARY;
         case MYSQL_TYPE_LONGLONG: /* Must be returned as char */
         default:

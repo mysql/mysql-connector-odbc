@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License, version 2.0, as
@@ -27,6 +27,77 @@
 // 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 
 #include "odbctap.h"
+
+DECLARE_TEST(my_json)
+{
+  SQLINTEGER id_value = 1;
+  SQLLEN out_bytes[3] = {0, 0, 0};
+  SQLCHAR buf[255], qbuf[255];
+  DECLARE_BASIC_HANDLES(henv2, hdbc2, hstmt2);
+  alloc_basic_handles_with_opt(&henv2, &hdbc2, &hstmt2, NULL, NULL, NULL, NULL,
+                               "CHARSET=utf8");
+
+  const char *json = "{\"key1\": \"value1\", \"key2\": \"value2\"}";
+  const char *json2 = "{\"key1\": \"value10\", \"key2\": \"value20\"}";
+
+  ok_sql(hstmt2, "DROP TABLE IF EXISTS t_bug_json");
+  ok_sql(hstmt2, "CREATE TABLE t_bug_json(id INT PRIMARY KEY, jdoc JSON)");
+
+  snprintf(qbuf, 255, "INSERT INTO t_bug_json VALUES (1, '%s')", json);
+  ok_stmt(hstmt2, SQLExecDirect(hstmt2, qbuf, SQL_NTS));
+
+  ok_stmt(hstmt2, SQLColumns(hstmt2, mydb, SQL_NTS, NULL, 0,
+                            (SQLCHAR *)"t_bug_json", SQL_NTS, NULL, 0));
+
+  ok_stmt(hstmt2, SQLFetch(hstmt2)); // Fetch 1st column and ignore data
+  ok_stmt(hstmt2, SQLFetch(hstmt2)); // Fetch 2nd column
+
+  is_num(my_fetch_int(hstmt2, 5), -1);             // DATA_TYPE
+  is_str(my_fetch_str(hstmt2, buf, 6), "JSON", 4); // TYPE_NAME
+
+  expect_stmt(hstmt2, SQLFetch(hstmt2), SQL_NO_DATA);
+  ok_stmt(hstmt2, SQLFreeStmt(hstmt2, SQL_CLOSE));
+  ok_stmt(hstmt2, SQLPrepare(hstmt2, "SELECT id, jdoc FROM t_bug_json WHERE id=?",
+                            SQL_NTS));
+  ok_stmt(hstmt2, SQLBindParameter(hstmt2, 1, SQL_PARAM_INPUT, SQL_C_DEFAULT,
+                                  SQL_INTEGER, 10, 0, &id_value, 0, &out_bytes[0]));
+  ok_stmt(hstmt2, SQLExecute(hstmt2));
+  ok_stmt(hstmt2, SQLFetch(hstmt2));
+  is_num(my_fetch_int(hstmt2, 1), 1);
+  is_str(my_fetch_str(hstmt2, buf, 2), json, strlen(json));
+  expect_stmt(hstmt2, SQLFetch(hstmt2), SQL_NO_DATA);
+
+  ok_stmt(hstmt2, SQLFreeStmt(hstmt2, SQL_CLOSE));
+  ok_stmt(hstmt2, SQLPrepare(hstmt2, "UPDATE t_bug_json SET jdoc = ? "\
+                                   "WHERE id = ?", SQL_NTS));
+
+  out_bytes[0] = strlen(json2);
+  ok_stmt(hstmt2, SQLBindParameter(hstmt2, 1, SQL_PARAM_INPUT, SQL_C_CHAR,
+                                  SQL_LONGVARCHAR, 0, 0, (SQLPOINTER)json2, strlen(json2),
+                                  &out_bytes[0]));
+
+  ok_stmt(hstmt2, SQLBindParameter(hstmt2, 2, SQL_PARAM_INPUT, SQL_C_DEFAULT,
+                                  SQL_INTEGER, 10, 0, &id_value, 0, &out_bytes[1]));
+
+  ok_stmt(hstmt2, SQLExecute(hstmt2));
+
+  ok_stmt(hstmt2, SQLPrepare(hstmt2, "SELECT id, jdoc FROM t_bug_json WHERE id=?",
+                            SQL_NTS));
+  out_bytes[0] = 0;
+  ok_stmt(hstmt2, SQLBindParameter(hstmt2, 1, SQL_PARAM_INPUT, SQL_C_DEFAULT,
+                                  SQL_INTEGER, 10, 0, &id_value, 0, &out_bytes[0]));
+  ok_stmt(hstmt2, SQLExecute(hstmt2));
+  ok_stmt(hstmt2, SQLFetch(hstmt2));
+  is_num(my_fetch_int(hstmt2, 1), 1);
+  is_str(my_fetch_str(hstmt2, buf, 2), json2, strlen(json2));
+  expect_stmt(hstmt2, SQLFetch(hstmt2), SQL_NO_DATA);
+
+  ok_stmt(hstmt2, SQLFreeStmt(hstmt2, SQL_CLOSE));
+
+  ok_sql(hstmt2, "DROP TABLE t_bug_json");
+  free_basic_handles(&henv2, &hdbc2, &hstmt2);
+  return OK;
+}
 
 DECLARE_TEST(my_local_infile)
 {
@@ -96,6 +167,7 @@ END_TEST:
 
 
 BEGIN_TESTS
+  ADD_TEST(my_json)
   ADD_TEST(my_local_infile)
 END_TESTS
 

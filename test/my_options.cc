@@ -342,7 +342,10 @@ do { \
             "OPTIONALLY ENCLOSED BY '\"' LINES TERMINATED BY '\n'";
 
         std::cout << " Result: ";
-        assert_num(SQL_SUCCESS, conn.execute(sstr.str().c_str()));
+        SQLRETURN rc = conn.execute(sstr.str().c_str());
+        if (rc != SQL_SUCCESS)
+          assert_num(SQL_SUCCESS_WITH_INFO, rc);
+
 
         assert_num(SQL_SUCCESS, conn.execute("SELECT * FROM test_local_infile ORDER BY id ASC;"));
 

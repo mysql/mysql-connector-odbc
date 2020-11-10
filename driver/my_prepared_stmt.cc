@@ -367,7 +367,8 @@ bool is_varlen_type(enum enum_field_types type)
           type == MYSQL_TYPE_TINY_BLOB ||
           type == MYSQL_TYPE_MEDIUM_BLOB ||
           type == MYSQL_TYPE_LONG_BLOB ||
-          type == MYSQL_TYPE_VAR_STRING);
+          type == MYSQL_TYPE_VAR_STRING ||
+          type == MYSQL_TYPE_JSON);
 }
 
 /* The structure and following allocation function are borrowed from c/c++ and adopted */
@@ -440,6 +441,7 @@ allocate_buffer_for_field(const MYSQL_FIELD * const field, BOOL outparams)
     case MYSQL_TYPE_BLOB:
     case MYSQL_TYPE_STRING:
     case MYSQL_TYPE_VAR_STRING:
+    case MYSQL_TYPE_JSON:
       /* We will get length with fetch and then fetch column */
       if (field->length > 0 && field->length < 1025)
         result.size= field->length + 1;
@@ -1047,6 +1049,7 @@ char * ssps_get_string(STMT *stmt, ulong column_number, char *value, ulong *leng
     case MYSQL_TYPE_BLOB:
     case MYSQL_TYPE_VARCHAR:
     case MYSQL_TYPE_VAR_STRING:
+    case MYSQL_TYPE_JSON:
       *length= *col_rbind->length;
       return (char *)(col_rbind->buffer);
     default:
