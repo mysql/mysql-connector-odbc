@@ -1,4 +1,4 @@
-# Copyright (c) 2007, 2019, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
 # 
 # This program is free software; you can redistribute it and/or modify 
 # it under the terms of the GNU General Public License, version 2.0, as 
@@ -65,11 +65,6 @@ Vendor:		%{mysql_vendor}
 Packager:	%{mysql_vendor} Product Engineering Team <mysql-build@oss.oracle.com>
 BuildRequires:	cmake 
 %{?shared_mysqlclient:BuildRequires: mysql-community-devel}
-%if 0%{?commercial}
-Requires: mysql-commercial-client-plugins = %{version}
-%else
-Requires: mysql-community-client-plugins = %{version}
-%endif
 BuildRequires:	unixODBC-devel
 BuildRoot:	%(mktemp -ud %{_tmppath}/%{name}-%{version}-%{release}-XXXXXX)
 
