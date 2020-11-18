@@ -56,7 +56,7 @@ static char * my_ul_to_a(char * buf, size_t buf_size, unsigned long long a)
 /* {{{ my_f_to_a() -I- */
 static char * my_f_to_a(char * buf, size_t buf_size, double a)
 {
-	myodbc_snprintf(buf, buf_size, "%f", a);
+	myodbc_snprintf(buf, buf_size, "%.17e", a);
 	return buf;
 }
 /* }}} */
@@ -415,11 +415,19 @@ allocate_buffer_for_field(const MYSQL_FIELD * const field, BOOL outparams)
 
     case MYSQL_TYPE_INT24:
     case MYSQL_TYPE_LONG:
-    case MYSQL_TYPE_FLOAT:
       result.size=4;
       break;
 
+    /*
+      For consistency with results obtained through MYSQL_ROW
+      we must fetch FLOAT and DOUBLE as character data
+    */
     case MYSQL_TYPE_DOUBLE:
+    case MYSQL_TYPE_FLOAT:
+      result.size=24;
+      result.type = MYSQL_TYPE_STRING;
+      break;
+
     case MYSQL_TYPE_LONGLONG:
       result.size=8;
       break;
@@ -907,7 +915,13 @@ int STMT::ssps_bind_result()
       }
     }
 
-    return mysql_stmt_bind_result(ssps, result_bind);
+    int rc = mysql_stmt_bind_result(ssps, result_bind);
+    if (rc)
+    {
+      const char *err = mysql_stmt_error(ssps);
+      set_error("HY000", err, 0);
+    }
+    return rc;
   }
 
   return 0;

@@ -1318,18 +1318,66 @@ DECLARE_TEST(t_bug69545)
   return OK;
 }
 
+/*
+  Bug #32135124 Crash, invaid or inconsistent data by using SQLBindParameter()
+*/
+
+DECLARE_TEST(t_bug32135124)
+{
+
+  SQLINTEGER id = 5;
+  char buf_p[64], buf_q[64];
+  SQLLEN read_p = 0, read_q = 0;
+
+  ok_sql(hstmt, "DROP TABLE IF EXISTS t_bug32135124");
+  ok_sql(hstmt, "CREATE TABLE t_bug32135124 (id int primary key, "\
+                "fnumber double)");
+  ok_sql(hstmt, "INSERT INTO t_bug32135124 (id, fnumber) "\
+                "VALUES (5, 1.79e+308)");
+
+  ok_stmt(hstmt, SQLPrepare(hstmt, "SELECT fnumber FROM t_bug32135124 "\
+                                   "WHERE id = ?", SQL_NTS));
+
+  ok_stmt(hstmt, SQLBindParameter( hstmt, 1, SQL_PARAM_INPUT, SQL_C_LONG,
+                 SQL_INTEGER, 1, 0, &id, 0, NULL));
+  ok_stmt(hstmt, SQLExecute(hstmt));
+  ok_stmt(hstmt, SQLBindCol(hstmt, 1, SQL_C_CHAR, buf_p, sizeof(buf_p),
+                            &read_p));
+
+  ok_stmt(hstmt, SQLFetch(hstmt));
+  expect_stmt(hstmt, SQLFetch(hstmt), SQL_NO_DATA);
+  ok_stmt(hstmt, SQLFreeStmt(hstmt, SQL_CLOSE));
+
+  ok_sql(hstmt, "SELECT fnumber from t_bug32135124 WHERE id = '5'");
+  ok_stmt(hstmt, SQLBindCol(hstmt, 1, SQL_C_CHAR, buf_q, sizeof(buf_q),
+                            &read_q));
+  ok_stmt(hstmt, SQLFetch(hstmt));
+  expect_stmt(hstmt, SQLFetch(hstmt), SQL_NO_DATA);
+  ok_stmt(hstmt, SQLFreeStmt(hstmt, SQL_CLOSE));
+
+  is_num(read_p, read_q);
+  is_num(strlen(buf_p), strlen(buf_q));
+  is_str(buf_p, buf_q, strlen(buf_q));
+
+  ok_sql(hstmt, "DROP TABLE IF EXISTS t_bug32135124");
+  return OK;
+}
+
 
 BEGIN_TESTS
+  ADD_TEST(t_bug32135124)
   ADD_TEST(t_text_types)
   ADD_TEST(t_longlong1)
   ADD_TEST(t_decimal)
   ADD_TEST(t_bigint)
+#ifndef USE_IODBC
   ADD_TEST(t_enumset)
   ADD_TEST(t_bug27862_1)
   // ADD_TODO(t_bug27862_2) TODO: Fix
   ADD_TEST(binary_suffix)
   ADD_TEST(t_sqlnum_msdn)
   ADD_TEST(t_sqlnum_from_str)
+#endif
   ADD_TEST(t_bug16917)
   ADD_TEST(t_bug16235)
   ADD_TEST(decimal_scale)
