@@ -644,6 +644,17 @@ IF(MYSQLCLIENT_STATIC_LINKING AND NOT RPM_BUILD)
           )
       endif()
 
+      # Also bundle modules required by the SASL library if it is bundled
+
+      if(lib_name MATCHES "libsasl")
+
+        install(DIRECTORY "${MYSQL_LIB_DIR}/private/sasl2"
+          DESTINATION "${LIB_SUBDIR}/private"
+          COMPONENT OdbcDll
+        )
+
+      endif()
+
     endif()
 
   endforeach()
