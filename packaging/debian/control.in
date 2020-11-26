@@ -15,7 +15,8 @@ Package: mysql-connector-odbc@PRODUCT_SUFFIX@
 Section: libs
 Architecture: any
 Multi-Arch: same
-Depends: mysql-@DEB_SERVERPRODUCT@-client-plugins,
+Depends: dpkg-dev,
+         mysql-@DEB_SERVERPRODUCT@-client-plugins,
          ${misc:Depends},
          ${shlibs:Depends}
 Recommends: libodbc1 | libiodbc2
@@ -45,7 +46,8 @@ Package: mysql-connector-odbc@PRODUCT_SUFFIX@-setup
 Section: libs
 Architecture: any
 Multi-Arch: same
-Depends: libgtk2.0-0 (>= 2.20.1),
+Depends: dpkg-dev,
+         libgtk2.0-0 (>= 2.20.1),
          mysql-connector-odbc@PRODUCT_SUFFIX@ (= ${binary:Version}),
          ${misc:Depends},
          ${shlibs:Depends}
