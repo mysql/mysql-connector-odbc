@@ -148,6 +148,7 @@ SQLCHAR *mydsn= (SQLCHAR *)"test";
 SQLCHAR *myuid= (SQLCHAR *)"root";
 SQLCHAR *mypwd= (SQLCHAR *)"";
 SQLCHAR *mysock= NULL;
+SQLCHAR *mydns_srv= NULL;
 int      myoption= 0, myport= 0, myenable_pooling= 0;
 SQLCHAR *my_str_options= (SQLCHAR *)""; /* String for additional connection options */
 SQLCHAR *myserver= (SQLCHAR *)"localhost";
@@ -317,6 +318,8 @@ int main(int argc, char **argv) \
     myauth=  (SQLCHAR *)getenv("TEST_DEFAULTAUTH"); \
   if (getenv("TEST_PLUGINDIR")) \
     myplugindir=  (SQLCHAR *)getenv("TEST_PLUGINDIR"); \
+  if (getenv("TEST_DNS_SRV")) \
+    mydns_srv= (SQLCHAR *)getenv("TEST_DNS_SRV"); \
 \
   if (argc > 1) \
     mydsn= (SQLCHAR *)argv[1]; \

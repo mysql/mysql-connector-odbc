@@ -187,99 +187,6 @@ struct Srv_host_detail
   unsigned int port = MYSQL_PORT;
 };
 
-#ifdef _WIN32
-std::multimap<Prio,Srv_host_detail> srv_list(const std::string &hostname,
-                                             uint16_t &total_weight)
-{
-  DNS_STATUS status;               //Return value of  DnsQuery_A() function.
-  PDNS_RECORD pDnsRecord =nullptr;          //Pointer to DNS_RECORD structure.
-
-  std::multimap<Prio,Srv_host_detail> srv;
-
-  status = DnsQuery(hostname.c_str(), DNS_TYPE_SRV, DNS_QUERY_STANDARD, nullptr, &pDnsRecord, nullptr);
-  if (!status)
-  {
-    PDNS_RECORD pRecord = pDnsRecord;
-    while (pRecord)
-    {
-      if (pRecord->wType == DNS_TYPE_SRV)
-      {
-        srv.insert(std::make_pair(
-                     Prio({pRecord->Data.Srv.wPriority,
-                           pRecord->Data.Srv.wWeight}
-                          ),
-                     Srv_host_detail
-                     {
-                       pRecord->Data.Srv.pNameTarget,
-                       pRecord->Data.Srv.wPort
-                     }));
-        total_weight+=pRecord->Data.Srv.wWeight;
-      }
-      pRecord = pRecord->pNext;
-    }
-
-    DnsRecordListFree(pDnsRecord, DnsFreeRecordListDeep);
-  }
-  return srv;
-}
-#else
-
-std::multimap<Prio,Srv_host_detail> srv_list(const std::string &hostname,
-                                             uint16_t &total_weight)
-{
-  struct __res_state state {};
-  res_ninit(&state);
-
-  std::multimap<Prio,Srv_host_detail> srv;
-
-  unsigned char query_buffer[NS_PACKETSZ];
-
-
-  //let get
-  int res = res_nsearch(&state, hostname.c_str(), ns_c_in, ns_t_srv, query_buffer, sizeof (query_buffer) );
-
-  if (res >= 0)
-  {
-    ns_msg msg;
-    char name_buffer[NS_MAXDNAME];
-
-    ns_initparse(query_buffer, res, &msg);
-
-
-    auto process = [&msg, &name_buffer, &total_weight, &srv](const ns_rr &rr) -> void
-    {
-      const unsigned char* srv_data = ns_rr_rdata(rr);
-      Srv_host_detail host_data;
-      uint16_t prio, weight;
-
-      //Each NS_GET16 call moves srv_data to next value
-      NS_GET16(prio, srv_data);
-      NS_GET16(weight, srv_data);
-      NS_GET16(host_data.port, srv_data);
-
-      dn_expand(ns_msg_base(msg), ns_msg_end(msg),
-                srv_data, name_buffer, sizeof(name_buffer));
-
-      host_data.name = name_buffer;
-
-      srv.insert(std::make_pair(Prio({prio, weight}), std::move(host_data)));
-
-      total_weight+=weight;
-    };
-
-    for(int x= 0; x < ns_msg_count(msg, ns_s_an); x++)
-    {
-          ns_rr rr;
-          ns_parserr(&msg, ns_s_an, x, &rr);
-          process(rr);
-    }
-  }
-  res_nclose(&state);
-
-  return srv;
-}
-#endif
-
 
 /*
   Parse a comma separated list of hosts, each optionally specifying a port after
@@ -583,8 +490,6 @@ SQLRETURN myodbc_do_connect(DBC *dbc, DataSource *ds)
   }
 #endif
 
-  std::multimap<Prio,Srv_host_detail> hosts_prio;
-
   uint16_t total_weight = 0;
 
   std::vector<Srv_host_detail> hosts;
@@ -629,9 +534,7 @@ SQLRETURN myodbc_do_connect(DBC *dbc, DataSource *ds)
       return SQL_ERROR;
     }
 
-    hosts_prio = srv_list(hosts[0].name, total_weight);
-
-    if(hosts_prio.empty())
+    if(hosts.empty())
     {
       std::stringstream err;
       err << "Unable to locate any hosts for " << ds->server8;
@@ -641,13 +544,6 @@ SQLRETURN myodbc_do_connect(DBC *dbc, DataSource *ds)
       return SQL_ERROR;
     }
 
-  }
-  else
-  {
-    for(auto host : hosts)
-    {
-      hosts_prio.insert(std::make_pair(Prio({0, 0}), host));
-    }
   }
 
   auto do_connect = [&mysql,&ds,&flags,&dbc](
@@ -678,14 +574,23 @@ SQLRETURN myodbc_do_connect(DBC *dbc, DataSource *ds)
     memcpy(ds->server8, host, chars);
     ds->port = port;
 
-    if (!mysql_real_connect(mysql,
-                            host,
-                            ds_get_utf8attr(ds->uid,      &ds->uid8),
-                            ds_get_utf8attr(ds->pwd,      &ds->pwd8),
-                            ds_get_utf8attr(ds->database, &ds->database8),
-                            port,
-                            ds_get_utf8attr(ds->socket,   &ds->socket8),
-                            flags))
+    MYSQL *connect_result = ds->enable_dns_srv ?
+                            mysql_real_connect_dns_srv(mysql,
+                              host,
+                              ds_get_utf8attr(ds->uid,      &ds->uid8),
+                              ds_get_utf8attr(ds->pwd,      &ds->pwd8),
+                              ds_get_utf8attr(ds->database, &ds->database8),
+                              flags)
+                            :
+                            mysql_real_connect(mysql,
+                              host,
+                              ds_get_utf8attr(ds->uid,      &ds->uid8),
+                              ds_get_utf8attr(ds->pwd,      &ds->pwd8),
+                              ds_get_utf8attr(ds->database, &ds->database8),
+                              port,
+                              ds_get_utf8attr(ds->socket,   &ds->socket8),
+                              flags);
+    if (!connect_result)
     {
       unsigned int native_error= mysql_errno(mysql);
 
@@ -724,71 +629,48 @@ SQLRETURN myodbc_do_connect(DBC *dbc, DataSource *ds)
   //Connect loop
   {
     bool connected = false;
-    std::random_device generator;
+    std::random_device rd;
+    std::mt19937 generator(rd()); // seed the generator
 
-    while(!hosts_prio.empty() && !connected)
+
+    while(!hosts.empty() && !connected)
     {
-      auto same_range = hosts_prio.equal_range(hosts_prio.begin()->first);
-      std::vector<Srv_host_detail*> same_prio;
-      std::vector<uint16_t> weights;
+      std::uniform_int_distribution<int> distribution(
+            0, hosts.size() - 1); // define the range of random numbers
 
-      for(auto it = same_range.first; it != same_range.second; ++it)
+      int pos = distribution(generator);
+      auto el = hosts.begin();
+
+      std::advance(el, pos);
+
+      if(do_connect(el->name.c_str(), el->port) == SQL_SUCCESS)
       {
-        //if weight is not used, we should put all weights = 1 so that
-        //discrete_distribution works as expected
-        weights.push_back(total_weight!= 0 ? it->first.weight : 1);
-        same_prio.push_back(&it->second);
+        connected = true;
+        break;
       }
-
-      while (!weights.empty() && !connected)
+      else
       {
-        std::discrete_distribution<int> distribution(
-              weights.begin(), weights.end());
-
-        auto el = same_prio.begin();
-        auto weight_el = weights.begin();
-
-        if (same_prio.size() > 1)
+        switch (mysql_errno(mysql))
         {
-          int pos = distribution(generator);
-          std::advance(el, pos);
-          std::advance(weight_el, pos);
-        }
-
-        if(do_connect((*el)->name.c_str(), (*el)->port) == SQL_SUCCESS)
-        {
-          connected = true;
-        }
-        else
-        {
-          switch (mysql_errno(mysql))
+        case ER_CON_COUNT_ERROR:
+        case CR_SOCKET_CREATE_ERROR:
+        case CR_CONNECTION_ERROR:
+        case CR_CONN_HOST_ERROR:
+        case CR_IPSOCK_ERROR:
+        case CR_UNKNOWN_HOST:
+          //On Network errors, continue
+          break;
+        default:
+          //If SQLSTATE not 08xxx, which is used for network errors
+          if(strncmp(mysql_sqlstate(mysql), "08", 2) != 0)
           {
-          case ER_CON_COUNT_ERROR:
-          case CR_SOCKET_CREATE_ERROR:
-          case CR_CONNECTION_ERROR:
-          case CR_CONN_HOST_ERROR:
-          case CR_IPSOCK_ERROR:
-          case CR_UNKNOWN_HOST:
-            //On Network errors, continue
-            break;
-          default:
-            //If SQLSTATE not 08xxx, which is used for network errors
-            if(strncmp(mysql_sqlstate(mysql), "08", 2) != 0)
-            {
-              //Return error and do not try another host
-              return SQL_ERROR;
-            }
+            //Return error and do not try another host
+            return SQL_ERROR;
           }
-
         }
-
-        same_prio.erase(el);
-        weights.erase(weight_el);
       }
-
-      hosts_prio.erase(same_range.first, same_range.second);
-
-    };
+      hosts.erase(el);
+    }
 
     if(!connected)
     {

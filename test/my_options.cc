@@ -31,6 +31,7 @@
 #include <iostream>
 #include <sstream>
 #include <cstdio>
+#include <map>
 #include <stdlib.h>
 
 #include "odbctap.h"
@@ -495,8 +496,52 @@ do { \
   return OK;
 }
 
+/*
+  Use mysql client library implementation of DNS+SRV
+*/
+DECLARE_TEST(t_wl14362)
+{
+  if (!mydns_srv)
+  {
+    SKIP_REASON = "Env variable TEST_DNS_SRV is not specified\n";
+    return SKIP;
+  }
+
+  const int con_num = 30;
+  std::string opts("ENABLE_DNS_SRV=1;SERVER=");
+  opts.append((char*)mydns_srv);
+  std::map<int, int> con_map;
+  char buf[1024];
+
+  for (int i = 0; i < con_num; ++i)
+  {
+    DECLARE_BASIC_HANDLES(henv1, hdbc1, hstmt1);
+
+    is(OK == alloc_basic_handles_with_opt(&henv1, &hdbc1, &hstmt1,
+       (SQLCHAR*)USE_DRIVER, myuid, mypwd, mydb, (SQLCHAR*)opts.c_str()));
+
+    ok_sql(hstmt1, "SHOW VARIABLES LIKE 'server_id'");
+
+    //my_fetch_str(hstmt1, (SQLCHAR*)buf, 2);
+    while(SQLFetch(hstmt1) == SQL_SUCCESS)
+    {
+      SQLINTEGER server_id = my_fetch_int(hstmt1, 2);
+      con_map[server_id]++;
+    }
+    free_basic_handles(&henv1, &hdbc1, &hstmt1);
+  }
+
+  for (auto el : con_map)
+  {
+    std::cout << "Server " << el.first << " : " << el.second <<
+                 " connects" << std::endl;
+    is(el.second > 1); // Each server should get at least two connections
+  }
+  return OK;
+}
 BEGIN_TESTS
   ADD_TEST(t_wl13883)
+  ADD_TEST(t_wl14362)
 END_TESTS
 
 RUN_TESTS
