@@ -246,6 +246,9 @@ void translate_error(char *save_state, myodbc_errid errid, uint mysql_err)
         case CR_CONNECTION_ERROR:
         case CR_SERVER_GONE_ERROR:
         case CR_SERVER_LOST:
+#if MYSQL_VERSION_ID > 80023
+        case ER_CLIENT_INTERACTION_TIMEOUT:
+#endif
             state= "08S01";
             break;
         case ER_MUST_CHANGE_PASSWORD_LOGIN:
@@ -359,6 +362,9 @@ SQLRETURN handle_connection_error(STMT *stmt)
     return SQL_SUCCESS;
   case CR_SERVER_GONE_ERROR:
   case CR_SERVER_LOST:
+#if MYSQL_VERSION_ID > 80023
+  case ER_CLIENT_INTERACTION_TIMEOUT:
+#endif
     return stmt->set_error("08S01", mysql_error(stmt->dbc->mysql), err);
   case CR_OUT_OF_MEMORY:
     return stmt->set_error("HY001", mysql_error(stmt->dbc->mysql), err);
@@ -376,7 +382,11 @@ SQLRETURN handle_connection_error(STMT *stmt)
 */
 my_bool is_connection_lost(uint errcode)
 {
-  if (errcode==CR_SERVER_GONE_ERROR || errcode==CR_SERVER_LOST)
+  if (errcode==CR_SERVER_GONE_ERROR || errcode==CR_SERVER_LOST
+#if MYSQL_VERSION_ID > 80023
+    || errcode==ER_CLIENT_INTERACTION_TIMEOUT
+#endif
+  )
   {
     return 1;
   }
