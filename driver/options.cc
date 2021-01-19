@@ -488,8 +488,7 @@ MySQLGetConnectAttr(SQLHDBC hdbc, SQLINTEGER attrib, SQLCHAR **char_attr,
     /* If waking up fails - we return "connection is dead", no matter what really the reason is */
     if (dbc->need_to_wakeup != 0 && wakeup_connection(dbc)
       || dbc->need_to_wakeup == 0 && mysql_ping(dbc->mysql) &&
-        (mysql_errno(dbc->mysql) == CR_SERVER_LOST ||
-         mysql_errno(dbc->mysql) == CR_SERVER_GONE_ERROR))
+        is_connection_lost(mysql_errno(dbc->mysql)))
       *((SQLUINTEGER *)num_attr)= SQL_CD_TRUE;
     else
       *((SQLUINTEGER *)num_attr)= SQL_CD_FALSE;

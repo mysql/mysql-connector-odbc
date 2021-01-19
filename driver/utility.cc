@@ -2390,7 +2390,7 @@ int check_if_server_is_alive( DBC *dbc )
                 PAH - 9.MAR.06
             */
 
-            if ( mysql_errno( dbc->mysql ) == CR_SERVER_LOST )
+            if (is_connection_lost(mysql_errno( dbc->mysql )))
                 result = 1;
         }
     }
