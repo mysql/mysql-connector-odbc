@@ -112,7 +112,7 @@ ECHO "| <version>   must be a 3 number version              |"
 ECHO "|                                                     |"
 ECHO "| EXAMPLE                                             |"
 ECHO "|                                                     |"
-ECHO "| CreateBinaryZip 8.0.23                              |"
+ECHO "| CreateBinaryZip 8.0.24                              |"
 ECHO "|                                                     |"
 ECHO "+-----------------------------------------------------+"
 
