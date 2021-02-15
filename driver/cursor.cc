@@ -880,7 +880,7 @@ SQLRETURN my_pos_update_std( STMT *             pStmtCursor,
     pStmtTemp = (STMT *)hStmtTemp;
 
     if (my_SQLPrepare(pStmtTemp, (SQLCHAR *)query.c_str(), query.size(),
-                      false, true) != SQL_SUCCESS)
+                      false, true, false) != SQL_SUCCESS)
     {
         my_SQLFreeStmt( pStmtTemp, SQL_DROP );
         return pStmt->set_error("HY000", "my_SQLPrepare() failed.", 0 );
@@ -909,7 +909,7 @@ SQLRETURN my_pos_update_std( STMT *             pStmtCursor,
         To check: do we really need that?
       */
       if (my_SQLPrepare(pStmt, (SQLCHAR *)query.c_str(), query.size(),
-                        false, true) != SQL_SUCCESS)
+                        false, true, false) != SQL_SUCCESS)
         return SQL_ERROR;
       pStmt->dae_type= DAE_NORMAL;
     }

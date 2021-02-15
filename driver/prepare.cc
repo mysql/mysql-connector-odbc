@@ -59,7 +59,8 @@
                     freeing the value is now up to the driver
 */
 SQLRETURN SQL_API MySQLPrepare(SQLHSTMT hstmt, SQLCHAR *query, SQLINTEGER len,
-                               bool dupe, bool reset_select_limit)
+                               bool dupe, bool reset_select_limit,
+                               bool force_prepare)
 {
   STMT *stmt= (STMT *)hstmt;
   /*
@@ -73,7 +74,8 @@ SQLRETURN SQL_API MySQLPrepare(SQLHSTMT hstmt, SQLCHAR *query, SQLINTEGER len,
     reset_parsed_query(&stmt->orig_query, NULL, NULL, NULL);
   }
 
-  return my_SQLPrepare(hstmt, query, len, dupe, reset_select_limit);
+  return my_SQLPrepare(hstmt, query, len, dupe, reset_select_limit,
+                       force_prepare);
 }
 
 
@@ -82,7 +84,8 @@ SQLRETURN SQL_API MySQLPrepare(SQLHSTMT hstmt, SQLCHAR *query, SQLINTEGER len,
   @purpose : prepares an SQL string for execution
 */
 SQLRETURN my_SQLPrepare(SQLHSTMT hstmt, SQLCHAR *szSqlStr, SQLINTEGER cbSqlStr,
-                        bool dupe, bool reset_select_limit)
+                        bool dupe, bool reset_select_limit,
+                        bool force_prepare)
 {
   STMT *stmt= (STMT *) hstmt;
 
@@ -100,7 +103,8 @@ SQLRETURN my_SQLPrepare(SQLHSTMT hstmt, SQLCHAR *szSqlStr, SQLINTEGER cbSqlStr,
     }
   }
 
-  return prepare(stmt, (char*)szSqlStr, cbSqlStr, reset_select_limit);
+  return prepare(stmt, (char*)szSqlStr, cbSqlStr, reset_select_limit,
+                 force_prepare);
 }
 
 

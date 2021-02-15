@@ -156,13 +156,13 @@ DECLARE_TEST(t_bug24131)
   ok_stmt(hstmt, SQLFreeStmt(hstmt, SQL_CLOSE));
   ok_stmt(hstmt, SQLPrepare(hstmt, (SQLCHAR *)"show create table bug24131", SQL_NTS));
 
-  ok_stmt(hstmt, SQLDescribeCol(hstmt, 2, buff, sizeof(buff), NULL, NULL,
-                                &colSize, NULL, NULL));
-
   ok_stmt(hstmt, SQLBindCol(hstmt,2,SQL_C_BINARY, buff, 1024, &boundLen));
 
   /* Note: buff has '2.0', but len is still 0! */
   ok_stmt(hstmt, SQLExecute(hstmt));
+
+  ok_stmt(hstmt, SQLDescribeCol(hstmt, 2, buff, sizeof(buff), NULL, NULL,
+                                &colSize, NULL, NULL));
 
   ok_stmt(hstmt, SQLExtendedFetch(hstmt, SQL_FETCH_NEXT, 1, &count, &status));
 
@@ -723,11 +723,8 @@ DECLARE_TEST(t_prefetch)
     is(OK == alloc_basic_handles_with_opt(&henv1, &hdbc1, &hstmt1, NULL,
                                         NULL, NULL, NULL, "MULTI_STATEMENTS=1"));
 
-    ok_stmt(hstmt1, SQLPrepare(hstmt1, "select* from b_prefecth;\
-                                        select * from b_prefecth where i < 7; ",
-                              SQL_NTS));
-
-    ok_stmt(hstmt1, SQLExecute(hstmt1));
+    ok_sql(hstmt1, "select* from b_prefecth;\
+                   select * from b_prefecth where i < 7; ");
 
     is_num(7, myrowcount(hstmt1));
 

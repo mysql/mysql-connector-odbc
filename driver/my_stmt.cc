@@ -372,7 +372,7 @@ BOOL is_null(STMT *stmt, ulong column_number, char *value)
    on a server. Returns SQLRETURN result code since preparing on client or
    server can produce errors, memory allocation to name one.  */
 SQLRETURN prepare(STMT *stmt, char * query, SQLINTEGER query_length,
-          bool reset_sql_limit)
+          bool reset_sql_limit, bool force_prepare)
 {
   /* TODO: I guess we always have to have query length here */
   if (query_length <= 0)
@@ -394,7 +394,8 @@ SQLRETURN prepare(STMT *stmt, char * query, SQLINTEGER query_length,
   stmt->param_count= PARAM_COUNT(&stmt->query);
   /* Trusting our parsing we are not using prepared statments unsless there are
      actually parameter markers in it */
-  if (!stmt->dbc->ds->no_ssps && PARAM_COUNT(&stmt->query) && !IS_BATCH(&stmt->query)
+  if (!stmt->dbc->ds->no_ssps && (PARAM_COUNT(&stmt->query) || force_prepare)
+    && !IS_BATCH(&stmt->query)
     && preparable_on_server(&stmt->query, stmt->dbc->mysql->server_version))
   {
     MYLOG_QUERY(stmt, "Using prepared statement");
