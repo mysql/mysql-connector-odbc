@@ -46,31 +46,22 @@
 ****************************************************************************/
 
 #include "driver.h"
+#include <mutex>
 
-#ifdef _UNIX_
-/* variables for thread counter */
-static myodbc_key_t myodbc_thread_counter_key;
-static pthread_once_t myodbc_thread_key_inited= PTHREAD_ONCE_INIT;
+thread_local long thread_count = 0;
 
-/* Function to call pthread_key_create from pthread_once*/
-void myodbc_thread_key_create()
-{
-  pthread_key_create (&myodbc_thread_counter_key, 0);
-}
-#endif
+std::mutex g_lock;
 
 void ENV::add_dbc(DBC* dbc)
 {
-  myodbc_mutex_lock(&lock);
+  LOCK_ENV(this);
   conn_list.emplace_back(dbc);
-  myodbc_mutex_unlock(&lock);
 }
 
 void ENV::remove_dbc(DBC* dbc)
 {
-  myodbc_mutex_lock(&lock);
+  LOCK_ENV(this);
   conn_list.remove(dbc);
-  myodbc_mutex_unlock(&lock);
 }
 
 bool ENV::has_connections()
@@ -83,7 +74,6 @@ DBC::DBC(ENV *p_env)  : env(p_env), mysql(nullptr),
                         last_query_time((time_t) time((time_t*) 0))
 {
   //mysql->net.vio = nullptr;
-  myodbc_mutex_init(&lock, NULL);
   myodbc_ov_init(env->odbc_ver);
   env->add_dbc(this);
 }
@@ -126,7 +116,6 @@ DBC::~DBC()
   if (ds)
     ds_delete(ds);
 
-  myodbc_mutex_destroy(&lock);
   free_explicit_descriptors();
 }
 
@@ -141,11 +130,9 @@ DBC::~DBC()
 SQLRETURN SQL_API my_SQLAllocEnv(SQLHENV *phenv)
 {
   ENV *env;
-#ifdef _UNIX_
-  /* Init thread key just once for all threads */
-  pthread_once(&myodbc_thread_key_inited, myodbc_thread_key_create);
-  myodbc_init();
-#endif
+
+  std::lock_guard<std::mutex> env_guard(g_lock);
+  myodbc_init(); // This will call mysql_library_init()
 
 #ifndef USE_IODBC
     env = new ENV(SQL_OV_ODBC3_80);
@@ -230,25 +217,10 @@ SQLRETURN SQL_API my_SQLAllocConnect(SQLHENV henv, SQLHDBC *phdbc)
     DBC *dbc;
     ENV *penv= (ENV *) henv;
 
-#ifdef _UNIX_
-    long *thread_count;
-    thread_count= (long*)pthread_getspecific(myodbc_thread_counter_key);
-
-    /* Increment or allocate the thread counter */
-    if (thread_count)
-    {
-      ++(*thread_count);
-    }
-    else
-    {
-      thread_count= (long*)myodbc_malloc(sizeof(long), MYF(0));
-      (*thread_count)= 1;
-      pthread_setspecific(myodbc_thread_counter_key, thread_count);
-
-      /* Call it just for safety */
+    if (!thread_count)
       mysql_thread_init();
-    }
-#endif
+
+    ++thread_count;
 
     if (mysql_get_client_version() < MIN_MYSQL_VERSION)
     {
@@ -334,32 +306,13 @@ SQLRETURN SQL_API my_SQLFreeConnect(SQLHDBC hdbc)
     DBC *dbc= (DBC *) hdbc;
     delete dbc;
 
-#ifdef _UNIX_
-
+    if (thread_count)
     {
-      long *thread_count;
-      thread_count= (long*)pthread_getspecific(myodbc_thread_counter_key);
-
-      if (thread_count)
-      {
-        if (*thread_count)
-        {
-          --(*thread_count);
-        }
-
-        if (*thread_count == 0)
-        {
-          /* The value to the key must be reset before freeing the buffer */
-          pthread_setspecific(myodbc_thread_counter_key, 0);
-          x_free(thread_count);
-
-          /* Last connection deallocated, supposedly the thread is finishing */
-          mysql_thread_end();
-        }
-      }
+      /* Last connection deallocated, supposedly the thread is finishing */
+      if (--thread_count ==0)
+        mysql_thread_end();
     }
 
-#endif
     return SQL_SUCCESS;
 }
 
@@ -638,15 +591,15 @@ SQLRETURN my_SQLAllocDesc(SQLHDBC hdbc, SQLHANDLE *pdesc)
   std::unique_ptr<DESC> desc(new DESC(NULL, SQL_DESC_ALLOC_USER,
                                       DESC_APP, DESC_UNKNOWN));
 
+  LOCK_DBC(dbc);
+
   if (!desc)
     return set_dbc_error(dbc, "HY001", "Memory allocation error", MYERR_S1001);
 
   desc->dbc= dbc;
 
   /* add to this connection's list of explicit descriptors */
-  myodbc_mutex_lock(&dbc->lock);
   dbc->add_desc(desc.get());
-  myodbc_mutex_unlock(&dbc->lock);
 
   *pdesc= desc.release();
   return SQL_SUCCESS;
@@ -662,6 +615,8 @@ SQLRETURN my_SQLFreeDesc(SQLHANDLE hdesc)
   DESC *desc= (DESC *) hdesc;
   DBC *dbc= desc->dbc;
 
+  LOCK_DBC(dbc);
+
   if (!desc)
     return SQL_ERROR;
   if (desc->alloc_type != SQL_DESC_ALLOC_USER)
@@ -669,9 +624,7 @@ SQLRETURN my_SQLFreeDesc(SQLHANDLE hdesc)
                           "allocated descriptor handle.", MYERR_S1017);
 
   /* remove from DBC */
-  myodbc_mutex_lock(&dbc->lock);
   dbc->remove_desc(desc);
-  myodbc_mutex_unlock(&dbc->lock);
 
   for (auto s : desc->stmt_list)
   {

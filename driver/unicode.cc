@@ -55,7 +55,8 @@ SQLGetDiagRecWImpl(SQLSMALLINT handle_type, SQLHANDLE handle,
                    SQLINTEGER *native_error, SQLWCHAR *message,
                    SQLSMALLINT message_max, SQLSMALLINT *message_len);
 SQLRETURN SQL_API
-SQLPrepareWImpl(SQLHSTMT hstmt, SQLWCHAR *str, SQLINTEGER str_len);
+SQLPrepareWImpl(SQLHSTMT hstmt, SQLWCHAR *str, SQLINTEGER str_len,
+                bool force_prepare);
 
 SQLRETURN SQL_API
 SQLSetConnectAttrWImpl(SQLHDBC hdbc, SQLINTEGER attribute,
@@ -361,7 +362,7 @@ SQLExecDirectW(SQLHSTMT hstmt, SQLWCHAR *str, SQLINTEGER str_len)
 
   CHECK_HANDLE(hstmt);
 
-  if ((error= SQLPrepareWImpl(hstmt, str, str_len)))
+  if ((error= SQLPrepareWImpl(hstmt, str, str_len, false)))
     return error;
   error= my_SQLExecute((STMT *)hstmt);
 
@@ -848,12 +849,13 @@ SQLPrepareW(SQLHSTMT hstmt, SQLWCHAR *str, SQLINTEGER str_len)
 {
   CHECK_HANDLE(hstmt);
 
-  return SQLPrepareWImpl(hstmt, str, str_len);
+  return SQLPrepareWImpl(hstmt, str, str_len, true);
 }
 
 
 SQLRETURN SQL_API
-SQLPrepareWImpl(SQLHSTMT hstmt, SQLWCHAR *str, SQLINTEGER str_len)
+SQLPrepareWImpl(SQLHSTMT hstmt, SQLWCHAR *str, SQLINTEGER str_len,
+                bool force_prepare)
 {
   STMT *stmt= (STMT *)hstmt;
   uint errors;
@@ -866,7 +868,7 @@ SQLPrepareWImpl(SQLHSTMT hstmt, SQLWCHAR *str, SQLINTEGER str_len)
     return stmt->set_error("22018", NULL, 0);
   }
 
-  return MySQLPrepare(hstmt, conv, str_len, true, false);
+  return MySQLPrepare(hstmt, conv, str_len, true, false, force_prepare);
 }
 
 

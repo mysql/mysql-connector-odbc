@@ -68,6 +68,18 @@
 #include "parse.h"
 #include <vector>
 #include <list>
+#include <mutex>
+
+#define LOCK_STMT(S) std::unique_lock<std::recursive_mutex> slock(S->dbc->lock)
+#define LOCK_STMT_DEFER(S) std::unique_lock<std::recursive_mutex> slock(S->dbc->lock, std::defer_lock)
+#define DO_LOCK_STMT() slock.lock();
+
+#define LOCK_DBC(D) std::unique_lock<std::recursive_mutex> dlock(D->lock)
+#define LOCK_DBC_DEFER(D) std::unique_lock<std::recursive_mutex> dlock(D->lock, std::defer_lock)
+#define DO_LOCK_DBC() dlock.lock();
+
+#define LOCK_ENV(E) std::unique_lock<std::mutex> elock(E->lock)
+
 
 #if defined(_WIN32) || defined(WIN32)
 # define INTFUNC  __stdcall
@@ -529,22 +541,17 @@ struct	ENV
   std::list<DBC*> conn_list;
   LIST	       *connections;
   MYERROR      error;
-#ifdef THREAD
-  myodbc_mutex_t lock;
-#endif
+  std::mutex lock;
+
   ENV(SQLINTEGER ver) : odbc_ver(ver), connections(nullptr)
-  {
-    myodbc_mutex_init(&lock,NULL);
-  }
+  {}
 
   void add_dbc(DBC* dbc);
   void remove_dbc(DBC* dbc);
   bool has_connections();
 
   ~ENV()
-  {
-    myodbc_mutex_destroy(&lock);
-  }
+  {}
 };
 
 
@@ -568,9 +575,8 @@ struct DBC
   uint          cursor_count = 0;
   ulong         net_buffer_len = 0;
   uint          commit_flag = 0;
-#ifdef THREAD
-  myodbc_mutex_t lock;
-#endif
+
+  std::recursive_mutex lock;
 
   bool          unicode = false;            /* Whether SQL*ConnectW was used */
   CHARSET_INFO  *ansi_charset_info = nullptr, /* 'ANSI' charset (SQL_C_CHAR) */
@@ -677,6 +683,7 @@ struct GETDATA{
     memchr(latest, 0, sizeof(latest));
   }
 };
+
 
 struct STMT
 {
@@ -799,10 +806,9 @@ struct STMT
     init_parsed_query(&orig_query);
     allocate_param_bind(10);
 
-    myodbc_mutex_lock(&dbc->lock);
+    LOCK_DBC(dbc);
     dbc->stmt_list.emplace_back(this);
     //dbc->statements = list_add(dbc->statements, &list);
-    myodbc_mutex_unlock(&dbc->lock);
   }
 
   ~STMT();
@@ -813,9 +819,6 @@ extern char *default_locale, *decimal_point, *thousands_sep;
 extern uint decimal_point_length,thousands_sep_length;
 #ifndef _UNIX_
 extern HINSTANCE NEAR s_hModule;  /* DLL handle. */
-#endif
-#ifdef THREAD
-extern myodbc_mutex_t myodbc_lock;
 #endif
 
 /*
@@ -899,7 +902,9 @@ SQLRETURN SQL_API MySQLGetStmtAttr(SQLHSTMT hstmt, SQLINTEGER Attribute,
                                      __attribute__((unused)),
                                   SQLINTEGER *StringLengthPtr);
 SQLRETURN SQL_API MySQLGetTypeInfo(SQLHSTMT hstmt, SQLSMALLINT fSqlType);
-SQLRETURN SQL_API MySQLPrepare(SQLHSTMT hstmt, SQLCHAR *query, SQLINTEGER len, bool dupe, bool reset_select_limit);
+SQLRETURN SQL_API MySQLPrepare(SQLHSTMT hstmt, SQLCHAR *query, SQLINTEGER len,
+                               bool dupe, bool reset_select_limit,
+                               bool force_prepare);
 SQLRETURN SQL_API MySQLPrimaryKeys(SQLHSTMT hstmt,
                                    SQLCHAR *catalog, SQLSMALLINT catalog_len,
                                    SQLCHAR *schema, SQLSMALLINT schema_len,

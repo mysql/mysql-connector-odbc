@@ -72,7 +72,7 @@ static SQLRETURN my_transact(SQLHDBC hdbc, SQLSMALLINT CompletionType)
 
     MYLOG_DBC_QUERY(dbc, query);
 
-    myodbc_mutex_lock(&dbc->lock);
+    LOCK_DBC(dbc);
     if (check_if_server_is_alive(dbc) ||
 	mysql_real_query(dbc->mysql,query,length))
     {
@@ -80,7 +80,6 @@ static SQLRETURN my_transact(SQLHDBC hdbc, SQLSMALLINT CompletionType)
 			     mysql_error(dbc->mysql),
 			     mysql_errno(dbc->mysql));
     }
-    myodbc_mutex_unlock(&dbc->lock);
   }
   return(result);
 }
@@ -108,27 +107,25 @@ end_transaction(SQLSMALLINT HandleType,
 
   switch (HandleType) {
   case SQL_HANDLE_ENV:
+  {
     henv= (ENV *)Handle;
-    myodbc_mutex_lock(&henv->lock);
+    LOCK_ENV(henv);
     for (DBC *dbc : henv->conn_list)
     {
         my_transact(dbc, CompletionType);
     }
-    myodbc_mutex_unlock(&henv->lock);
     break;
-
+  }
   case SQL_HANDLE_DBC:
+  {
     hdbc= (DBC*)Handle;
 
 #ifndef _WIN32
-    myodbc_mutex_lock(&hdbc->env->lock);
+    LOCK_DBC(hdbc);
 #endif
     result= my_transact(hdbc, CompletionType);
-#ifndef _WIN32
-    myodbc_mutex_unlock(&hdbc->env->lock);
-#endif
     break;
-
+  }
   default:
     result= SQL_ERROR;
     ((STMT*)Handle)->set_error(MYERR_S1092,NULL,0);

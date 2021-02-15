@@ -43,11 +43,12 @@
 SQLRETURN do_query(STMT *stmt,char *query, SQLULEN query_length)
 {
     int error= SQL_ERROR, native_error= 0;
+    LOCK_STMT_DEFER(stmt);
 
     if (!query)
     {
       /* Probably error from insert_param */
-      goto skip_unlock_exit;
+      goto exit;
     }
 
     if(!SQL_SUCCEEDED(set_sql_select_limit(stmt->dbc,
@@ -59,7 +60,7 @@ SQLRETURN do_query(STMT *stmt,char *query, SQLULEN query_length)
                      stmt->dbc->error.native_error);
 
       /* if setting sql_select_limit fails, the query will probably fail anyway too */
-      goto skip_unlock_exit;
+      goto exit;
     }
 
     if (query_length == 0)
@@ -68,7 +69,7 @@ SQLRETURN do_query(STMT *stmt,char *query, SQLULEN query_length)
     }
 
     MYLOG_QUERY(stmt, query);
-    myodbc_mutex_lock(&stmt->dbc->lock);
+    DO_LOCK_STMT();
 
     if ( check_if_server_is_alive( stmt->dbc ) )
     {
@@ -206,9 +207,7 @@ SQLRETURN do_query(STMT *stmt,char *query, SQLULEN query_length)
     error= SQL_SUCCESS;
 
 exit:
-    myodbc_mutex_unlock(&stmt->dbc->lock);
 
-skip_unlock_exit:
     if (query != GET_QUERY(&stmt->query))
     {
       x_free(query);
@@ -246,7 +245,7 @@ SQLRETURN insert_params(STMT *stmt, SQLULEN row, char **finalquery,
   uint i,length, had_info= 0;
   SQLRETURN rc= SQL_SUCCESS;
 
-  int mutex_was_locked= myodbc_mutex_trylock(&stmt->dbc->lock);
+  LOCK_STMT(stmt);
 
   //to = stmt->buf() + (finalquery_length != NULL ? *finalquery_length : 0);
 
@@ -347,11 +346,6 @@ SQLRETURN insert_params(STMT *stmt, SQLULEN row, char **finalquery,
     }
   }
 
-  if (!mutex_was_locked)
-  {
-    myodbc_mutex_unlock(&stmt->dbc->lock);
-  }
-
   if (!stmt->dbc->ds->dont_use_set_locale)
   {
     setlocale(LC_NUMERIC,default_locale);
@@ -363,10 +357,8 @@ SQLRETURN insert_params(STMT *stmt, SQLULEN row, char **finalquery,
 
 memerror:      /* Too much data */
   rc= stmt->set_error(MYERR_S1001,NULL,4001);
+
 error:
-  /* ! was _already_ locked, when we tried to lock */
-  if (!mutex_was_locked)
-    myodbc_mutex_unlock(&stmt->dbc->lock);
   if (!stmt->dbc->ds->dont_use_set_locale)
     setlocale(LC_NUMERIC,default_locale);
   return rc;
@@ -1442,14 +1434,7 @@ SQLRETURN my_SQLExecute( STMT *pStmt )
     *pStmt->ipd->rows_processed_ptr= (SQLULEN)0;
   }
 
-  /* Locking if we have params array for "SELECT" statemnt */
-  /* if param_count is zero, the rest probably are artifacts(not reset
-     attributes) from a previously executed statement. besides this lock
-     is not needed when there are no params*/
-  if (pStmt->param_count && pStmt->apd->array_size > 1 && is_select_stmt)
-  {
-    myodbc_mutex_lock(&pStmt->dbc->lock);
-  }
+  LOCK_STMT(pStmt);
 
   for (row= 0; row < pStmt->apd->array_size; ++row)
   {
@@ -1485,11 +1470,6 @@ SQLRETURN my_SQLExecute( STMT *pStmt )
         if (param_status_ptr)
           *param_status_ptr= SQL_PARAM_UNUSED;
 
-        /* If this is last paramset - we will miss unlock */
-        if (pStmt->apd->array_size > 1 && is_select_stmt
-            && row == pStmt->apd->array_size - 1)
-          myodbc_mutex_unlock(&pStmt->dbc->lock);
-
         continue;
       }
 
@@ -1504,10 +1484,6 @@ SQLRETURN my_SQLExecute( STMT *pStmt )
           rc= pStmt->set_error("HYC00", "Parameter arrays "
                               "with data at execution are not supported", 0);
           lastError= param_status_ptr;
-
-          /* unlocking since we do break*/
-          if (is_select_stmt)
-            myodbc_mutex_unlock(&pStmt->dbc->lock);
 
           one_of_params_not_succeded= 1;
 
@@ -1547,10 +1523,6 @@ SQLRETURN my_SQLExecute( STMT *pStmt )
 
       if (!SQL_SUCCEEDED(rc))
       {
-        if (pStmt->apd->array_size > 1 && is_select_stmt
-          && row == pStmt->apd->array_size - 1)
-          myodbc_mutex_unlock(&pStmt->dbc->lock);
-
         continue/*return rc*/;
       }
 
@@ -1565,11 +1537,6 @@ SQLRETURN my_SQLExecute( STMT *pStmt )
 
           pStmt->add_to_buffer(stmtsBinder, binderLength);
           length+= binderLength;
-        }
-        else
-        {
-          /* last select statement has been constructed - so releasing lock*/
-          myodbc_mutex_unlock(&pStmt->dbc->lock);
         }
       }
     }
@@ -1935,29 +1902,32 @@ SQLRETURN SQL_API SQLPutData( SQLHSTMT      hstmt,
 SQLRETURN SQL_API SQLCancel(SQLHSTMT hstmt)
 {
   MYSQL *second= NULL;
-  int error;
   DBC *dbc;
+
 
   CHECK_HANDLE(hstmt);
 
   dbc= ((STMT *)hstmt)->dbc;
-  error= myodbc_mutex_trylock(&dbc->lock);
+
+  LOCK_DBC_DEFER(dbc); // implicitly declares dlock variable without locking
 
   /* If there's no query going on, just close the statement. */
-  if (error == 0)
+  if (dlock.try_lock())
   {
-    myodbc_mutex_unlock(&dbc->lock);
+    /*
+      Lock is acquired. STMT can be closed safely.
+      Lock will be released automatically
+    */
     return my_SQLFreeStmt(hstmt, SQL_CLOSE);
   }
 
-  /* If we got a non-BUSY error, it's just an error. */
-  if (error != EBUSY)
-    return ((STMT *)hstmt)->set_error("HY000",
-                          "Unable to get connection mutex status", error);
-
   /*
     If the mutex was locked, we need to make a new connection and KILL the
-    ongoing query.
+    ongoing query. The mutex will be unlocked later automatically.
+
+    This is an entirely new connection and it should not
+    interfere with the existing one. Therefore, locking is not needed in
+    the following block.
   */
   second= mysql_init(second);
 

@@ -94,10 +94,11 @@ SQLRETURN odbc_stmt(DBC *dbc, const char *query,
                     SQLULEN query_length, my_bool req_lock)
 {
   SQLRETURN result= SQL_SUCCESS;
+  LOCK_DBC_DEFER(dbc);
 
   if (req_lock)
   {
-    myodbc_mutex_lock(&dbc->lock);
+    DO_LOCK_DBC();
   }
 
   if (query_length == SQL_NTS)
@@ -112,10 +113,6 @@ SQLRETURN odbc_stmt(DBC *dbc, const char *query,
                            mysql_errno(dbc->mysql));
   }
 
-  if (req_lock)
-  {
-    myodbc_mutex_unlock(&dbc->lock);
-  }
   return result;
 }
 
@@ -132,13 +129,12 @@ SQLRETURN odbc_stmt(DBC *dbc, const char *query,
 void myodbc_link_fields(STMT *stmt, MYSQL_FIELD *fields, uint field_count)
 {
     MYSQL_RES *result;
-    myodbc_mutex_lock(&stmt->dbc->lock);
+    LOCK_STMT(stmt);
     result= stmt->result;
     result->fields= fields;
     result->field_count= field_count;
     result->current_field= 0;
     fix_result_types(stmt);
-    myodbc_mutex_unlock(&stmt->dbc->lock);
 }
 
 

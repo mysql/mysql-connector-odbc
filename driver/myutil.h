@@ -126,7 +126,8 @@ typedef char * DYNAMIC_ELEMENT;
 
 SQLRETURN         my_SQLPrepare (SQLHSTMT hstmt, SQLCHAR *szSqlStr,
                                  SQLINTEGER cbSqlStr, bool dupe,
-                                 bool reset_select_limit);
+                                 bool reset_select_limit,
+                                 bool force_prepare);
 SQLRETURN         my_SQLExecute         (STMT * stmt);
 SQLRETURN SQL_API my_SQLFreeStmt        (SQLHSTMT hstmt,SQLUSMALLINT fOption);
 SQLRETURN SQL_API my_SQLFreeStmtExtended(SQLHSTMT hstmt,
@@ -405,7 +406,7 @@ long double   get_double  (STMT *stmt, ulong column_number, char *value,
                           ulong length);
 BOOL          is_null     (STMT *stmt, ulong column_number, char *value);
 SQLRETURN     prepare     (STMT *stmt, char * query, SQLINTEGER query_length,
-                           bool reset_sql_limit);
+                           bool reset_sql_limit, bool force_prepare);
 
 
 inline

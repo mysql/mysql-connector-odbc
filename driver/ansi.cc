@@ -52,7 +52,8 @@ SQLGetDiagRecImpl(SQLSMALLINT handle_type, SQLHANDLE handle,
                   SQLINTEGER *native_error, SQLCHAR *message,
                   SQLSMALLINT message_max, SQLSMALLINT *message_len);
 SQLRETURN SQL_API
-SQLPrepareImpl(SQLHSTMT hstmt, SQLCHAR *str, SQLINTEGER str_len);
+SQLPrepareImpl(SQLHSTMT hstmt, SQLCHAR *str, SQLINTEGER str_len,
+               bool force_prepare);
 
 SQLRETURN SQL_API
 SQLSetConnectAttrImpl(SQLHDBC hdbc, SQLINTEGER attribute,
@@ -343,7 +344,7 @@ SQLExecDirect(SQLHSTMT hstmt, SQLCHAR *str, SQLINTEGER str_len)
 
   CHECK_HANDLE(hstmt);
 
-  if ((error= SQLPrepareImpl(hstmt, str, str_len)))
+  if ((error= SQLPrepareImpl(hstmt, str, str_len, false)))
     return error;
   error= my_SQLExecute((STMT *)hstmt);
 
@@ -709,12 +710,13 @@ SQLPrepare(SQLHSTMT hstmt, SQLCHAR *str, SQLINTEGER str_len)
 {
   CHECK_HANDLE(hstmt);
 
-  return SQLPrepareImpl(hstmt, str, str_len);
+  return SQLPrepareImpl(hstmt, str, str_len, true);
 }
 
 
 SQLRETURN SQL_API
-SQLPrepareImpl(SQLHSTMT hstmt, SQLCHAR *str, SQLINTEGER str_len)
+SQLPrepareImpl(SQLHSTMT hstmt, SQLCHAR *str, SQLINTEGER str_len,
+               bool force_prepare)
 {
   STMT *stmt= (STMT *)hstmt;
 
@@ -723,7 +725,7 @@ SQLPrepareImpl(SQLHSTMT hstmt, SQLCHAR *str, SQLINTEGER str_len)
     we can pass it straight through. Otherwise it needs to be converted to
     the connection character set (probably utf-8).
   */
-  return MySQLPrepare(hstmt, str, str_len, false, false);
+  return MySQLPrepare(hstmt, str, str_len, false, false, force_prepare);
 }
 
 

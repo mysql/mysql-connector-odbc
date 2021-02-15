@@ -1579,7 +1579,7 @@ SQLRETURN SQL_API SQLMoreResults( SQLHSTMT hStmt )
 
   CHECK_HANDLE(hStmt);
 
-  myodbc_mutex_lock( &stmt->dbc->lock );
+  LOCK_STMT(stmt);
 
   CLEAR_STMT_ERROR( stmt );
 
@@ -1687,7 +1687,6 @@ SQLRETURN SQL_API SQLMoreResults( SQLHSTMT hStmt )
   }
 
 exitSQLMoreResults:
-  myodbc_mutex_unlock( &stmt->dbc->lock );
   return nReturn;
 }
 

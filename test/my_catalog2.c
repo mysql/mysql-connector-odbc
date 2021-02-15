@@ -847,8 +847,8 @@ DECLARE_TEST(bug12824839)
                 "(id int, vc_col varchar(32) UNIQUE, int_col int,"
                 "primary key(id,int_col))");
 
-  ok_stmt(hstmt, SQLPrepare(hstmt, "SELECT * from any_non_existing_table",
-                            SQL_NTS));
+  expect_stmt(hstmt, SQLPrepare(hstmt, "SELECT * from any_non_existing_table",
+                     SQL_NTS), SQL_ERROR);
 
   /* this will fail */
   expect_stmt(hstmt, SQLNumResultCols(hstmt, &col_count), SQL_ERROR);

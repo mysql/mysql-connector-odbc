@@ -372,7 +372,7 @@ BOOL is_null(STMT *stmt, ulong column_number, char *value)
    on a server. Returns SQLRETURN result code since preparing on client or
    server can produce errors, memory allocation to name one.  */
 SQLRETURN prepare(STMT *stmt, char * query, SQLINTEGER query_length,
-          bool reset_sql_limit)
+          bool reset_sql_limit, bool force_prepare)
 {
   /* TODO: I guess we always have to have query length here */
   if (query_length <= 0)
@@ -394,7 +394,8 @@ SQLRETURN prepare(STMT *stmt, char * query, SQLINTEGER query_length,
   stmt->param_count= PARAM_COUNT(&stmt->query);
   /* Trusting our parsing we are not using prepared statments unsless there are
      actually parameter markers in it */
-  if (!stmt->dbc->ds->no_ssps && PARAM_COUNT(&stmt->query) && !IS_BATCH(&stmt->query)
+  if (!stmt->dbc->ds->no_ssps && (PARAM_COUNT(&stmt->query) || force_prepare)
+    && !IS_BATCH(&stmt->query)
     && preparable_on_server(&stmt->query, stmt->dbc->mysql->server_version))
   {
     MYLOG_QUERY(stmt, "Using prepared statement");
@@ -404,13 +405,12 @@ SQLRETURN prepare(STMT *stmt, char * query, SQLINTEGER query_length,
        it at the moment */
     if (!get_cursor_name(&stmt->query))
     {
-     myodbc_mutex_lock(&stmt->dbc->lock);
+     LOCK_STMT(stmt);
 
      if (reset_sql_limit)
         set_sql_select_limit(stmt->dbc, 0, false);
 
      int prep_res = mysql_stmt_prepare(stmt->ssps, query, query_length);
-     myodbc_mutex_unlock(&stmt->dbc->lock);
 
      if (prep_res)
       {
@@ -636,20 +636,14 @@ SQLRETURN scroller_prefetch(STMT * stmt)
 
   MYLOG_QUERY(stmt, stmt->scroller.query);
 
-  myodbc_mutex_lock(&stmt->dbc->lock);
+  LOCK_STMT(stmt);
 
   if (exec_stmt_query(stmt, stmt->scroller.query,
                         (unsigned long)stmt->scroller.query_len, FALSE))
   {
-    myodbc_mutex_unlock(&stmt->dbc->lock);
     return SQL_ERROR;
   }
-
   get_result_metadata(stmt, FALSE);
-
-  /* I think there is no need to do fix_result_types here */
-  myodbc_mutex_unlock(&stmt->dbc->lock);
-
   return SQL_SUCCESS;
 }
 

@@ -443,7 +443,7 @@ do { \
 #endif
       };
 
-      for (int k = 0; k < 3; ++k)
+      for (int k = 0; k < 2; ++k)
       {
         bool server_local_infile = true;
         bool set_after_connect = false;
