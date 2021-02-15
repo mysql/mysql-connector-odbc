@@ -229,13 +229,12 @@ static my_bool check_if_usable_unique_key_exists(STMT *stmt)
 
   MYLOG_QUERY(stmt, buff);
 
-  myodbc_mutex_lock(&stmt->dbc->lock);
+  LOCK_STMT(stmt);
   if (exec_stmt_query(stmt, buff, strlen(buff), FALSE) ||
       !(res= mysql_store_result(stmt->dbc->mysql)))
   {
     stmt->set_error( MYERR_S1000, mysql_error(stmt->dbc->mysql),
               mysql_errno(stmt->dbc->mysql));
-    myodbc_mutex_unlock(&stmt->dbc->lock);
     return FALSE;
   }
 
@@ -268,7 +267,6 @@ static my_bool check_if_usable_unique_key_exists(STMT *stmt)
       stmt->cursor.pk_count= seq_in_index= 0;
   }
   mysql_free_result(res);
-  myodbc_mutex_unlock(&stmt->dbc->lock);
 
   /* Remember that we've figured this out already. */
   stmt->cursor.pk_validated= 1;
@@ -574,16 +572,14 @@ static SQLRETURN append_all_fields_std(STMT *stmt, std::string &str)
 
   select = "SELECT * FROM `" + stmt->table_name + "` LIMIT 0";
   MYLOG_QUERY(stmt, select.c_str());
-  myodbc_mutex_lock(&stmt->dbc->lock);
+  LOCK_STMT(stmt);
   if (exec_stmt_query_std(stmt, select, false) ||
       !(presultAllColumns= mysql_store_result(stmt->dbc->mysql)))
   {
     stmt->set_error( MYERR_S1000, mysql_error(stmt->dbc->mysql),
               mysql_errno(stmt->dbc->mysql));
-    myodbc_mutex_unlock(&stmt->dbc->lock);
     return SQL_ERROR;
   }
-  myodbc_mutex_unlock(&stmt->dbc->lock);
 
   /*
     If the number of fields in the underlying table is not the same as
@@ -1671,7 +1667,7 @@ SQLRETURN SQL_API my_SQLSetPos(SQLHSTMT hstmt, SQLSETPOSIROW irow,
                     return stmt->set_error(MYERR_S1000, alloc_error, 0);
                 }
 
-                myodbc_mutex_lock(&stmt->dbc->lock);
+                LOCK_STMT(stmt);
                 --irow;
                 sqlRet= SQL_SUCCESS;
                 stmt->cursor_row= (long)(stmt->current_row+irow);
@@ -1686,7 +1682,6 @@ SQLRETURN SQL_API my_SQLSetPos(SQLHSTMT hstmt, SQLSETPOSIROW irow,
                  so the MYSQL_RES is in the state we expect.
                 */
                 data_seek(stmt, (my_ulonglong)stmt->cursor_row);
-                myodbc_mutex_unlock(&stmt->dbc->lock);
                 break;
             }
 

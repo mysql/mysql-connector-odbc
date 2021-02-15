@@ -328,27 +328,25 @@ MySQLSetConnectAttr(SQLHDBC hdbc, SQLINTEGER Attribute,
         int cat_len= StringLengthPtr == SQL_NTS ?
                      strlen((char *)ValuePtr) : StringLengthPtr;
 
+        LOCK_DBC(dbc);
         if (cat_len > NAME_LEN)
         {
-          return set_conn_error((DBC*)hdbc, MYERR_01004,
+          return set_conn_error(dbc, MYERR_01004,
                                 "Invalid string or buffer length", 0);
         }
 
         if (!(db= fix_str((char *)ldb, (char *)ValuePtr, StringLengthPtr)))
           return set_conn_error((DBC*)hdbc,MYERR_S1009,NULL, 0);
 
-        myodbc_mutex_lock(&dbc->lock);
         if (is_connected(dbc))
         {
           if (mysql_select_db(dbc->mysql,(char*) db))
           {
             set_conn_error(dbc,MYERR_S1000,mysql_error(dbc->mysql),mysql_errno(dbc->mysql));
-            myodbc_mutex_unlock(&dbc->lock);
             return SQL_ERROR;
           }
         }
         dbc->database = db ? db : "";
-        myodbc_mutex_unlock(&dbc->lock);
       }
       break;
 

@@ -697,10 +697,9 @@ STMT::~STMT()
   delete_parsed_query(&orig_query);
   delete_param_bind(param_bind);
 
-  myodbc_mutex_lock(&dbc->lock);
+  LOCK_DBC(dbc);
   dbc->stmt_list.remove(this);
   //dbc->statements = list_delete(dbc->statements, &list);
-  myodbc_mutex_unlock(&dbc->lock);
 }
 
 void STMT::reset_getdata_position()

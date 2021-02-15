@@ -405,13 +405,12 @@ SQLRETURN prepare(STMT *stmt, char * query, SQLINTEGER query_length,
        it at the moment */
     if (!get_cursor_name(&stmt->query))
     {
-     myodbc_mutex_lock(&stmt->dbc->lock);
+     LOCK_STMT(stmt);
 
      if (reset_sql_limit)
         set_sql_select_limit(stmt->dbc, 0, false);
 
      int prep_res = mysql_stmt_prepare(stmt->ssps, query, query_length);
-     myodbc_mutex_unlock(&stmt->dbc->lock);
 
      if (prep_res)
       {
@@ -637,20 +636,14 @@ SQLRETURN scroller_prefetch(STMT * stmt)
 
   MYLOG_QUERY(stmt, stmt->scroller.query);
 
-  myodbc_mutex_lock(&stmt->dbc->lock);
+  LOCK_STMT(stmt);
 
   if (exec_stmt_query(stmt, stmt->scroller.query,
                         (unsigned long)stmt->scroller.query_len, FALSE))
   {
-    myodbc_mutex_unlock(&stmt->dbc->lock);
     return SQL_ERROR;
   }
-
   get_result_metadata(stmt, FALSE);
-
-  /* I think there is no need to do fix_result_types here */
-  myodbc_mutex_unlock(&stmt->dbc->lock);
-
   return SQL_SUCCESS;
 }
 

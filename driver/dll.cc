@@ -114,7 +114,11 @@ void myodbc_init(void)
 */
 void myodbc_end()
 {
+  if (!myodbc_inited)
+    return;
+
   --myodbc_inited;
+
   if (!myodbc_inited)
   {
     x_free(decimal_point);

@@ -196,6 +196,8 @@ server_list_dbcolumns(STMT *stmt,
   MYSQL_RES *result;
   char buff[NAME_LEN * 2 + 64], column_buff[NAME_LEN * 2 + 64];
 
+  LOCK_STMT(stmt);
+
   /* If a catalog was specified, we have to change working catalog
      to be able to use mysql_list_fields. */
   if (cbCatalog)
@@ -203,21 +205,15 @@ server_list_dbcolumns(STMT *stmt,
     if (reget_current_catalog(dbc))
       return NULL;
 
-    /* reget_current_catalog locks and release mutex, so locking
-       here again */
-    myodbc_mutex_lock(&dbc->lock);
 
     strncpy(buff, (const char*)szCatalog, cbCatalog);
     buff[cbCatalog]= '\0';
 
     if (mysql_select_db(mysql, buff))
     {
-      myodbc_mutex_unlock(&dbc->lock);
       return NULL;
     }
   }
-  else
-    myodbc_mutex_lock(&dbc->lock);
 
   strncpy(buff, (const char*)szTable, cbTable);
   buff[cbTable]= '\0';
@@ -233,11 +229,9 @@ server_list_dbcolumns(STMT *stmt,
     {
       /* Well, probably have to return error here */
       mysql_free_result(result);
-      myodbc_mutex_unlock(&dbc->lock);
       return NULL;
     }
   }
-  myodbc_mutex_unlock(&dbc->lock);
 
   return result;
 }
@@ -277,22 +271,19 @@ columns_no_i_s(STMT * stmt, SQLCHAR *szCatalog, SQLSMALLINT cbCatalog,
   }
 
   /* Get the list of tables that match szCatalog and szTable */
-  myodbc_mutex_lock(&stmt->dbc->lock);
+  LOCK_STMT(stmt);
   res= table_status(stmt, szCatalog, cbCatalog, szTable, cbTable, TRUE,
                     TRUE, TRUE);
 
   if (!res && mysql_errno(stmt->dbc->mysql))
   {
     SQLRETURN rc= handle_connection_error(stmt);
-    myodbc_mutex_unlock(&stmt->dbc->lock);
     return rc;
   }
   else if (!res)
   {
-    myodbc_mutex_unlock(&stmt->dbc->lock);
     goto empty_set;
   }
-  myodbc_mutex_unlock(&stmt->dbc->lock);
 
 #ifdef _WIN32
   if (GetModuleHandle("msaccess.exe") != NULL)
@@ -603,17 +594,16 @@ list_table_priv_no_i_s(SQLHSTMT hstmt,
     MEM_ROOT *alloc;
     uint     row_count;
 
-    myodbc_mutex_lock(&stmt->dbc->lock);
+    LOCK_STMT(stmt);
+
     stmt->result= table_privs_raw_data(stmt, catalog, catalog_len,
       table, table_len);
 
     if (!stmt->result)
     {
       SQLRETURN rc= handle_connection_error(stmt);
-      myodbc_mutex_unlock(&stmt->dbc->lock);
       return rc;
     }
-    myodbc_mutex_unlock(&stmt->dbc->lock);
 
     /* Allocate max buffers, to avoid reallocation */
     x_free(stmt->result_array);
@@ -757,7 +747,8 @@ list_column_priv_no_i_s(SQLHSTMT hstmt,
   CLEAR_STMT_ERROR(hstmt);
   my_SQLFreeStmt(hstmt,MYSQL_RESET);
 
-  myodbc_mutex_lock(&stmt->dbc->lock);
+  LOCK_STMT(stmt);
+
   stmt->result= column_privs_raw_data(stmt,
     catalog, catalog_len,
     table, table_len,
@@ -765,10 +756,8 @@ list_column_priv_no_i_s(SQLHSTMT hstmt,
   if (!stmt->result)
   {
     SQLRETURN rc= handle_connection_error(stmt);
-    myodbc_mutex_unlock(&stmt->dbc->lock);
     return rc;
   }
-  myodbc_mutex_unlock(&stmt->dbc->lock);
 
   x_free(stmt->result_array);
   stmt->result_array= (char **)myodbc_malloc(sizeof(char *) *
@@ -1107,24 +1096,23 @@ SQLRETURN foreign_keys_no_i_s(SQLHSTMT hstmt,
   myodbc_init_dynamic_array(&records, sizeof(MY_FOREIGN_KEY_FIELD), 0, 0);
 
   /* Get the list of tables that match szCatalog and szTable */
-  myodbc_mutex_lock(&stmt->dbc->lock);
+  LOCK_STMT(stmt);
+
   local_res= table_status(stmt, szFkCatalogName, cbFkCatalogName, szFkTableName,
                     cbFkTableName, FALSE, TRUE, TRUE);
   if (!local_res && mysql_errno(stmt->dbc->mysql))
   {
     rc= handle_connection_error(stmt);
-    goto unlock_and_free;
+    goto free_res;
   }
   else if (!local_res)
   {
-    goto empty_set_unlock;
+    goto empty_set;
   }
   free_internal_result_buffers(stmt);
-  myodbc_mutex_unlock(&stmt->dbc->lock);
 
   while ((table_row = mysql_fetch_row(local_res)))
   {
-    myodbc_mutex_lock(&stmt->dbc->lock);
     lengths = mysql_fetch_lengths(local_res);
     if (stmt->result)
       mysql_free_result(stmt->result);
@@ -1138,11 +1126,10 @@ SQLRETURN foreign_keys_no_i_s(SQLHSTMT hstmt,
       if (mysql_errno(stmt->dbc->mysql))
       {
         rc= handle_connection_error(stmt);
-        goto unlock_and_free;
+        goto free_res;
       }
-      goto empty_set_unlock;
+      goto empty_set;
     }
-    myodbc_mutex_unlock(&stmt->dbc->lock);
 
     /* Convert mysql fields to data that odbc wants */
     alloc= &stmt->alloc_root;
@@ -1458,9 +1445,6 @@ SQLRETURN foreign_keys_no_i_s(SQLHSTMT hstmt,
   myodbc_link_fields(stmt,SQLFORE_KEYS_fields,SQLFORE_KEYS_FIELDS);
   return SQL_SUCCESS;
 
-empty_set_unlock:
-  myodbc_mutex_unlock(&stmt->dbc->lock);
-
 empty_set:
   x_free((char *)tempdata);
   delete_dynamic(&records);
@@ -1476,8 +1460,7 @@ empty_set:
                                      sizeof(SQLFORE_KEYS_values),
                                      SQLFORE_KEYS_fields,
                                      SQLFORE_KEYS_FIELDS);
-unlock_and_free:
-  myodbc_mutex_unlock(&stmt->dbc->lock);
+free_res:
   mysql_free_result(local_res);
   local_res= NULL;
 
@@ -1542,15 +1525,14 @@ primary_keys_no_i_s(SQLHSTMT hstmt,
     char      **data;
     uint      row_count;
 
-    myodbc_mutex_lock(&stmt->dbc->lock);
+    LOCK_STMT(stmt);
+
     if (!(stmt->result= server_list_dbkeys(stmt, catalog, catalog_len,
                                            table, table_len)))
     {
       SQLRETURN rc= handle_connection_error(stmt);
-      myodbc_mutex_unlock(&stmt->dbc->lock);
       return rc;
     }
-    myodbc_mutex_unlock(&stmt->dbc->lock);
 
     x_free(stmt->result_array);
     stmt->result_array= (char**) myodbc_malloc(sizeof(char*)*SQLPRIM_KEYS_FIELDS*
@@ -1787,19 +1769,15 @@ procedure_columns_no_i_s(SQLHSTMT hstmt,
   }
 
   /* get procedures list */
-  myodbc_mutex_lock(&stmt->dbc->lock);
+  LOCK_STMT(stmt);
 
   if (!(proc_list_res= server_list_proc_params(stmt,
       szCatalogName, cbCatalogName, szProcName, cbProcName)))
   {
-    myodbc_mutex_unlock(&stmt->dbc->lock);
-
     nReturn= stmt->set_error( MYERR_S1000, mysql_error(stmt->dbc->mysql),
                       mysql_errno(stmt->dbc->mysql));
     goto clean_exit;
   }
-
-  myodbc_mutex_unlock(&stmt->dbc->lock);
 
   while ((row= mysql_fetch_row(proc_list_res)))
   {
@@ -1988,18 +1966,13 @@ procedure_columns_no_i_s(SQLHSTMT hstmt,
 
   if (cbColumnName)
   {
-    myodbc_mutex_lock(&stmt->dbc->lock);
     if (exec_stmt_query_std(stmt, query, false) ||
         !(columns_res= mysql_store_result(stmt->dbc->mysql)))
     {
-      myodbc_mutex_unlock(&stmt->dbc->lock);
-
       nReturn= stmt->set_error( MYERR_S1000, mysql_error(stmt->dbc->mysql),
                 mysql_errno(stmt->dbc->mysql));
       goto exit_with_free;
     }
-
-    myodbc_mutex_unlock(&stmt->dbc->lock);
 
     /* should be only one row */
     row= mysql_fetch_row(columns_res);
@@ -2355,19 +2328,18 @@ statistics_no_i_s(SQLHSTMT hstmt,
     MYSQL *mysql= stmt->dbc->mysql;
     DBC *dbc= stmt->dbc;
 
+    LOCK_STMT(stmt);
+
     if (!table_len)
         goto empty_set;
 
-    myodbc_mutex_lock(&dbc->lock);
     stmt->result= server_list_dbkeys(stmt, catalog, catalog_len,
                                      table, table_len);
     if (!stmt->result)
     {
       SQLRETURN rc= handle_connection_error(stmt);
-      myodbc_mutex_unlock(&dbc->lock);
       return rc;
     }
-    myodbc_mutex_unlock(&dbc->lock);
     my_int2str(SQL_INDEX_OTHER,SS_type,10,0);
     stmt->order=       SQLSTAT_order;
     stmt->order_count= array_elements(SQLSTAT_order);
@@ -2467,6 +2439,7 @@ tables_no_i_s(SQLHSTMT hstmt,
     my_bool is_info_schema= 0;
     SQLRETURN rc = SQL_SUCCESS;
 
+    LOCK_STMT(stmt);
     /*
       empty (but non-NULL) schema and table returns catalog list
       If no_i_s then call 'show database' to list all catalogs (database).
@@ -2475,7 +2448,6 @@ tables_no_i_s(SQLHSTMT hstmt,
         || (catalog && (!server_has_i_s(stmt->dbc) ||
                         stmt->dbc->ds->no_information_schema))))
     {
-      myodbc_mutex_lock(&stmt->dbc->lock);
       {
         char buff[32 + NAME_LEN * 2], *to;
         to= myodbc_stpmov(buff, "SHOW DATABASES LIKE '");
@@ -2486,7 +2458,6 @@ tables_no_i_s(SQLHSTMT hstmt,
         if (!mysql_query(stmt->dbc->mysql, buff))
           catalog_res= mysql_store_result(stmt->dbc->mysql);
       }
-      myodbc_mutex_unlock(&stmt->dbc->lock);
 
       if (!catalog_res)
       {
@@ -2577,8 +2548,6 @@ tables_no_i_s(SQLHSTMT hstmt,
       while (catalog_res && (catalog_row= mysql_fetch_row(catalog_res))
              || is_info_schema)
       {
-        myodbc_mutex_lock(&stmt->dbc->lock);
-
         if (is_info_schema)
         {
           /*
@@ -2600,7 +2569,6 @@ tables_no_i_s(SQLHSTMT hstmt,
           */
           if(myodbc_strcasecmp(catalog_row[0], "information_schema") == 0)
           {
-            myodbc_mutex_unlock(&stmt->dbc->lock);
             continue;
           }
 
@@ -2620,15 +2588,12 @@ tables_no_i_s(SQLHSTMT hstmt,
           switch (mysql_errno(stmt->dbc->mysql))
           {
           case ER_BAD_DB_ERROR:
-            myodbc_mutex_unlock(&stmt->dbc->lock);
             goto empty_set;
           default:
             rc= handle_connection_error(stmt);
-            myodbc_mutex_unlock(&stmt->dbc->lock);
             goto free_and_return;
           }
         }
-        myodbc_mutex_unlock(&stmt->dbc->lock);
 
         if (!stmt->result)
           goto empty_set; ///////////////////////
