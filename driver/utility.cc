@@ -1636,7 +1636,18 @@ SQLLEN get_transfer_octet_length(STMT *stmt, MYSQL_FIELD *field)
 
   case MYSQL_TYPE_STRING:
     if (stmt->dbc->ds->pad_char_to_full_length)
-      length= field->max_length;
+    {
+      unsigned int csmaxlen = get_charset_maxlen(field->charsetnr);
+      if (!csmaxlen)
+        return SQL_NO_TOTAL;
+
+      /*
+        We need to find out the real length using the database length and
+        the current mode (ANSI or UNICODE)
+      */
+      length= (field->max_length > field->length ? field->max_length : field->length) / csmaxlen;
+      return length;
+    }
     /* FALLTHROUGH */
 
   case MYSQL_TYPE_ENUM:

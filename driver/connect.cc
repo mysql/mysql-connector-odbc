@@ -293,6 +293,11 @@ SQLRETURN myodbc_do_connect(DBC *dbc, DataSource *ds)
   /* Detect another problem specific to MS Access */
   if (GetModuleHandle("msaccess.exe") != NULL)
     ds->default_bigint_bind_str= 1;
+
+  /* MS SQL Likes when the CHAR columns are padded */
+  if (GetModuleHandle("sqlservr.exe") != NULL)
+    ds->pad_char_to_full_length= 1;
+
 #endif
 
   mysql = mysql_init(nullptr);

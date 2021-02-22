@@ -59,6 +59,14 @@ extern "C" {
 
 extern CHARSET_INFO *utf8_charset_info;
 
+struct CHARSET_COLLATION_INFO
+{
+  unsigned int id;
+  const char *cs_name;
+  const char *coll_name;
+  unsigned int maxlen;
+};
+
 /**
  Determine whether a charset number represents a UTF-8 collation.
 */
@@ -125,6 +133,8 @@ bool myodbc_append_mem_std(std::string &str, const char *append, size_t length);
 bool myodbc_append_os_quoted_std(std::string &str, const char *append, ...);
 void myodbc_dynstr_free(DYNAMIC_STRING *str);
 bool myodbc_dynstr_realloc(DYNAMIC_STRING *str, size_t additional_size);
+
+unsigned int get_charset_maxlen(unsigned int num);
 #ifdef __cplusplus
 }
 #endif

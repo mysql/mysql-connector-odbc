@@ -1364,7 +1364,209 @@ DECLARE_TEST(t_bug32135124)
 }
 
 
+/*
+  Bug #32537000: PAD_SPACE=1 DOES NOT WORK IN ODBC DRIVER
+*/
+DECLARE_TEST(t_bug32537000)
+{
+  SQLSMALLINT name_length, data_type, decimal_digits, nullable;
+  SQLCHAR column_name[SQL_MAX_COLUMN_NAME_LEN];
+  SQLULEN column_size;
+  SQLCHAR buf[80]= {0};
+  SQLLEN buflen= 0;
+  SQLINTEGER rowcnt= 3;
+  SQLINTEGER row_offset1= 5;
+  DECLARE_BASIC_HANDLES(henv1, hdbc1, hstmt1);
+  SQLHSTMT hstmt2;
+
+  struct t_row{
+    SQLINTEGER id;
+    SQLCHAR enum_val[64];
+    SQLLEN enum_len;
+    SQLCHAR char_val[64];
+    SQLLEN char_len;
+  };
+
+  struct t_row_w{
+    SQLINTEGER id;
+    SQLWCHAR wenum_val[64];
+    SQLLEN wenum_len;
+    SQLWCHAR wchar_val[64];
+    SQLLEN wchar_len;
+  };
+
+  {
+    struct t_row rows[3];
+    size_t row_size = sizeof(rows[0]);
+    size_t total_size = sizeof(rows);
+
+    memset(rows, 0, total_size);
+
+    char enum_val[3][6] = { "red  ", "green", "blue " };
+    char char_val[3][11] = { "red1      ", "green1    ", "blue1     " };
+
+    ok_sql(hstmt, "DROP TABLE IF EXISTS t_bug32537000");
+    ok_sql(hstmt, "CREATE TABLE t_bug32537000 "
+      "(id int primary key auto_increment,"
+      "enum_col enum('red', 'green', 'blue'),"
+      "char_col char(10))DEFAULT CHARSET=utf8mb4");
+
+    ok_sql(hstmt, "INSERT INTO t_bug32537000 VALUES "
+      "(1, 'red', 'red1'),"
+      "(2, 'green', 'green1'),"
+      "(3, 'blue', 'blue1')");
+
+    alloc_basic_handles_with_opt(&henv1, &hdbc1, &hstmt1, NULL, NULL, NULL, NULL,
+      "PAD_SPACE=1");
+
+    ok_stmt(hstmt1, SQLSetStmtAttr(hstmt1, SQL_ATTR_CURSOR_TYPE,
+      (SQLPOINTER)SQL_CURSOR_FORWARD_ONLY, 0));
+
+    ok_stmt(hstmt1, SQLSetStmtAttr(hstmt1, SQL_ATTR_ROW_ARRAY_SIZE,
+      (SQLPOINTER)((size_t)rowcnt), 0));
+    ok_stmt(hstmt1, SQLSetStmtAttr(hstmt1, SQL_ATTR_ROW_BIND_TYPE,
+      (SQLPOINTER)row_size, 0));
+
+    ok_stmt(hstmt1, SQLBindCol(hstmt1, 1, SQL_C_LONG, &rows[0].id, 0, NULL));
+    ok_stmt(hstmt1, SQLBindCol(hstmt1, 2, SQL_C_CHAR,
+      &rows[0].enum_val, 64, &rows[0].enum_len));
+    ok_stmt(hstmt1, SQLBindCol(hstmt1, 3, SQL_C_CHAR,
+      &rows[0].char_val, 64, &rows[0].char_len));
+
+    ok_sql(hstmt1, "SELECT * FROM t_bug32537000 ORDER BY id");
+
+    ok_stmt(hstmt1, SQLFetch(hstmt1));
+
+    printf("RESULT:\n");
+    for (int i = 0; i < 3; ++i)
+    {
+      printf("[id: %d] [enum_val: '%s', enum_len: %d] [char_val: '%s', char_len: %d]\n",
+        rows[i].id, rows[i].enum_val, (int)rows[i].enum_len, rows[i].char_val,
+        (int)rows[i].char_len
+      );
+      is_str(enum_val[i], rows[i].enum_val, 5);
+      is_str(char_val[i], rows[i].char_val, 10);
+
+      is_num(5, rows[i].enum_len);
+      is_num(10, rows[i].char_len);
+    }
+    printf("\n");
+
+    expect_stmt(hstmt1, SQLFetch(hstmt1), SQL_NO_DATA);
+
+    ok_con(hdbc1, SQLAllocStmt(hdbc1, &hstmt2));
+
+    ok_sql(hstmt2, "SELECT * FROM t_bug32537000 ORDER BY id");
+
+    printf("RESULT 2:\n");
+
+    int cnt = 0;
+    while (SQL_SUCCESS == SQLFetch(hstmt2))
+    {
+      ok_stmt(hstmt2, SQLGetData(hstmt2, 1, SQL_C_LONG, &rows[0].id, 4, NULL));
+      ok_stmt(hstmt2, SQLGetData(hstmt2, 2, SQL_C_CHAR, rows[0].enum_val, 64, &rows[0].enum_len));
+      ok_stmt(hstmt2, SQLGetData(hstmt2, 3, SQL_C_CHAR, rows[0].char_val, 64, &rows[0].char_len));
+
+      printf("[id: %d] [enum_val: '%s', enum_len: %d] [char_val: '%s', char_len: %d]\n",
+        rows[0].id, rows[0].enum_val, (int)rows[0].enum_len, rows[0].char_val,
+        (int)rows[0].char_len
+      );
+
+      is_str(enum_val[cnt], rows[0].enum_val, 5);
+      is_str(char_val[cnt], rows[0].char_val, 10);
+      ++cnt;
+
+      is_num(5, rows[0].enum_len);
+      is_num(10, rows[0].char_len);
+    }
+
+    free_basic_handles(&henv1, &hdbc1, &hstmt1);
+
+  }
+  if (unicode_driver)
+  {
+    struct t_row_w rows[3];
+    size_t row_size= sizeof(rows[0]);
+    size_t total_size = sizeof(rows);
+
+    wchar_t wenum_val[3][6] = { L"red  ", L"green", L"blue " };
+    wchar_t wchar_val[3][11] = { L"red1      ", L"green1    ", L"blue1     " };
+
+    alloc_basic_handles_with_opt(&henv1, &hdbc1, &hstmt1, NULL, NULL, NULL, NULL,
+                                 "PAD_SPACE=1");
+
+    memset(rows, 0, total_size);
+
+    printf("\nTESTING WIDE CHARACTERS:\n\n");
+
+    ok_stmt(hstmt1, SQLSetStmtAttr(hstmt1, SQL_ATTR_CURSOR_TYPE,
+                                  (SQLPOINTER)SQL_CURSOR_FORWARD_ONLY, 0));
+
+    ok_stmt(hstmt1, SQLSetStmtAttr(hstmt1, SQL_ATTR_ROW_ARRAY_SIZE,
+                                  (SQLPOINTER)((size_t)rowcnt), 0));
+    ok_stmt(hstmt1, SQLSetStmtAttr(hstmt1, SQL_ATTR_ROW_BIND_TYPE,
+                                  (SQLPOINTER)row_size, 0));
+
+    ok_stmt(hstmt1, SQLBindCol(hstmt1, 1, SQL_C_LONG, &rows[0].id, 0, NULL));
+    ok_stmt(hstmt1, SQLBindCol(hstmt1, 2, SQL_C_WCHAR,
+                              &rows[0].wenum_val, 64, &rows[0].wenum_len));
+    ok_stmt(hstmt1, SQLBindCol(hstmt1, 3, SQL_C_WCHAR,
+                              &rows[0].wchar_val, 64, &rows[0].wchar_len));
+
+    ok_sql(hstmt1, "SELECT * FROM t_bug32537000 ORDER BY id");
+
+    ok_stmt(hstmt1, SQLFetch(hstmt1));
+
+    printf("RESULT:\n");
+    for(int i = 0; i < 3; ++i)
+    {
+      printf("[id: %d] [enum_len: %d] [char_len: %d]\n",
+        rows[i].id, (int)rows[i].wenum_len, (int)rows[i].wchar_len
+      );
+
+      is_wstr(wenum_val[i], sqlwchar_to_wchar_t(rows[i].wenum_val), 5);
+      is_wstr(wchar_val[i], sqlwchar_to_wchar_t(rows[i].wchar_val), 10);
+
+      is_num(5*sizeof(SQLWCHAR), rows[i].wenum_len);
+      is_num(10*sizeof(SQLWCHAR), rows[i].wchar_len);
+    }
+    printf("\n");
+
+    expect_stmt(hstmt1, SQLFetch(hstmt1), SQL_NO_DATA);
+
+    ok_con(hdbc1, SQLAllocStmt(hdbc1, &hstmt2));
+
+    ok_sql(hstmt2, "SELECT * FROM t_bug32537000 ORDER BY id");
+
+    printf("RESULT 2:\n");
+
+    int cnt = 0;
+    while(SQL_SUCCESS == SQLFetch(hstmt2))
+    {
+      ok_stmt(hstmt2, SQLGetData(hstmt2, 1, SQL_C_LONG, &rows[0].id, 4, NULL));
+      ok_stmt(hstmt2, SQLGetData(hstmt2, 2, SQL_C_WCHAR, rows[0].wenum_val, 64, &rows[0].wenum_len));
+      ok_stmt(hstmt2, SQLGetData(hstmt2, 3, SQL_C_WCHAR, rows[0].wchar_val, 64, &rows[0].wchar_len));
+
+      printf("[id: %d] [enum_len: %d] [char_len: %d]\n",
+        rows[0].id, (int)rows[0].wenum_len, (int)rows[0].wchar_len
+      );
+
+      is_wstr(wenum_val[cnt], sqlwchar_to_wchar_t(rows[0].wenum_val), 5);
+      is_wstr(wchar_val[cnt], sqlwchar_to_wchar_t(rows[0].wchar_val), 10);
+      ++cnt;
+
+      is_num(5*sizeof(SQLWCHAR), rows[0].wenum_len);
+      is_num(10*sizeof(SQLWCHAR), rows[0].wchar_len);
+    }
+
+    free_basic_handles(&henv1, &hdbc1, &hstmt1);
+  }
+
+  return OK;
+}
+
 BEGIN_TESTS
+  ADD_TEST(t_bug32537000)
   ADD_TEST(t_bug32135124)
   ADD_TEST(t_text_types)
   ADD_TEST(t_longlong1)
