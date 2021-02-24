@@ -1565,7 +1565,41 @@ DECLARE_TEST(t_bug32537000)
   return OK;
 }
 
+/*
+  Bug #28783266 MYSQL CONNECTOR/ODBC LINKED SERVER ISSUE WITH 8.0
+  UNICODE DRIVER
+*/
+DECLARE_TEST(t_bug28783266)
+{
+  SQLSMALLINT col_count = -1;
+  DECLARE_BASIC_HANDLES(henv1, hdbc1, hstmt1);
+  ok_sql(hstmt, "DROP TABLE IF EXISTS t_bug28783266");
+
+  ok_sql(hstmt, "CREATE TABLE t_bug28783266 (id int, vc varchar(32), txt TEXT)");
+  ok_sql(hstmt, "INSERT INTO t_bug28783266 VALUES (1, 'abc', 'text')");
+  printf("Test with SSPS enabled\n");
+  ok_stmt(hstmt, SQLPrepareW(hstmt, W(L"\r\n SELECT * FROM t_bug28783266"), SQL_NTS));
+  ok_stmt(hstmt, SQLNumResultCols(hstmt, &col_count));
+  is_num(3, col_count);
+  ok_stmt(hstmt, SQLExecute(hstmt));
+  my_print_non_format_result(hstmt);
+
+  printf("Test with SSPS disabled\n");
+  alloc_basic_handles_with_opt(&henv1, &hdbc1, &hstmt1, NULL, NULL, NULL, NULL,
+                                "NO_SSPS=1");
+
+  ok_stmt(hstmt1, SQLPrepareW(hstmt1, W(L"\r\n SELECT * FROM t_bug28783266"), SQL_NTS));
+  ok_stmt(hstmt1, SQLNumResultCols(hstmt1, &col_count));
+  is_num(3, col_count);
+  ok_stmt(hstmt1, SQLExecute(hstmt1));
+  my_print_non_format_result(hstmt1);
+  free_basic_handles(&henv1, &hdbc1, &hstmt1);
+
+  return OK;
+}
+
 BEGIN_TESTS
+  ADD_TEST(t_bug28783266)
   ADD_TEST(t_bug32537000)
   ADD_TEST(t_bug32135124)
   ADD_TEST(t_text_types)
