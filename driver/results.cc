@@ -358,6 +358,27 @@ sql_get_bookmark_data(STMT *stmt, SQLSMALLINT fCType, uint column_number,
 }
 
 
+char *fix_padding(STMT *stmt, SQLSMALLINT fCType, char *value, std::string &out_str,
+              SQLLEN cbValueMax, ulong &data_len, DESCREC *irrec)
+{
+    if (stmt->dbc->ds->pad_char_to_full_length &&
+         (irrec->type == SQL_CHAR || irrec->type == SQL_WCHAR) &&
+         (fCType == SQL_C_CHAR || fCType == SQL_C_WCHAR || fCType == SQL_C_BINARY)
+       )
+    {
+      if (value)
+        out_str = std::string(value, data_len);
+
+      /* Calculate new data length with spaces */
+      data_len = irrec->octet_length < cbValueMax ? irrec->octet_length : cbValueMax;
+
+      out_str.resize(data_len, ' ');
+      return (char*)out_str.c_str();
+    }
+    return value;
+}
+
+
 /**
   Retrieve the data from a field as a specified ODBC C type.
 
@@ -1552,11 +1573,18 @@ SQLRETURN SQL_API SQLGetData(SQLHSTMT      StatementHandle,
         length= strlen(stmt->current_values[sColNum]);
 
       arrec= desc_get_rec(stmt->ard, sColNum, FALSE);
+
+      /* String will be used as a temporary storage which frees itself automatically */
+      std::string temp_str;
+      char *value = fix_padding(stmt, TargetType, stmt->current_values[sColNum],
+                                      temp_str, BufferLength, length, irrec);
+
       result= sql_get_data(stmt, TargetType, sColNum,
                           TargetValuePtr, BufferLength, StrLen_or_IndPtr,
-                          stmt->current_values[sColNum], length,
-                          arrec);
+                          value, length, arrec);
     }
+
+
 
     DEFAULT_LOCALE_SET(stmt)
 
@@ -1869,9 +1897,15 @@ fill_fetch_buffers(STMT *stmt, MYSQL_ROW values, uint rownum)
                                       sizeof(SQLLEN), rownum);
       }
 
+      std::string temp_str;
+      char *temp_val = fix_padding(stmt, arrec->concise_type, *values,
+                                   temp_str, arrec->octet_length,
+                                   length, irrec);
+
       tmp_res= sql_get_data(stmt, arrec->concise_type, (uint)i,
                             TargetValuePtr, arrec->octet_length, pcbValue,
-                            *values, length, arrec);
+                            temp_val, length, arrec);
+
       if (tmp_res != SQL_SUCCESS)
       {
         if (tmp_res == SQL_SUCCESS_WITH_INFO)

@@ -242,6 +242,11 @@ SQLRETURN SQL_API sql_get_bookmark_data(STMT *stmt, SQLSMALLINT fCType,
               uint column_number, SQLPOINTER rgbValue,
               SQLLEN cbValueMax, SQLLEN *pcbValue,
               char *value, ulong length, DESCREC *arrec);
+
+void fix_padded_length(STMT *stmt, SQLSMALLINT fCType,
+              SQLLEN cbValueMax, SQLLEN *pcbValue, ulong data_len,
+              DESCREC *irrec);
+
 SQLRETURN SQL_API my_SQLSetPos(SQLHSTMT hstmt, SQLSETPOSIROW irow,
                                SQLUSMALLINT fOption, SQLUSMALLINT fLock);
 int       unireg_to_c_datatype  (MYSQL_FIELD *field);

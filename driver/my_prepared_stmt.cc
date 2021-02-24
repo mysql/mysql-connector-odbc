@@ -98,7 +98,7 @@ BOOL ssps_get_out_params(STMT *stmt)
   if (is_call_procedure(&stmt->query))
   {
     MYSQL_ROW values= NULL;
-    DESCREC   *iprec, *aprec;
+    DESCREC   *iprec, *aprec, *irrec;
     uint      counter= 0;
     int       i, out_params;
 
