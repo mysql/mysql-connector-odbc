@@ -1280,8 +1280,48 @@ DECLARE_TEST(t_bug_14005343)
   return OK;
 }
 
+/*
+  SQLPROCEDURECOLUMNS FUNCTION RETURNS INCOMPLETE RESULTS
+*/
+DECLARE_TEST(t_bug32504915)
+{
+  char *create_query = malloc(32000);
+  int i, col_num;
+  int max_cols = 50;
+
+  create_query[0] = '\0';
+
+  ok_sql(hstmt, "drop procedure if exists t_bug32504915");
+  strcat(create_query, "create procedure t_bug32504915(");
+
+  for(i = 0; i < max_cols; ++i)
+  {
+    char snum[10];
+    if (i)
+      strcat(create_query, ",");
+
+    strcat(create_query, "in input_parameter_0000000");
+    snprintf(snum, sizeof(snum), "%d", i);
+    strcat(create_query, snum);
+    strcat(create_query, " varchar(45)");
+  }
+  strcat(create_query, ")begin end;");
+  ok_stmt(hstmt, SQLExecDirect(hstmt, (SQLCHAR*)create_query, SQL_NTS));
+
+  ok_stmt(hstmt, SQLProcedureColumns(hstmt, NULL, 0, NULL, 0,
+                                     "t_bug32504915", SQL_NTS,
+                                     "%", SQL_NTS));
+
+  col_num = my_print_non_format_result(hstmt);
+  is_num(50, col_num);
+
+  free(create_query);
+  return OK;
+}
+
 
 BEGIN_TESTS
+  ADD_TEST(t_bug32504915)
   ADD_TEST(t_sqlprocedurecolumns)
   ADD_TEST(t_bug57182)
   ADD_TEST(t_bug_14005343)
