@@ -2274,7 +2274,7 @@ BEGIN_TESTS
 #ifndef USE_IODBC
   ADD_TEST(t_bug56804)
 #endif
-  ADD_TEST(t_bug31678876)
+  ADD_TEST_UNICODE(t_bug31678876)
   ADD_TEST(t_param_offset)
   ADD_TEST(t_bug49029)
   ADD_TEST(t_bug53891)
