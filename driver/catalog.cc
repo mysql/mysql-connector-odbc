@@ -168,46 +168,48 @@ static MYSQL_RES *table_status_i_s(STMT        *stmt,
 {
   MYSQL *mysql= stmt->dbc->mysql;
   /** the buffer size should count possible escapes */
-  char buff[300+8*NAME_CHAR_LEN], *to;
   my_bool clause_added= FALSE;
-
-  to= myodbc_stpmov(buff, "SELECT TABLE_NAME, TABLE_COMMENT, TABLE_TYPE, TABLE_SCHEMA " \
-                      "FROM ( SELECT * FROM INFORMATION_SCHEMA.TABLES  " \
-                      "WHERE ");
+  std::string query;
+  char tmpbuff[1024];
+  size_t cnt = 0;;
+  query.reserve(1024);
+  query = "SELECT TABLE_NAME,TABLE_COMMENT,TABLE_TYPE,TABLE_SCHEMA " \
+          "FROM (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE ";
 
   if (catalog_name && *catalog_name)
   {
-    to= myodbc_stpmov(to, "TABLE_SCHEMA LIKE '");
-    to+= myodbc_escape_string(stmt, to, (ulong)(sizeof(buff) - (to - buff)),
+    query.append("TABLE_SCHEMA LIKE '");
+    cnt = myodbc_escape_string(stmt, tmpbuff, sizeof(tmpbuff),
                               (char *)catalog_name, catalog_len, 1);
-    to= myodbc_stpmov(to, "' ");
+    query.append(tmpbuff, cnt);
+    query.append("' ");
     clause_added= TRUE;
   }
   else
   {
-    to= myodbc_stpmov(to, "TABLE_SCHEMA = DATABASE() ");
+    query.append("TABLE_SCHEMA=DATABASE() ");
   }
 
   if (show_tables)
   {
-    to= myodbc_stpmov(to, "AND ");
+    query.append("AND ");
     if (show_views)
-      to= myodbc_stpmov(to, "( ");
-    to= myodbc_stpmov(to, "TABLE_TYPE='BASE TABLE' ");
+      query.append("( ");
+    query.append("TABLE_TYPE='BASE TABLE' ");
   }
 
   if (show_views)
   {
     if (show_tables)
-      to= myodbc_stpmov(to, "OR ");
+      query.append("OR ");
     else
-      to= myodbc_stpmov(to, "AND ");
+      query.append("AND ");
 
-    to= myodbc_stpmov(to, "TABLE_TYPE='VIEW' ");
+    query.append("TABLE_TYPE='VIEW' ");
     if (show_tables)
-      to= myodbc_stpmov(to, ") ");
+      query.append(") ");
   }
-  to = myodbc_stpmov(to, ") TABLES ");
+  query.append(") TABLES ");
 
   /*
     As a pattern-value argument, an empty string needs to be treated
@@ -219,24 +221,24 @@ static MYSQL_RES *table_status_i_s(STMT        *stmt,
 
   if (table_name && *table_name)
   {
-    to= myodbc_stpmov(to, "WHERE TABLE_NAME LIKE '");
+    query.append("WHERE TABLE_NAME LIKE '");
     if (wildcard)
     {
-      to+= mysql_real_escape_string(mysql, to, (char *)table_name, table_len);
+      cnt = mysql_real_escape_string(mysql, tmpbuff, (char *)table_name, table_len);
+      query.append(tmpbuff, cnt);
     }
     else
     {
-      to+= myodbc_escape_string(stmt, to, (ulong)(sizeof(buff) - (to - buff)),
+      cnt = myodbc_escape_string(stmt, tmpbuff, sizeof(tmpbuff),
                                 (char *)table_name, table_len, 0);
+      query.append(tmpbuff, cnt);
     }
-    to= myodbc_stpmov(to, "'");
+    query.append("'");
   }
 
-  assert(to - buff < sizeof(buff));
+  MYLOG_QUERY(stmt, query.c_str());
 
-  MYLOG_QUERY(stmt, buff);
-
-  if (exec_stmt_query(stmt, buff, (unsigned long)(to - buff), FALSE))
+  if (exec_stmt_query(stmt, query.c_str(), query.length(), FALSE))
   {
     return NULL;
   }
@@ -284,7 +286,7 @@ MYSQL_RES *table_status(STMT        *stmt,
             NULL _default parameter means that parameter is mandatory and error is generated
 @returns :  1 if required parameter is NULL, 0 otherwise
 */
-int add_name_condition_oa_id(HSTMT hstmt, char ** pos, SQLCHAR * name,
+int add_name_condition_oa_id(HSTMT hstmt, std::string &query, SQLCHAR * name,
                               SQLSMALLINT name_len, char * _default)
 {
   SQLUINTEGER metadata_id;
@@ -299,22 +301,24 @@ int add_name_condition_oa_id(HSTMT hstmt, char ** pos, SQLCHAR * name,
 
     if (metadata_id)
     {
-      *pos= myodbc_stpmov(*pos, "=");
+      query.append("=");
       /* Need also code to remove trailing blanks */
     }
     else
-      *pos= myodbc_stpmov(*pos, "= BINARY ");
+      query.append("= BINARY ");
 
-    *pos= myodbc_stpmov(*pos, "'");
-    *pos+= mysql_real_escape_string(stmt->dbc->mysql, *pos, (char *)name, name_len);
-    *pos= myodbc_stpmov(*pos, "' ");
+    query.append("'");
+    char tmpbuff[1024];
+    size_t cnt = mysql_real_escape_string(stmt->dbc->mysql, tmpbuff, (char *)name, name_len);
+    query.append(tmpbuff, cnt);
+    query.append("' ");
   }
   else
   {
     /* According to http://msdn.microsoft.com/en-us/library/ms714579%28VS.85%29.aspx
     identifier argument cannot be NULL with one exception not actual for mysql) */
     if (!metadata_id && _default)
-      *pos= myodbc_stpmov(*pos, _default);
+      query.append(_default);
     else
       return 1;
   }
@@ -329,7 +333,7 @@ int add_name_condition_oa_id(HSTMT hstmt, char ** pos, SQLCHAR * name,
 are either pattern value(oa) or identifier string(id)
 @returns :  1 if required parameter is NULL, 0 otherwise
 */
-int add_name_condition_pv_id(HSTMT hstmt, char ** pos, SQLCHAR * name,
+int add_name_condition_pv_id(HSTMT hstmt, std::string &query, SQLCHAR * name,
                                        SQLSMALLINT name_len, char * _default)
 {
   SQLUINTEGER metadata_id;
@@ -343,22 +347,25 @@ int add_name_condition_pv_id(HSTMT hstmt, char ** pos, SQLCHAR * name,
 
     if (metadata_id)
     {
-      *pos= myodbc_stpmov(*pos, "=");
+      query.append("=");
       /* Need also code to remove trailing blanks */
     }
     else
-      *pos= myodbc_stpmov(*pos, " LIKE BINARY ");
+      query.append(" LIKE BINARY ");
 
-    *pos= myodbc_stpmov(*pos, "'");
-    *pos+= mysql_real_escape_string(stmt->dbc->mysql, *pos, (char *)name, name_len);
-    *pos= myodbc_stpmov(*pos, "' ");
+    query.append("'");
+    char tmpbuff[1024];
+    size_t cnt = mysql_real_escape_string(stmt->dbc->mysql, tmpbuff,
+                                          (char *)name, name_len);
+    query.append(tmpbuff, cnt);
+    query.append("' ");
   }
   else
   {
     /* According to http://msdn.microsoft.com/en-us/library/ms714579%28VS.85%29.aspx
        identifier argument cannot be NULL with one exception not actual for mysql) */
     if (!metadata_id && _default)
-      *pos= myodbc_stpmov(*pos, _default);
+      query.append(_default);
     else
       return 1;
   }
@@ -575,29 +582,28 @@ SQLRETURN list_table_priv_i_s(SQLHSTMT    hstmt,
 {
   STMT *stmt=(STMT *) hstmt;
   MYSQL *mysql= stmt->dbc->mysql;
-  char   buff[300+6*NAME_LEN+1], *pos;
+  char   tmpbuff[1024];
   SQLRETURN rc;
+  std::string query;
+  query.reserve(1024);
 
   /* Db,User,Table_name,"NULL" as Grantor,Table_priv*/
-  pos= myodbc_stpmov(buff,
-               "SELECT TABLE_SCHEMA as TABLE_CAT, TABLE_CATALOG as TABLE_SCHEM,"
-                      "TABLE_NAME, NULL as GRANTOR, GRANTEE,"
-                      "PRIVILEGE_TYPE as PRIVILEGE, IS_GRANTABLE "
-               "FROM INFORMATION_SCHEMA.TABLE_PRIVILEGES "
-               "WHERE TABLE_NAME");
+  query = "SELECT TABLE_SCHEMA as TABLE_CAT,TABLE_CATALOG as TABLE_SCHEM,"
+          "TABLE_NAME, NULL as GRANTOR,GRANTEE,"
+          "PRIVILEGE_TYPE as PRIVILEGE,IS_GRANTABLE "
+          "FROM INFORMATION_SCHEMA.TABLE_PRIVILEGES "
+          "WHERE TABLE_NAME";
 
-  add_name_condition_pv_id(hstmt, &pos, table_name, table_len, " LIKE '%'" );
+  add_name_condition_pv_id(hstmt, query, table_name, table_len, " LIKE '%'" );
 
-  pos= myodbc_stpmov(pos, " AND TABLE_SCHEMA");
-  add_name_condition_oa_id(hstmt, &pos, catalog_name, catalog_len, "=DATABASE()");
+  query.append(" AND TABLE_SCHEMA");
+  add_name_condition_oa_id(hstmt, query, catalog_name, catalog_len, "=DATABASE()");
 
   /* TABLE_CAT is always NULL in mysql I_S */
-  pos= myodbc_stpmov(pos, " ORDER BY /*TABLE_CAT,*/ TABLE_SCHEM, TABLE_NAME, PRIVILEGE, GRANTEE");
+  query.append(" ORDER BY /*TABLE_CAT,*/ TABLE_SCHEM, TABLE_NAME, PRIVILEGE, GRANTEE");
 
-  assert(pos - buff < sizeof(buff));
-
-  if( !SQL_SUCCEEDED(rc= MySQLPrepare(hstmt, (SQLCHAR *)buff,
-                          (SQLINTEGER)(pos - buff), false, true, false)))
+  if( !SQL_SUCCEEDED(rc= MySQLPrepare(hstmt, (SQLCHAR *)query.c_str(),
+                          (SQLINTEGER)(query.length()), false, true, false)))
     return rc;
 
   return my_SQLExecute(stmt);
@@ -657,34 +663,31 @@ static SQLRETURN list_column_priv_i_s(HSTMT       hstmt,
   STMT *stmt=(STMT *) hstmt;
   MYSQL *mysql= stmt->dbc->mysql;
   /* 3 names theorethically can have all their characters escaped - thus 6*NAME_LEN  */
-  char   buff[400+6*NAME_LEN+1], *pos;
+  char   tmpbuff[1024];
   SQLRETURN rc;
+  std::string query;
+  query.reserve(1024);
 
   /* Db,User,Table_name,"NULL" as Grantor,Table_priv*/
-  pos= myodbc_stpmov(buff,
-    "SELECT TABLE_SCHEMA as TABLE_CAT, TABLE_CATALOG as TABLE_SCHEM,"
-    "TABLE_NAME, COLUMN_NAME, NULL as GRANTOR, GRANTEE,"
-    "PRIVILEGE_TYPE as PRIVILEGE, IS_GRANTABLE "
-    "FROM INFORMATION_SCHEMA.COLUMN_PRIVILEGES "
-    "WHERE TABLE_NAME");
+  query = "SELECT TABLE_SCHEMA as TABLE_CAT, TABLE_CATALOG as TABLE_SCHEM,"
+          "TABLE_NAME, COLUMN_NAME, NULL as GRANTOR, GRANTEE,"
+          "PRIVILEGE_TYPE as PRIVILEGE, IS_GRANTABLE "
+          "FROM INFORMATION_SCHEMA.COLUMN_PRIVILEGES "
+          "WHERE TABLE_NAME";
 
-  if(add_name_condition_oa_id(hstmt, &pos, table_name, table_len, NULL))
+  if(add_name_condition_oa_id(hstmt, query, table_name, table_len, NULL))
     return stmt->set_error("HY009", "Invalid use of NULL pointer(table is required parameter)", 0);
 
-  pos= myodbc_stpmov(pos, " AND TABLE_SCHEMA");
-  add_name_condition_oa_id(hstmt, &pos, catalog_name, catalog_len, "=DATABASE()");
+  query.append(" AND TABLE_SCHEMA");
+  add_name_condition_oa_id(hstmt, query, catalog_name, catalog_len, "=DATABASE()");
 
-
-  pos= myodbc_stpmov(pos, " AND COLUMN_NAME");
-  add_name_condition_pv_id(hstmt, &pos, column_name, column_len, " LIKE '%'");
-
+  query.append(" AND COLUMN_NAME");
+  add_name_condition_pv_id(hstmt, query, column_name, column_len, " LIKE '%'");
 
   /* TABLE_CAT is always NULL in mysql I_S */
-  pos= myodbc_stpmov(pos, " ORDER BY /*TABLE_CAT,*/ TABLE_SCHEM, TABLE_NAME, COLUMN_NAME, PRIVILEGE");
+  query.append(" ORDER BY /*TABLE_CAT,*/ TABLE_SCHEM, TABLE_NAME, COLUMN_NAME, PRIVILEGE");
 
-  assert(pos - buff < sizeof(buff));
-
-  if( !SQL_SUCCEEDED(rc= MySQLPrepare(hstmt, (SQLCHAR *)buff, SQL_NTS,
+  if( !SQL_SUCCEEDED(rc= MySQLPrepare(hstmt, (SQLCHAR *)query.c_str(), SQL_NTS,
                                       false, true, false)))
     return rc;
 
@@ -865,9 +868,12 @@ SQLRETURN foreign_keys_i_s(SQLHSTMT hstmt,
 {
   STMT *stmt=(STMT *) hstmt;
   MYSQL *mysql= stmt->dbc->mysql;
-  char query[3062], *buff; /* This should be big enough. */
+  char tmpbuff[1024]; /* This should be big enough. */
   char *update_rule, *delete_rule, *ref_constraints_join;
   SQLRETURN rc;
+  std::string query;
+  query.reserve(4096);
+  size_t cnt = 0;
 
   /*
      With 5.1, we can use REFERENTIAL_CONSTRAINTS to get even more info.
@@ -905,86 +911,81 @@ SQLRETURN foreign_keys_i_s(SQLHSTMT hstmt,
   }
 
   /* This is a big, ugly query. But it works! */
-  buff= strxmov(query,
-                "SELECT A.REFERENCED_TABLE_SCHEMA AS PKTABLE_CAT,"
-                "NULL AS PKTABLE_SCHEM,"
-                "A.REFERENCED_TABLE_NAME AS PKTABLE_NAME,"
-                "A.REFERENCED_COLUMN_NAME AS PKCOLUMN_NAME,"
-                "A.TABLE_SCHEMA AS FKTABLE_CAT, NULL AS FKTABLE_SCHEM,"
-                "A.TABLE_NAME AS FKTABLE_NAME,"
-                "A.COLUMN_NAME AS FKCOLUMN_NAME,"
-                "A.ORDINAL_POSITION AS KEY_SEQ,",
-                update_rule, " AS UPDATE_RULE,",
-                delete_rule, " AS DELETE_RULE,"
+  query = "SELECT A.REFERENCED_TABLE_SCHEMA AS PKTABLE_CAT,"
+          "NULL AS PKTABLE_SCHEM,"
+          "A.REFERENCED_TABLE_NAME AS PKTABLE_NAME,"
+          "A.REFERENCED_COLUMN_NAME AS PKCOLUMN_NAME,"
+          "A.TABLE_SCHEMA AS FKTABLE_CAT, NULL AS FKTABLE_SCHEM,"
+          "A.TABLE_NAME AS FKTABLE_NAME,"
+          "A.COLUMN_NAME AS FKCOLUMN_NAME,"
+          "A.ORDINAL_POSITION AS KEY_SEQ,";
+  query.append(update_rule).append(" AS UPDATE_RULE,").append(delete_rule);
+  query.append(" AS DELETE_RULE,"
                 "A.CONSTRAINT_NAME AS FK_NAME,"
                 "'PRIMARY' AS PK_NAME,"
                 "7 AS DEFERRABILITY"
                 " FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE A"
                 " JOIN INFORMATION_SCHEMA.KEY_COLUMN_USAGE D"
                 " ON (D.TABLE_SCHEMA=A.REFERENCED_TABLE_SCHEMA AND D.TABLE_NAME=A.REFERENCED_TABLE_NAME"
-                    " AND D.COLUMN_NAME=A.REFERENCED_COLUMN_NAME)",
-                ref_constraints_join,
-                " WHERE D.CONSTRAINT_NAME",
-                // For given FK table name the constraint must only be PRIMARY, not UNIQUE
-                (fk_table_name && fk_table_name[0] ?
-                  "='PRIMARY' " : " IS NOT NULL "
-                ),
-                NullS);
+                " AND D.COLUMN_NAME=A.REFERENCED_COLUMN_NAME)");
+  query.append(ref_constraints_join).append(" WHERE D.CONSTRAINT_NAME");
+  query.append((fk_table_name && fk_table_name[0] ?
+                "='PRIMARY' " : " IS NOT NULL "));
 
   if (pk_table_name && pk_table_name[0])
   {
-    buff= myodbc_stpmov(buff, "AND A.REFERENCED_TABLE_SCHEMA = ");
+    query.append("AND A.REFERENCED_TABLE_SCHEMA = ");
     if (pk_catalog_name && pk_catalog_name[0])
     {
-      buff= myodbc_stpmov(buff, "'");
-      buff+= mysql_real_escape_string(mysql, buff, (char *)pk_catalog_name,
+      query.append("'");
+      cnt = mysql_real_escape_string(mysql, tmpbuff, (char *)pk_catalog_name,
                                       pk_catalog_len);
-      buff= myodbc_stpmov(buff, "' ");
+      query.append(tmpbuff, cnt);
+      query.append("' ");
     }
     else
     {
-      buff= myodbc_stpmov(buff, "DATABASE() ");
+      query.append("DATABASE() ");
     }
 
-    buff= myodbc_stpmov(buff, "AND A.REFERENCED_TABLE_NAME = '");
+    query.append("AND A.REFERENCED_TABLE_NAME = '");
 
-    buff+= mysql_real_escape_string(mysql, buff, (char *)pk_table_name,
+    cnt = mysql_real_escape_string(mysql, tmpbuff, (char *)pk_table_name,
                                     pk_table_len);
-    buff= myodbc_stpmov(buff, "' ");
+    query.append(tmpbuff, cnt);
+    query.append("' ");
 
-    myodbc_stpmov(buff, "ORDER BY PKTABLE_CAT, PKTABLE_NAME, "
-                 "KEY_SEQ, FKTABLE_NAME");
+    query.append("ORDER BY PKTABLE_CAT, PKTABLE_NAME, KEY_SEQ, FKTABLE_NAME");
   }
 
   if (fk_table_name && fk_table_name[0])
   {
-    buff= myodbc_stpmov(buff, "AND A.TABLE_SCHEMA = ");
+    query.append("AND A.TABLE_SCHEMA = ");
 
     if (fk_catalog_name && fk_catalog_name[0])
     {
-      buff= myodbc_stpmov(buff, "'");
-      buff+= mysql_real_escape_string(mysql, buff, (char *)fk_catalog_name,
+      query.append("'");
+      cnt = mysql_real_escape_string(mysql, tmpbuff, (char *)fk_catalog_name,
                                       fk_catalog_len);
-      buff= myodbc_stpmov(buff, "' ");
+      query.append(tmpbuff, cnt);
+      query.append("' ");
     }
     else
     {
-      buff= myodbc_stpmov(buff, "DATABASE() ");
+      query.append("DATABASE() ");
     }
 
-    buff= myodbc_stpmov(buff, "AND A.TABLE_NAME = '");
+    query.append("AND A.TABLE_NAME = '");
 
-    buff+= mysql_real_escape_string(mysql, buff, (char *)fk_table_name,
+    cnt = mysql_real_escape_string(mysql, tmpbuff, (char *)fk_table_name,
                                     fk_table_len);
-    buff= myodbc_stpmov(buff, "' ");
+    query.append(tmpbuff, cnt);
+    query.append("' ");
 
-    buff= myodbc_stpmov(buff, "ORDER BY FKTABLE_CAT, FKTABLE_NAME, "
-                 "KEY_SEQ, PKTABLE_NAME");
+    query.append("ORDER BY FKTABLE_CAT, FKTABLE_NAME, KEY_SEQ, PKTABLE_NAME");
   }
 
-  assert(buff - query < sizeof(query));
-
-  rc= MySQLPrepare(hstmt, (SQLCHAR *)query, (SQLINTEGER)(buff - query),
+  rc= MySQLPrepare(hstmt, (SQLCHAR *)query.c_str(), (SQLINTEGER)(query.length()),
                    false, true, false);
 
   if (!SQL_SUCCEEDED(rc))

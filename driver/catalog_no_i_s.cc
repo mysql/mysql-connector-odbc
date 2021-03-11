@@ -111,21 +111,28 @@ static MYSQL_RES *server_list_dbkeys(STMT *stmt,
 {
     DBC   *dbc = stmt->dbc;
     MYSQL *mysql= dbc->mysql;
-    char  buff[255 + 4 * NAME_LEN], *to;
+    char  tmpbuff[1024];
+    std::string query;
+    query.reserve(1024);
+    size_t cnt = 0;
 
-    to= myodbc_stpmov(buff, "SHOW KEYS FROM `");
+    query = "SHOW KEYS FROM `";
+
     if (catalog_len)
     {
-      to+= myodbc_escape_string(stmt, to, (ulong)(sizeof(buff) - (to - buff)),
+      cnt = myodbc_escape_string(stmt, tmpbuff, (ulong)sizeof(tmpbuff),
                                 (char *)catalog, catalog_len, 1);
-      to= myodbc_stpmov(to, "`.`");
+      query.append(tmpbuff, cnt);
+      query.append("`.`");
     }
-    to+= myodbc_escape_string(stmt, to, (ulong)(sizeof(buff) - (to - buff)),
-                              (char *)table, table_len, 1);
-    to= myodbc_stpmov(to, "`");
 
-    MYLOG_DBC_QUERY(dbc, buff);
-    if (exec_stmt_query(stmt, buff, strlen(buff), FALSE))
+    cnt = myodbc_escape_string(stmt, tmpbuff, (ulong)sizeof(tmpbuff),
+                              (char *)table, table_len, 1);
+    query.append(tmpbuff, cnt);
+    query.append("`");
+
+    MYLOG_DBC_QUERY(dbc, query.c_str());
+    if (exec_stmt_query(stmt, query.c_str(), query.length(), FALSE))
         return NULL;
     return mysql_store_result(mysql);
 }
@@ -525,28 +532,33 @@ static MYSQL_RES *table_privs_raw_data( STMT *      stmt,
 {
   DBC *dbc= stmt->dbc;
   MYSQL *mysql= dbc->mysql;
-  char   buff[255+2*NAME_LEN+1], *pos;
+  char   tmpbuff[1024];
+  std::string query;
+  size_t cnt = 0;
 
-  pos= strxmov(buff,
-    "SELECT Db,User,Table_name,Grantor,Table_priv ",
-    "FROM mysql.tables_priv WHERE Table_name LIKE '",
-    NullS);
-  pos+= mysql_real_escape_string(mysql, pos, (char *)table, table_len);
+  query.reserve(1024);
+  query = "SELECT Db,User,Table_name,Grantor,Table_priv "
+          "FROM mysql.tables_priv WHERE Table_name LIKE '";
 
-  pos= strxmov(pos, "' AND Db = ", NullS);
+  cnt = mysql_real_escape_string(mysql, tmpbuff, (char *)table, table_len);
+  query.append(tmpbuff, cnt);
+
+  query.append("' AND Db = ");
+
   if (catalog_len)
   {
-    pos= myodbc_stpmov(pos, "'");
-    pos+= mysql_real_escape_string(mysql, pos, (char *)catalog, catalog_len);
-    pos= myodbc_stpmov(pos, "'");
+    query.append("'");
+    cnt = mysql_real_escape_string(mysql, tmpbuff, (char *)catalog, catalog_len);
+    query.append(tmpbuff, cnt);
+    query.append("'");
   }
   else
-    pos= myodbc_stpmov(pos, "DATABASE()");
+    query.append("DATABASE()");
 
-  pos= strxmov(pos, " ORDER BY Db, Table_name, Table_priv, User", NullS);
+  query.append(" ORDER BY Db, Table_name, Table_priv, User");
 
-  MYLOG_DBC_QUERY(dbc, buff);
-  if (exec_stmt_query(stmt, buff, strlen(buff), FALSE))
+  MYLOG_DBC_QUERY(dbc, query.c_str());
+  if (exec_stmt_query(stmt, query.c_str(), query.length(), FALSE))
     return NULL;
 
   return mysql_store_result(mysql);
@@ -677,33 +689,39 @@ static MYSQL_RES *column_privs_raw_data(STMT *      stmt,
   DBC   *dbc = stmt->dbc;
   MYSQL *mysql = dbc->mysql;
 
-  char buff[400+6*NAME_LEN+1], *pos;
+  char tmpbuff[1024];
+  std::string query;
+  size_t cnt = 0;
 
-  pos= myodbc_stpmov(buff,
-    "SELECT c.Db, c.User, c.Table_name, c.Column_name,"
-    "t.Grantor, c.Column_priv, t.Table_priv "
-    "FROM mysql.columns_priv AS c, mysql.tables_priv AS t "
-    "WHERE c.Table_name = '");
-  pos+= mysql_real_escape_string(mysql, pos, (char *)table, table_len);
+  query.reserve(1024);
 
-  pos= myodbc_stpmov(pos, "' AND c.Db = ");
+  query = "SELECT c.Db, c.User, c.Table_name, c.Column_name,"
+          "t.Grantor, c.Column_priv, t.Table_priv "
+          "FROM mysql.columns_priv AS c, mysql.tables_priv AS t "
+          "WHERE c.Table_name = '";
+
+  cnt = mysql_real_escape_string(mysql, tmpbuff, (char *)table, table_len);
+  query.append(tmpbuff, cnt);
+
+  query.append("' AND c.Db = ");
   if (catalog_len)
   {
-    pos= myodbc_stpmov(pos, "'");
-    pos+= mysql_real_escape_string(mysql, pos, (char *)catalog, catalog_len);
-    pos= myodbc_stpmov(pos, "'");
+    query.append("'");
+    cnt = mysql_real_escape_string(mysql, tmpbuff, (char *)catalog, catalog_len);
+    query.append(tmpbuff, cnt);
+    query.append("'");
   }
   else
-    pos= myodbc_stpmov(pos, "DATABASE()");
+    query.append("DATABASE()");
 
-  pos= myodbc_stpmov(pos, "AND c.Column_name LIKE '");
-  pos+= mysql_real_escape_string(mysql, pos, (char *)column, column_len);
+  query.append("AND c.Column_name LIKE '");
+  cnt = mysql_real_escape_string(mysql, tmpbuff, (char *)column, column_len);
+  query.append(tmpbuff, cnt);
 
-  pos= myodbc_stpmov(pos,
-    "' AND c.Table_name = t.Table_name "
-    "ORDER BY c.Db, c.Table_name, c.Column_name, c.Column_priv");
+  query.append("' AND c.Table_name = t.Table_name "
+               "ORDER BY c.Db, c.Table_name, c.Column_name, c.Column_priv");
 
-  if (exec_stmt_query(stmt, buff, strlen(buff), FALSE))
+  if (exec_stmt_query(stmt, query.c_str(), query.length(), FALSE))
     return NULL;
 
   return mysql_store_result(mysql);
@@ -829,16 +847,21 @@ MYSQL_RES *table_status_no_i_s(STMT        *stmt,
                                my_bool      wildcard)
 {
 	MYSQL *mysql= stmt->dbc->mysql;
-	/** @todo determine real size for buffer */
-	char buff[36 + 4*NAME_LEN + 1], *to;
 
-	to= myodbc_stpmov(buff, "SHOW TABLE STATUS ");
+	char tmpbuff[1024];
+  std::string query;
+  size_t cnt = 0;
+
+  query.reserve(1024);
+
+	query = "SHOW TABLE STATUS ";
 	if (catalog && *catalog)
 	{
-		to= myodbc_stpmov(to, "FROM `");
-		to+= myodbc_escape_string(stmt, to, (ulong)(sizeof(buff) - (to - buff)),
+		query.append("FROM `");
+		cnt = myodbc_escape_string(stmt, tmpbuff, (ulong)sizeof(tmpbuff),
 			(char *)catalog, catalog_length, 1);
-		to= myodbc_stpmov(to, "` ");
+    query.append(tmpbuff, cnt);
+		query.append("` ");
 	}
 
 	/*
@@ -851,20 +874,19 @@ MYSQL_RES *table_status_no_i_s(STMT        *stmt,
 
 	if (table && *table)
 	{
-		to= myodbc_stpmov(to, "LIKE '");
+		query.append("LIKE '");
 		if (wildcard)
-			to+= mysql_real_escape_string(mysql, to, (char *)table, table_length);
+			cnt = mysql_real_escape_string(mysql, tmpbuff, (char *)table, table_length);
 		else
-			to+= myodbc_escape_string(stmt, to, (ulong)(sizeof(buff) - (to - buff)),
+			cnt = myodbc_escape_string(stmt, tmpbuff, (ulong)sizeof(tmpbuff),
 			(char *)table, table_length, 0);
-		to= myodbc_stpmov(to, "'");
+    query.append(tmpbuff, cnt);
+		query.append("'");
 	}
 
-  MYLOG_QUERY(stmt, buff);
+  MYLOG_QUERY(stmt, query.c_str());
 
-  assert(to - buff < sizeof(buff));
-
-  if (exec_stmt_query(stmt, buff, (unsigned long)(to - buff), FALSE))
+  if (exec_stmt_query(stmt, query.c_str(), (unsigned long)query.length(), FALSE))
   {
     return NULL;
   }
@@ -893,15 +915,16 @@ MYSQL_RES *server_show_create_table(STMT        *stmt,
                                     SQLSMALLINT  table_length)
 {
   MYSQL *mysql= stmt->dbc->mysql;
-  /** @todo determine real size for buffer */
-  char buff[36 + 4*NAME_LEN + 1], *to;
+	char tmpbuff[1024];
+  std::string query;
+  size_t cnt = 0;
 
-  to= myodbc_stpmov(buff, "SHOW CREATE TABLE ");
+  query.reserve(1024);
+
+  query = "SHOW CREATE TABLE ";
   if (catalog && *catalog)
   {
-    to= myodbc_stpmov(to, " `");
-    to= myodbc_stpmov(to, (char *)catalog);
-    to= myodbc_stpmov(to, "`.");
+    query.append(" `").append((char *)catalog).append("`.");
   }
 
   /* Empty string won't match anything. */
@@ -910,16 +933,13 @@ MYSQL_RES *server_show_create_table(STMT        *stmt,
 
   if (table && *table)
   {
-    to= myodbc_stpmov(to, " `");
-    to= myodbc_stpmov(to, (char *)table);
-    to= myodbc_stpmov(to, "`");
+    query.append(" `").append((char *)table).append("`");
   }
 
-  MYLOG_QUERY(stmt, buff);
+  MYLOG_QUERY(stmt, query.c_str());
 
-  assert(to - buff < sizeof(buff));
 
-  if (mysql_real_query(mysql,buff,(unsigned long)(to - buff)))
+  if (mysql_real_query(mysql, query.c_str(),(unsigned long)query.length()))
   {
     return NULL;
   }
@@ -2452,13 +2472,18 @@ tables_no_i_s(SQLHSTMT hstmt,
                         stmt->dbc->ds->no_information_schema))))
     {
       {
-        char buff[32 + NAME_LEN * 2], *to;
-        to= myodbc_stpmov(buff, "SHOW DATABASES LIKE '");
-        to+= mysql_real_escape_string(stmt->dbc->mysql, to,
+	      char tmpbuff[1024];
+        std::string query;
+        size_t cnt = 0;
+
+        query.reserve(1024);
+        query = "SHOW DATABASES LIKE '";
+        cnt = mysql_real_escape_string(stmt->dbc->mysql, tmpbuff,
                                       (char *)catalog, catalog_len);
-        to= myodbc_stpmov(to, "'");
-        MYLOG_QUERY(stmt, buff);
-        if (!mysql_query(stmt->dbc->mysql, buff))
+        query.append(tmpbuff, cnt);
+        query.append("'");
+        MYLOG_QUERY(stmt, query.c_str());
+        if (!mysql_query(stmt->dbc->mysql, query.c_str()))
           catalog_res= mysql_store_result(stmt->dbc->mysql);
       }
 
