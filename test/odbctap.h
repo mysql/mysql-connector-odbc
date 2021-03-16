@@ -1189,6 +1189,82 @@ int mydrvconnect(SQLHENV *henv, SQLHDBC *hdbc, SQLHSTMT *hstmt, SQLCHAR *connIn)
 }
 
 
+/*
+  Helper function to make the connection string.
+*/
+SQLCHAR *make_conn_str(const SQLCHAR *dsn, const SQLCHAR *uid,
+                       const SQLCHAR *pwd, const SQLCHAR *db,
+                       const SQLCHAR *options, int hide_password)
+{
+  static SQLCHAR connIn[4096]= {0};
+  SQLCHAR dsn_buf[MAX_NAME_LEN]= {0};
+  SQLCHAR socket_buf[MAX_NAME_LEN]= {0};
+  /* ";database="+ we make buffer bigger for one certain test */
+  SQLCHAR     db_buf[4096]= {0};
+  /* Should fit 8 byte + ";port=" */
+  SQLCHAR     port_buf[32]= {0};
+
+  /* We never set the custom DSN, but sometimes use DRIVER instead */
+  if (dsn == NULL)
+    snprintf((char *)dsn_buf, sizeof(dsn_buf), "DSN=%s", (char *)mydsn);
+  else if (dsn == (const SQLCHAR*)USE_DRIVER)
+    snprintf((char *)dsn_buf, sizeof(dsn_buf), "DRIVER=%s", (char *)mydriver);
+  else
+    snprintf((char *)dsn_buf, sizeof(dsn_buf), "DSN=%s", (char *)dsn);
+
+  if (uid     == NULL) uid=     myuid;
+  if (pwd     == NULL) pwd=     mypwd;
+  if (db      == NULL) db=      mydb;
+  if (options == NULL) options= my_str_options;
+
+  if (hide_password)
+    pwd = (SQLCHAR*)"*************";
+
+  snprintf((char *)connIn, sizeof(connIn), "%s;UID=%s;PWD=%s;OPTION=%d",
+          (char *)dsn_buf, (char *)uid, (char *)pwd, myoption);
+
+  if (mysock && mysock[0])
+  {
+    snprintf((char *)socket_buf, sizeof(socket_buf), ";SOCKET=%s", (char *)mysock);
+    strncat((char *)connIn, (char*)socket_buf, sizeof(connIn));
+  }
+  if (db && db[0])
+  {
+    snprintf((char *)db_buf, sizeof(db_buf), ";DATABASE=%s", (char *)db);
+    strncat((char *)connIn, (char *)db_buf, sizeof(connIn));
+  }
+  if (myport)
+  {
+    snprintf((char*)port_buf, sizeof(port_buf), ";PORT=%d", myport);
+    strncat((char *)connIn, (char*)port_buf, sizeof(connIn));
+  }
+
+  if (options != NULL && options[0] > 0)
+  {
+    strncat((char*)connIn, ";", sizeof(connIn));
+    strncat((char*)connIn, (char*)options, sizeof(connIn));
+  }
+
+#if MYSQL_VERSION_ID >= 50507
+  if (init_auth_plugin)
+  {
+    init_auth_plugin= 0; /* reset the plugin init flag */
+    if (myauth && myauth[0])
+    {
+      strncat((char *)connIn, ";DEFAULTAUTH=", sizeof(connIn));
+      strncat((char *)connIn, (char *)myauth, sizeof(connIn));
+    }
+    if (myplugindir && myplugindir[0])
+    {
+      strncat((char *)connIn, ";PLUGINDIR=", sizeof(connIn));
+      strncat((char *)connIn, (char *)myplugindir, sizeof(connIn));
+    }
+  }
+#endif
+  return connIn;
+}
+
+
 /* Helper function for tests to get (additional) connection
    If dsn, uid, pwd or options is null - they defualt to mydsn, myuid, mypwd
    and my_str_options, respectively.
@@ -1198,80 +1274,13 @@ int get_connection(SQLHDBC *hdbc, const SQLCHAR *dsn, const SQLCHAR *uid,
                    const SQLCHAR *options)
 {
   /* Buffers have to be large enough to contain SSL options and long names */
-  SQLCHAR     connIn[4096], connOut[4096];
-  SQLCHAR     dsn_buf[MAX_NAME_LEN]= {0}, socket_buf[MAX_NAME_LEN]= {0};
-  /* ";database="+ we make buffer bigger for one certain test */
-  SQLCHAR     db_buf[4096]= {0};
-  /* Should fit 8 byte + ";port=" */
-  SQLCHAR     port_buf[32]= {0};
+  SQLCHAR     connOut[4096];
   SQLSMALLINT len;
   SQLRETURN   rc;
   SQLCHAR     driver_name[16]; /* Should be enough for myodbc library file name */
+  SQLCHAR     *connIn;
 
-  /* We never set the custom DSN, but sometimes use DRIVER instead */
-  if (dsn == NULL)
-    sprintf((char *)dsn_buf, "DSN=%s", (char *)mydsn);
-  else if (dsn == (const SQLCHAR*)USE_DRIVER)
-    sprintf((char *)dsn_buf, "DRIVER=%s", (char *)mydriver);
-  else
-    sprintf((char *)dsn_buf, "DSN=%s", (char *)dsn);
-
-  /* We never set the custom DSN, but sometimes use DRIVER instead */
-  if (dsn == NULL)
-    sprintf((char *)dsn_buf, "DSN=%s", (char *)mydsn);
-  else if (dsn == (const SQLCHAR*)USE_DRIVER)
-    sprintf((char *)dsn_buf, "DRIVER=%s", (char *)mydriver);
-  else
-    sprintf((char *)dsn_buf, "DSN=%s", (char *)dsn);
-
-  /* Defaults */
-  if (uid     == NULL) uid=     myuid;
-  if (pwd     == NULL) pwd=     mypwd;
-  if (db      == NULL) db=      mydb;
-  if (options == NULL) options= my_str_options;
-
-  sprintf((char *)connIn, "%s;UID=%s;PWD=%s;OPTION=%d",
-          (char *)dsn_buf, (char *)uid, (char *)pwd, myoption);
-
-  if (mysock && mysock[0])
-  {
-    sprintf((char *)socket_buf, ";SOCKET=%s", (char *)mysock);
-    strcat((char *)connIn, (char*)socket_buf);
-  }
-  if (db && db[0])
-  {
-    sprintf((char *)db_buf, ";DATABASE=%s", (char *)db);
-    strcat((char *)connIn, (char *)db_buf);
-  }
-  if (myport)
-  {
-    sprintf((char*)port_buf, ";PORT=%d", myport);
-    strcat((char *)connIn, (char*)port_buf);
-  }
-
-  if (options != NULL && options[0] > 0)
-  {
-    strcat((char*)connIn, ";");
-    strcat((char*)connIn, (char*)options);
-  }
-
-#if MYSQL_VERSION_ID >= 50507
-  if (init_auth_plugin)
-  {
-    init_auth_plugin= 0; /* reset the plugin init flag */
-    if (myauth && myauth[0])
-    {
-      strcat((char *)connIn, ";DEFAULTAUTH=");
-      strcat((char *)connIn, (char *)myauth);
-    }
-    if (myplugindir && myplugindir[0])
-    {
-      strcat((char *)connIn, ";PLUGINDIR=");
-      strcat((char *)connIn, (char *)myplugindir);
-    }
-  }
-#endif
-
+  connIn = make_conn_str(dsn, uid, pwd, db, options, 0);
   rc= SQLDriverConnect(*hdbc, NULL, connIn, SQL_NTS, connOut,
                        MAX_NAME_LEN, &len, SQL_DRIVER_NOPROMPT);
 
@@ -1279,8 +1288,7 @@ int get_connection(SQLHDBC *hdbc, const SQLCHAR *dsn, const SQLCHAR *uid,
   {
     /* re-build and print the connection string with hidden password */
     printf("# Connection failed with the following Connection string: " \
-           "\n%s;UID=%s;PWD=*******%s%s%s;%s\n",
-           dsn_buf, uid, socket_buf, db_buf, port_buf, options);
+           "\n%s\n", (char*)make_conn_str(dsn, uid, pwd, db, options, 1));
     return rc;
   }
 

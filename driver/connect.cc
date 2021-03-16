@@ -820,6 +820,15 @@ SQLRETURN myodbc_do_connect(DBC *dbc, DataSource *ds)
   // for older versions just use net_buffer_length() macro
   dbc->net_buffer_len = net_buffer_length;
 #endif
+
+  if (ds->no_information_schema)
+  {
+    set_dbc_error(dbc, "01000", "The connection option NO_I_S is now "
+                                "deprecated and will be removed in future "
+                                "releases of MySQL Connector/ODBC", 0);
+    rc= SQL_SUCCESS_WITH_INFO;
+  }
+
   guard.set_success(rc == SQL_SUCCESS || rc == SQL_SUCCESS_WITH_INFO);
   return rc;
 
@@ -990,7 +999,8 @@ SQLRETURN SQL_API MySQLDriverConnect(SQLHDBC hdbc, SQLHWND hwnd,
 
   case SQL_DRIVER_COMPLETE:
   case SQL_DRIVER_COMPLETE_REQUIRED:
-    if (myodbc_do_connect(dbc, ds) == SQL_SUCCESS)
+    rc= myodbc_do_connect(dbc, ds);
+    if (rc == SQL_SUCCESS || rc == SQL_SUCCESS_WITH_INFO)
       goto connected;
     bPrompt= TRUE;
     break;
@@ -1166,7 +1176,8 @@ SQLRETURN SQL_API MySQLDriverConnect(SQLHDBC hdbc, SQLHWND hwnd,
 
   }
 
-  if ((rc= myodbc_do_connect(dbc, ds)) != SQL_SUCCESS)
+  rc= myodbc_do_connect(dbc, ds);
+  if (rc != SQL_SUCCESS && rc != SQL_SUCCESS_WITH_INFO)
   {
     goto error;
   }

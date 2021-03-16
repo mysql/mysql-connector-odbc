@@ -27,6 +27,7 @@
 // 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 
 #include <string>
+#include <vector>
 #include <fstream>
 #include <iostream>
 #include <sstream>
@@ -539,7 +540,87 @@ DECLARE_TEST(t_wl14362)
   }
   return OK;
 }
+
+
+#define ok_dsn(C) if (!C) { \
+  std::cout << "Call failed: " << #C << " in line " << __LINE__ << ":" << \
+   __FILE__ << std::endl; \
+  return FAIL; \
+}
+/*
+  Deprecate NO_I_S connection option
+*/
+DECLARE_TEST(t_wl14586)
+{
+  SQLHDBC hdbc1;
+  const char *dsn_name = "wl14586";
+  SQLCHAR drv_info[1024];
+  std::string drv_nobrackets;
+
+  if (mydriver[0] == '{' && strlen((const char*)mydriver) > 2)
+    drv_nobrackets = std::string((const char*)(mydriver + 1),
+                                 strlen((const char*)mydriver) - 2);
+  else
+    drv_nobrackets = (const char*)mydriver;
+
+  ok_env(henv, SQLAllocHandle(SQL_HANDLE_DBC, henv, &hdbc1));
+
+  SQLCHAR *connstr = make_conn_str((SQLCHAR*)USE_DRIVER,
+                                nullptr, nullptr, nullptr,
+                                (const SQLCHAR*)"NO_I_S=1", 0);
+
+  SQLRETURN rc = SQLDriverConnect(hdbc1, NULL, connstr, SQL_NTS, nullptr, 0,
+                                  nullptr, SQL_DRIVER_NOPROMPT);
+  // Driver must report the option deprecation
+  is(rc == SQL_SUCCESS_WITH_INFO);
+  print_diag(rc, SQL_HANDLE_DBC, hdbc1, "Expected Info inSQLDriverConnect():",
+             __FILE__, __LINE__);
+  ok_con(hdbc1, SQLDisconnect(hdbc1));
+
+  ok_dsn(SQLGetPrivateProfileString((LPCSTR)drv_nobrackets.c_str(),
+                                    (LPCSTR)"DRIVER", (LPCSTR)"",
+                                    (LPSTR)drv_info, 1023, "odbcinst.ini"));
+
+  SQLRemoveDSNFromIni((LPCSTR)dsn_name);
+
+  if (!SQLWriteDSNToIni((LPCSTR)dsn_name, (LPCSTR)drv_nobrackets.c_str()))
+  {
+    std::cout << "Could not create a new DSN named " << dsn_name << std::endl;
+    return FAIL;
+  }
+
+  char port[16] = { 0 };
+  if (myport)
+    snprintf(port, sizeof(port), "%d", myport);
+
+  std::vector<std::vector<const char*>> params = {
+    {"SERVER",      (const char*)myserver},
+    {"USER",        (const char*)myuid   },
+    {"PWD",         (const char*)mypwd   },
+    {"DB",          (const char*)mydb    },
+    {"SOCKET",      (const char*)mysock  },
+    {"PORT",        (const char*)port    },
+    {"NO_I_S",      (const char*)"1"     }
+  };
+
+  for (auto p : params)
+  {
+    if (p[1] && *p[1])
+      ok_dsn(SQLWritePrivateProfileString((LPCSTR)dsn_name, p[0], p[1], "odbc.ini"));
+  }
+
+  rc = SQLConnect(hdbc1, (SQLCHAR*)dsn_name, SQL_NTS, nullptr, 0, nullptr, 0);
+  // Driver must report the option deprecation
+  is(rc == SQL_SUCCESS_WITH_INFO);
+  print_diag(rc, SQL_HANDLE_DBC, hdbc1, "Expected Info in SQLConnect():",
+             __FILE__, __LINE__);
+  ok_con(hdbc1, SQLDisconnect(hdbc1));
+  SQLRemoveDSNFromIni("wl14586");
+  return OK;
+}
+
 BEGIN_TESTS
+  ADD_TEST(t_wl14586)
   ADD_TEST(t_wl13883)
   ADD_TEST(t_wl14362)
 END_TESTS
