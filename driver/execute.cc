@@ -244,6 +244,7 @@ SQLRETURN insert_params(STMT *stmt, SQLULEN row, char **finalquery,
   char *query= GET_QUERY(&stmt->query);
   uint i,length, had_info= 0;
   SQLRETURN rc= SQL_SUCCESS;
+  DECLARE_LOCALE_HANDLE
 
   LOCK_STMT(stmt);
 
@@ -251,7 +252,7 @@ SQLRETURN insert_params(STMT *stmt, SQLULEN row, char **finalquery,
 
   if (!stmt->dbc->ds->dont_use_set_locale)
   {
-    setlocale(LC_NUMERIC, "C");  /* force use of '.' as decimal point */
+    __LOCALE_SET("C"); /* force use of '.' as decimal point */
   }
 
   if (adjust_param_bind_array(stmt) )
@@ -348,7 +349,7 @@ SQLRETURN insert_params(STMT *stmt, SQLULEN row, char **finalquery,
 
   if (!stmt->dbc->ds->dont_use_set_locale)
   {
-    setlocale(LC_NUMERIC,default_locale);
+    __LOCALE_RESTORE();
   }
 
 
@@ -360,7 +361,7 @@ memerror:      /* Too much data */
 
 error:
   if (!stmt->dbc->ds->dont_use_set_locale)
-    setlocale(LC_NUMERIC,default_locale);
+    __LOCALE_RESTORE();
   return rc;
 }
 
