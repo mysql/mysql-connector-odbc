@@ -1,4 +1,4 @@
-// Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved. 
+// Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved. 
 // 
 // This program is free software; you can redistribute it and/or modify 
 // it under the terms of the GNU General Public License, version 2.0, as 
@@ -26,8 +26,77 @@
 // along with this program; if not, write to the Free Software Foundation, Inc., 
 // 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA 
 
+#ifdef _WIN32
 #include "setupgui.h"
+#else
+#include "MYODBC_MYSQL.h"
+#include "installer.h"
+#include "unicode_transcode.h"
+#include <sql.h>
+
+#endif
+
 #include "stringutil.h"
+
+int (*odbc_dialog_show)(DataSource*, HWND, BOOL) = nullptr;
+
+#ifndef _WIN32
+#include <link.h>
+
+int check_major_gtk_version()
+{
+  
+  struct link_map* lmap = nullptr;
+  
+  void *dlhandle = dlopen(nullptr, RTLD_NOW);
+  int res = dlinfo(dlhandle, RTLD_DI_LINKMAP, &lmap);
+  
+  if (res != 0)
+    return 3;  // If something is not right try using GTK+3
+  
+  while(NULL != lmap)
+  {
+    printf("-- %s\n", lmap->l_name);
+    if (strstr(lmap->l_name, "gtk-2.0") ||
+        strstr(lmap->l_name, "gtk-x11-2")
+    )
+      return 2;
+    lmap = lmap->l_next;
+  }
+  return 3;
+}
+
+#endif
+
+
+bool setup_dialog_func()
+{
+#ifdef _WIN32
+  odbc_dialog_show = &ShowOdbcParamsDialog;
+#else
+  if (odbc_dialog_show == nullptr)
+  {
+    void *dlhandle = nullptr;
+    
+    switch(check_major_gtk_version())
+    {
+      case 2: 
+        dlhandle = dlopen("libmyodbc8S-gtk2.so", RTLD_NOW);
+        break;
+      case 3:
+        dlhandle = dlopen("libmyodbc8S-gtk3.so", RTLD_NOW);
+        break;
+    }
+    
+    if (!dlhandle)
+      return false;
+    
+    odbc_dialog_show = (int(*)(DataSource*, HWND, BOOL))dlsym(dlhandle,
+                                                        "ShowOdbcParamsDialog");
+  }
+#endif
+  return true;
+}
 
 /*
    Entry point for GUI prompting from SQLDriverConnect().
@@ -45,14 +114,15 @@ BOOL Driver_Prompt(HWND hWnd, SQLWCHAR *instr, SQLUSMALLINT completion,
   if (instr && *instr)
   {
     if (ds_from_kvpair(ds, instr, (SQLWCHAR)';'))
-    {
-      rc= FALSE;
       goto exit;
-    }
   }
 
+  
+  if (!setup_dialog_func())
+    goto exit;
+  
   /* Show the dialog and handle result */
-  if (ShowOdbcParamsDialog(ds, hWnd, TRUE) == 1)
+  if (odbc_dialog_show(ds, hWnd, TRUE) == 1)
   {
     int len;
     /* serialize to outstr */
@@ -153,14 +223,20 @@ BOOL INSTAPI ConfigDSNW(HWND hWnd, WORD nRequest, LPCWSTR pszDriver,
       ds_set_strattr(&ds->driver, driver->name);
     }
   case ODBC_CONFIG_DSN:
+    
+    if (!setup_dialog_func())
+    {
+      rc = FALSE;
+      break;
+    }
 #ifdef _WIN32
     /*
       for windows, if hWnd is NULL, we try to add the dsn
       with what information was given
     */
-    if (!hWnd || ShowOdbcParamsDialog(ds, hWnd, FALSE) == 1)
+    if (!hWnd || odbc_dialog_show(ds, hWnd, FALSE) == 1)
 #else
-    if (ShowOdbcParamsDialog(ds, hWnd, FALSE) == 1)
+    if (odbc_dialog_show(ds, hWnd, FALSE) == 1)
 #endif
     {
       /* save datasource */

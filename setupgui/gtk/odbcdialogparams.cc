@@ -1,4 +1,4 @@
-// Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License, version 2.0, as
@@ -34,8 +34,16 @@
 #include <stdio.h>
 #include "../setupgui.h"
 #include "pixmaps/connector_odbc_header.xpm"
+
+#if GTK_MAJOR_VERSION >= 3
 #include "ui_xml.h"
+#else
+#include "ui_xml_v2.h"
+#endif
+
 #include "stringutil.h"
+#include <thread>
+#include <chrono>
 
 static DataSource* pParams= NULL;
 static gchar*      pCaption= NULL;
@@ -176,7 +184,46 @@ void on_test_clicked(GtkButton *button, gpointer user_data)
   x_free(displayMsg);
 }
 
+#if GTK_MAJOR_VERSION >= 3
+gboolean
+on_database_popup (GtkComboBox *widget,
+                   GdkEvent  *event,
+                   gpointer   user_data)
+{
+  GtkTreeIter iter;
+  LIST *dbs, *dbtmp;
 
+  /* Active item is to be set only once! */
+  if(db_popped_up)
+  {
+    /* reset it for the next popup */
+    db_popped_up= FALSE;
+    return FALSE;
+  }
+  db_popped_up= TRUE;
+
+  if(gtk_combo_box_get_active (widget) < 0)
+    gtk_combo_box_set_active (GTK_COMBO_BOX (widget), 0);
+
+  gtk_combo_box_text_remove_all(GTK_COMBO_BOX_TEXT (widget));
+  FillParameters((HWND)NULL, pParams);
+  dbs= mygetdatabases((HWND)NULL, pParams);
+  dbtmp= dbs;
+  for(; dbtmp; dbtmp= list_rest(dbtmp))
+  {
+    gchar *dbname;
+    SQLINTEGER len= SQL_NTS;
+
+    dbname= (gchar*)sqlwchar_as_utf8((SQLWCHAR*)dbtmp->data, &len);
+    gtk_combo_box_text_append_text (GTK_COMBO_BOX_TEXT (widget), dbname);
+
+    x_free(dbname);
+  }
+
+  list_free(dbs, 1);
+  return FALSE;
+}
+#else
 void on_database_popup (GtkComboBox *widget, gpointer user_data)
 {
   GtkListStore *store;
@@ -216,9 +263,9 @@ void on_database_popup (GtkComboBox *widget, gpointer user_data)
   gtk_combo_box_set_model(widget, GTK_TREE_MODEL(store));
   g_object_unref(store);
   list_free(dbs, 1);
-
 }
 
+#endif
 
 void on_tab_press (GtkComboBox *widget, GdkEvent *event, gpointer user_data)
 {
@@ -257,6 +304,49 @@ void on_tab_press (GtkComboBox *widget, GdkEvent *event, gpointer user_data)
   }
 }
 
+#if GTK_MAJOR_VERSION >= 3
+gboolean
+on_charset_popup (GtkComboBox *widget,
+                   GdkEvent  *event,
+                   gpointer   user_data)
+{
+  GtkTreeIter iter;
+  LIST *css, *cstmp;
+
+  /* Active item is to be set only once! */
+  if(cs_popped_up)
+  {
+    /* reset it for the next popup */
+    cs_popped_up= FALSE;
+    return FALSE;
+  }
+  cs_popped_up= TRUE;
+
+  if(gtk_combo_box_get_active (widget) < 0)
+    gtk_combo_box_set_active (GTK_COMBO_BOX (widget), 0);
+
+  gtk_combo_box_text_remove_all(GTK_COMBO_BOX_TEXT (widget));
+
+  FillParameters((HWND)NULL, pParams);
+  css= mygetcharsets((HWND)NULL, pParams);
+  cstmp= css;
+
+  for(; cstmp; cstmp= list_rest(cstmp))
+  {
+    gchar *csname;
+    SQLINTEGER len= SQL_NTS;
+
+    csname= (gchar*)sqlwchar_as_utf8((SQLWCHAR*)cstmp->data, &len);
+    gtk_combo_box_text_append_text (GTK_COMBO_BOX_TEXT (widget), csname);
+
+    x_free(csname);
+
+  }
+
+  list_free(css, 1);
+  return FALSE;
+}
+#else
 void on_charset_popup (GtkComboBox *widget, gpointer user_data)
 {
   GtkListStore *store;
@@ -297,7 +387,7 @@ void on_charset_popup (GtkComboBox *widget, gpointer user_data)
   list_free(css, 1);
 
 }
-
+#endif
 
 void on_ssl_file_button_clicked(GtkComboBox *widget, gpointer user_data)
 {
@@ -499,7 +589,7 @@ int ShowOdbcParamsDialog(DataSource* params, HWND ParentWnd, BOOL isPrompt)
   pParams= params;
   g_isPrompt= isPrompt;
 
-  gtk_init(NULL, NULL);
+  gtk_init(nullptr, nullptr);
   /*
      If prompting (with a DSN name), or not prompting (add/edit DSN),
      we translate the lib path to the actual driver name.
@@ -552,6 +642,10 @@ int ShowOdbcParamsDialog(DataSource* params, HWND ParentWnd, BOOL isPrompt)
   dummy= gtk_combo_box_new();
   g_object_ref_sink(G_OBJECT (dummy));
 
+#if GTK_MAJOR_VERSION >= 3
+  dummy= gtk_combo_box_text_new();
+  g_object_ref_sink(G_OBJECT (dummy));
+#endif
   builder = gtk_builder_new ();
   /* add GUI definitions from ui_xml.h */
   gtk_builder_add_from_string(builder, ui_xml, -1 /* NULL-terminated */,
@@ -596,15 +690,27 @@ int ShowOdbcParamsDialog(DataSource* params, HWND ParentWnd, BOOL isPrompt)
                     G_CALLBACK (on_test_clicked), NULL);
 
   dummy= GTK_WIDGET (gtk_builder_get_object (builder, "database"));
+
+#if GTK_MAJOR_VERSION >= 3
+  g_signal_connect ((gpointer) dummy, "set-focus-child",
+                    G_CALLBACK (on_database_popup), NULL);
+#else
   g_signal_connect ((gpointer) dummy, "notify::popup-shown",
                     G_CALLBACK (on_database_popup), NULL);
+#endif
+
   /* Work around the keyboard-trapping bug in GTKComboBox */
   g_signal_connect ((gpointer) dummy, "key-press-event",
                     G_CALLBACK (on_tab_press), NULL);
 
   dummy= GTK_WIDGET (gtk_builder_get_object (builder, "charset"));
+#if GTK_MAJOR_VERSION >= 3
+  g_signal_connect ((gpointer) dummy, "set-focus-child",
+                    G_CALLBACK (on_charset_popup), NULL);
+#else
   g_signal_connect ((gpointer) dummy, "notify::popup-shown",
                     G_CALLBACK (on_charset_popup), NULL);
+#endif
   /* Work around the keyboard-trapping bug in GTKComboBox */
   g_signal_connect ((gpointer) dummy, "key-press-event",
                     G_CALLBACK (on_tab_press), (gpointer)1);
@@ -651,9 +757,13 @@ int ShowOdbcParamsDialog(DataSource* params, HWND ParentWnd, BOOL isPrompt)
   g_signal_connect ((gpointer) dummy, "toggled",
                     G_CALLBACK (on_check_cursor_prefetch_toggled), NULL);
 
-
   dummy= GTK_WIDGET (gtk_builder_get_object (builder, "plugindir_button"));
   entry= GTK_ENTRY (gtk_builder_get_object (builder, "plugin_dir"));
+  g_signal_connect ((gpointer) dummy, "clicked",
+                    G_CALLBACK (on_ssl_folder_button_clicked), entry);
+
+  dummy= GTK_WIDGET (gtk_builder_get_object (builder, "load_data_local_dir_button"));
+  entry= GTK_ENTRY (gtk_builder_get_object (builder, "load_data_local_dir"));
   g_signal_connect ((gpointer) dummy, "clicked",
                     G_CALLBACK (on_ssl_folder_button_clicked), entry);
 

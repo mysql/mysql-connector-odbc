@@ -1,4 +1,4 @@
-// Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License, version 2.0, as
@@ -29,7 +29,7 @@
 static char *ui_xml ="<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" \
 "<!-- Generated with glade 3.18.3 -->\n" \
 "<interface>\n" \
-  "<requires lib=\"gtk+\" version=\"3.0\"/>\n" \
+  "<requires lib=\"gtk+\" version=\"2.24\"/>\n" \
   "<object class=\"GtkAdjustment\" id=\"adjustment1\">\n" \
     "<property name=\"upper\">65535</property>\n" \
     "<property name=\"value\">3306</property>\n" \
@@ -383,7 +383,7 @@ static char *ui_xml ="<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" \
                       "</packing>\n" \
                     "</child>\n" \
                     "<child>\n" \
-                      "<object class=\"GtkComboBoxText\" id=\"database\">\n" \
+                      "<object class=\"GtkComboBox\" id=\"database\">\n" \
                         "<property name=\"visible\">True</property>\n" \
                         "<property name=\"can_focus\">True</property>\n" \
                         "<property name=\"events\">GDK_BUTTON_MOTION_MASK | GDK_BUTTON_PRESS_MASK | GDK_STRUCTURE_MASK | GDK_FOCUS_CHANGE_MASK</property>\n" \
@@ -670,7 +670,6 @@ static char *ui_xml ="<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" \
                           "<object class=\"GtkLabel\" id=\"labelPluginDir\">\n" \
                             "<property name=\"visible\">True</property>\n" \
                             "<property name=\"can_focus\">False</property>\n" \
-                            "<property name=\"hexpand\">False</property>\n" \
                             "<property name=\"label\" translatable=\"yes\">Plugin directory:</property>\n" \
                             "<property name=\"justify\">right</property>\n" \
                             "<property name=\"width_chars\">10</property>\n" \
@@ -688,7 +687,6 @@ static char *ui_xml ="<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" \
                           "<object class=\"GtkLabel\" id=\"labelAuth\">\n" \
                             "<property name=\"visible\">True</property>\n" \
                             "<property name=\"can_focus\">False</property>\n" \
-                            "<property name=\"hexpand\">True</property>\n" \
                             "<property name=\"label\" translatable=\"yes\">Authentication Library:</property>\n" \
                             "<property name=\"justify\">right</property>\n" \
                             "<property name=\"width_chars\">10</property>\n" \
@@ -754,7 +752,7 @@ static char *ui_xml ="<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" \
                           "</packing>\n" \
                         "</child>\n" \
                         "<child>\n" \
-                          "<object class=\"GtkComboBoxText\" id=\"charset\">\n" \
+                          "<object class=\"GtkComboBox\" id=\"charset\">\n" \
                             "<property name=\"visible\">True</property>\n" \
                             "<property name=\"can_focus\">True</property>\n" \
                             "<property name=\"events\">GDK_BUTTON_MOTION_MASK | GDK_BUTTON_PRESS_MASK | GDK_STRUCTURE_MASK | GDK_FOCUS_CHANGE_MASK</property>\n" \
@@ -1793,7 +1791,6 @@ static char *ui_xml ="<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" \
                           "<object class=\"GtkLabel\" id=\"labelPluginDir1\">\n" \
                             "<property name=\"visible\">True</property>\n" \
                             "<property name=\"can_focus\">False</property>\n" \
-                            "<property name=\"hexpand\">False</property>\n" \
                             "<property name=\"label\" translatable=\"yes\">LOAD DATA LOCAL directory:</property>\n" \
                             "<property name=\"justify\">right</property>\n" \
                             "<property name=\"width_chars\">10</property>\n" \
