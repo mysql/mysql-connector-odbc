@@ -165,6 +165,7 @@ typedef struct {
   BOOL no_tls_1;
   BOOL no_tls_1_1;
   BOOL no_tls_1_2;
+  BOOL no_tls_1_3;
 
   BOOL no_date_overflow;
   BOOL enable_local_infile;

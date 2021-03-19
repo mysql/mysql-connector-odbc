@@ -386,21 +386,27 @@ SQLRETURN myodbc_do_connect(DBC *dbc, DataSource *ds)
 #endif
 #if MYSQL_VERSION_ID >= 50710
   {
-    char tls_options[128] = { 0 };
-    if (!ds->no_tls_1)
+    std::string tls_options;
+
+    std::map<std::string, bool> opts = {
+      { "TLSv1", !ds->no_tls_1 },
+      { "TLSv1.1", !ds->no_tls_1_1 },
+      { "TLSv1.2", !ds->no_tls_1_2 },
+      { "TLSv1.3", !ds->no_tls_1_3 },
+    };
+
+    for (auto &opt : opts)
     {
-      strcat(tls_options, "TLSv1");
+      if (!opt.second)
+        continue;
+
+      if (!tls_options.empty())
+         tls_options.append(",");
+      tls_options.append(opt.first);
     }
-    if (!ds->no_tls_1_1)
-    {
-      strcat(tls_options, ds->no_tls_1 ? "TLSv1.1" : ",TLSv1.1");
-    }
-    if (!ds->no_tls_1_2)
-    {
-      strcat(tls_options, ds->no_tls_1 && ds->no_tls_1_1 ? "TLSv1.2" : ",TLSv1.2");
-    }
-    if (tls_options[0])
-      mysql_options(mysql, MYSQL_OPT_TLS_VERSION, tls_options);
+
+    if (tls_options.length())
+      mysql_options(mysql, MYSQL_OPT_TLS_VERSION, tls_options.c_str());
   }
 #endif
 
@@ -820,6 +826,7 @@ SQLRETURN myodbc_do_connect(DBC *dbc, DataSource *ds)
   // for older versions just use net_buffer_length() macro
   dbc->net_buffer_len = net_buffer_length;
 #endif
+
   guard.set_success(rc == SQL_SUCCESS || rc == SQL_SUCCESS_WITH_INFO);
   return rc;
 
@@ -990,7 +997,8 @@ SQLRETURN SQL_API MySQLDriverConnect(SQLHDBC hdbc, SQLHWND hwnd,
 
   case SQL_DRIVER_COMPLETE:
   case SQL_DRIVER_COMPLETE_REQUIRED:
-    if (myodbc_do_connect(dbc, ds) == SQL_SUCCESS)
+    rc= myodbc_do_connect(dbc, ds);
+    if (rc == SQL_SUCCESS || rc == SQL_SUCCESS_WITH_INFO)
       goto connected;
     bPrompt= TRUE;
     break;
@@ -1166,7 +1174,8 @@ SQLRETURN SQL_API MySQLDriverConnect(SQLHDBC hdbc, SQLHWND hwnd,
 
   }
 
-  if ((rc= myodbc_do_connect(dbc, ds)) != SQL_SUCCESS)
+  rc= myodbc_do_connect(dbc, ds);
+  if (rc != SQL_SUCCESS && rc != SQL_SUCCESS_WITH_INFO)
   {
     goto error;
   }

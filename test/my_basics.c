@@ -1157,28 +1157,40 @@ DECLARE_TEST(t_tls_opts)
   SQLCHAR buf[1024] = { 0 };
   SQLLEN len = 0;
 
-  is(OK == alloc_basic_handles_with_opt(&henv1, &hdbc1, &hstmt1, NULL,
-    NULL, NULL, NULL, "NO_TLS_1_0=1;NO_TLS_1_2=1"));
+  char *opts[] = {
+    "NO_TLS_1_0=1;",
+    "NO_TLS_1_1=1;",
+    "NO_TLS_1_2=1;",
+    "NO_TLS_1_3=1;"
+  };
 
-  /* Check the affected tows */
-  ok_sql(hstmt1, "SHOW STATUS LIKE 'Ssl_version'");
-  ok_stmt(hstmt1, SQLFetch(hstmt1));
-  ok_stmt(hstmt1, SQLGetData(hstmt1, 2, SQL_C_CHAR, buf, sizeof(buf), &len));
-  // is(len == 7);
-  // is_str(buf, "TLSv1.1", 7);
-  free_basic_handles(&henv1, &hdbc1, &hstmt1);
+  char *vals[] = {
+    "TLSv1",
+    "TLSv1.1",
+    "TLSv1.2",
+    "TLSv1.3"
+  };
 
-  is(OK == alloc_basic_handles_with_opt(&henv1, &hdbc1, &hstmt1, NULL,
-    NULL, NULL, NULL, "NO_TLS_1_1=1;NO_TLS_1_2=1"));
+  for (int i = 0; i < 4; ++i)
+  {
+    printf("TLS Parameters: %s\n", opts[i]);
+    is(OK == alloc_basic_handles_with_opt(&henv1, &hdbc1, &hstmt1, NULL,
+      NULL, NULL, NULL, opts[i]));
 
-  /* Check the affected tows */
-  ok_sql(hstmt1, "SHOW STATUS LIKE 'Ssl_version'");
-  ok_stmt(hstmt1, SQLFetch(hstmt1));
-  len = 0;
-  ok_stmt(hstmt1, SQLGetData(hstmt1, 2, SQL_C_CHAR, buf, sizeof(buf), &len));
-  // is(len == 5);
-  // is_str(buf, "TLSv1", 5);
-  free_basic_handles(&henv1, &hdbc1, &hstmt1);
+    /* Check the affected tows */
+    ok_sql(hstmt1, "SHOW STATUS LIKE 'Ssl_version'");
+    ok_stmt(hstmt1, SQLFetch(hstmt1));
+    ok_stmt(hstmt1, SQLGetData(hstmt1, 2, SQL_C_CHAR, buf, sizeof(buf), &len));
+
+    printf("SSL Version: %s\n\n", buf);
+    /*
+      Set one NO_TLS_X option and the version applied must be
+      not the same as disabled by the option
+    */
+    is(strcmp(vals[i], buf) != 0);
+
+    free_basic_handles(&henv1, &hdbc1, &hstmt1);
+  }
 
   return OK;
 }

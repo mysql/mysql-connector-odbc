@@ -56,10 +56,11 @@ IF (WIN32)
 ELSE (WIN32)
 
   # Sources for the main setup module
-  SET(SETUP_SRCS ConfigDSN.cc)
+  SET(SETUP_SRCS gtk/setup_loader.cc)
   
   # Sources for the GTK setup module
-  SET(SETUP_SRCS_GTK callbacks.cc
+  SET(SETUP_SRCS_GTK ConfigDSN.cc
+                     callbacks.cc
                      setupgui.h
                      utils.cc
                      gtk/odbcdialogparams.cc
@@ -84,7 +85,11 @@ ELSE (APPLE)
     IF (GTK3_INCLUDE_DIRS)
       ADD_LIBRARY(myodbc8S-gtk3 SHARED ${SETUP_SRCS_GTK})
       TARGET_INCLUDE_DIRECTORIES(myodbc8S-gtk3 PUBLIC ${GTK3_INCLUDE_DIRS})
-      TARGET_LINK_DIRECTORIES(myodbc8S-gtk3 PUBLIC ${GTK3_LIBRARY_DIRS})
+      
+      IF(GTK3_LIBRARY_DIRS)
+        TARGET_LINK_DIRECTORIES(myodbc8S-gtk3 PUBLIC ${GTK3_LIBRARY_DIRS})
+      ENDIF(GTK3_LIBRARY_DIRS)
+      
       INSTALL(TARGETS myodbc8S-gtk3 DESTINATION ${LIB_SUBDIR})
       SET_TARGET_PROPERTIES(myodbc8S-gtk3 PROPERTIES COMPILE_FLAGS "${PLATFORM_CFLAGS}")      
     ENDIF(GTK3_INCLUDE_DIRS)
@@ -94,7 +99,11 @@ ELSE (APPLE)
     IF (GTK2_INCLUDE_DIRS)
       ADD_LIBRARY(myodbc8S-gtk2 SHARED ${SETUP_SRCS_GTK})
       TARGET_INCLUDE_DIRECTORIES(myodbc8S-gtk2 PUBLIC ${GTK2_INCLUDE_DIRS})
-      TARGET_LINK_DIRECTORIES(myodbc8S-gtk2 PUBLIC ${GTK2_LIBRARY_DIRS})
+      
+      IF(GTK2_LIBRARY_DIRS)
+        TARGET_LINK_DIRECTORIES(myodbc8S-gtk2 PUBLIC ${GTK2_LIBRARY_DIRS})
+      ENDIF(GTK2_LIBRARY_DIRS)
+      
       INSTALL(TARGETS myodbc8S-gtk2 DESTINATION ${LIB_SUBDIR})
       SET_TARGET_PROPERTIES(myodbc8S-gtk2 PROPERTIES COMPILE_FLAGS "${PLATFORM_CFLAGS}")      
     ENDIF (GTK2_INCLUDE_DIRS)
@@ -114,19 +123,19 @@ IF (NOT WIN32)
   SET(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} ${ODBC_LINK_FLAGS}")
   
   TARGET_LINK_LIBRARIES(myodbc8S
-                      myodbc-util ${ODBCLIB} ${ODBCINSTLIB} ${MYSQL_CLIENT_LIBS}
+                      myodbc-util ${ODBCLIB} ${ODBCINSTLIB} dl
                       ${PLATFORM_LIBS})
   
   IF (TARGET myodbc8S-gtk3)
     TARGET_LINK_LIBRARIES(myodbc8S-gtk3 ${GTK3_LIBRARIES}
                           myodbc-util ${ODBCLIB} ${ODBCINSTLIB}
-                           ${PLATFORM_LIBS})
+                           ${PLATFORM_LIBS} ${MYSQL_CLIENT_LIBS})
   ENDIF (TARGET myodbc8S-gtk3)
   
   IF (TARGET myodbc8S-gtk2)
     TARGET_LINK_LIBRARIES(myodbc8S-gtk2 ${GTK2_LIBRARIES}
                           myodbc-util ${ODBCLIB} ${ODBCINSTLIB}
-                          ${MYSQL_CLIENT_LIBS} ${PLATFORM_LIBS})
+                          ${PLATFORM_LIBS} ${MYSQL_CLIENT_LIBS})
   ENDIF (TARGET myodbc8S-gtk2)
   
 ELSE (NOT WIN32)

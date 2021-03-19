@@ -1,4 +1,4 @@
-// Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License, version 2.0, as
@@ -26,8 +26,8 @@
 // along with this program; if not, write to the Free Software Foundation, Inc.,
 // 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 
-static char *ui_xml ="<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" \
-"<!-- Generated with glade 3.18.3 -->\n" \
+static char *ui_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" \
+"<!-- Generated with glade 3.22.2 -->\n" \
 "<interface>\n" \
   "<requires lib=\"gtk+\" version=\"3.0\"/>\n" \
   "<object class=\"GtkAdjustment\" id=\"adjustment1\">\n" \
@@ -50,13 +50,16 @@ static char *ui_xml ="<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" \
     "<property name=\"modal\">True</property>\n" \
     "<property name=\"window_position\">center-on-parent</property>\n" \
     "<property name=\"destroy_with_parent\">True</property>\n" \
+    "<child type=\"titlebar\">\n" \
+      "<placeholder/>\n" \
+    "</child>\n" \
     "<child>\n" \
       "<object class=\"GtkVBox\" id=\"vbox1\">\n" \
         "<property name=\"visible\">True</property>\n" \
         "<property name=\"can_focus\">False</property>\n" \
         "<child>\n" \
           "<object class=\"GtkImage\" id=\"header\">\n" \
-            "<property name=\"width_request\">520</property>\n" \
+            "<property name=\"width_request\">568</property>\n" \
             "<property name=\"height_request\">63</property>\n" \
             "<property name=\"visible\">True</property>\n" \
             "<property name=\"can_focus\">False</property>\n" \
@@ -670,7 +673,6 @@ static char *ui_xml ="<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" \
                           "<object class=\"GtkLabel\" id=\"labelPluginDir\">\n" \
                             "<property name=\"visible\">True</property>\n" \
                             "<property name=\"can_focus\">False</property>\n" \
-                            "<property name=\"hexpand\">False</property>\n" \
                             "<property name=\"label\" translatable=\"yes\">Plugin directory:</property>\n" \
                             "<property name=\"justify\">right</property>\n" \
                             "<property name=\"width_chars\">10</property>\n" \
@@ -688,7 +690,6 @@ static char *ui_xml ="<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" \
                           "<object class=\"GtkLabel\" id=\"labelAuth\">\n" \
                             "<property name=\"visible\">True</property>\n" \
                             "<property name=\"can_focus\">False</property>\n" \
-                            "<property name=\"hexpand\">True</property>\n" \
                             "<property name=\"label\" translatable=\"yes\">Authentication Library:</property>\n" \
                             "<property name=\"justify\">right</property>\n" \
                             "<property name=\"width_chars\">10</property>\n" \
@@ -1236,12 +1237,6 @@ static char *ui_xml ="<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" \
                       "<placeholder/>\n" \
                     "</child>\n" \
                     "<child>\n" \
-                      "<placeholder/>\n" \
-                    "</child>\n" \
-                    "<child>\n" \
-                      "<placeholder/>\n" \
-                    "</child>\n" \
-                    "<child>\n" \
                       "<object class=\"GtkEntry\" id=\"sslkey\">\n" \
                         "<property name=\"visible\">True</property>\n" \
                         "<property name=\"can_focus\">True</property>\n" \
@@ -1474,54 +1469,6 @@ static char *ui_xml ="<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" \
                       "</packing>\n" \
                     "</child>\n" \
                     "<child>\n" \
-                      "<object class=\"GtkCheckButton\" id=\"no_tls_1\">\n" \
-                        "<property name=\"label\" translatable=\"yes\">Disable TLS Version 1</property>\n" \
-                        "<property name=\"visible\">True</property>\n" \
-                        "<property name=\"can_focus\">True</property>\n" \
-                        "<property name=\"receives_default\">False</property>\n" \
-                        "<property name=\"xalign\">0.5</property>\n" \
-                        "<property name=\"draw_indicator\">True</property>\n" \
-                      "</object>\n" \
-                      "<packing>\n" \
-                        "<property name=\"left_attach\">1</property>\n" \
-                        "<property name=\"right_attach\">2</property>\n" \
-                        "<property name=\"top_attach\">7</property>\n" \
-                        "<property name=\"bottom_attach\">8</property>\n" \
-                      "</packing>\n" \
-                    "</child>\n" \
-                    "<child>\n" \
-                      "<object class=\"GtkCheckButton\" id=\"no_tls_1_1\">\n" \
-                        "<property name=\"label\" translatable=\"yes\">Disable TLS Version 1.1</property>\n" \
-                        "<property name=\"visible\">True</property>\n" \
-                        "<property name=\"can_focus\">True</property>\n" \
-                        "<property name=\"receives_default\">False</property>\n" \
-                        "<property name=\"xalign\">0.5</property>\n" \
-                        "<property name=\"draw_indicator\">True</property>\n" \
-                      "</object>\n" \
-                      "<packing>\n" \
-                        "<property name=\"left_attach\">1</property>\n" \
-                        "<property name=\"right_attach\">2</property>\n" \
-                        "<property name=\"top_attach\">8</property>\n" \
-                        "<property name=\"bottom_attach\">9</property>\n" \
-                      "</packing>\n" \
-                    "</child>\n" \
-                    "<child>\n" \
-                      "<object class=\"GtkCheckButton\" id=\"no_tls_1_2\">\n" \
-                        "<property name=\"label\" translatable=\"yes\">Disable TLS Version 1.2</property>\n" \
-                        "<property name=\"visible\">True</property>\n" \
-                        "<property name=\"can_focus\">True</property>\n" \
-                        "<property name=\"receives_default\">False</property>\n" \
-                        "<property name=\"xalign\">0.5</property>\n" \
-                        "<property name=\"draw_indicator\">True</property>\n" \
-                      "</object>\n" \
-                      "<packing>\n" \
-                        "<property name=\"left_attach\">1</property>\n" \
-                        "<property name=\"right_attach\">2</property>\n" \
-                        "<property name=\"top_attach\">9</property>\n" \
-                        "<property name=\"bottom_attach\">10</property>\n" \
-                      "</packing>\n" \
-                    "</child>\n" \
-                    "<child>\n" \
                       "<object class=\"GtkButton\" id=\"rsakey_button\">\n" \
                         "<property name=\"label\" translatable=\"yes\">...</property>\n" \
                         "<property name=\"use_action_appearance\">False</property>\n" \
@@ -1560,6 +1507,69 @@ static char *ui_xml ="<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" \
                         "<property name=\"bottom_attach\">7</property>\n" \
                       "</packing>\n" \
                     "</child>\n" \
+                    "<child>\n" \
+                      "<object class=\"GtkCheckButton\" id=\"no_tls_1\">\n" \
+                        "<property name=\"label\" translatable=\"yes\">Disable TLS Version 1</property>\n" \
+                        "<property name=\"visible\">True</property>\n" \
+                        "<property name=\"can_focus\">True</property>\n" \
+                        "<property name=\"receives_default\">False</property>\n" \
+                        "<property name=\"xalign\">0.5</property>\n" \
+                        "<property name=\"draw_indicator\">True</property>\n" \
+                      "</object>\n" \
+                      "<packing>\n" \
+                        "<property name=\"top_attach\">7</property>\n" \
+                        "<property name=\"bottom_attach\">8</property>\n" \
+                      "</packing>\n" \
+                    "</child>\n" \
+                    "<child>\n" \
+                      "<object class=\"GtkCheckButton\" id=\"no_tls_1_1\">\n" \
+                        "<property name=\"label\" translatable=\"yes\">Disable TLS Version 1.1</property>\n" \
+                        "<property name=\"visible\">True</property>\n" \
+                        "<property name=\"can_focus\">True</property>\n" \
+                        "<property name=\"receives_default\">False</property>\n" \
+                        "<property name=\"xalign\">0.5</property>\n" \
+                        "<property name=\"draw_indicator\">True</property>\n" \
+                      "</object>\n" \
+                      "<packing>\n" \
+                        "<property name=\"top_attach\">8</property>\n" \
+                        "<property name=\"bottom_attach\">9</property>\n" \
+                      "</packing>\n" \
+                    "</child>\n" \
+                    "<child>\n" \
+                      "<object class=\"GtkCheckButton\" id=\"no_tls_1_2\">\n" \
+                        "<property name=\"label\" translatable=\"yes\">Disable TLS Version 1.2</property>\n" \
+                        "<property name=\"visible\">True</property>\n" \
+                        "<property name=\"can_focus\">True</property>\n" \
+                        "<property name=\"receives_default\">False</property>\n" \
+                        "<property name=\"xalign\">0.5</property>\n" \
+                        "<property name=\"draw_indicator\">True</property>\n" \
+                      "</object>\n" \
+                      "<packing>\n" \
+                        "<property name=\"left_attach\">1</property>\n" \
+                        "<property name=\"right_attach\">2</property>\n" \
+                        "<property name=\"top_attach\">7</property>\n" \
+                        "<property name=\"bottom_attach\">8</property>\n" \
+                      "</packing>\n" \
+                    "</child>\n" \
+                    "<child>\n" \
+                      "<object class=\"GtkCheckButton\" id=\"no_tls_1_3\">\n" \
+                        "<property name=\"label\" translatable=\"yes\">Disable TLS Version 1.3</property>\n" \
+                        "<property name=\"visible\">True</property>\n" \
+                        "<property name=\"can_focus\">True</property>\n" \
+                        "<property name=\"receives_default\">False</property>\n" \
+                        "<property name=\"xalign\">0</property>\n" \
+                        "<property name=\"draw_indicator\">True</property>\n" \
+                      "</object>\n" \
+                      "<packing>\n" \
+                        "<property name=\"left_attach\">1</property>\n" \
+                        "<property name=\"right_attach\">2</property>\n" \
+                        "<property name=\"top_attach\">8</property>\n" \
+                        "<property name=\"bottom_attach\">9</property>\n" \
+                      "</packing>\n" \
+                    "</child>\n" \
+                    "<child>\n" \
+                      "<placeholder/>\n" \
+                    "</child>\n" \
                   "</object>\n" \
                   "<packing>\n" \
                     "<property name=\"position\">4</property>\n" \
@@ -1588,6 +1598,12 @@ static char *ui_xml ="<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" \
                         "<property name=\"can_focus\">False</property>\n" \
                         "<property name=\"n_rows\">8</property>\n" \
                         "<property name=\"n_columns\">2</property>\n" \
+                        "<child>\n" \
+                          "<placeholder/>\n" \
+                        "</child>\n" \
+                        "<child>\n" \
+                          "<placeholder/>\n" \
+                        "</child>\n" \
                         "<child>\n" \
                           "<placeholder/>\n" \
                         "</child>\n" \
@@ -1720,12 +1736,6 @@ static char *ui_xml ="<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" \
                           "</packing>\n" \
                         "</child>\n" \
                         "<child>\n" \
-                          "<placeholder/>\n" \
-                        "</child>\n" \
-                        "<child>\n" \
-                          "<placeholder/>\n" \
-                        "</child>\n" \
-                        "<child>\n" \
                           "<object class=\"GtkCheckButton\" id=\"min_date_to_zero\">\n" \
                             "<property name=\"label\" translatable=\"yes\">Bind minimal date as zero date</property>\n" \
                             "<property name=\"use_action_appearance\">False</property>\n" \
@@ -1793,7 +1803,6 @@ static char *ui_xml ="<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" \
                           "<object class=\"GtkLabel\" id=\"labelPluginDir1\">\n" \
                             "<property name=\"visible\">True</property>\n" \
                             "<property name=\"can_focus\">False</property>\n" \
-                            "<property name=\"hexpand\">False</property>\n" \
                             "<property name=\"label\" translatable=\"yes\">LOAD DATA LOCAL directory:</property>\n" \
                             "<property name=\"justify\">right</property>\n" \
                             "<property name=\"width_chars\">10</property>\n" \
