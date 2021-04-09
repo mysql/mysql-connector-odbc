@@ -108,7 +108,7 @@ ECHO "|              i - internal                           |"
 ECHO "|                                                     |"
 ECHO "| EXAMPLE                                             |"
 ECHO "|                                                     |"
-ECHO "| CreateBinaryMsi 8.0.24                              |"
+ECHO "| CreateBinaryMsi 8.0.25                              |"
 ECHO "|                                                     |"
 ECHO "+-----------------------------------------------------+"
 
