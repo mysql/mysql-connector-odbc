@@ -142,7 +142,8 @@ DECLARE_TEST(my_table_dbs)
     rc = SQLFreeStmt(hstmt, SQL_CLOSE);
     mystmt(hstmt,rc);
 
-    rc = SQLTables(hstmt,(SQLCHAR *)"%",1,"",0,"",0,NULL,0);
+    /* Must return non-NULL catalogs */
+    rc = SQLTables(hstmt,(SQLCHAR *)SQL_ALL_CATALOGS,1,"",0,"",0,NULL,0);
     mystmt(hstmt,rc);
 
     rc = SQLFetch(hstmt);
@@ -834,8 +835,8 @@ DECLARE_TEST(t_sqltables)
   mystmt(hstmt,r);
 
   r  = SQLTables(hstmt, (SQLCHAR *)"TEST", SQL_NTS,
-                 (SQLCHAR *)"TEST", SQL_NTS, NULL, 0,
-                 (SQLCHAR *)"TABLE", SQL_NTS);
+                        (SQLCHAR *)"", SQL_NTS, NULL, 0,
+                        (SQLCHAR *)"TABLE", SQL_NTS);
   mystmt(hstmt,r);
 
   myresult(hstmt);
@@ -1043,6 +1044,10 @@ DECLARE_TEST(empty_set)
 DECLARE_TEST(t_bug23031)
 {
   SQLCHAR buff[255];
+
+  // Impossible to get view and commend with NO_I_S
+  if (myoption & (1 << 30))
+    return OK;
 
   ok_sql(hstmt, "DROP VIEW IF EXISTS t_bug23031_v");
   ok_sql(hstmt, "DROP TABLE IF EXISTS t_bug23031_t");

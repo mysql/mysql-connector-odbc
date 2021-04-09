@@ -138,6 +138,8 @@ static SQLWCHAR W_NO_BIGINT[]=
   {'N','O','_','B','I','G','I','N','T',0};
 static SQLWCHAR W_NO_CATALOG[]=
   {'N','O','_','C','A','T','A','L','O','G',0};
+static SQLWCHAR W_NO_SCHEMA[]=
+  {'N','O','_','S','C','H','E','M','A',0};
 static SQLWCHAR W_USE_MYCNF[]=
   {'U','S','E','_','M','Y','C','N','F',0};
 static SQLWCHAR W_SAFE[]=
@@ -854,6 +856,8 @@ void ds_map_param(DataSource *ds, const SQLWCHAR *param,
     *booldest= &ds->change_bigint_columns_to_int;
   else if (!sqlwcharcasecmp(W_NO_CATALOG, param))
     *booldest= &ds->no_catalog;
+  else if (!sqlwcharcasecmp(W_NO_SCHEMA, param))
+    *booldest= &ds->no_schema;
   else if (!sqlwcharcasecmp(W_USE_MYCNF, param))
     *booldest= &ds->read_options_from_mycnf;
   else if (!sqlwcharcasecmp(W_SAFE, param))
@@ -1382,6 +1386,7 @@ int ds_add(DataSource *ds)
   if (ds_add_intprop(ds->name, W_NAMED_PIPE, ds->force_use_of_named_pipes)) goto error;
   if (ds_add_intprop(ds->name, W_NO_BIGINT, ds->change_bigint_columns_to_int)) goto error;
   if (ds_add_intprop(ds->name, W_NO_CATALOG, ds->no_catalog)) goto error;
+  if (ds_add_intprop(ds->name, W_NO_SCHEMA, ds->no_schema)) goto error;
   if (ds_add_intprop(ds->name, W_USE_MYCNF, ds->read_options_from_mycnf)) goto error;
   if (ds_add_intprop(ds->name, W_SAFE, ds->safe)) goto error;
   if (ds_add_intprop(ds->name, W_NO_TRANSACTIONS, ds->disable_transactions)) goto error;

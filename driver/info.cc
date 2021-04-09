@@ -42,7 +42,7 @@ do { \
 
 #define MYINFO_SET_USHORT(val) \
 do { \
-  *((SQLUSMALLINT *)num_info)= (val); \
+  *((SQLUSMALLINT *)num_info)= (SQLUSMALLINT)(val); \
   *value_len= sizeof(SQLUSMALLINT); \
   return SQL_SUCCESS; \
 } while(0)
@@ -561,8 +561,12 @@ MySQLGetInfo(SQLHDBC hdbc, SQLUSMALLINT fInfoType,
   case SQL_MAX_BINARY_LITERAL_LEN:
     MYINFO_SET_ULONG(0);
 
+  // SQL_MAX_QUALIFIER_NAME_LEN is also defined as SQL_MAX_CATALOG_NAME_LEN
   case SQL_MAX_CATALOG_NAME_LEN:
-    MYINFO_SET_USHORT(NAME_LEN);
+    if (!dbc->ds->no_catalog)
+      MYINFO_SET_USHORT(64);
+    else
+      MYINFO_SET_USHORT(0);
 
   case SQL_MAX_CHAR_LITERAL_LEN:
     MYINFO_SET_ULONG(0);
@@ -612,8 +616,9 @@ MySQLGetInfo(SQLHDBC hdbc, SQLUSMALLINT fInfoType,
   case SQL_MAX_ROW_SIZE_INCLUDES_LONG:
     MYINFO_SET_STR("Y");
 
+  // SQL_MAX_OWNER_NAME_LEN is also defined as SQL_MAX_SCHEMA_NAME_LEN
   case SQL_MAX_SCHEMA_NAME_LEN:
-    if (!dbc->ds->no_catalog)
+    if (!dbc->ds->no_schema)
       MYINFO_SET_USHORT(64);
     else
       MYINFO_SET_USHORT(0);
@@ -708,11 +713,10 @@ MySQLGetInfo(SQLHDBC hdbc, SQLUSMALLINT fInfoType,
     MYINFO_SET_STR("N");
 
   case SQL_SCHEMA_TERM:
-    /* This is because we map MySQL database (schema) to catalog. */
-    MYINFO_SET_STR("");
+    MYINFO_SET_STR((dbc->ds && dbc->ds->no_schema) ? "" : "database");
 
   case SQL_SCHEMA_USAGE:
-    if (!dbc->ds->no_catalog)
+    if (!dbc->ds->no_schema)
       MYINFO_SET_ULONG(SQL_SU_DML_STATEMENTS | SQL_SU_PROCEDURE_INVOCATION |
                        SQL_SU_TABLE_DEFINITION | SQL_SU_INDEX_DEFINITION |
                        SQL_SU_PRIVILEGE_DEFINITION);

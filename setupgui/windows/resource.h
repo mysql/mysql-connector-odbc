@@ -102,6 +102,7 @@
 #define IDC_CHECK_zero_date_to_min      10022
 #define IDC_CHECK_ignore_space_after_function_names 10023
 #define IDC_CHECK_no_catalog            10025
+#define IDC_CHECK_no_schema             10069
 #define IDC_CHECK_read_options_from_mycnf 10026
 #define IDC_CHECK_disable_transactions  10027
 #define IDC_CHECK_force_use_of_forward_only_cursors 10028

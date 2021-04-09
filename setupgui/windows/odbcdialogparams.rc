@@ -179,10 +179,12 @@ BEGIN
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,42,141,10
     CONTROL         "&Disable catalog support",IDC_CHECK_no_catalog,
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,57,91,10
-    CONTROL         "&Limit column size to signed 32-bit range",IDC_CHECK_limit_column_size,
+    CONTROL         "&Disable schema support",IDC_CHECK_no_schema,
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,72,141,10
+    CONTROL         "&Limit column size to signed 32-bit range",IDC_CHECK_limit_column_size,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,87,141,10
     CONTROL         "D&on't use INFORMATION_SCHEMA for metadata",IDC_CHECK_no_information_schema,
-                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,87,194,10
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,102,194,10
 
 END
 

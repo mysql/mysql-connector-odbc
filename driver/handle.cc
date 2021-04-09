@@ -480,7 +480,7 @@ SQLRETURN SQL_API my_SQLFreeStmtExtended(SQLHSTMT hstmt,SQLUSMALLINT fOption,
     STMT *stmt= (STMT *) hstmt;
     uint i;
 
-    stmt->buf_set_pos(0);
+    stmt->reset();
 
     if (fOption == SQL_UNBIND)
     {

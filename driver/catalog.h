@@ -1,30 +1,30 @@
-// Copyright (c) 2010, 2018, Oracle and/or its affiliates. All rights reserved. 
-// 
-// This program is free software; you can redistribute it and/or modify 
-// it under the terms of the GNU General Public License, version 2.0, as 
-// published by the Free Software Foundation. 
-// 
-// This program is also distributed with certain software (including 
-// but not limited to OpenSSL) that is licensed under separate terms, 
-// as designated in a particular file or component or in included license 
-// documentation. The authors of MySQL hereby grant you an 
-// additional permission to link the program and your derivative works 
-// with the separately licensed software that they have included with 
-// MySQL. 
-// 
-// Without limiting anything contained in the foregoing, this file, 
-// which is part of <MySQL Product>, is also subject to the 
-// Universal FOSS Exception, version 1.0, a copy of which can be found at 
-// http://oss.oracle.com/licenses/universal-foss-exception. 
-// 
-// This program is distributed in the hope that it will be useful, but 
-// WITHOUT ANY WARRANTY; without even the implied warranty of 
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-// See the GNU General Public License, version 2.0, for more details. 
-// 
-// You should have received a copy of the GNU General Public License 
-// along with this program; if not, write to the Free Software Foundation, Inc., 
-// 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA 
+// Copyright (c) 2010, 2018, Oracle and/or its affiliates. All rights reserved.
+//
+// This program is free software; you can redistribute it and/or modify
+// it under the terms of the GNU General Public License, version 2.0, as
+// published by the Free Software Foundation.
+//
+// This program is also distributed with certain software (including
+// but not limited to OpenSSL) that is licensed under separate terms,
+// as designated in a particular file or component or in included license
+// documentation. The authors of MySQL hereby grant you an
+// additional permission to link the program and your derivative works
+// with the separately licensed software that they have included with
+// MySQL.
+//
+// Without limiting anything contained in the foregoing, this file,
+// which is part of <MySQL Product>, is also subject to the
+// Universal FOSS Exception, version 1.0, a copy of which can be found at
+// http://oss.oracle.com/licenses/universal-foss-exception.
+//
+// This program is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+// See the GNU General Public License, version 2.0, for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program; if not, write to the Free Software Foundation, Inc.,
+// 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 
 /**
   @file  catalog.h
@@ -51,14 +51,14 @@ enum myodbcProcColumns {mypcPROCEDURE_CAT= 0, mypcPROCEDURE_SCHEM,  mypcPROCEDUR
                   /*6*/ mypcTYPE_NAME,        mypcCOLUMN_SIZE,      mypcBUFFER_LENGTH,
                   /*9*/ mypcDECIMAL_DIGITS,   mypcNUM_PREC_RADIX,   mypcNULLABLE,
                   /*12*/mypcREMARKS,          mypcCOLUMN_DEF,       mypcSQL_DATA_TYPE,
-                  /*15*/mypcSQL_DATETIME_SUB, mypcCHAR_OCTET_LENGTH,mypcORDINAL_POSITION, 
+                  /*15*/mypcSQL_DATETIME_SUB, mypcCHAR_OCTET_LENGTH,mypcORDINAL_POSITION,
                   /*18*/mypcIS_NULLABLE };
 
 
 /* Some common(for i_s/no_i_s) helper functions */
-const char *my_next_token(const char *prev_token, 
-                          const char **token, 
-                                char *data, 
+const char *my_next_token(const char *prev_token,
+                          const char **token,
+                                char *data,
                           const char chr);
 
 SQLRETURN
@@ -75,29 +75,37 @@ my_bool server_has_i_s(DBC *dbc);
 /* no_i_s functions */
 SQLRETURN
 columns_no_i_s(STMT *hstmt, SQLCHAR *szCatalog, SQLSMALLINT cbCatalog,
-               SQLCHAR *szSchema __attribute__((unused)),
-               SQLSMALLINT cbSchema __attribute__((unused)),
+               SQLCHAR *szSchema,
+               SQLSMALLINT cbSchema,
                SQLCHAR *szTable, SQLSMALLINT cbTable,
                SQLCHAR *szColumn, SQLSMALLINT cbColumn);
 
-SQLRETURN 
+SQLRETURN
 list_column_priv_no_i_s(SQLHSTMT hstmt,
                       SQLCHAR *catalog, SQLSMALLINT catalog_len,
-                      SQLCHAR *schema __attribute__((unused)),
-                      SQLSMALLINT schema_len __attribute__((unused)),
+                      SQLCHAR *schema,
+                      SQLSMALLINT schema_len,
                       SQLCHAR *table, SQLSMALLINT table_len,
                       SQLCHAR *column, SQLSMALLINT column_len);
 
 SQLRETURN
 list_table_priv_no_i_s(SQLHSTMT hstmt,
                        SQLCHAR *catalog, SQLSMALLINT catalog_len,
-                       SQLCHAR *schema __attribute__((unused)),
-                       SQLSMALLINT schema_len __attribute__((unused)),
+                       SQLCHAR *schema,
+                       SQLSMALLINT schema_len,
                        SQLCHAR *table, SQLSMALLINT table_len);
 
+MYSQL_RES *db_status(STMT *stmt, std::string &db);
+
+std::string get_database_name(STMT *stmt,
+                              SQLCHAR *catalog, SQLSMALLINT catalog_len,
+                              SQLCHAR *schema, SQLSMALLINT schema_len,
+                              bool try_reget = true);
+
+
 MYSQL_RES *table_status(STMT        *stmt,
-                        SQLCHAR     *catalog,
-                        SQLSMALLINT  catalog_length,
+                        SQLCHAR     *db,
+                        SQLSMALLINT  db_length,
                         SQLCHAR     *table,
                         SQLSMALLINT  table_length,
                         my_bool      wildcard,
@@ -105,40 +113,40 @@ MYSQL_RES *table_status(STMT        *stmt,
                         my_bool      show_views);
 
 MYSQL_RES *table_status_no_i_s(STMT        *stmt,
-                               SQLCHAR     *catalog,
-                               SQLSMALLINT  catalog_length,
+                               SQLCHAR     *db,
+                               SQLSMALLINT  db_length,
                                SQLCHAR     *table,
                                SQLSMALLINT  table_length,
                                my_bool      wildcard);
 
 SQLRETURN foreign_keys_no_i_s(SQLHSTMT hstmt,
-                              SQLCHAR    *szPkCatalogName __attribute__((unused)),
-                              SQLSMALLINT cbPkCatalogName __attribute__((unused)),
-                              SQLCHAR    *szPkSchemaName __attribute__((unused)),
-                              SQLSMALLINT cbPkSchemaName __attribute__((unused)),
-                              SQLCHAR    *szPkTableName,
-                              SQLSMALLINT cbPkTableName,
-                              SQLCHAR    *szFkCatalogName,
-                              SQLSMALLINT cbFkCatalogName,
-                              SQLCHAR    *szFkSchemaName __attribute__((unused)),
-                              SQLSMALLINT cbFkSchemaName __attribute__((unused)),
-                              SQLCHAR    *szFkTableName,
-                              SQLSMALLINT cbFkTableName);
+                              SQLCHAR    *pk_catalog,
+                              SQLSMALLINT pk_catalog_len,
+                              SQLCHAR    *pk_schema,
+                              SQLSMALLINT pk_schema_len,
+                              SQLCHAR    *pk_table,
+                              SQLSMALLINT pk_table_len,
+                              SQLCHAR    *fk_catalog,
+                              SQLSMALLINT fk_catalog_len,
+                              SQLCHAR    *fk_schema,
+                              SQLSMALLINT fk_schema_len,
+                              SQLCHAR    *fk_table,
+                              SQLSMALLINT fk_table_len);
 
 
 SQLRETURN
 primary_keys_no_i_s(SQLHSTMT hstmt,
                     SQLCHAR *catalog, SQLSMALLINT catalog_len,
-                    SQLCHAR *schema __attribute__((unused)),
-                    SQLSMALLINT schema_len __attribute__((unused)),
+                    SQLCHAR *schema,
+                    SQLSMALLINT schema_len,
                     SQLCHAR *table, SQLSMALLINT table_len);
 
 
 SQLRETURN
 procedure_columns_no_i_s(SQLHSTMT hstmt,
                          SQLCHAR *szCatalogName, SQLSMALLINT cbCatalogName,
-                         SQLCHAR *szSchemaName __attribute__((unused)),
-                         SQLSMALLINT cbSchemaName __attribute__((unused)),
+                         SQLCHAR *szSchemaName,
+                         SQLSMALLINT cbSchemaName,
                          SQLCHAR *szProcName, SQLSMALLINT cbProcName,
                          SQLCHAR *szColumnName, SQLSMALLINT cbColumnName);
 
@@ -146,11 +154,11 @@ procedure_columns_no_i_s(SQLHSTMT hstmt,
 SQLRETURN
 special_columns_no_i_s(SQLHSTMT hstmt, SQLUSMALLINT fColType,
                        SQLCHAR *szTableQualifier, SQLSMALLINT cbTableQualifier,
-                       SQLCHAR *szTableOwner __attribute__((unused)),
-                       SQLSMALLINT cbTableOwner __attribute__((unused)),
+                       SQLCHAR *szTableOwner,
+                       SQLSMALLINT cbTableOwner,
                        SQLCHAR *szTableName, SQLSMALLINT cbTableName,
-                       SQLUSMALLINT fScope __attribute__((unused)),
-                       SQLUSMALLINT fNullable __attribute__((unused)));
+                       SQLUSMALLINT fScope,
+                       SQLUSMALLINT fNullable);
 
 /*
   @purpose : retrieves a list of statistics about a single table and the
@@ -161,11 +169,11 @@ special_columns_no_i_s(SQLHSTMT hstmt, SQLUSMALLINT fColType,
 SQLRETURN
 statistics_no_i_s(SQLHSTMT hstmt,
                   SQLCHAR *catalog, SQLSMALLINT catalog_len,
-                  SQLCHAR *schema __attribute__((unused)),
-                  SQLSMALLINT schema_len __attribute__((unused)),
+                  SQLCHAR *schema,
+                  SQLSMALLINT schema_len,
                   SQLCHAR *table, SQLSMALLINT table_len,
                   SQLUSMALLINT fUnique,
-                  SQLUSMALLINT fAccuracy __attribute__((unused)));
+                  SQLUSMALLINT fAccuracy);
 
 SQLRETURN
 tables_no_i_s(SQLHSTMT hstmt,

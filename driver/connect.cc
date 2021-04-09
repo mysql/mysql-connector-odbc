@@ -71,8 +71,8 @@ unsigned long get_client_flags(DataSource *ds)
 
   if (ds->safe || ds->return_matching_rows)
     flags|= CLIENT_FOUND_ROWS;
-  if (ds->no_catalog)
-    flags|= CLIENT_NO_SCHEMA;
+  //if (ds->no_catalog)
+  //  flags|= CLIENT_NO_SCHEMA;
   if (ds->use_compressed_protocol)
     flags|= CLIENT_COMPRESS;
   if (ds->ignore_space_after_function_names)

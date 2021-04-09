@@ -873,6 +873,25 @@ static char *ui_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" \
                       "</packing>\n" \
                     "</child>\n" \
                     "<child>\n" \
+                      "<object class=\"GtkCheckButton\" id=\"no_schema\">\n" \
+                        "<property name=\"label\" translatable=\"yes\">Disable Schema Support</property>\n" \
+                        "<property name=\"use_action_appearance\">False</property>\n" \
+                        "<property name=\"visible\">True</property>\n" \
+                        "<property name=\"can_focus\">True</property>\n" \
+                        "<property name=\"receives_default\">False</property>\n" \
+                        "<property name=\"has_tooltip\">True</property>\n" \
+                        "<property name=\"tooltip_text\" translatable=\"yes\">Forces results from the catalog functions, such as SQLTables, to always return NULL and the driver to report that schemas are not supported.</property>\n" \
+                        "<property name=\"use_underline\">True</property>\n" \
+                        "<property name=\"xalign\">0.5</property>\n" \
+                        "<property name=\"draw_indicator\">True</property>\n" \
+                      "</object>\n" \
+                      "<packing>\n" \
+                        "<property name=\"expand\">True</property>\n" \
+                        "<property name=\"fill\">True</property>\n" \
+                        "<property name=\"position\">5</property>\n" \
+                      "</packing>\n" \
+                    "</child>\n" \
+                    "<child>\n" \
                       "<object class=\"GtkCheckButton\" id=\"limit_column_size\">\n" \
                         "<property name=\"label\" translatable=\"yes\">Limit Column Size to Signed 32-bit Range</property>\n" \
                         "<property name=\"use_action_appearance\">False</property>\n" \
@@ -885,7 +904,7 @@ static char *ui_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" \
                       "<packing>\n" \
                         "<property name=\"expand\">True</property>\n" \
                         "<property name=\"fill\">True</property>\n" \
-                        "<property name=\"position\">5</property>\n" \
+                        "<property name=\"position\">6</property>\n" \
                       "</packing>\n" \
                     "</child>\n" \
                     "<child>\n" \
@@ -904,7 +923,7 @@ static char *ui_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" \
                       "<packing>\n" \
                         "<property name=\"expand\">True</property>\n" \
                         "<property name=\"fill\">True</property>\n" \
-                        "<property name=\"position\">6</property>\n" \
+                        "<property name=\"position\"7</property>\n" \
                       "</packing>\n" \
                     "</child>\n" \
                   "</object>\n" \

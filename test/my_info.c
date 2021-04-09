@@ -289,7 +289,7 @@ DECLARE_TEST(t_bug28385722)
 
   ok_con(hdbc, SQLGetInfo(hdbc, SQL_MAX_SCHEMA_NAME_LEN, &schema_len,
                           sizeof(schema_len), &val_len));
-  is_num(schema_len, 64);
+  is(schema_len > 63);
 
   ok_con(hdbc, SQLGetInfo(hdbc, SQL_SCHEMA_USAGE, &schema_usage,
                           sizeof(schema_usage), &val_len));

@@ -523,6 +523,7 @@ int list_datasource_details(DataSource *ds)
   if (ds->force_use_of_named_pipes) printf("\tNAMED_PIPE\n");
   if (ds->change_bigint_columns_to_int) printf("\tNO_BIGINT\n");
   if (ds->no_catalog) printf("\tNO_CATALOG\n");
+  if (ds->no_schema) printf("\tNO_SCHEMA\n");
   if (ds->read_options_from_mycnf) printf("\tUSE_MYCNF\n");
   if (ds->safe) printf("\tSAFE\n");
   if (ds->disable_transactions) printf("\tNO_TRANSACTIONS\n");

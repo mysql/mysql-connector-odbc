@@ -621,6 +621,19 @@ void STMT::free_unbind()
   ard->reset();
 }
 
+
+/*
+  Do only a "light" reset
+*/
+void STMT::reset()
+{
+  buf_set_pos(0);
+
+  // If data existed before invalidating the result array does not need freeing
+  if (m_row_storage.invalidate())
+    result_array = nullptr;
+}
+
 void STMT::free_reset_out_params()
 {
   if (out_params_state == OPS_STREAMS_PENDING)
