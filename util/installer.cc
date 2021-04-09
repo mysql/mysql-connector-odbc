@@ -192,6 +192,8 @@ static SQLWCHAR W_NO_TLS_1_1[] =
 { 'N', 'O', '_', 'T', 'L', 'S', '_', '1', '_', '1', 0 };
 static SQLWCHAR W_NO_TLS_1_2[] =
 { 'N', 'O', '_', 'T', 'L', 'S', '_', '1', '_', '2', 0 };
+static SQLWCHAR W_NO_TLS_1_3[] =
+{ 'N', 'O', '_', 'T', 'L', 'S', '_', '1', '_', '3', 0 };
 static SQLWCHAR W_SSLMODE[] =
 { 'S', 'S', 'L', 'M', 'O', 'D', 'E', 0 };
 static SQLWCHAR W_NO_DATE_OVERFLOW[] =
@@ -232,7 +234,7 @@ SQLWCHAR *dsnparams[]= {W_DSN, W_DRIVER, W_DESCRIPTION, W_SERVER,
                         W_CAN_HANDLE_EXP_PWD, W_ENABLE_CLEARTEXT_PLUGIN,
                         W_GET_SERVER_PUBLIC_KEY, W_ENABLE_DNS_SRV, W_MULTI_HOST,
                         W_SAVEFILE, W_RSAKEY, W_PLUGIN_DIR, W_DEFAULT_AUTH,
-                        W_NO_TLS_1, W_NO_TLS_1_1, W_NO_TLS_1_2,
+                        W_NO_TLS_1, W_NO_TLS_1_1, W_NO_TLS_1_2, W_NO_TLS_1_3,
                         W_SSLMODE, W_NO_DATE_OVERFLOW, W_LOAD_DATA_LOCAL_DIR};
 static const
 int dsnparamcnt= sizeof(dsnparams) / sizeof(SQLWCHAR *);
@@ -904,6 +906,8 @@ void ds_map_param(DataSource *ds, const SQLWCHAR *param,
     *booldest = &ds->no_tls_1_1;
   else if (!sqlwcharcasecmp(W_NO_TLS_1_2, param))
     *booldest = &ds->no_tls_1_2;
+  else if (!sqlwcharcasecmp(W_NO_TLS_1_3, param))
+    *booldest = &ds->no_tls_1_3;
   else if (!sqlwcharcasecmp(W_NO_DATE_OVERFLOW, param))
     *booldest = &ds->no_date_overflow;
   else if (!sqlwcharcasecmp(W_ENABLE_LOCAL_INFILE, param))
@@ -1404,6 +1408,7 @@ int ds_add(DataSource *ds)
   if (ds_add_intprop(ds->name, W_NO_TLS_1, ds->no_tls_1)) goto error;
   if (ds_add_intprop(ds->name, W_NO_TLS_1_1, ds->no_tls_1_1)) goto error;
   if (ds_add_intprop(ds->name, W_NO_TLS_1_2, ds->no_tls_1_2)) goto error;
+  if (ds_add_intprop(ds->name, W_NO_TLS_1_3, ds->no_tls_1_3)) goto error;
   if (ds_add_intprop(ds->name, W_NO_DATE_OVERFLOW, ds->no_date_overflow)) goto error;
   if (ds_add_intprop(ds->name, W_ENABLE_LOCAL_INFILE, ds->enable_local_infile)) goto error;
   if (ds_add_strprop(ds->name, W_LOAD_DATA_LOCAL_DIR, ds->load_data_local_dir)) goto error;
