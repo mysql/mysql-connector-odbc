@@ -154,28 +154,6 @@ void myodbc_sqlstate3_init(void)
 }
 
 
-/*
-  @type    : myodbc3 internal
-  @purpose : sets the connection level errors, which doesn't need any
-  conversion
-*/
-
-SQLRETURN set_dbc_error(DBC *dbc, char *state,
-                        const char *message, uint errcode)
-{
-    myodbc_stpmov(dbc->error.sqlstate, state);
-    strxmov(dbc->error.message, MYODBC_ERROR_PREFIX, message, NullS);
-    dbc->error.native_error= errcode;
-    return SQL_ERROR;
-}
-
-
-/*
-  @type    : myodbc3 internal
-  @purpose : sets the statement level errors, which doesn't need any
-  conversion
-*/
-
 
 /*
   @type    : myodbc3 internal

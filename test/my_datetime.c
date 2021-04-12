@@ -1399,6 +1399,7 @@ DECLARE_TEST(t_date_overflow)
                                   SQL_DATE, 0, 0, &ts, sizeof(ts), NULL));
 
   expect_stmt(hstmt, SQLExecute(hstmt), SQL_ERROR);
+  ok_stmt(hstmt, SQLFreeStmt(hstmt, SQL_RESET_PARAMS));
 
   /* Empty result is expected */
   ok_sql(hstmt, "SELECT * FROM t_date_overflow");

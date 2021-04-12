@@ -120,7 +120,13 @@ DBC::~DBC()
 }
 
 
-
+SQLRETURN DBC::set_error(char * state, const char * message, uint errcode)
+{
+  myodbc_stpmov(error.sqlstate, state);
+  strxmov(error.message, MYODBC_ERROR_PREFIX, message, NullS);
+  error.native_error= errcode;
+  return SQL_ERROR;
+}
 /*
   @type    : myodbc3 internal
   @purpose : to allocate the environment handle and to maintain
@@ -331,7 +337,7 @@ SQLRETURN SQL_API SQLFreeConnect(SQLHDBC hdbc)
 
 
 /* allocates dynamic array for param bind.
-   returns TRUE on allocation errors */
+   Throws on allocation errors */
 void STMT::allocate_param_bind(uint elements)
 {
   if (dbc->ds->no_ssps)
@@ -415,7 +421,7 @@ SQLRETURN SQL_API my_SQLAllocStmt(SQLHDBC hdbc,SQLHSTMT *phstmt)
   }
   catch (...)
   {
-    return set_dbc_error(dbc, "HY001", "Memory allocation error", MYERR_S1001);
+    return dbc->set_error( "HY001", "Memory allocation error", MYERR_S1001);
   }
 
   *phstmt = (SQLHSTMT*)stmt.release();
@@ -594,7 +600,7 @@ SQLRETURN my_SQLAllocDesc(SQLHDBC hdbc, SQLHANDLE *pdesc)
   LOCK_DBC(dbc);
 
   if (!desc)
-    return set_dbc_error(dbc, "HY001", "Memory allocation error", MYERR_S1001);
+    return dbc->set_error( "HY001", "Memory allocation error", MYERR_S1001);
 
   desc->dbc= dbc;
 
@@ -698,7 +704,7 @@ SQLRETURN SQL_API SQLCancelHandle(SQLSMALLINT  HandleType,
   case SQL_HANDLE_DBC:
     {
       DBC *dbc= (DBC*)Handle;
-      return set_dbc_error(dbc, "IM001", "Driver does not support this function", 0);
+      return dbc->set_error( "IM001", "Driver does not support this function", 0);
     }
   /* Normally DM should map such call to SQLCancel */
   case SQL_HANDLE_STMT:

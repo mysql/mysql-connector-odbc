@@ -477,16 +477,11 @@ struct DESC {
 
   void free_paramdata();
   void reset();
+  SQLRETURN set_field(SQLSMALLINT recnum, SQLSMALLINT fldid,
+                      SQLPOINTER val, SQLINTEGER buflen);
 
   DESC(STMT *p_stmt, SQLSMALLINT p_alloc_type,
-    desc_ref_type p_ref_type, desc_desc_type p_desc_type) :
-    alloc_type(p_alloc_type), array_size(1), array_status_ptr(nullptr),
-    bind_offset_ptr(nullptr), bind_type(SQL_BIND_BY_COLUMN),
-    count(0), bookmark_count(0),
-    rows_processed_ptr(nullptr), desc_type(p_desc_type), ref_type(p_ref_type),
-    stmt(p_stmt)
-  {
-  }
+    desc_ref_type p_ref_type, desc_desc_type p_desc_type);
 
   size_t rcount()
   {
@@ -515,6 +510,29 @@ struct DESC {
     if (alloc_type == SQL_DESC_ALLOC_USER)
       stmt_list.emplace_back(stmt);
   }
+
+  inline bool is_apd()
+  {
+    return desc_type == DESC_PARAM && ref_type == DESC_APP;
+  }
+
+  inline bool is_ipd()
+  {
+    return desc_type == DESC_PARAM && ref_type == DESC_IMP;
+  }
+
+  inline bool is_ard()
+  {
+    return desc_type == DESC_ROW && ref_type == DESC_APP;
+  }
+
+  inline bool is_ird()
+  {
+    return desc_type == DESC_ROW && ref_type == DESC_IMP;
+  }
+
+  SQLRETURN set_error(char *state, const char *message, uint errcode);
+
 };
 
 /* Statement attributes */
@@ -575,7 +593,7 @@ struct DBC
   uint          cursor_count = 0;
   ulong         net_buffer_len = 0;
   uint          commit_flag = 0;
-
+  bool          has_query_attrs = false;
   std::recursive_mutex lock;
 
   bool          unicode = false;            /* Whether SQL*ConnectW was used */
@@ -592,6 +610,15 @@ struct DBC
   void free_connection_stmts();
   void add_desc(DESC* desc);
   void remove_desc(DESC *desc);
+  SQLRETURN set_error(char *state, const char *message, uint errcode);
+  SQLRETURN connect(DataSource *ds);
+
+  inline bool transactions_supported()
+  { return mysql->server_capabilities & CLIENT_TRANSACTIONS; }
+
+  inline bool autocommit_is_on()
+  { return mysql->server_status & SERVER_STATUS_AUTOCOMMIT; }
+
   void close();
   ~DBC();
 
@@ -704,6 +731,8 @@ struct STMT
 
   MY_PARSED_QUERY	query, orig_query;
   DYNAMIC_ARRAY     *param_bind;
+  std::vector<MYSQL_BIND> query_attr_bind;
+  std::vector<char*>      query_attr_names;
 
   my_bool           lengths_allocated;
   unsigned long     *lengths; /* used to set lengths if we shuffle field values
@@ -768,6 +797,8 @@ struct STMT
   void allocate_param_bind(uint elements);
   long compute_cur_row(unsigned fFetchType, SQLLEN irow);
 
+  SQLRETURN bind_query_attrs(bool use_ssps);
+
   void free_unbind();
   void free_reset_out_params();
   void free_reset_params();
@@ -777,6 +808,16 @@ struct STMT
 
   SQLRETURN set_error(myodbc_errid errid, const char *errtext, SQLINTEGER errcode);
   SQLRETURN set_error(const char *state, const char *errtext, SQLINTEGER errcode);
+
+  /*
+    Error message and errno is taken from dbc->mysql
+  */
+  SQLRETURN set_error(myodbc_errid errid);
+
+  /*
+    Error message and errno is taken from dbc->mysql
+  */
+  SQLRETURN set_error(const char *state);
 
   STMT(DBC *d) : dbc(d), result(NULL), array(NULL), result_array(NULL),
     current_values(NULL), fields(NULL), end_of_set(NULL),
@@ -927,9 +968,6 @@ SQLRETURN SQL_API MySQLSetConnectAttr(SQLHDBC hdbc, SQLINTEGER Attribute,
                                       SQLINTEGER StringLengthPtr);
 SQLRETURN SQL_API MySQLSetCursorName(SQLHSTMT hstmt, SQLCHAR *name,
                                      SQLSMALLINT len);
-SQLRETURN MySQLSetDescField(SQLHDESC hdesc, SQLSMALLINT recnum,
-                            SQLSMALLINT fldid, SQLPOINTER val,
-                            SQLINTEGER buflen);
 SQLRETURN SQL_API MySQLSetStmtAttr(SQLHSTMT hstmt, SQLINTEGER attribute,
                                    SQLPOINTER value, SQLINTEGER len);
 SQLRETURN SQL_API MySQLSpecialColumns(SQLHSTMT hstmt, SQLUSMALLINT type,

@@ -1797,8 +1797,7 @@ procedure_columns_no_i_s(SQLHSTMT hstmt,
   if (!(proc_list_res= server_list_proc_params(stmt,
       szCatalogName, cbCatalogName, szProcName, cbProcName)))
   {
-    nReturn= stmt->set_error( MYERR_S1000, mysql_error(stmt->dbc->mysql),
-                      mysql_errno(stmt->dbc->mysql));
+    nReturn= stmt->set_error(MYERR_S1000);
     goto clean_exit;
   }
 
@@ -1992,8 +1991,7 @@ procedure_columns_no_i_s(SQLHSTMT hstmt,
     if (exec_stmt_query_std(stmt, query, false) ||
         !(columns_res= mysql_store_result(stmt->dbc->mysql)))
     {
-      nReturn= stmt->set_error( MYERR_S1000, mysql_error(stmt->dbc->mysql),
-                mysql_errno(stmt->dbc->mysql));
+      nReturn= stmt->set_error(MYERR_S1000);
       goto exit_with_free;
     }
 
@@ -2002,8 +2000,7 @@ procedure_columns_no_i_s(SQLHSTMT hstmt,
 
     if (row == NULL)
     {
-      nReturn= stmt->set_error( MYERR_S1000, mysql_error(stmt->dbc->mysql),
-                mysql_errno(stmt->dbc->mysql));
+      nReturn= stmt->set_error(MYERR_S1000);
       goto exit_with_free;
     }
 

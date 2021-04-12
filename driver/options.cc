@@ -406,7 +406,7 @@ MySQLSetConnectAttr(SQLHDBC hdbc, SQLINTEGER Attribute,
         }
         else
         {
-          return set_dbc_error(dbc, "HY024", "Invalid attribute value", 0);
+          return dbc->set_error( "HY024", "Invalid attribute value", 0);
         }
       }
       break;
@@ -415,7 +415,7 @@ MySQLSetConnectAttr(SQLHDBC hdbc, SQLINTEGER Attribute,
     case SQL_ATTR_RESET_CONNECTION:
       if (ValuePtr != (SQLPOINTER)SQL_RESET_CONNECTION_YES)
       {
-        return set_dbc_error(dbc, "HY024", "Invalid attribute value", 0);
+        return dbc->set_error( "HY024", "Invalid attribute value", 0);
       }
       /* TODO 3.8 feature */
       reset_connection(dbc);
@@ -425,7 +425,7 @@ MySQLSetConnectAttr(SQLHDBC hdbc, SQLINTEGER Attribute,
 #endif
 
     case SQL_ATTR_ENLIST_IN_DTC:
-      return set_dbc_error(dbc, "HYC00",
+      return dbc->set_error( "HYC00",
                            "Optional feature not supported", 0);
 
       /*

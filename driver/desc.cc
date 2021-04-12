@@ -227,18 +227,8 @@ DESCREC *desc_get_rec(DESC *desc, int recnum, my_bool expand)
     {
       for (i= desc->rcount(); expand && i <= recnum; ++i)
       {
-        /* we might have used records lying around from before if
-         * SQLFreeStmt() was called with SQL_UNBIND or SQL_FREE_PARAMS
-         */
-        if ((uint)i < desc->records2.size())
-        {
-          rec= &desc->records2[recnum];
-        }
-        else
-        {
-          desc->records2.emplace_back(desc->desc_type, desc->ref_type);
-          rec = &desc->records2.back();
-        }
+        desc->records2.emplace_back(desc->desc_type, desc->ref_type);
+        rec = &desc->records2.back();
         rec->reset_to_defaults();
       }
     }
@@ -366,6 +356,7 @@ apply_desc_val(void *dest, SQLSMALLINT dest_type, void *src, SQLINTEGER buflen)
       *(SQLULEN *)dest= (SQLULEN)src;
     break;
 
+  case SQL_NTS:
   case SQL_IS_POINTER:
     *(SQLPOINTER *)dest= src;
     break;
@@ -415,7 +406,7 @@ getfield(SQLSMALLINT fldid)
   REC_FLD(literal_prefix   , PR_RIR                     , SQL_IS_POINTER);
   REC_FLD(literal_suffix   , PR_RIR                     , SQL_IS_POINTER);
   REC_FLD(local_type_name  , PR_RIR|PR_RIP              , SQL_IS_POINTER);
-  REC_FLD(name             , PR_RIR|PR_WIP              , SQL_IS_POINTER);
+  REC_FLD(name             , PR_RIR|PR_WIP              , SQL_NTS);
   REC_FLD(nullable         , PR_RIR|PR_RIP              , SQL_IS_SMALLINT);
   REC_FLD(num_prec_radix   , PR_WAR|PR_WAP|PR_RIR|PR_WIP, SQL_IS_INTEGER);
   REC_FLD(octet_length     , PR_WAR|PR_WAP|PR_RIR|PR_WIP, SQL_IS_LEN);
@@ -720,82 +711,98 @@ MySQLGetDescField(SQLHDESC hdesc, SQLSMALLINT recnum, SQLSMALLINT fldid,
 }
 
 
+SQLRETURN DESC::set_error(char *state, const char *message, uint errcode)
+{
+  myodbc_stpmov(error.sqlstate, state);
+  strxmov(error.message, stmt->dbc->st_error_prefix,
+          message, NullS);
+  error.native_error = errcode;
+
+  return SQL_ERROR;
+}
+
+DESC::DESC(STMT *p_stmt, SQLSMALLINT p_alloc_type,
+    desc_ref_type p_ref_type, desc_desc_type p_desc_type) :
+    alloc_type(p_alloc_type), array_size(1), array_status_ptr(nullptr),
+    bind_offset_ptr(nullptr), bind_type(SQL_BIND_BY_COLUMN),
+    count(0), bookmark_count(0),
+    rows_processed_ptr(nullptr), desc_type(p_desc_type), ref_type(p_ref_type),
+    stmt(p_stmt), dbc(nullptr)
+{
+  if(stmt != nullptr)
+    dbc = p_stmt->dbc;
+}
+
+
 /*
   @type    : ODBC 3.0 API
   @purpose : Set a field of a descriptor.
  */
-SQLRETURN
-MySQLSetDescField(SQLHDESC hdesc, SQLSMALLINT recnum, SQLSMALLINT fldid,
-                  SQLPOINTER val, SQLINTEGER buflen)
+SQLRETURN DESC::set_field(SQLSMALLINT recnum, SQLSMALLINT fldid,
+                      SQLPOINTER val, SQLINTEGER buflen)
 {
-  DESC *desc= (DESC *)hdesc;
   desc_field *fld = getfield(fldid);
   void *dest_struct;
   void *dest;
 
-  if (desc == NULL)
-  {
-    return SQL_INVALID_HANDLE;
-  }
-
-  CLEAR_DESC_ERROR(desc);
+  CLEAR_ERROR(error);
 
   /* check for invalid IRD modification */
-  if (IS_IRD(desc))
+  if (is_ird())
   {
     switch (fldid)
     {
-    case SQL_DESC_ARRAY_STATUS_PTR:
-    case SQL_DESC_ROWS_PROCESSED_PTR:
-      break;
-    default:
-      return set_desc_error(desc, "HY016",
-                            "Cannot modify an implementation row descriptor",
-                            MYERR_S1016);
+      case SQL_DESC_ARRAY_STATUS_PTR:
+      case SQL_DESC_ROWS_PROCESSED_PTR:
+        break;
+      default:
+      return set_error("HY016",
+                      "Cannot modify an implementation row descriptor",
+                      MYERR_S1016);
     }
   }
 
   if ((fld == NULL) ||
       /* header permissions check */
       (fld->loc == DESC_HDR &&
-         ((desc->ref_type == DESC_APP && (~fld->perms & P_WA)) ||
-          (desc->ref_type == DESC_IMP && (~fld->perms & P_WI)))))
+         ((ref_type == DESC_APP && (~fld->perms & P_WA)) ||
+          (ref_type == DESC_IMP && (~fld->perms & P_WI)))))
   {
-    return set_desc_error(desc, "HY091",
-              "Invalid descriptor field identifier",
-              MYERR_S1091);
+    return set_error("HY091",
+                     "Invalid descriptor field identifier",
+                     MYERR_S1091);
   }
   else if (fld->loc == DESC_REC)
   {
     int perms= 0; /* needed perms to access */
 
-    if (desc->ref_type == DESC_APP)
+    if (ref_type == DESC_APP)
       perms= P_WA;
-    else if (desc->ref_type == DESC_IMP)
+    else if (ref_type == DESC_IMP)
       perms= P_WI;
 
-    if (desc->desc_type == DESC_PARAM)
+    if (desc_type == DESC_PARAM)
       perms= P_PAR(perms);
-    else if (desc->desc_type == DESC_ROW)
+    else if (desc_type == DESC_ROW)
       perms= P_ROW(perms);
 
     if ((~fld->perms & perms) == perms)
-      return set_desc_error(desc, "HY091",
-                "Invalid descriptor field identifier",
-                MYERR_S1091);
+      return set_error("HY091",
+                       "Invalid descriptor field identifier",
+                       MYERR_S1091);
   }
 
   /* get the dest struct */
   if (fld->loc == DESC_HDR)
-    dest_struct= desc;
+    dest_struct= this;
   else
   {
-    if (recnum < 1 && desc->stmt->stmt_options.bookmarks == SQL_UB_OFF)
-      return set_desc_error(desc, "07009",
-                "Invalid descriptor index",
-                MYERR_07009);
+    if (recnum < 1 && stmt->stmt_options.bookmarks == SQL_UB_OFF)
+      return set_error("07009",
+                       "Invalid descriptor index",
+                       MYERR_07009);
     else
-      dest_struct= desc_get_rec(desc, recnum - 1, TRUE);
+      dest_struct= desc_get_rec(this, recnum - 1, TRUE);
   }
 
   dest= ((char *)dest_struct) + fld->offset;
@@ -807,27 +814,36 @@ MySQLSetDescField(SQLHDESC hdesc, SQLSMALLINT recnum, SQLSMALLINT fldid,
   /* TODO checks when strings? */
   if ((fld->data_type == SQL_IS_POINTER && buflen != SQL_IS_POINTER) ||
       (fld->data_type != SQL_IS_POINTER && buflen == SQL_IS_POINTER))
-    return set_desc_error(desc, "HY015",
-                          "Invalid parameter type",
-                          MYERR_S1015);
+    return set_error("HY015",
+                     "Invalid parameter type",
+                     MYERR_S1015);
 
   /* per-field checks/functionality */
   switch (fldid)
   {
   case SQL_DESC_COUNT:
     /* we just force the descriptor record count to expand */
-    (void)desc_get_rec(desc, (size_t)val - 1, TRUE);
+    (void)desc_get_rec(this, (size_t)val - 1, TRUE);
     break;
   case SQL_DESC_NAME:
+    {
+      // dest_struct already points to the correct DESCREC*
+      DESCREC *name_rec = (DESCREC*)dest_struct;
+      // Add name as parameter data and zero terminating character
+      name_rec->par.add_param_data((char*)val, strlen((char*)val) + 1);
+      // Get a pointer to allocated copy of the name
+      val = name_rec->par.val();
+    }
+    break;
     /* We don't support named parameters, values stay as initialized */
-    return set_desc_error(desc, "01S01",
-                          "Option value changed",
-                          MYERR_01S02);
+    //return set_desc_error(desc, "01S01",
+    //                      "Option value changed",
+    //                      MYERR_01S02);
   case SQL_DESC_UNNAMED:
     if ((size_t)val == SQL_NAMED)
-      return set_desc_error(desc, "HY092",
-                            "Invalid attribute/option identifier",
-                            MYERR_S1092);
+      return set_error("HY092",
+                       "Invalid attribute/option identifier",
+                       MYERR_S1092);
   }
 
   /* We have to unbind the value if not setting a buffer */
@@ -852,7 +868,7 @@ MySQLSetDescField(SQLHDESC hdesc, SQLSMALLINT recnum, SQLSMALLINT fldid,
     "ParameterType Argument" sectiosn - basically IPD has to be heres as well with same rules
     C and SQL types match. Thus we can use same function for calculation of type and dti code.
    */
-  if ((IS_ARD(desc) || IS_APD(desc) || IS_IPD(desc)) && fld->loc == DESC_REC)
+  if ((is_ard() || is_apd() || is_ipd()) && fld->loc == DESC_REC)
   {
     DESCREC *rec= (DESCREC *) dest_struct;
     switch (fldid)
@@ -882,7 +898,7 @@ MySQLSetDescField(SQLHDESC hdesc, SQLSMALLINT recnum, SQLSMALLINT fldid,
     case SQL_DESC_TYPE:
     case SQL_DESC_CONCISE_TYPE:
       /* setup type specific defaults (TODO others besides SQL_C_NUMERIC)? */
-      if (IS_ARD(desc) && rec->type == SQL_C_NUMERIC)
+      if (is_ard() && rec->type == SQL_C_NUMERIC)
       {
         rec->precision= 38;
         rec->scale= 0;
@@ -894,7 +910,7 @@ MySQLSetDescField(SQLHDESC hdesc, SQLSMALLINT recnum, SQLSMALLINT fldid,
     Set "real_param_done" for parameters if all fields needed to bind
     a parameter are set.
   */
-  if (IS_APD(desc) && val != NULL && fld->loc == DESC_REC)
+  if (is_apd() && val != NULL && fld->loc == DESC_REC)
   {
     DESCREC *rec= (DESCREC *) dest_struct;
     switch (fldid)
@@ -968,8 +984,9 @@ stmt_SQLSetDescField(STMT *stmt, DESC *desc, SQLSMALLINT recnum,
                      SQLSMALLINT fldid, SQLPOINTER val, SQLINTEGER buflen)
 {
   SQLRETURN rc;
-  if ((rc= MySQLSetDescField((SQLHANDLE)desc, recnum, fldid,
-                             val, buflen)) != SQL_SUCCESS)
+  CHECK_HANDLE(desc);
+
+  if ((rc= desc->set_field(recnum, fldid, val, buflen)) != SQL_SUCCESS)
     memcpy(&stmt->error, &desc->error, sizeof(MYERROR));
   return rc;
 }

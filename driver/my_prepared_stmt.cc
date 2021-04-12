@@ -719,11 +719,21 @@ SQLRETURN STMT::set_error(myodbc_errid errid, const char *errtext,
   return error.retcode;
 }
 
+SQLRETURN STMT::set_error(myodbc_errid errid)
+{
+  return set_error(errid, mysql_error(dbc->mysql), mysql_errno(dbc->mysql));
+}
+
 SQLRETURN STMT::set_error(const char *state, const char *msg,
                           SQLINTEGER errcode)
 {
     error = MYERROR(state, msg, errcode, dbc->st_error_prefix);
     return SQL_ERROR;
+}
+
+SQLRETURN STMT::set_error(const char *state)
+{
+  return set_error(state, mysql_error(dbc->mysql), mysql_errno(dbc->mysql));
 }
 
 
@@ -924,6 +934,78 @@ int STMT::ssps_bind_result()
   }
 
   return 0;
+}
+
+SQLRETURN STMT::bind_query_attrs(bool use_ssps)
+{
+  if (use_ssps)
+  {
+    set_error(MYERR_01000,
+              "Query attributes for prepared statements are not supported",
+              0);
+    return SQL_SUCCESS_WITH_INFO;
+  }
+
+  uint rcount = (uint)apd->rcount();
+  if (rcount == param_count)
+  {
+    // Nothing to do
+    return SQL_SUCCESS;
+  }
+  else if (rcount < param_count)
+  {
+    set_error( MYERR_07001,
+              "The number of parameter markers is larger "
+              "than he number of parameters provided",0);
+    return SQL_ERROR;
+  }
+  else if (!dbc->has_query_attrs)
+  {
+    set_error(MYERR_01000,
+              "The server does not support query attributes",
+              0);
+    return SQL_SUCCESS_WITH_INFO;
+  }
+
+  uint num = param_count;
+  query_attr_bind.clear();
+  query_attr_bind.reserve(rcount - param_count);
+  query_attr_names.clear();
+  query_attr_names.reserve(rcount - param_count);
+
+  while(num < rcount)
+  {
+    DESCREC *aprec = desc_get_rec(apd, num, false);
+    DESCREC *iprec = desc_get_rec(ipd, num, false);
+    query_attr_bind.emplace_back(MYSQL_BIND{});
+    MYSQL_BIND *bind = &query_attr_bind.back();
+
+    query_attr_names.emplace_back(iprec->par.val());
+
+    // This will just fill the bind structure and do the param data conversion
+    if(insert_param(this, bind, apd, aprec, iprec, 0) == SQL_ERROR)
+    {
+      set_error(MYERR_01000,
+                "The number of attributes is larger than the "
+                "number of attribute values provided",
+                0);
+      return SQL_ERROR;
+    }
+    ++num;
+  }
+
+  MYSQL_BIND *bind = query_attr_bind.data();
+  const char** names = (const char**)query_attr_names.data();
+
+  if (mysql_bind_param(dbc->mysql, rcount - param_count,
+                        query_attr_bind.data(),
+                        (const char**)query_attr_names.data()))
+  {
+    set_error("HY000");
+    return SQL_SUCCESS_WITH_INFO;
+  }
+
+  return SQL_SUCCESS;
 }
 
 /*
@@ -1281,12 +1363,12 @@ SQLRETURN ssps_send_long_data(STMT *stmt, unsigned int param_number, const char 
       /* We can fall back to assembling parameter's value on client */
         return SQL_SUCCESS_WITH_INFO;
       case CR_SERVER_GONE_ERROR:
-        return stmt->set_error("08S01", mysql_stmt_error(stmt->ssps), 0);
+        return stmt->set_error("08S01", mysql_stmt_error(stmt->ssps), err);
       case CR_COMMANDS_OUT_OF_SYNC:
       case CR_UNKNOWN_ERROR:
-        return stmt->set_error("HY000", mysql_stmt_error( stmt->ssps), 0);
+        return stmt->set_error("HY000", mysql_stmt_error( stmt->ssps), err);
       case CR_OUT_OF_MEMORY:
-        return stmt->set_error("HY001", mysql_stmt_error(stmt->ssps), 0);
+        return stmt->set_error("HY001", mysql_stmt_error(stmt->ssps), err);
       default:
         return stmt->set_error("HY000", "unhandled error from mysql_stmt_send_long_data", 0 );
     }

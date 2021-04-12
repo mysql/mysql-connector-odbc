@@ -265,6 +265,8 @@ void mem_gc_init()
   gc_blk.counter= 0;
 }
 
+#define SQL_IS_SUCCESS(R) ((R == SQL_SUCCESS) || (R == SQL_SUCCESS_WITH_INFO))
+
 #define DECLARE_BASIC_HANDLES(E, C, S) SQLHENV E= NULL; \
   SQLHDBC C= NULL; \
   SQLHSTMT S= NULL
@@ -664,7 +666,7 @@ static void print_diag(SQLRETURN rc, SQLSMALLINT htype, SQLHANDLE handle,
     drc= SQLGetDiagRec(htype, handle, 1, sqlstate, &native_error,
                        message, SQL_MAX_MESSAGE_LENGTH - 1, &length);
 
-    if (SQL_SUCCEEDED(drc))
+    if (SQL_IS_SUCCESS(drc))
       printf("# [%6s] %*s in %s on line %d\n",
              sqlstate, length, message, file, line);
     else
@@ -688,7 +690,7 @@ static void print_diag_installer(BOOL is_success, const char *text,
     char     message[SQL_MAX_MESSAGE_LENGTH];
     SQLRETURN   drc;
     drc= SQLInstallerError(1, &error_code, message, SQL_MAX_MESSAGE_LENGTH - 1, &length);
-    if (SQL_SUCCEEDED(drc))
+    if (SQL_IS_SUCCESS(drc))
       printf("# [%s] %s in %s on line %d\n",
              text, message, file, line);
     else
@@ -856,7 +858,7 @@ static int my_print_data(SQLHSTMT hstmt, SQLUSMALLINT index,
 	do { \
 	print_diag(r, SQL_HANDLE_STMT, (hstmt), "mystmt_row(hstmt,r,row)", \
 	__FILE__, __LINE__); \
-	if (!SQL_SUCCEEDED(r)) \
+	if (!SQL_IS_SUCCESS(r)) \
 	  return row; \
 	} while (0)
 /**
@@ -894,7 +896,7 @@ int my_print_non_format_result(SQLHSTMT hstmt)
     fprintf(stdout,"\n");
 
     rc = SQLFetch(hstmt);
-    while (SQL_SUCCEEDED(rc))
+    while (SQL_IS_SUCCESS(rc))
     {
         ++nRowCount;
         for (nIndex=0; nIndex< ncol; ++nIndex)
@@ -1092,7 +1094,7 @@ wchar_t *my_fetch_wstr(SQLHSTMT hstmt, SQLWCHAR *buffer, SQLUSMALLINT icol)
   SQLLEN nLen;
 
   rc= SQLGetData(hstmt, icol, SQL_WCHAR, buffer, MAX_ROW_DATA_LEN + 1, &nLen);
-  if (!SQL_SUCCEEDED(rc))
+  if (!SQL_IS_SUCCESS(rc))
     return L"";
 
   buffer[nLen/sizeof(SQLWCHAR)]= 0;
@@ -1284,7 +1286,7 @@ int get_connection(SQLHDBC *hdbc, const SQLCHAR *dsn, const SQLCHAR *uid,
   rc= SQLDriverConnect(*hdbc, NULL, connIn, SQL_NTS, connOut,
                        MAX_NAME_LEN, &len, SQL_DRIVER_NOPROMPT);
 
-  if (!SQL_SUCCEEDED(rc))
+  if (!SQL_IS_SUCCESS(rc))
   {
     /* re-build and print the connection string with hidden password */
     printf("# Connection failed with the following Connection string: " \
@@ -1296,7 +1298,7 @@ int get_connection(SQLHDBC *hdbc, const SQLCHAR *dsn, const SQLCHAR *uid,
      in fact error of turning autocommit on */
   rc= SQLSetConnectAttr(*hdbc, SQL_ATTR_AUTOCOMMIT,
                                   (SQLPOINTER)SQL_AUTOCOMMIT_ON, 0);
-  if (!SQL_SUCCEEDED(rc))
+  if (!SQL_IS_SUCCESS(rc))
   {
     return rc;
   }
@@ -1305,7 +1307,7 @@ int get_connection(SQLHDBC *hdbc, const SQLCHAR *dsn, const SQLCHAR *uid,
   {
     rc= SQLGetInfo(*hdbc, SQL_DRIVER_NAME, driver_name, sizeof(driver_name), NULL);
 
-    if (SQL_SUCCEEDED(rc))
+    if (SQL_IS_SUCCESS(rc))
     {
       /* ANSI driver file name contains 5a.{dll|so} */
       unicode_driver= strstr((char*)driver_name, "a.") == NULL ? 1 : 0;
@@ -1335,7 +1337,7 @@ int alloc_basic_handles_with_opt(SQLHENV *henv, SQLHDBC *hdbc,
   {
     SQLRETURN rc= SQLSetEnvAttr(*henv, SQL_ATTR_CP_MATCH, (SQLPOINTER)SQL_CP_STRICT_MATCH, 0);
 
-    if( !SQL_SUCCEEDED(rc))
+    if( !SQL_IS_SUCCESS(rc))
     {
       /* No DM case? */
       is_num(check_sqlstate_ex(*henv, SQL_HANDLE_ENV, "HYC00"), OK);

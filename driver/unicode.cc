@@ -1023,7 +1023,7 @@ SQLSetConnectAttrWImpl(SQLHDBC hdbc, SQLINTEGER attribute,
     /* Verifying for incorrect val_len */
     if (value_len < 0 && value_len != SQL_NTS)
     {
-      return set_dbc_error(dbc, "HY090",
+      return dbc->set_error("HY090",
                   " StringLength argument was less "
                   "than 0 but was not SQL_NTS " , 0);
     }
@@ -1297,8 +1297,29 @@ SQLSetDescFieldW(SQLHDESC hdesc, SQLSMALLINT record, SQLSMALLINT field,
                  SQLPOINTER value, SQLINTEGER value_len)
 {
   CHECK_HANDLE(hdesc);
+  DESC *desc = (DESC*)hdesc;
+  SQLRETURN rc = SQL_SUCCESS;
+  SQLPOINTER val = value;
+  SQLCHAR *val8 = nullptr;
+  uint errors= 0;
 
-  return MySQLSetDescField(hdesc, record, field, value, value_len);
+  switch(field)
+  {
+    case SQL_DESC_NAME:
+      // Assume a string value, which needs conversion
+      val8= sqlwchar_as_sqlchar(desc->dbc->cxn_charset_info,
+                                (SQLWCHAR*)value, &value_len, &errors);
+
+      // Set SQL_NTS instead of the real length or type won't be recognized
+      value_len = SQL_NTS;
+      break;
+  }
+
+  rc = desc->set_field(record, field,
+                       val8 ? val8 : val,
+                       value_len);
+  x_free(val8);
+  return rc;
 }
 
 

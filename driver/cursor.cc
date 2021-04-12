@@ -233,8 +233,7 @@ static my_bool check_if_usable_unique_key_exists(STMT *stmt)
   if (exec_stmt_query(stmt, buff, strlen(buff), FALSE) ||
       !(res= mysql_store_result(stmt->dbc->mysql)))
   {
-    stmt->set_error( MYERR_S1000, mysql_error(stmt->dbc->mysql),
-              mysql_errno(stmt->dbc->mysql));
+    stmt->set_error(MYERR_S1000);
     return FALSE;
   }
 
@@ -576,8 +575,7 @@ static SQLRETURN append_all_fields_std(STMT *stmt, std::string &str)
   if (exec_stmt_query_std(stmt, select, false) ||
       !(presultAllColumns= mysql_store_result(stmt->dbc->mysql)))
   {
-    stmt->set_error( MYERR_S1000, mysql_error(stmt->dbc->mysql),
-              mysql_errno(stmt->dbc->mysql));
+    stmt->set_error(MYERR_S1000);
     return SQL_ERROR;
   }
 

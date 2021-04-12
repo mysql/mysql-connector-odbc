@@ -269,7 +269,7 @@ SQLDriverConnect(SQLHDBC hdbc, SQLHWND hwnd, SQLCHAR *in, SQLSMALLINT in_len,
     outw= (SQLWCHAR *)myodbc_malloc(sizeof(SQLWCHAR) * out_max, MYF(0));
     if (!outw)
     {
-      rc= set_dbc_error((DBC *)hdbc, "HY001", NULL, 0);
+      rc= ((DBC*)hdbc)->set_error("HY001", NULL, 0);
       goto error;
     }
   }
@@ -296,7 +296,7 @@ SQLDriverConnect(SQLHDBC hdbc, SQLHWND hwnd, SQLCHAR *in, SQLSMALLINT in_len,
     /* TODO what to do with errors? */
 
     if (*out_len > out_max - 1)
-      rc= set_dbc_error((DBC *)hdbc, "01004", NULL, 0);
+      rc= ((DBC*)hdbc)->set_error("01004", NULL, 0);
   }
 
 error:
@@ -955,8 +955,8 @@ SQLSetDescField(SQLHDESC hdesc, SQLSMALLINT record, SQLSMALLINT field,
                 SQLPOINTER value, SQLINTEGER value_len)
 {
   CHECK_HANDLE(hdesc);
-
-  return MySQLSetDescField(hdesc, record, field, value, value_len);
+  DESC *desc = (DESC*)hdesc;
+  return desc->set_field(record, field, value, value_len);
 }
 
 

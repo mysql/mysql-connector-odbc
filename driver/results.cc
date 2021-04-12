@@ -1482,7 +1482,7 @@ SQLRETURN SQL_API SQLGetData(SQLHSTMT      StatementHandle,
                              SQLLEN *      StrLen_or_IndPtr)
 {
     STMT *stmt= (STMT *) StatementHandle;
-    SQLRETURN result;
+    SQLRETURN result = SQL_SUCCESS;
     ulong length= 0;
     DESCREC *irrec, *arrec;
     DECLARE_LOCALE_HANDLE
@@ -1644,7 +1644,7 @@ SQLRETURN SQL_API SQLMoreResults( SQLHSTMT hStmt )
         goto exitSQLMoreResults;
       case CR_COMMANDS_OUT_OF_SYNC:
       case CR_UNKNOWN_ERROR:
-        nReturn = stmt->set_error("HY000", mysql_error( stmt->dbc->mysql ), nRetVal );
+        nReturn = stmt->set_error("HY000");
         goto exitSQLMoreResults;
       default:
         nReturn = stmt->set_error("HY000", "unhandled error from mysql_next_result()", nRetVal );
@@ -1679,8 +1679,7 @@ SQLRETURN SQL_API SQLMoreResults( SQLHSTMT hStmt )
       goto exitSQLMoreResults;
     }
     /* we have fields but no resultset (not even an empty one) - this is bad */
-    nReturn = stmt->set_error("HY000", mysql_error( stmt->dbc->mysql ),
-                              mysql_errno(stmt->dbc->mysql));
+    nReturn = stmt->set_error("HY000");
     goto exitSQLMoreResults;
   }
 
@@ -1707,8 +1706,7 @@ SQLRETURN SQL_API SQLMoreResults( SQLHSTMT hStmt )
     free_result_bind(stmt);
     if (bind_result(stmt) || get_result(stmt))
     {
-      nReturn= stmt->set_error("HY000", mysql_error( stmt->dbc->mysql ),
-                            mysql_errno(stmt->dbc->mysql));
+      nReturn= stmt->set_error("HY000");
     }
 
     fix_result_types(stmt);

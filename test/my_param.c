@@ -2241,7 +2241,169 @@ DECLARE_TEST(t_bug30591722)
 }
 
 
+DECLARE_TEST(t_wl14217)
+{
+  SQLINTEGER p1_int = 50;
+  char *p2_char = "char attribute";
+  SQLHANDLE ipd = NULL;
+  char query[1024];
+  const char* name1 = "my_attr_name1";
+  const char* name2 = "my_attr_name2";
+  const char* name3 = "my_attr_name3";
+  const char* no_val_name = "no_value";
+  int p_select = 1;
+  SQLINTEGER v_select = 0;
+  SQLUINTEGER v1_int = 0;
+  SQLLEN len1 = 0, len2 = 0, len3 = 0, len4 = 0;
+
+  TIMESTAMP_STRUCT p3_ts;
+  /* insert using SQL_C_TIMESTAMP to SQL_TIMESTAMP */
+  p3_ts.year= 2020;
+  p3_ts.month= 12;
+  p3_ts.day= 21;
+  p3_ts.hour= 15;
+  p3_ts.minute= 34;
+  p3_ts.second= 59;
+  p3_ts.fraction= 0;
+
+  if (!mysql_min_version(hdbc, "8.0.23", 6))
+    skip("This feature is supported by MySQL 8.0.23 or newer");
+
+  /*
+    If component is already installed the query will return error.
+    Ignoring the result.
+  */
+  SQLExecDirect(hstmt,
+                "INSTALL COMPONENT \"file://component_query_attributes\"",
+                SQL_NTS);
+
+  ok_stmt(hstmt, SQLFreeStmt(hstmt, SQL_CLOSE));
+
+  ok_stmt(hstmt, SQLBindParameter(hstmt, 1, SQL_PARAM_INPUT, SQL_C_LONG,
+                                  SQL_INTEGER, 0, 0, &p1_int, 0, NULL));
+
+  ok_stmt(hstmt, SQLBindParameter(hstmt, 2, SQL_PARAM_INPUT, SQL_C_CHAR,
+                                  SQL_CHAR, 0, 0, p2_char, (SQLLEN)strlen(p2_char),
+                                  NULL));
+
+  ok_stmt(hstmt, SQLBindParameter(hstmt, 3, SQL_PARAM_INPUT,
+                                  SQL_C_TIMESTAMP, SQL_TIMESTAMP,
+                                  0, 0, &p3_ts, (SQLLEN)sizeof(p3_ts), NULL));
+
+
+  ok_stmt(hstmt, SQLGetStmtAttr(hstmt, SQL_ATTR_IMP_PARAM_DESC, &ipd, 0, 0));
+  ok_stmt(hstmt, SQLSetDescField(ipd, 1, SQL_DESC_NAME, (SQLPOINTER)name1, SQL_NTS));
+  ok_stmt(hstmt, SQLSetDescField(ipd, 2, SQL_DESC_NAME, (SQLPOINTER)name2, SQL_NTS));
+  ok_stmt(hstmt, SQLSetDescField(ipd, 3, SQL_DESC_NAME, (SQLPOINTER)name3, SQL_NTS));
+  ok_stmt(hstmt, SQLSetDescField(ipd, 4, SQL_DESC_NAME, (SQLPOINTER)no_val_name, SQL_NTS));
+
+  while(p_select < 4)
+  {
+    v_select = 0;
+    SQLCHAR v2_char[32];
+    TIMESTAMP_STRUCT v3_ts;
+    SQLCHAR v4_char[32];
+    v1_int = 0;
+    len1 = 0;  len2 = 0;  len3 = 0;  len4 = 0;
+    SQLLEN exp_len2 = strlen(p2_char);
+    SQLLEN exp_len3 = sizeof(v3_ts);
+
+
+    memset(&v2_char, 0, sizeof(v2_char));
+    memset(&v3_ts, 0, sizeof(v3_ts));
+    memset(&v4_char, 0, sizeof(v4_char));
+
+    snprintf(query, sizeof(query),
+      "SELECT %d, mysql_query_attribute_string('%s'),"
+      "mysql_query_attribute_string('%s'),"
+      "mysql_query_attribute_string('%s'),"
+      "mysql_query_attribute_string('%s')"
+      , p_select, name1, name2, name3, no_val_name);
+
+    // On 3rd run we should reset STMT and remove statement attributes
+    if (p_select == 3)
+    {
+      ok_stmt(hstmt, SQLFreeStmt(hstmt, SQL_RESET_PARAMS));
+      p1_int = 0;
+      p2_char = "";
+      exp_len2 = -1;
+
+      memset(&p3_ts, 0, sizeof(p3_ts));
+      exp_len3 = -1;
+
+    }
+
+    printf("Running query, iteration number: %d\n", p_select);
+    ok_stmt(hstmt, SQLExecDirect(hstmt, (SQLCHAR*)query, SQL_NTS));
+    ok_stmt(hstmt, SQLFetch(hstmt));
+
+    ok_stmt(hstmt, SQLGetData(hstmt, 1, SQL_C_ULONG, &v_select, 0, NULL));
+    ok_stmt(hstmt, SQLGetData(hstmt, 2, SQL_C_ULONG, &v1_int, 0, &len1));
+    ok_stmt(hstmt, SQLGetData(hstmt, 3, SQL_C_CHAR, &v2_char, sizeof(v2_char), &len2));
+    ok_stmt(hstmt, SQLGetData(hstmt, 4, SQL_C_TIMESTAMP, &v3_ts, sizeof(v3_ts), &len3));
+
+    // Attribute with name only, but no data
+    ok_stmt(hstmt, SQLGetData(hstmt, 5, SQL_C_CHAR, &v4_char, sizeof(v4_char), &len4));
+
+    printf("Attributes data: [%d][%d][%s][%d-%d-%d %d:%d:%d]\n",
+           v_select, v1_int, v2_char,
+           v3_ts.year, v3_ts.month, v3_ts.day,
+           v3_ts.hour, v3_ts.minute, v3_ts.second);
+
+    is_num(p_select, v_select);
+    is_num(p1_int, v1_int);
+    is_num(exp_len2, len2);
+    is_str(p2_char, v2_char, strlen(p2_char));
+
+    is_num(exp_len3, len3);
+    is_num(0, memcmp(&p3_ts, &v3_ts, sizeof(p3_ts)));
+
+    is_num(-1, len4);
+    expect_stmt(hstmt, SQLFetch(hstmt), SQL_NO_DATA);
+    ok_stmt(hstmt, SQLFreeStmt(hstmt, SQL_CLOSE));
+
+    ++p_select;
+  }
+
+  ok_stmt(hstmt, SQLFreeStmt(hstmt, SQL_CLOSE));
+
+  // Bind just a parameter, no name
+  p1_int = 99;
+  len1 = 0;
+  ok_stmt(hstmt, SQLBindParameter(hstmt, 1, SQL_PARAM_INPUT, SQL_C_LONG,
+                                SQL_INTEGER, 0, 0, &p1_int, 0, NULL));
+
+  ok_stmt(hstmt, SQLExecDirect(hstmt, (SQLCHAR*)"SELECT 98", SQL_NTS));
+  ok_stmt(hstmt, SQLFetch(hstmt));
+
+  ok_stmt(hstmt, SQLGetData(hstmt, 1, SQL_C_ULONG, &v_select, 0, NULL));
+  expect_stmt(hstmt, SQLGetData(hstmt, 2, SQL_C_ULONG, &v1_int, 0, &len1), SQL_ERROR);
+
+  is_num(98, v_select);
+
+  ok_stmt(hstmt, SQLFreeStmt(hstmt, SQL_RESET_PARAMS));
+  ok_stmt(hstmt, SQLFreeStmt(hstmt, SQL_CLOSE));
+
+  // Bind parameters with gaps
+  p1_int = 199;
+  ok_stmt(hstmt, SQLBindParameter(hstmt, 3, SQL_PARAM_INPUT, SQL_C_LONG,
+                                SQL_INTEGER, 0, 0, &p1_int, 0, NULL));
+
+  ok_stmt(hstmt, SQLGetStmtAttr(hstmt, SQL_ATTR_IMP_PARAM_DESC, &ipd, 0, 0));
+  ok_stmt(hstmt, SQLSetDescField(ipd, 3, SQL_DESC_NAME, (SQLPOINTER)name3, SQL_NTS));
+
+  expect_stmt(hstmt, SQLExecDirect(hstmt, (SQLCHAR*)query, SQL_NTS),
+              SQL_ERROR);
+
+  ok_stmt(hstmt, SQLFreeStmt(hstmt, SQL_RESET_PARAMS));
+  ok_stmt(hstmt, SQLFreeStmt(hstmt, SQL_CLOSE));
+
+  return OK;
+}
+
+
 BEGIN_TESTS
+  ADD_TEST(t_wl14217)
   ADD_TEST(tmysql_fix)
   ADD_TEST(my_param_data)
   ADD_TEST(t_bug31373948)

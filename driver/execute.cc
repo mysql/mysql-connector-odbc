@@ -107,7 +107,7 @@ SQLRETURN do_query(STMT *stmt,char *query, SQLULEN query_length)
       scroller_move(stmt);
       MYLOG_QUERY(stmt, stmt->scroller.query);
 
-      native_error= mysql_real_query(stmt->dbc->mysql, stmt->scroller.query,
+      native_error = mysql_real_query(stmt->dbc->mysql, stmt->scroller.query,
                                   (unsigned long)stmt->scroller.query_len);
     }
       /* Not using ssps for scroller so far. Relaxing a bit condition
@@ -140,6 +140,14 @@ SQLRETURN do_query(STMT *stmt,char *query, SQLULEN query_length)
       /* Need to close ps handler if it is open as our relsult will be generated
          by direct execution. and ps handler may create some chaos */
       ssps_close(stmt);
+
+      native_error = stmt->bind_query_attrs(false);
+      if (native_error == SQL_ERROR)
+      {
+        error = SQL_ERROR;
+        goto exit;
+      }
+
       native_error= mysql_real_query(stmt->dbc->mysql,query,query_length);
     }
 
@@ -148,8 +156,7 @@ SQLRETURN do_query(STMT *stmt,char *query, SQLULEN query_length)
     if (native_error)
     {
       MYLOG_QUERY(stmt, mysql_error(stmt->dbc->mysql));
-      stmt->set_error("HY000", mysql_error(stmt->dbc->mysql),
-                     mysql_errno(stmt->dbc->mysql));
+      stmt->set_error("HY000");
 
       /* For some errors - translating to more appropriate status */
       translate_error(stmt->error.sqlstate, MYERR_S1000,
@@ -162,8 +169,7 @@ SQLRETURN do_query(STMT *stmt,char *query, SQLULEN query_length)
       /* Query was supposed to return result, but result is NULL*/
       if (returned_result(stmt))
       {
-        stmt->set_error( MYERR_S1000, mysql_error(stmt->dbc->mysql),
-                mysql_errno(stmt->dbc->mysql));
+        stmt->set_error(MYERR_S1000);
         goto exit;
       }
       else /* Query was not supposed to return a result */
@@ -195,8 +201,7 @@ SQLRETURN do_query(STMT *stmt,char *query, SQLULEN query_length)
     {
       if (bind_result(stmt) || get_result(stmt))
       {
-          stmt->set_error( MYERR_S1000, mysql_error(stmt->dbc->mysql),
-                  mysql_errno(stmt->dbc->mysql));
+          stmt->set_error(MYERR_S1000);
           goto exit;
       }
       /* Caching row counts for queries returning resultset as well */
@@ -272,7 +277,7 @@ SQLRETURN insert_params(STMT *stmt, SQLULEN row, char **finalquery,
     {
       rc= stmt->set_error( MYERR_07001,
           "The number of parameter markers is not equal "
-          "to he number of parameters provided",0);
+          "to the number of parameters provided",0);
       goto error;
     }
 
@@ -460,7 +465,7 @@ static
 BOOL put_param_value(STMT *stmt, MYSQL_BIND *bind,
                      const char * value, unsigned long length)
 {
-  if (ssps_used(stmt) && bind)
+  if (bind)
   {
     return bind_param(bind, value, length, MYSQL_TYPE_STRING);
   }
@@ -937,7 +942,7 @@ SQLRETURN insert_param(STMT *stmt, MYSQL_BIND *bind, DESC* apd,
         if (data[0] == '{')       /* Of type {d date } */
         {
           /* TODO: check if we need to check for truncation here as well? */
-          if (bind != NULL && ssps_used(stmt))
+          if (bind != NULL)
           {
             /* First the datetime has to be filtered out of the brackets
                and other stuff. The validity of the format is up to the
@@ -992,7 +997,7 @@ SQLRETURN insert_param(STMT *stmt, MYSQL_BIND *bind, DESC* apd,
       case SQL_VARBINARY:
       case SQL_LONGVARBINARY:
         {
-          if (bind != NULL && ssps_used(stmt))
+          if (bind != NULL)
           {
             /* i guess for ssps we do not need introducer */
             convert= 0;
@@ -1019,7 +1024,7 @@ SQLRETURN insert_param(STMT *stmt, MYSQL_BIND *bind, DESC* apd,
           if (aprec->concise_type == SQL_C_WCHAR &&
               dbc->cxn_charset_info->number != UTF8_CHARSET_NUMBER)
           {
-            if (bind != NULL && ssps_used(stmt))
+            if (bind != NULL)
             {
                 if (bind_param(bind, data, length, MYSQL_TYPE_BLOB))
               {
@@ -1037,7 +1042,7 @@ SQLRETURN insert_param(STMT *stmt, MYSQL_BIND *bind, DESC* apd,
                     dbc->cxn_charset_info->number !=
                     dbc->ansi_charset_info->number)
           {
-            if (bind != NULL && ssps_used(stmt))
+            if (bind != NULL)
             {
               if (bind_param(bind, data, length, MYSQL_TYPE_BLOB))
               {
@@ -1092,7 +1097,7 @@ SQLRETURN insert_param(STMT *stmt, MYSQL_BIND *bind, DESC* apd,
             return stmt->set_error("22008", "Fractional truncation", 0);
           }
 
-          if (bind != NULL && ssps_used(stmt))
+          if (bind != NULL)
           {
             length= sprintf(buff, "%02d:%02d:%02d", time->hour, time->minute, time->second);
           }
@@ -1130,7 +1135,7 @@ SQLRETURN insert_param(STMT *stmt, MYSQL_BIND *bind, DESC* apd,
             return stmt->set_error("22008", "Not a valid time value supplied", 0);
           }
 
-          if (bind != NULL && ssps_used(stmt))
+          if (bind != NULL)
           {
             length= sprintf(buff, "%02d:%02d:%02d",
                   hours,
@@ -1155,7 +1160,7 @@ SQLRETURN insert_param(STMT *stmt, MYSQL_BIND *bind, DESC* apd,
 
       case SQL_BIT:
         {
-          if (bind != NULL && ssps_used(stmt))
+          if (bind != NULL)
           {
             char bit_val= atoi(data)!= 0 ? 1 : 0;
             /* Generic ODBC supports only BIT(1) */
@@ -1224,7 +1229,7 @@ SQLRETURN insert_param(STMT *stmt, MYSQL_BIND *bind, DESC* apd,
         }
     }
 
-    if (bind != NULL && ssps_used(stmt) && stmt->setpos_op == 0)
+    if (bind != NULL && stmt->setpos_op == 0)
     {
       bind_param(bind, data, length, MYSQL_TYPE_STRING);
     }

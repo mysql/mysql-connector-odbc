@@ -1221,6 +1221,7 @@ DECLARE_TEST(t_bug17311065)
   is_str(sqlstate, "07009", 5);
 
   ok_stmt(hstmt, SQLFreeStmt(hstmt, SQL_CLOSE));
+  ok_stmt(hstmt, SQLFreeStmt(hstmt, SQL_RESET_PARAMS));
   ok_sql(hstmt, "DROP TABLE IF EXISTS t_bug17311065");
 
   return OK;

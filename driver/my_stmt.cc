@@ -416,8 +416,7 @@ SQLRETURN prepare(STMT *stmt, char * query, SQLINTEGER query_length,
       {
         MYLOG_QUERY(stmt, mysql_error(stmt->dbc->mysql));
 
-        stmt->set_error("HY000",mysql_error(stmt->dbc->mysql),
-                       mysql_errno(stmt->dbc->mysql));
+        stmt->set_error("HY000");
         translate_error(stmt->error.sqlstate,MYERR_S1000,
                         mysql_errno(stmt->dbc->mysql));
 
@@ -462,7 +461,6 @@ SQLRETURN prepare(STMT *stmt, char * query, SQLINTEGER query_length,
 
   return SQL_SUCCESS;
 }
-
 
 SQLRETURN send_long_data (STMT *stmt, unsigned int param_num, DESCREC * aprec, const char *chunk,
                           unsigned long length)

@@ -227,7 +227,7 @@ MySQLGetInfo(SQLHDBC hdbc, SQLUSMALLINT fInfoType,
 
   case SQL_DATABASE_NAME:
     if (is_connected(dbc) && reget_current_catalog(dbc))
-      return set_dbc_error(dbc, "HY000",
+      return dbc->set_error("HY000",
                            "SQLGetInfo() failed to return current catalog.",
                            0);
     MYINFO_SET_STR(!dbc->database.empty() ? dbc->database.c_str() : "null");
