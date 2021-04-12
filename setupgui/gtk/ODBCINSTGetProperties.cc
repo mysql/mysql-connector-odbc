@@ -67,6 +67,7 @@ static const char *MYODBC_OPTIONS[][3] = {
   {"IGNORE_SPACE",      "C", "Ignore space after function names"},
   {"NO_BIGINT",         "C", "Treat BIGINT columns as INT columns"},
   {"NO_CATALOG",        "C", "Disable catalog support"},
+  {"NO_SCHEMA",         "C", "Disable schema support"},
   {"USE_MYCNF",         "C", "Read options from my.cnf"},
   {"SAFE",              "C", "Add some extra safety checks"},
   {"NO_TRANSACTIONS",   "C", "Disable transaction support"},

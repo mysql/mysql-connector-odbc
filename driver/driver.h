@@ -692,6 +692,25 @@ enum OUT_PARAM_STATE
 };
 
 
+#define CAT_SCHEMA_SET_FULL(STMT, C, S, V, CZ, SZ, CL, SL) { \
+  bool cat_is_set = false; \
+  if (!STMT->dbc->ds->no_catalog && (CL || !SL)) \
+  { \
+    C = V;\
+    S = nullptr; \
+    cat_is_set = true; \
+  } \
+  if (!STMT->dbc->ds->no_schema && !cat_is_set && SZ) \
+  { \
+    S = V; \
+    C = nullptr; \
+  } \
+}
+
+#define CAT_SCHEMA_SET(C, S, V) \
+  CAT_SCHEMA_SET_FULL(stmt, C, S, V, catalog, schema, catalog_len, schema_len)
+
+
 /* Main statement handler */
 
 struct GETDATA{
@@ -711,6 +730,134 @@ struct GETDATA{
   }
 };
 
+struct ODBC_RESULTSET
+{
+  MYSQL_RES *res = nullptr;
+  ODBC_RESULTSET(MYSQL_RES *r = nullptr) : res(r)
+  {}
+
+  void reset(MYSQL_RES *r = nullptr)
+  { if (res) mysql_free_result(res); res = r; }
+
+  MYSQL_RES *release()
+  {
+    MYSQL_RES *tmp = res;
+    res = nullptr;
+    return tmp;
+  }
+
+  MYSQL_RES * operator=(MYSQL_RES *r)
+  { reset(r); return res; }
+
+  operator MYSQL_RES*() const
+  { return res; }
+
+  operator bool() const
+  { return res != nullptr; }
+
+  ~ODBC_RESULTSET() { reset(); }
+};
+
+/*
+  A string capable of being a NULL
+*/
+struct xstring : public std::string
+{
+  bool m_is_null = false;
+
+  using Base = std::string;
+
+  xstring(std::nullptr_t) : m_is_null(true)
+  {}
+
+  xstring(char* s) : m_is_null(s == nullptr),
+                  Base(s == nullptr ? "" : std::forward<char*>(s))
+  {
+    if (m_is_null)
+      m_is_null = true;
+  }
+
+  template <class T>
+  xstring(T &&s) : Base(std::forward<T>(s))
+  {}
+
+  xstring(long long v) : Base(std::to_string(v))
+  {}
+
+  xstring(SQLSMALLINT v) : Base(std::to_string(v))
+  {}
+
+  xstring(long int v) : Base(std::to_string(v))
+  {}
+
+  xstring(int v) : Base(std::to_string(v))
+  {}
+
+  const char *c_str() const { return m_is_null ? nullptr : Base::c_str(); }
+  size_t size() const { return m_is_null ? 0 : Base::size(); }
+
+  bool is_null() { return m_is_null; }
+
+};
+
+struct ROW_STORAGE
+{
+
+  typedef std::vector<xstring> vstr;
+  typedef std::vector<const char*> pstr;
+  size_t m_rnum = 0, m_cnum = 0, m_cur_row = 0, m_cur_col = 0;
+
+  /*
+    Data and pointers are in separate containers because for the pointers
+    we will need to get the sequence of pointers returned by vector::data()
+  */
+  vstr m_data;
+  pstr m_pdata;
+
+  /*
+    Setting zero for rows or columns makes the storage object invalid
+  */
+  size_t set_size(size_t rnum, size_t cnum);
+
+  /*
+    Invalidate the data array.
+    Returns true if the data actually existed and was invalidated. False otherwise.
+  */
+  bool invalidate()
+  {
+    bool was_invalidated = is_valid();
+    set_size(0, 0);
+    return was_invalidated;
+  }
+
+  bool is_valid() { return m_rnum * m_cnum > 0; }
+
+  bool next_row();
+
+  xstring& operator[](size_t idx);
+
+  const xstring & operator=(const xstring &val);
+
+  ROW_STORAGE()
+  { set_size(0, 0); }
+
+  ROW_STORAGE(size_t rnum, size_t cnum) : m_rnum(rnum), m_cnum(cnum)
+  { set_size(rnum, cnum); }
+
+  const char **data();
+
+};
+
+enum class EXCEPTION_TYPE {EMPTY_SET, CONN_ERR, GENERAL};
+
+struct ODBCEXCEPTION
+{
+  EXCEPTION_TYPE m_type = EXCEPTION_TYPE::GENERAL;
+
+  ODBCEXCEPTION(EXCEPTION_TYPE t = EXCEPTION_TYPE::GENERAL) : m_type(t)
+  {}
+
+};
 
 struct STMT
 {
@@ -718,11 +865,13 @@ struct STMT
   MYSQL_RES         *result;
   MEM_ROOT          alloc_root;
   my_bool           fake_result;
-  MYSQL_ROW	        array, result_array, current_values;
+  MYSQL_ROW	        array; // Holds row data directly from mysql resultset
+  MYSQL_ROW         result_array, current_values;
   MYSQL_ROW         (*fix_fields)(STMT *stmt, MYSQL_ROW row);
   MYSQL_FIELD	      *fields;
   MYSQL_ROW_OFFSET  end_of_set;
   tempBuf           tempbuf;
+  ROW_STORAGE       m_row_storage;
 
   MYCURSOR          cursor;
   MYERROR           error;
@@ -798,6 +947,7 @@ struct STMT
   long compute_cur_row(unsigned fFetchType, SQLLEN irow);
 
   SQLRETURN bind_query_attrs(bool use_ssps);
+  void reset();
 
   void free_unbind();
   void free_reset_out_params();

@@ -286,7 +286,7 @@ void    set_current_cursor_data   (STMT *stmt,SQLUINTEGER irow);
 my_bool is_minimum_version        (const char *server_version,const char *version);
 int     myodbc_strcasecmp         (const char *s, const char *t);
 int     myodbc_casecmp            (const char *s, const char *t, uint len);
-my_bool reget_current_catalog     (DBC *dbc);
+int     reget_current_catalog     (DBC *dbc);
 
 ulong   myodbc_escape_string      (STMT *stmt, char *to, ulong to_length,
                                   const char *from, ulong length, int escape_id);

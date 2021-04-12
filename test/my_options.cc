@@ -33,6 +33,7 @@
 #include <sstream>
 #include <cstdio>
 #include <map>
+#include <vector>
 #include <stdlib.h>
 
 #include "odbctap.h"
@@ -541,6 +542,277 @@ DECLARE_TEST(t_wl14362)
   return OK;
 }
 
+struct test_params
+{
+  int no_catalog;
+  int no_schema;
+  const char* catalog_name;
+  const char* schema_name;
+  SQLRETURN expected_res;
+};
+
+
+int run_func_tests(test_params &par)
+{
+
+  SQLRETURN rc = SQL_SUCCESS;
+  SQLCHAR buf[4096];
+
+  DECLARE_BASIC_HANDLES(henv1, hdbc1, hstmt1);
+
+  auto check_results = [&](SQLRETURN ret, const char *func,
+                           const char *col1 = nullptr,
+                           const char *col2 = nullptr)
+  {
+    size_t expected_len1 = par.catalog_name ?
+                                  strlen(par.catalog_name) : 0;
+    size_t expected_len2 = par.schema_name ?
+                                 strlen(par.schema_name) : 0;
+
+    std::cout << func << std::endl;
+
+    if (par.expected_res != SQL_ERROR)
+      ok_stmt(hstmt1, ret);
+
+    is_num(par.expected_res, ret);
+
+    /* On expected error the rows do not need to be checked */
+    if (par.expected_res == SQL_ERROR)
+      return OK;
+
+    int rows_result = 0;
+    while(SQL_SUCCESS == SQLFetch(hstmt1))
+    {
+      const char *str1 = par.catalog_name;
+      const char *str2 = par.schema_name;
+
+      if (strcmp(func, "SQLSpecialColumns") == 0)
+      {
+        str1 = col1;
+        str2 = col2;
+        expected_len1 = 0;
+        expected_len2 = str2 ? strlen(str2) : 0;
+      }
+
+      if (strcmp(func, "SQLForeignKeys") == 0)
+      {
+        is_str(str1, my_fetch_str(hstmt1, buf, 5),
+               expected_len1);
+        is_str(str2, my_fetch_str(hstmt1, buf, 6),
+               expected_len2);
+      }
+
+      is_str(str1, my_fetch_str(hstmt1, buf, 1),
+             expected_len1);
+      is_str(str2, my_fetch_str(hstmt1, buf, 2),
+             expected_len2);
+      ++rows_result;
+    }
+
+    is(rows_result > 0);
+    SQLFreeStmt(hstmt1, SQL_CLOSE);
+    return OK;
+  };
+
+  for (int i = 0; i < 2; ++i)
+  {
+    std::string connstr = "NO_CATALOG=";
+    connstr.append(par.no_catalog ? "1" : "0");
+    connstr.append(";NO_SCHEMA=");
+    connstr.append(par.no_schema ? "1" : "0");
+
+    connstr.append( i ? ";NO_I_S=1" : ";NO_I_S=0");
+    std::cout << "Connectin parameters [ " << connstr << " ]" << std::endl <<
+                 "CATALOG: [ " << (par.catalog_name ? par.catalog_name : "NULL") <<
+                 " ] SCHEMA: [ " << (par.schema_name ? par.schema_name : "NULL")
+                 << " ]" << std::endl;
+
+    alloc_basic_handles_with_opt(&henv1, &hdbc1, &hstmt1,
+                                 nullptr, nullptr, nullptr, nullptr,
+                                 (SQLCHAR*)connstr.c_str());
+
+    rc = SQLTables(hstmt1, (SQLCHAR*)par.catalog_name, SQL_NTS,
+                           (SQLCHAR*)par.schema_name, SQL_NTS,
+                           (SQLCHAR*)"t_wl14490a", SQL_NTS,
+                           (SQLCHAR*)"TABLE", SQL_NTS);
+    is_num(OK, check_results(rc, "SQLTables"));
+
+    rc = SQLColumns(hstmt1, (SQLCHAR*)par.catalog_name, SQL_NTS,
+                            (SQLCHAR*)par.schema_name, SQL_NTS,
+                            (SQLCHAR*)"t_wl14490a", SQL_NTS,
+                            (SQLCHAR*)"a", SQL_NTS);
+    is_num(OK, check_results(rc, "SQLColumns"));
+
+    rc = SQLStatistics(hstmt1, (SQLCHAR*)par.catalog_name, SQL_NTS,
+                               (SQLCHAR*)par.schema_name, SQL_NTS,
+                               (SQLCHAR*)"t_wl14490a", SQL_NTS,
+                               SQL_INDEX_ALL,SQL_QUICK);
+    is_num(OK, check_results(rc, "SQLStatistics"));
+
+    rc = SQLSpecialColumns(hstmt1, SQL_ROWVER,
+                           (SQLCHAR*)par.catalog_name, SQL_NTS,
+                           (SQLCHAR*)par.schema_name, SQL_NTS,
+                           (SQLCHAR*)"t_wl14490a", SQL_NTS,
+                           SQL_SCOPE_SESSION, SQL_NULLABLE);
+    is_num(OK, check_results(rc, "SQLSpecialColumns", nullptr, "b_ts"));
+
+    rc = SQLPrimaryKeys(hstmt1, (SQLCHAR*)par.catalog_name, SQL_NTS,
+                        (SQLCHAR*)par.schema_name, SQL_NTS,
+                        (SQLCHAR*)"t_wl14490a", SQL_NTS);
+    is_num(OK, check_results(rc, "SQLPrimaryKeys"));
+
+    rc = SQLForeignKeys(hstmt1, (SQLCHAR*)par.catalog_name, SQL_NTS,
+                                (SQLCHAR*)par.schema_name, SQL_NTS,
+                                NULL, 0, // All tables referenced by t_wl14490c
+                                (SQLCHAR*)par.catalog_name, SQL_NTS,
+                                (SQLCHAR*)par.schema_name, SQL_NTS,
+                                (SQLCHAR *)"t_wl14490c", SQL_NTS);
+    is_num(OK, check_results(rc, "SQLForeignKeys"));
+
+    rc = SQLTablePrivileges(hstmt1, (SQLCHAR*)par.catalog_name, SQL_NTS,
+                            (SQLCHAR*)par.schema_name, SQL_NTS,
+                            (SQLCHAR*)"t_wl14490a", SQL_NTS);
+    is_num(OK, check_results(rc, "SQLTablePrivileges"));
+
+    rc = SQLColumnPrivileges(hstmt1, (SQLCHAR*)par.catalog_name, SQL_NTS,
+                            (SQLCHAR*)par.schema_name, SQL_NTS,
+                            (SQLCHAR*)"t_wl14490a", SQL_NTS,
+                            (SQLCHAR*)"a", SQL_NTS);
+    is_num(OK, check_results(rc, "SQLColumnPrivileges"));
+
+    rc = SQLProcedures(hstmt1, (SQLCHAR*)par.catalog_name, SQL_NTS,
+                            (SQLCHAR*)par.schema_name, SQL_NTS,
+                            (SQLCHAR*)"procwl14490", SQL_NTS);
+    is_num(OK, check_results(rc, "SQLProcedures"));
+
+    rc = SQLProcedureColumns(hstmt1, (SQLCHAR*)par.catalog_name, SQL_NTS,
+                            (SQLCHAR*)par.schema_name, SQL_NTS,
+                            (SQLCHAR*)"procwl14490", SQL_NTS,
+                            nullptr, 0);
+    is_num(OK, check_results(rc, "SQLProcedureColumns"));
+
+    {
+      SQLUSMALLINT cat_vals[] = {
+        SQL_MAX_CATALOG_NAME_LEN,
+        SQL_MAX_QUALIFIER_NAME_LEN,
+        SQL_CATALOG_NAME,
+        SQL_CATALOG_NAME_SEPARATOR,
+        SQL_CATALOG_TERM,
+        SQL_CATALOG_USAGE
+      };
+      char info_buf[512];
+      unsigned *pbuf = (unsigned*)info_buf;
+      std::cout << "SQLGetInfo(CATALOG)" << std::endl;
+      for(SQLUSMALLINT v : cat_vals)
+      {
+        *pbuf = 0;
+        SQLSMALLINT str_len_ptr = sizeof(info_buf);
+        ok_stmt(hdbc1, SQLGetInfo(hdbc1, v, info_buf, sizeof(info_buf),
+                                  nullptr));
+        std::cout << "[" << *pbuf << "]";
+        if (par.no_catalog)
+        {
+          if(!(*pbuf == 0))
+            std::cout << "(err) ";
+        }
+        else
+        {
+          if(!(*pbuf != 0))
+            std::cout << "(err) ";
+        }
+      }
+      std::cout << std::endl;
+    }
+
+    {
+      SQLUSMALLINT schema_vals[] = {
+        SQL_MAX_SCHEMA_NAME_LEN,
+        SQL_MAX_OWNER_NAME_LEN,
+        SQL_SCHEMA_TERM,
+        SQL_SCHEMA_USAGE
+      };
+      char info_buf[512];
+      unsigned *pbuf = (unsigned*)info_buf;
+      std::cout << "SQLGetInfo(SCHEMA)" << std::endl;
+      for(SQLUSMALLINT v : schema_vals)
+      {
+        *pbuf = 0;
+        SQLSMALLINT str_len_ptr = sizeof(info_buf);
+        ok_stmt(hdbc1, SQLGetInfo(hdbc1, v, info_buf, sizeof(info_buf),
+                                  nullptr));
+        std::cout << "[" << *pbuf << "]";
+        if (par.no_schema)
+        {
+          if(!(*pbuf == 0))
+            std::cout << "(err) ";
+        }
+        else
+        {
+          if(!(*pbuf != 0))
+            std::cout << "(err) ";
+        }
+      }
+      std::cout << std::endl;
+    }
+
+    free_basic_handles(&henv1, &hdbc1, &hstmt1);
+  }
+
+  return OK;
+}
+
+DECLARE_TEST(t_wl14490)
+{
+  char buf[256];
+  ok_sql(hstmt, "DROP TABLE IF EXISTS t_wl14490c, t_wl14490b, t_wl14490a");
+  ok_sql(hstmt, "CREATE TABLE t_wl14490a (a INT PRIMARY KEY, "
+                "b_ts TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP) ENGINE=InnoDB");
+  ok_sql(hstmt, "CREATE TABLE t_wl14490b (b INT PRIMARY KEY) ENGINE=InnoDB");
+  ok_sql(hstmt, "CREATE TABLE t_wl14490c (a INT, b INT, UNIQUE(a), UNIQUE(b),"
+                "CONSTRAINT `first_constraint1` FOREIGN KEY (`b`) REFERENCES `t_wl14490b` (`b`),"
+                "CONSTRAINT `second_constraint1` FOREIGN KEY (`a`) REFERENCES `t_wl14490a` (`a`)"
+                ") ENGINE=InnoDB");
+  ok_sql(hstmt, "SELECT USER()");
+  ok_stmt(hstmt, SQLFetch(hstmt));
+  my_fetch_str(hstmt, (SQLCHAR*)buf, 1);
+  SQLFetch(hstmt);
+  SQLFreeStmt(hstmt, SQL_CLOSE);
+
+  std::string query = "GRANT ALL ON ";
+  query.append((char*)mydb).append(".").append("t_wl14490a to ").append(buf);
+  ok_stmt(hstmt, SQLExecDirect(hstmt, (SQLCHAR*)query.c_str(), query.length()));
+
+  query = "GRANT INSERT (a), SELECT (a), REFERENCES (a), UPDATE (a) ON ";
+  query.append((char*)mydb).append(".").append("t_wl14490a to ").append(buf);
+  ok_stmt(hstmt, SQLExecDirect(hstmt, (SQLCHAR*)query.c_str(), query.length()));
+
+  ok_sql(hstmt, "DROP PROCEDURE IF EXISTS procwl14490");
+  ok_sql(hstmt, "CREATE PROCEDURE procwl14490(IN p1 INT, IN p2 INT) begin end;");
+
+  test_params params[] = {
+    {0, 0, (const char*)mydb, nullptr, SQL_SUCCESS},
+    {0, 0, nullptr, (const char*)mydb, SQL_SUCCESS},
+    {0, 0, (const char*)mydb, (const char*)mydb, SQL_ERROR},
+    {1, 0, (const char*)mydb, nullptr, SQL_ERROR},
+    {1, 0, nullptr, (const char*)mydb, SQL_SUCCESS},
+    {0, 1, (const char*)mydb, nullptr, SQL_SUCCESS},
+    {0, 1, nullptr, (const char*)mydb, SQL_ERROR},
+    {1, 1, nullptr, (const char*)mydb, SQL_ERROR},
+    {1, 1, (const char*)mydb, nullptr, SQL_ERROR},
+    {1, 1, nullptr, nullptr, SQL_SUCCESS},
+  };
+
+  for (auto &elem : params)
+  {
+    if (run_func_tests(elem) != OK)
+      return FAIL;
+  }
+
+  ok_sql(hstmt, "DROP TABLE t_wl14490c, t_wl14490b, t_wl14490a");
+  ok_sql(hstmt, "DROP PROCEDURE procwl14490");
+
+  return OK;
+}
 
 #define ok_dsn(C) if (!C) { \
   std::cout << "Call failed: " << #C << " in line " << __LINE__ << ":" << \
@@ -619,10 +891,13 @@ DECLARE_TEST(t_wl14586)
   return OK;
 }
 
+
 BEGIN_TESTS
+  ADD_TEST(t_wl14490)
   ADD_TEST(t_wl14586)
   ADD_TEST(t_wl13883)
   ADD_TEST(t_wl14362)
 END_TESTS
 
 RUN_TESTS
+

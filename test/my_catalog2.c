@@ -209,8 +209,8 @@ DECLARE_TEST(t_bug36441)
   {
     ok_stmt(hstmt, SQLFetch(hstmt));
 
-    is_num(catalog_len, SQL_NULL_DATA);
-    is_num(schema_len, SQL_NULL_DATA);
+    is_str(catalog, mydb, strlen(mydb));
+    is_num(schema_len, -1);
     is_str(table, "t_bug36441_0123456789", 3);
     is_str(column, key_column_name[i], 4);
     is_num(key_seq, i+1);
@@ -402,7 +402,7 @@ DECLARE_TEST(t_sqlprocedurecolumns)
       64,  64,      0,  0,     SQL_NULLABLE, "", 0,  SQL_VARCHAR,  0,  64,   10, "YES"},
 
     /*cat    schem  proc_name                  col_name      col_type         data_type          type_name */
-    {"test", 0,     "procedure_columns_test1", "re_param11", SQL_PARAM_INPUT, SQL_LONGVARBINARY, "long varbinary",
+    {"test", 0,     "procedure_columns_test1", "re_param11", SQL_PARAM_INPUT, SQL_LONGVARBINARY, "mediumblob",
     /*size      buf_len   dec radix  nullable      rem def sql_data_type       sub octet     pos nullable*/
       16777215, 16777215, 0,  0,     SQL_NULLABLE, "", 0,  SQL_LONGVARBINARY,  0,  16777215, 12, "YES"},
 
@@ -442,7 +442,7 @@ DECLARE_TEST(t_sqlprocedurecolumns)
      8,      8,      0,  0,     SQL_NULLABLE, "", 0,  SQL_BINARY,     0,  8,    7, "YES"},
 
     /*cat    schem  proc_name                  col_name      col_type          data_type          type_name */
-    {"test", 0,     "procedure_columns_test2", "re_param H", SQL_PARAM_INPUT, SQL_LONGVARCHAR, "long varchar",
+    {"test", 0,     "procedure_columns_test2", "re_param H", SQL_PARAM_INPUT, SQL_LONGVARCHAR, "mediumtext",
     /*size     buf_len   dec radix  nullable      rem def sql_data_type       sub octet     pos nullable*/
      16777215, 16777215, 0,  0,     SQL_NULLABLE, "", 0,  SQL_LONGVARCHAR,  0,  16777215, 8, "YES"},
 
@@ -467,9 +467,9 @@ DECLARE_TEST(t_sqlprocedurecolumns)
      255,    255,    0,  0,     SQL_NULLABLE, "", 0,  SQL_LONGVARCHAR, 0,  255,  12, "YES"},
 
     /*cat    schem  proc_name                  col_name     col_type         data_type    type_name */
-    {"test", 0,     "procedure_columns_test2", "re_paramM", SQL_PARAM_INPUT, SQL_NUMERIC,  "numeric",
+    {"test", 0,     "procedure_columns_test2", "re_paramM", SQL_PARAM_INPUT, SQL_DECIMAL,  "decimal",
     /*size buf_len  dec radix  nullable      rem def sql_data_type sub octet pos nullable*/
-      8,   10,      2,  10,    SQL_NULLABLE, "", 0,  SQL_NUMERIC,   0,  0,   13,  "YES"},
+      8,   10,      2,  10,    SQL_NULLABLE, "", 0,  SQL_DECIMAL,   0,  0,   13,  "YES"},
 
     /*cat    schem  proc_name                  col_name       col_type         data_type     type_name */
     {"test", 0,     "procedure_columns_test3", "re_param_00", SQL_PARAM_INPUT, SQL_TYPE_TIMESTAMP, "datetime",
@@ -533,12 +533,12 @@ DECLARE_TEST(t_sqlprocedurecolumns)
   ok_sql(hstmt, "create procedure procedure_columns_test1(IN re_param1 TINYINT, OUT re_param2 SMALLINT," \
                 "re_param3 MEDIUMINT, INOUT `re_param 4` INT UNSIGNED, OUT re_param5 BIGINT, re_param6 FLOAT(4,2)," \
                 "OUT re_param7 DOUBLE(5, 3), IN re_param8 DECIMAL(10,3) unSIGned, re_param9 CHAR(32)," \
-                "Out re_param10 VARCHAR(64) charset utf8, ignore_param INT, re_param11 long VARBINARY)" \
+                "Out re_param10 VARCHAR(64) charset utf8, ignore_param INT, re_param11 MEDIUMBLOB)" \
                 "begin end;"
                 );
   ok_sql(hstmt, "create procedure procedure_columns_test2(IN re_paramA bloB," \
                 "IN re_paramB LONGBLOB, inout re_paramC TinyBlob, re_paramD mediumblob, IN re_paramE varbinary(128)," \
-                "OUT re_paramF binary, re_paramG binary(8), `re_param H` LONG VARCHAR, IN re_paramI TEXT," \
+                "OUT re_paramF binary, re_paramG binary(8), `re_param H` MEDIUMTEXT, IN re_paramI TEXT," \
                 "re_paramJ mediumtext, INOUT re_paramK longtext, re_paramL tinytext, re_paramM numeric(8,2))" \
                 "begin end;"
                 );
@@ -573,6 +573,7 @@ DECLARE_TEST(t_sqlprocedurecolumns)
   {
     SQLCHAR buff[255] = {0}, *param_cat, *param_name;
     SQLUINTEGER col_size, buf_len, octet_len;
+    printf("\nRow %d\n", (iter+1));
 
     param_cat= (SQLCHAR*)my_fetch_str(hstmt, buff, 1);
     is_str(param_cat, data_to_check[iter].c01_procedure_cat,
@@ -693,7 +694,7 @@ DECLARE_TEST(t_bug57182)
   ok_stmt(hstmt, SQLFreeStmt(hstmt, SQL_CLOSE));
 
   /* And testing impossible column condition - expecting to get no rows */
-  ok_stmt(hstmt, SQLProcedureColumns(hstmt, "test", SQL_NTS, NULL, 0,
+   ok_stmt(hstmt, SQLProcedureColumns(hstmt, "test", SQL_NTS, NULL, 0,
     "bug57182", SQL_NTS,
     "non_existing_column%", SQL_NTS));
 
@@ -1186,6 +1187,7 @@ DECLARE_TEST(t_bug_14005343)
     ++nrows;
     ok_stmt(hstmt, SQLGetData(hstmt, 1, SQL_C_CHAR, database,
                              sizeof(database), NULL));
+    printf("%s\n", database);
     /* the table catalog in the results must not be '%' */
     is(database[0] != '%');
   }

@@ -2426,7 +2426,7 @@ bool myodbc_append_quoted_name_std(std::string &str, const char *name)
   @purpose : reset the db name to current_database()
 */
 
-my_bool reget_current_catalog(DBC *dbc)
+int reget_current_catalog(DBC *dbc)
 {
     dbc->database.clear();
 
@@ -2492,6 +2492,9 @@ int myodbc_casecmp(const char *s, const char *t, uint len)
   {
     return 0;
   }
+
+  if ((!s && t) || (s && !t))
+    return 1;
 
   if (!s || !t)
   {

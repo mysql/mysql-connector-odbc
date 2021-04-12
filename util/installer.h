@@ -145,6 +145,7 @@ typedef struct {
   BOOL ignore_space_after_function_names;
   BOOL force_use_of_named_pipes;
   BOOL no_catalog;
+  BOOL no_schema;
   BOOL read_options_from_mycnf;
   BOOL disable_transactions;
   BOOL force_use_of_forward_only_cursors;
