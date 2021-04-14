@@ -1,30 +1,30 @@
-// Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved. 
-// 
-// This program is free software; you can redistribute it and/or modify 
-// it under the terms of the GNU General Public License, version 2.0, as 
-// published by the Free Software Foundation. 
-// 
-// This program is also distributed with certain software (including 
-// but not limited to OpenSSL) that is licensed under separate terms, 
-// as designated in a particular file or component or in included license 
-// documentation. The authors of MySQL hereby grant you an 
-// additional permission to link the program and your derivative works 
-// with the separately licensed software that they have included with 
-// MySQL. 
-// 
-// Without limiting anything contained in the foregoing, this file, 
-// which is part of <MySQL Product>, is also subject to the 
-// Universal FOSS Exception, version 1.0, a copy of which can be found at 
-// http://oss.oracle.com/licenses/universal-foss-exception. 
-// 
-// This program is distributed in the hope that it will be useful, but 
-// WITHOUT ANY WARRANTY; without even the implied warranty of 
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-// See the GNU General Public License, version 2.0, for more details. 
-// 
-// You should have received a copy of the GNU General Public License 
-// along with this program; if not, write to the Free Software Foundation, Inc., 
-// 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA 
+// Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+//
+// This program is free software; you can redistribute it and/or modify
+// it under the terms of the GNU General Public License, version 2.0, as
+// published by the Free Software Foundation.
+//
+// This program is also distributed with certain software (including
+// but not limited to OpenSSL) that is licensed under separate terms,
+// as designated in a particular file or component or in included license
+// documentation. The authors of MySQL hereby grant you an
+// additional permission to link the program and your derivative works
+// with the separately licensed software that they have included with
+// MySQL.
+//
+// Without limiting anything contained in the foregoing, this file,
+// which is part of <MySQL Product>, is also subject to the
+// Universal FOSS Exception, version 1.0, a copy of which can be found at
+// http://oss.oracle.com/licenses/universal-foss-exception.
+//
+// This program is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+// See the GNU General Public License, version 2.0, for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program; if not, write to the Free Software Foundation, Inc.,
+// 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 /*
  * Tests for descriptors.
  */
@@ -326,43 +326,54 @@ DECLARE_TEST(t_explicit_error)
                                 &desc1, 0, NULL));
   ok_stmt(hstmt2, SQLGetStmtAttr(hstmt2, SQL_ATTR_APP_ROW_DESC,
                                  &desc2, 0, NULL));
+  printf("LINE:%d\n",__LINE__);
+
+#ifndef SQL_ATTR_UNIXODBC_VERSION
+  /* This call is checked by the driver manager and sometimes UnixODBC
+     crashes in there.
+  */
 
   /* can't set implicit ard from a different statement */
   expect_stmt(hstmt, SQLSetStmtAttr(hstmt, SQL_ATTR_APP_ROW_DESC,
                                     desc2, 0), SQL_ERROR);
   is(check_sqlstate(hstmt, "HY017") == OK);
-
+#endif
   /* can set it to the same statement */
+  printf("LINE:%d\n",__LINE__);
   ok_stmt(hstmt, SQLSetStmtAttr(hstmt, SQL_ATTR_APP_ROW_DESC, desc1, 0));
+  printf("LINE:%d\n",__LINE__);
 
   /* can't set implementation descriptors */
   expect_stmt(hstmt, SQLSetStmtAttr(hstmt, SQL_ATTR_IMP_ROW_DESC,
                                     desc1, 0), SQL_ERROR);
+  printf("LINE:%d\n",__LINE__);
   is(check_sqlstate(hstmt, "HY024") == OK ||
      check_sqlstate(hstmt, "HY017") == OK);
+  printf("LINE:%d\n",__LINE__);
 
   /*
     can't free implicit descriptors
     This crashes unixODBC 2.2.11, as it improperly frees the descriptor,
     and again tries to when freeing the statement handle.
   */
-  if (using_unixodbc_version(henv, "2.2.11"))
-  {
+#ifdef SQL_ATTR_UNIXODBC_VERSION
     printMessage("free implicit descriptor test skipped under unixODBC 2.2.11");
-  }
-  else
-  {
+#else
     expect_desc(desc1, SQLFreeHandle(SQL_HANDLE_DESC, desc1), SQL_ERROR);
     is(check_sqlstate_ex(desc1, SQL_HANDLE_DESC, "HY017") == OK);
-  }
+#endif
 
   /* can't set apd as ard (and vice-versa) */
+  printf("LINE:%d\n",__LINE__);
   ok_con(hdbc, SQLAllocHandle(SQL_HANDLE_DESC, hdbc, &expapd));
+  printf("LINE:%d\n",__LINE__);
   ok_stmt(hstmt, SQLSetStmtAttr(hstmt, SQL_ATTR_APP_PARAM_DESC,
                                 expapd, 0)); /* this makes expapd an apd */
 
+  printf("LINE:%d\n",__LINE__);
   expect_stmt(hstmt, SQLSetStmtAttr(hstmt, SQL_ATTR_APP_ROW_DESC,
                                     expapd, 0), SQL_ERROR);
+  printf("LINE:%d\n",__LINE__);
   is(check_sqlstate(hstmt, "HY024") == OK);
 
   /*
@@ -370,9 +381,12 @@ DECLARE_TEST(t_explicit_error)
     Even though the above call failed, unixODBC saved this value internally
     and returns it. desc1 should *not* be the same as the explicit apd
   */
+  printf("LINE:%d\n",__LINE__);
   ok_stmt(hstmt, SQLGetStmtAttr(hstmt, SQL_ATTR_APP_ROW_DESC,
                                 &desc1, 0, NULL));
+  printf("LINE:%d\n",__LINE__);
   printMessage("explicit apd: %x, stmt's ard: %x", expapd, desc1);
+  printf("LINE:%d\n",__LINE__);
 
   return OK;
 }
