@@ -1029,7 +1029,7 @@ SQLRETURN copy_binhex_result(STMT *stmt,
         }
         *dst= 0;
     }
-    if ( (ulong) cbValueMax > length*2 )
+    if ( length == src_length )
         return SQL_SUCCESS;
 
     stmt->set_error("01004", NULL, 0);
