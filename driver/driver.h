@@ -235,7 +235,10 @@ typedef enum { DESC_HDR, DESC_REC } fld_loc;
   #define __LOCALE_RESTORE() \
     { \
       uselocale(LC_GLOBAL_LOCALE); \
-      freelocale(nloc); \
+      if (nloc != NULL) \
+      { \
+        freelocale(nloc); \
+      } \
     }
 #else
 
