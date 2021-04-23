@@ -138,5 +138,5 @@ ECHO   VERSION      must be; a 3 number version code
 ECHO .
 ECHO   Examples:
 ECHO 
-ECHO   %0 8.0.24
+ECHO   %0 8.0.25
 
