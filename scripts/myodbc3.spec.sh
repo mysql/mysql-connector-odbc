@@ -240,12 +240,7 @@ fi
 %doc %{license_files}
 %doc INFO_SRC INFO_BIN
 %{_libdir}/libmyodbc8S.so
-   %if 0%{?suse_version} == 1315
-     %{_libdir}/libmyodbc8S-gtk2.so
-   %else
-     %{_libdir}/libmyodbc8S-gtk2.so
-     %{_libdir}/libmyodbc8S-gtk3.so
-   %endif
+%{_libdir}/libmyodbc8S-gtk*.so
 %endif
 
 %files test
