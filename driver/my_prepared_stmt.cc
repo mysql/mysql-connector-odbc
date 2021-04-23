@@ -990,6 +990,10 @@ SQLRETURN STMT::bind_query_attrs(bool use_ssps)
   {
     DESCREC *aprec = desc_get_rec(apd, num, false);
     DESCREC *iprec = desc_get_rec(ipd, num, false);
+
+    if (!aprec || !iprec)
+      return SQL_SUCCESS; // Nothing to do
+
     query_attr_bind.emplace_back(MYSQL_BIND{});
     MYSQL_BIND *bind = &query_attr_bind.back();
 
