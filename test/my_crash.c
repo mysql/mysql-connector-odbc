@@ -945,8 +945,40 @@ DECLARE_TEST(t_bug18796005)
   return OK;
 }
 
+/*
+ *  Bug #32813838 ODBC DRIVER CRASHES WITH A SIMPLE QUERY IN ACCESS/VB6
+ */
+DECLARE_TEST(t_bug32813838)
+{
+  struct {
+    SQLINTEGER id;
+    SQLCHAR name[16];
+  } rows[25];
+  size_t row_size= (sizeof(rows) / 25);
+  SQLINTEGER out_id, out_x;
+  SQLULEN bind_offset= 20 * row_size;
+  SQLHANDLE ipd = NULL;
+  SQLHANDLE apd = NULL;
+  SQLLEN ipd_oct_len = 0, apd_oct_len = 0;
+
+  SQLExecDirect(hstmt, "DROP TABLE t_bug32813838", SQL_NTS);
+  ok_sql(hstmt, "CREATE TABLE IF NOT EXISTS t_bug32813838 (id int,"
+                "name char(16))");
+  ok_sql(hstmt, "INSERT INTO t_bug32813838 VALUES (1,'abc'),(2,'def')");
+  ok_stmt(hstmt, SQLGetStmtAttr(hstmt, SQL_ATTR_APP_PARAM_DESC, &apd, 0, 0));
+  ok_stmt(hstmt, SQLSetDescField(apd, 1, SQL_DESC_OCTET_LENGTH_PTR,
+                                 &apd_oct_len, 0));
+
+  ok_stmt(hstmt, SQLParamOptions(hstmt, 1, NULL));
+  ok_sql(hstmt, "SELECT * FROM t_bug32813838");
+  my_print_non_format_result(hstmt);
+  ok_sql(hstmt, "DROP TABLE t_bug32813838");
+
+  return OK;
+}
 
 BEGIN_TESTS
+  ADD_TEST(t_bug32813838)
   ADD_TEST(t_setpos_update_no_ssps)
   ADD_TEST(t_bug18641824)
   ADD_TEST(t_bug18805392)
