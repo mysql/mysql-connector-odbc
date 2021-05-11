@@ -380,12 +380,26 @@ do { \
     }
   };
 
+  auto get_rand_name = []()
+  {
+    srand(time(NULL)); // use current time as seed for random generator
+    int random_variable = rand();
+    static const char hexdigit[17] = "0123456789abcdef";
+    char buf[17];
+    for(int i = 0; i < 16; ++i)
+        buf[i] = hexdigit[rand() % 16];
+      buf[16] = '\0';
+    return std::string(buf);
+  };
+
+
   try
   {
     {
       std::string temp_dir;
       std::string dir;
       std::string file_path;
+      std::string test_dir = get_rand_name();
 
 #ifdef _WIN32
       temp_dir = getenv("TEMP");
@@ -395,24 +409,26 @@ do { \
                                       testLocal::slash_type::MAKE_FORWARD);
       temp_dir.append("/");
 
-      dataDir hidden_dir(temp_dir + "HiddenTest/", true);
-      dataFile file_in_hidden_dir(temp_dir + "HiddenTest/", "infile.txt");
-
 #else
       temp_dir = "/tmp/";
 #endif
 
+      temp_dir.append(test_dir + "/");
       dir = temp_dir + "test/";
       file_path = dir + "infile.txt";
 
+      dataDir dir_temp(temp_dir);
       dataDir dir_test(dir);
       dataDir dir_link(temp_dir + "test_link/");
       dataDir dir_subdir_link(temp_dir + "test_subdir_link/");
 
       dataFile infile(dir, "infile.txt");
 
-#ifndef _WIN32
-      dataFile infile_wo("/tmp/test/", "infile_wo.txt", true);
+#ifdef _WIN32
+      dataDir hidden_dir(temp_dir + "HiddenTest/", true);
+      dataFile file_in_hidden_dir(temp_dir + "HiddenTest/", "infile.txt");
+#else
+      dataFile infile_wo(dir, "infile_wo.txt", true);
       dataSymlink sl(file_path, temp_dir + "test_link/link_infile.txt");
       dataSymlink sld(dir, temp_dir + "test_subdir_link/subdir");
       std::string sld_file = sld.path();
@@ -893,9 +909,9 @@ DECLARE_TEST(t_wl14586)
 
 
 BEGIN_TESTS
+  ADD_TEST(t_wl13883)
   ADD_TEST(t_wl14490)
   ADD_TEST(t_wl14586)
-  ADD_TEST(t_wl13883)
   ADD_TEST(t_wl14362)
 END_TESTS
 
