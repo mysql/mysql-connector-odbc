@@ -35,10 +35,6 @@
 /* We don't want ansi calls to be mapped to unicode counterparts, but that does not work */
 /* #define SQL_NOUNICODEMAP 1*/
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 
 #ifdef HAVE_CONFIG_H
 # include <myconf.h>
@@ -388,6 +384,11 @@ int main(int argc, char **argv) \
     return SKIP; \
   } while (0)
 
+#ifdef CPP_THROW_CLASS
+#define TEST_RETURN_FAIL throw CPP_THROW_CLASS(__FILE__, __LINE__);
+#else
+#define TEST_RETURN_FAIL return FAIL;
+#endif
 
 /**
   Execute an SQL statement and bail out if the execution does not return
@@ -403,7 +404,7 @@ do { \
              "SQLExecDirect(" #statement ", \"" query "\", SQL_NTS)",\
              __FILE__, __LINE__); \
   if (rc != SQL_SUCCESS && rc != SQL_SUCCESS_WITH_INFO) \
-    return FAIL; \
+    TEST_RETURN_FAIL; \
 } while (0)
 
 
@@ -425,7 +426,7 @@ do { \
                __FILE__, __LINE__); \
     printf("# Expected %d, but got %d in %s on line %d\n", expect, rc, \
            __FILE__, __LINE__); \
-    return FAIL; \
+    TEST_RETURN_FAIL; \
   } \
 } while (0)
 
@@ -439,10 +440,10 @@ do { \
 */
 #define ok_stmt(statement, call) \
 do { \
-  SQLRETURN rc= (call); \
-  print_diag(rc, SQL_HANDLE_STMT, (statement), #call, __FILE__, __LINE__); \
-  if (rc != SQL_SUCCESS && rc != SQL_SUCCESS_WITH_INFO) \
-    return FAIL; \
+  SQLRETURN _rc= (call); \
+  print_diag(_rc, SQL_HANDLE_STMT, (statement), #call, __FILE__, __LINE__); \
+  if (_rc != SQL_SUCCESS && _rc != SQL_SUCCESS_WITH_INFO) \
+    TEST_RETURN_FAIL; \
 } while (0)
 
 
@@ -458,7 +459,7 @@ do { \
   SQLRETURN rc= (call); \
   print_diag(rc, SQL_HANDLE_DESC, (desc), #call, __FILE__, __LINE__); \
   if (rc != SQL_SUCCESS && rc != SQL_SUCCESS_WITH_INFO) \
-    return FAIL; \
+    TEST_RETURN_FAIL; \
 } while (0)
 
 
@@ -479,7 +480,7 @@ do { \
     print_diag(rc, (type), (hnd), #call, __FILE__, __LINE__); \
     printf("# Expected %d, but got %d in %s on line %d\n", (expect), rc, \
            __FILE__, __LINE__); \
-    return FAIL; \
+    TEST_RETURN_FAIL; \
   } \
 } while (0)
 
@@ -509,10 +510,10 @@ do { \
 */
 #define ok_env(environ, call) \
 do { \
-  SQLRETURN rc= (call); \
-  print_diag(rc, SQL_HANDLE_ENV, (environ), #call, __FILE__, __LINE__); \
-  if (rc != SQL_SUCCESS && rc != SQL_SUCCESS_WITH_INFO) \
-    return FAIL; \
+  SQLRETURN _rc= (call); \
+  print_diag(_rc, SQL_HANDLE_ENV, (environ), #call, __FILE__, __LINE__); \
+  if (_rc != SQL_SUCCESS && _rc != SQL_SUCCESS_WITH_INFO) \
+    TEST_RETURN_FAIL; \
 } while (0)
 
 
@@ -525,10 +526,10 @@ do { \
 */
 #define ok_con(con, call) \
 do { \
-  SQLRETURN rc= (call); \
-  print_diag(rc, SQL_HANDLE_DBC, (con), #call, __FILE__, __LINE__); \
-  if (rc != SQL_SUCCESS && rc != SQL_SUCCESS_WITH_INFO) \
-    return FAIL; \
+  SQLRETURN _rc= (call); \
+  print_diag(_rc, SQL_HANDLE_DBC, (con), #call, __FILE__, __LINE__); \
+  if (_rc != SQL_SUCCESS && _rc != SQL_SUCCESS_WITH_INFO) \
+    TEST_RETURN_FAIL; \
 } while (0)
 
 
@@ -540,10 +541,10 @@ do { \
 */
 #define ok_install(call) \
 do { \
-  BOOL rc= (call); \
-  print_diag_installer(rc, #call, __FILE__, __LINE__); \
-  if (!rc) \
-    return FAIL; \
+  BOOL _rc= (call); \
+  print_diag_installer(_rc, #call, __FILE__, __LINE__); \
+  if (!_rc) \
+    TEST_RETURN_FAIL; \
 } while (0)
 
 
@@ -559,7 +560,7 @@ do { \
   if (!(a)) { \
     printf("# !(%s) in %s on line %d\n", \
            #a, __FILE__, __LINE__); \
-    return FAIL; \
+    TEST_RETURN_FAIL; \
   } \
 } while (0);
 
@@ -582,7 +583,7 @@ do { \
   if (strncmp(val_a, val_b, val_len) != 0) { \
     printf("# %s ('%*s') != '%*s' in %s on line %d\n", \
            #a, val_len, val_a, val_len, val_b, __FILE__, __LINE__); \
-    return FAIL; \
+    TEST_RETURN_FAIL; \
   } \
 } while (0);
 
@@ -601,7 +602,7 @@ do { \
   if (memcmp(val_a, val_b, val_len * sizeof(wchar_t)) != 0) { \
     printf("# %s ('%*ls') != '%*ls' in %s on line %d\n", \
            #a, val_len, val_a, val_len, val_b, __FILE__, __LINE__); \
-    return FAIL; \
+    TEST_RETURN_FAIL; \
   } \
 } while (0);
 
@@ -618,7 +619,7 @@ do { \
   if (a1 != a2) { \
     printf("# %s (%lld) != %lld in %s on line %d\n", \
            #a, a1, a2, __FILE__, __LINE__); \
-    return FAIL; \
+    TEST_RETURN_FAIL; \
   } \
 } while (0)
 
@@ -777,7 +778,7 @@ static void print_diag_installer(BOOL is_success, const char *text,
 /**
   Print resultset dashes
 */
-static int my_print_dashes(SQLHSTMT hstmt, SQLSMALLINT nCol)
+int my_print_dashes(SQLHSTMT hstmt, SQLSMALLINT nCol)
 {
     SQLLEN     disp_size, nullable;
     SQLCHAR    ColName[MAX_NAME_LEN+1];
@@ -1228,23 +1229,23 @@ SQLCHAR *make_conn_str(const SQLCHAR *dsn, const SQLCHAR *uid,
   if (mysock && mysock[0])
   {
     snprintf((char *)socket_buf, sizeof(socket_buf), ";SOCKET=%s", (char *)mysock);
-    strncat((char *)connIn, (char*)socket_buf, sizeof(connIn)-1);
+    strncat((char *)connIn, (char*)socket_buf, sizeof(connIn));
   }
   if (db && db[0])
   {
     snprintf((char *)db_buf, sizeof(db_buf), ";DATABASE=%s", (char *)db);
-    strncat((char *)connIn, (char *)db_buf, sizeof(connIn)-1);
+    strncat((char *)connIn, (char *)db_buf, sizeof(connIn));
   }
   if (myport)
   {
     snprintf((char*)port_buf, sizeof(port_buf), ";PORT=%d", myport);
-    strncat((char *)connIn, (char*)port_buf, sizeof(connIn)-1);
+    strncat((char *)connIn, (char*)port_buf, sizeof(connIn));
   }
 
   if (options != NULL && options[0] > 0)
   {
-    strncat((char*)connIn, ";", sizeof(connIn)-1);
-    strncat((char*)connIn, (char*)options, sizeof(connIn)-1);
+    strncat((char*)connIn, ";", sizeof(connIn));
+    strncat((char*)connIn, (char*)options, sizeof(connIn));
   }
 
 #if MYSQL_VERSION_ID >= 50507
@@ -1253,13 +1254,13 @@ SQLCHAR *make_conn_str(const SQLCHAR *dsn, const SQLCHAR *uid,
     init_auth_plugin= 0; /* reset the plugin init flag */
     if (myauth && myauth[0])
     {
-      strncat((char *)connIn, ";DEFAULTAUTH=", sizeof(connIn)-1);
-      strncat((char *)connIn, (char *)myauth, sizeof(connIn)-1);
+      strncat((char *)connIn, ";DEFAULTAUTH=", sizeof(connIn));
+      strncat((char *)connIn, (char *)myauth, sizeof(connIn));
     }
     if (myplugindir && myplugindir[0])
     {
-      strncat((char *)connIn, ";PLUGINDIR=", sizeof(connIn)-1);
-      strncat((char *)connIn, (char *)myplugindir, sizeof(connIn)-1);
+      strncat((char *)connIn, ";PLUGINDIR=", sizeof(connIn));
+      strncat((char *)connIn, (char *)myplugindir, sizeof(connIn));
     }
   }
 #endif
@@ -1525,6 +1526,3 @@ int using_unixodbc_version(SQLHANDLE henv, SQLCHAR *ver)
   return 0;
 }
 
-#ifdef __cplusplus
-}
-#endif
