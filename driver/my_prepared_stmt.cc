@@ -991,6 +991,10 @@ SQLRETURN STMT::bind_query_attrs(bool use_ssps)
     DESCREC *aprec = desc_get_rec(apd, num, false);
     DESCREC *iprec = desc_get_rec(ipd, num, false);
 
+    /*
+      IPREC and APREC should both be not NULL if query attributes
+      or parameters are set.
+    */
     if (!aprec || !iprec)
       return SQL_SUCCESS; // Nothing to do
 
