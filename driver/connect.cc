@@ -296,6 +296,10 @@ SQLRETURN DBC::connect(DataSource *dsrc)
   if (GetModuleHandle("sqlservr.exe") != NULL)
     dsrc->pad_char_to_full_length= 1;
 
+  /* Detect MS Query and prevent if from using schema as database */
+  if (GetModuleHandle("msqry32.exe") != NULL)
+    dsrc->no_schema = 1;
+
 #endif
 
   mysql = mysql_init(nullptr);
