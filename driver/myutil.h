@@ -400,6 +400,8 @@ int               next_result         (STMT *stmt);
 SQLRETURN         send_long_data      (STMT *stmt, unsigned int param_num, DESCREC * aprec,
                                       const char *chunk, unsigned long length);
 
+#define IGNORE_THROW(A) try{ A; }catch(...){}
+
 int           get_int     (STMT *stmt, ulong column_number, char *value,
                           ulong length);
 long long     get_int64   (STMT *stmt, ulong column_number, char *value,

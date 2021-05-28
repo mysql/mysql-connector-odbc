@@ -52,6 +52,7 @@
 #endif
 
 /*
+  Bug 32552965
   MYSQL ODBC CONNECTOR *8.0.23* 'MALFORMED COMMUNICATION PACKET' WITH ADO.NET DATA
 */
 DECLARE_TEST(t_bug32552965)
@@ -73,13 +74,41 @@ DECLARE_TEST(t_bug32552965)
     ok_stmt(hstmt, SQLBindParameter(hstmt, 2, SQL_PARAM_INPUT,
           SQL_C_LONG, SQL_INTEGER, 0, 0, &int_data, 0, &len2));
     ok_stmt(hstmt, SQLExecute(hstmt));
-    std::cout << "All good\n";
+  }
+  ENDCATCH;
+}
+
+
+/*
+  Bug 27499789
+  ODBC PARAMETER NO_CACHE LEAD TO FUNCTION CALL ERROR NOT RETURN
+*/
+DECLARE_TEST(t_bug27499789)
+{
+  try
+  {
+    std::cout << "Connect...\n";
+    odbc::connection con(nullptr, nullptr, nullptr, nullptr, ";NO_CACHE=1");
+    std::cout << "HSTMT...\n";
+    SQLHSTMT hstmt = con.hstmt;
+    std::cout << "Prepare...\n";
+    odbc::stmt_prepare(hstmt, "SELECT 1 + 9223372036854775807;");
+    std::cout << "Execute...\n";
+    ok_stmt(hstmt, SQLExecute(hstmt));
+    std::cout << "Fetch...\n";
+    err_stmt(hstmt, SQLFetch(hstmt));
+
+    SQLBIGINT val = 0;
+    SQLLEN len = 0;
+    std::cout << "Get Data...\n";
+    err_stmt(hstmt, SQLGetData(hstmt, 1, SQL_C_SBIGINT, &val, 0, &len));
   }
   ENDCATCH;
 }
 
 
 BEGIN_TESTS
+  ADD_TEST(t_bug27499789)
   ADD_TEST(t_bug32552965)
 
   END_TESTS
