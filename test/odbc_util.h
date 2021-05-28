@@ -63,9 +63,9 @@ struct SimpleException
   throw odbc::Exception(st);\
 }
 
-#define err_stmt(hstmt, A) try { ok_stmt(hstmt, A); } catch(...) {}
+#define err_stmt(hstmt, A) try { ok_stmt(hstmt, A); return FALSE; } catch(...) {}
 
-#define err_con(hdbc, A) try { ok_con(hdbc, A); } catch(...) {}
+#define err_con(hdbc, A) try { ok_con(hdbc, A); return FALSE; } catch(...) {}
 
 #define ENDCATCH catch(odbc::Exception &ex)\
   {\
@@ -174,8 +174,8 @@ struct Exception
     msg = buf;
 
     if (SQL_IS_SUCCESS(drc))
-      printf("# [%6s] %*s\n",
-             sqlstate, length, (char*)msg);
+      printf("# [%6s][%d] %*s\n",
+             sqlstate, length, native_error, (char*)msg);
     else
       printf("# Did not get expected diagnostics from SQLGetDiagRec() = %d\n",
              drc);
@@ -677,18 +677,18 @@ struct HENV
 
 struct HDBC
 {
-  SQLHDBC hdbc;
+  SQLHDBC hdbc = nullptr;
   SQLHENV henv;
   xstring connout;
   connection con;
 
   void connect(xstring opts = nullptr)
   {
-    xbuf buf(512);
+    xbuf buf(4096);
     xstring cstr = con.m_connstr;
     cstr.append(opts);
     ok_con(hdbc, SQLDriverConnect(hdbc, NULL, cstr, SQL_NTS, buf,
-                                  buf.size, nullptr, SQL_DRIVER_NOPROMPT));
+                                  512, nullptr, SQL_DRIVER_NOPROMPT));
     connout = buf;
   }
 
@@ -716,7 +716,7 @@ struct HDBC
 struct HSTMT
 {
   SQLHDBC hdbc;
-  SQLHSTMT hstmt;
+  SQLHSTMT hstmt = nullptr;
   HSTMT(SQLHDBC dbc) : hdbc(dbc)
   {
     ok_con(hdbc, SQLAllocHandle(SQL_HANDLE_STMT, hdbc, &hstmt));

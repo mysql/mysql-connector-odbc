@@ -297,7 +297,7 @@ void set_current_cursor_data(STMT *stmt, SQLUINTEGER irow)
     if (ssps_used(stmt))
     {
        data_seek(stmt, row_pos);
-       fetch_row(stmt);
+       IGNORE_THROW(fetch_row(stmt));
     }
     else
     {
@@ -1607,11 +1607,12 @@ static const char *alloc_error= "Driver Failed to set the internal dynamic resul
 SQLRETURN SQL_API my_SQLSetPos(SQLHSTMT hstmt, SQLSETPOSIROW irow,
                                SQLUSMALLINT fOption, SQLUSMALLINT fLock)
 {
-    STMT      *stmt= (STMT *) hstmt;
-    SQLRETURN sqlRet= SQL_SUCCESS;
-    MYSQL_RES *result= stmt->result;
-    SQLRETURN rc;
+  STMT      *stmt = (STMT *) hstmt;
+  SQLRETURN ret = SQL_SUCCESS;
+  MYSQL_RES *result = stmt->result;
 
+  try
+  {
     CLEAR_STMT_ERROR(stmt);
 
     if ( !result )
@@ -1667,7 +1668,7 @@ SQLRETURN SQL_API my_SQLSetPos(SQLHSTMT hstmt, SQLSETPOSIROW irow,
 
                 LOCK_STMT(stmt);
                 --irow;
-                sqlRet= SQL_SUCCESS;
+                ret= SQL_SUCCESS;
                 stmt->cursor_row= (long)(stmt->current_row+irow);
                 data_seek(stmt, (my_ulonglong)stmt->cursor_row);
                 stmt->current_values= fetch_row(stmt);
@@ -1696,7 +1697,7 @@ SQLRETURN SQL_API my_SQLSetPos(SQLHSTMT hstmt, SQLSETPOSIROW irow,
                 std::string del_query("DELETE FROM ");
                 del_query.reserve(1024);
 
-                sqlRet = setpos_delete_std( stmt, irow, del_query );
+                ret = setpos_delete_std( stmt, irow, del_query );
                 break;
             }
 
@@ -1710,14 +1711,14 @@ SQLRETURN SQL_API my_SQLSetPos(SQLHSTMT hstmt, SQLSETPOSIROW irow,
                     set_dynamic_result(stmt))
                   return stmt->set_error(MYERR_S1000, alloc_error, 0);
 
-                if (rc= setpos_dae_check_and_init(stmt, irow, fLock,
+                if (ret = setpos_dae_check_and_init(stmt, irow, fLock,
                                                   DAE_SETPOS_UPDATE))
-                  return rc;
+                  return ret;
 
                 std::string upd_query("UPDATE ");
                 upd_query.reserve(1024);
 
-                sqlRet= setpos_update_std(stmt, irow, upd_query);
+                ret= setpos_update_std(stmt, irow, upd_query);
                 break;
             }
 
@@ -1734,9 +1735,9 @@ SQLRETURN SQL_API my_SQLSetPos(SQLHSTMT hstmt, SQLSETPOSIROW irow,
                 if ( !(table_name= find_used_table(stmt)) )
                     return SQL_ERROR;
 
-                if (rc= setpos_dae_check_and_init(stmt, irow, fLock,
+                if (ret = setpos_dae_check_and_init(stmt, irow, fLock,
                                                   DAE_SETPOS_INSERT))
-                  return rc;
+                  return ret;
 
                 std::string ins_query("INSERT INTO ");
                 ins_query.reserve(1024);
@@ -1763,7 +1764,7 @@ SQLRETURN SQL_API my_SQLSetPos(SQLHSTMT hstmt, SQLSETPOSIROW irow,
                 ins_query.append(") VALUES ");
 
                 /* process row(s) using our INSERT as base */
-                sqlRet= batch_insert_std(stmt, irow, ins_query);
+                ret= batch_insert_std(stmt, irow, ins_query);
 
                 break;
             }
@@ -1775,7 +1776,7 @@ SQLRETURN SQL_API my_SQLSetPos(SQLHSTMT hstmt, SQLSETPOSIROW irow,
                   new rows, instead it needs to refresh the positioned
                   buffers
                 */
-                sqlRet= my_SQLExtendedFetch(hstmt, SQL_FETCH_ABSOLUTE, irow,
+                ret= my_SQLExtendedFetch(hstmt, SQL_FETCH_ABSOLUTE, irow,
                                             stmt->ird->rows_processed_ptr,
                                             stmt->stmt_options.rowStatusPtr_ex ?
                                             stmt->stmt_options.rowStatusPtr_ex :
@@ -1786,7 +1787,12 @@ SQLRETURN SQL_API my_SQLSetPos(SQLHSTMT hstmt, SQLSETPOSIROW irow,
         default:
             return stmt->set_error(MYERR_S1009,NULL,0);
     }
-    return sqlRet;
+  }
+  catch(MYERROR &e)
+  {
+    ret = e.retcode;
+  }
+  return ret;
 }
 
 

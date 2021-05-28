@@ -206,24 +206,24 @@ MYSQL_ROW fetch_row(STMT *stmt)
 {
   if (ssps_used(stmt))
   {
-    int error;
     if (stmt->ssps_bind_result())
     {
-      return NULL;
+      return nullptr;
     }
+    int error = mysql_stmt_fetch(stmt->ssps);
 
-    error= mysql_stmt_fetch(stmt->ssps);
-
+    switch (error)
     {
-
-      if (error == MYSQL_NO_DATA)
+      case 1:
+        stmt->set_error("HY000", mysql_stmt_error(stmt->ssps),
+          mysql_stmt_errno(stmt->ssps));
+        throw stmt->error;
+      case MYSQL_NO_DATA:
         return nullptr;
-
-      if (stmt->fix_fields)
-      {
-        return stmt->fix_fields(stmt, nullptr); // it returns stmt->array
-      }
     }
+
+    if (stmt->fix_fields)
+      return stmt->fix_fields(stmt, nullptr); // it returns stmt->array
 
     return stmt->array;
   }

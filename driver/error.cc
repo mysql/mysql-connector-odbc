@@ -312,6 +312,7 @@ MYERROR::MYERROR(const char *state, const char *msg, SQLINTEGER errcode,
   myodbc_stpmov(sqlstate, state);
   strxmov(message, prefix, msg, NullS);
   native_error = errcode;
+  retcode = SQL_ERROR;
 }
 
 
