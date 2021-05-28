@@ -1229,23 +1229,23 @@ SQLCHAR *make_conn_str(const SQLCHAR *dsn, const SQLCHAR *uid,
   if (mysock && mysock[0])
   {
     snprintf((char *)socket_buf, sizeof(socket_buf), ";SOCKET=%s", (char *)mysock);
-    strncat((char *)connIn, (char*)socket_buf, sizeof(connIn));
+    strncat((char *)connIn, (char*)socket_buf, sizeof(connIn) - 1);
   }
   if (db && db[0])
   {
     snprintf((char *)db_buf, sizeof(db_buf), ";DATABASE=%s", (char *)db);
-    strncat((char *)connIn, (char *)db_buf, sizeof(connIn));
+    strncat((char *)connIn, (char *)db_buf, sizeof(connIn) - 1);
   }
   if (myport)
   {
     snprintf((char*)port_buf, sizeof(port_buf), ";PORT=%d", myport);
-    strncat((char *)connIn, (char*)port_buf, sizeof(connIn));
+    strncat((char *)connIn, (char*)port_buf, sizeof(connIn) - 1);
   }
 
   if (options != NULL && options[0] > 0)
   {
     strncat((char*)connIn, ";", sizeof(connIn));
-    strncat((char*)connIn, (char*)options, sizeof(connIn));
+    strncat((char*)connIn, (char*)options, sizeof(connIn) - 1);
   }
 
 #if MYSQL_VERSION_ID >= 50507
@@ -1255,12 +1255,12 @@ SQLCHAR *make_conn_str(const SQLCHAR *dsn, const SQLCHAR *uid,
     if (myauth && myauth[0])
     {
       strncat((char *)connIn, ";DEFAULTAUTH=", sizeof(connIn));
-      strncat((char *)connIn, (char *)myauth, sizeof(connIn));
+      strncat((char *)connIn, (char *)myauth, sizeof(connIn) - 1);
     }
     if (myplugindir && myplugindir[0])
     {
       strncat((char *)connIn, ";PLUGINDIR=", sizeof(connIn));
-      strncat((char *)connIn, (char *)myplugindir, sizeof(connIn));
+      strncat((char *)connIn, (char *)myplugindir, sizeof(connIn) - 1);
     }
   }
 #endif
