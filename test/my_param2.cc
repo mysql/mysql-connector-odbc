@@ -87,27 +87,68 @@ DECLARE_TEST(t_bug27499789)
 {
   try
   {
-    std::cout << "Connect...\n";
     odbc::connection con(nullptr, nullptr, nullptr, nullptr, ";NO_CACHE=1");
-    std::cout << "HSTMT...\n";
     SQLHSTMT hstmt = con.hstmt;
-    std::cout << "Prepare...\n";
     odbc::stmt_prepare(hstmt, "SELECT 1 + 9223372036854775807;");
-    std::cout << "Execute...\n";
     ok_stmt(hstmt, SQLExecute(hstmt));
-    std::cout << "Fetch...\n";
     err_stmt(hstmt, SQLFetch(hstmt));
 
     SQLBIGINT val = 0;
     SQLLEN len = 0;
-    std::cout << "Get Data...\n";
     err_stmt(hstmt, SQLGetData(hstmt, 1, SQL_C_SBIGINT, &val, 0, &len));
   }
   ENDCATCH;
 }
 
 
+/*
+  Bug #32763378
+  SQLSETPOS(SQL_DELETE) DOES NOT PRODUCE DIAGNOSTIC FOR DUPLICATE KEY
+*/
+DECLARE_TEST(t_bug32763378)
+{
+  try
+  {
+    odbc::table tab(hstmt, "bug32763378", "A VARCHAR(10) UNIQUE, B VARCHAR(10)");
+    odbc::stmt_prepare(hstmt, "INSERT INTO " + tab.table_name + " VALUES(?,?)");
+
+    SQLLEN rows_fetched = 0;
+    SQLCHAR buffers[2][10];
+    SQLLEN lengths[2] = { 0, 0 };
+    memset(buffers, 0, sizeof(buffers));
+    odbc::xbuf buff(SQL_MAX_MESSAGE_LENGTH);
+    buff.setval("A");
+    ok_stmt(hstmt, SQLBindParameter(hstmt, 1, SQL_PARAM_INPUT, SQL_C_CHAR,
+	    SQL_VARCHAR, 0, 0, buff, buff.size, NULL));
+    ok_stmt(hstmt, SQLBindParameter(hstmt, 2, SQL_PARAM_INPUT, SQL_C_CHAR,
+	    SQL_VARCHAR, 0, 0, buff, buff.size, NULL));
+    odbc::stmt_execute(hstmt);
+    buff.setval("B");
+    odbc::stmt_execute(hstmt);
+    odbc::stmt_reset(hstmt);
+    odbc::stmt_close(hstmt);
+
+    odbc::stmt_prepare(hstmt, "SELECT A, B FROM " + tab.table_name + " WHERE A='A' FOR UPDATE");
+    ok_stmt(hstmt, SQLBindCol(hstmt, 1, SQL_C_CHAR, buffers[0], 10, &lengths[0]));
+    ok_stmt(hstmt, SQLBindCol(hstmt, 2, SQL_C_CHAR, buffers[1], 10, &lengths[1]));
+    odbc::stmt_execute(hstmt);
+    ok_stmt(hstmt, SQLFetchScroll(hstmt, SQL_FETCH_NEXT, 0));
+    buffers[0][0] = 'B';
+    is_err(SQLSetPos(hstmt, 1, SQL_UPDATE, SQL_LOCK_NO_CHANGE));
+
+    SQLCHAR sqlstate[6] = { 0, 0, 0, 0, 0, 0 };
+    SQLINTEGER  native_error = 0;
+    SQLSMALLINT length = 0;
+    ok_stmt(hstmt, SQLGetDiagRec(SQL_HANDLE_STMT, hstmt, 1, sqlstate, &native_error,
+                     buff, buff.size - 1, &length));
+    std::cout << "Expected error message: " << buff.get_str() << std::endl;
+  }
+  ENDCATCH;
+}
+
+
 BEGIN_TESTS
+  ADD_TEST(t_bug32763378)
   ADD_TEST(t_bug27499789)
   ADD_TEST(t_bug32552965)
 

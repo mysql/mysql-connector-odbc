@@ -1291,6 +1291,11 @@ static SQLRETURN setpos_update_std(STMT *stmt, SQLUSMALLINT irow,
       {
         affected+= mysql_affected_rows(stmt->dbc->mysql);
       }
+      else if (!SQL_SUCCEEDED(nReturn))
+      {
+        stmt->error = stmt->dbc->error;
+        return nReturn;
+      }
 
   } while ( ++rowset_pos <= rowset_end );
 
