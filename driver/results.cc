@@ -1936,17 +1936,19 @@ SQLRETURN SQL_API myodbc_single_fetch( SQLHSTMT             hstmt,
                                        SQLUSMALLINT        *rgfRowStatus,
                                        my_bool              upd_status )
 {
-    SQLULEN           rows_to_fetch;
-    long              cur_row, max_row;
-    SQLRETURN         row_res, res;
-    STMT              *stmt= (STMT *) hstmt;
-    MYSQL_ROW         values= 0;
-    MYSQL_ROW_OFFSET  save_position= 0;
-    SQLULEN           dummy_pcrow;
-    BOOL              disconnected= FALSE;
-    long              brow= 0;
-    DECLARE_LOCALE_HANDLE
+  SQLULEN           rows_to_fetch;
+  long              cur_row, max_row;
+  SQLRETURN         row_res, res;
+  STMT              *stmt= (STMT *) hstmt;
+  MYSQL_ROW         values= 0;
+  MYSQL_ROW_OFFSET  save_position= 0;
+  SQLULEN           dummy_pcrow;
+  BOOL              disconnected= FALSE;
+  long              brow= 0;
+  DECLARE_LOCALE_HANDLE
 
+  try
+  {
     if ( !stmt->result )
       return stmt->set_error("24000", "Fetch without a SELECT", 0);
 
@@ -2245,8 +2247,12 @@ exitSQLSingleFetch:
         return SQL_SUCCESS_WITH_INFO; //SQL_NO_DATA_FOUND
       }
     }
-
-    return res;
+  }
+  catch(MYERROR &e)
+  {
+    res = e.retcode;
+  }
+  return res;
 }
 
 
@@ -2265,18 +2271,19 @@ SQLRETURN SQL_API my_SQLExtendedFetch( SQLHSTMT             hstmt,
                                        SQLUSMALLINT        *rgfRowStatus,
                                        my_bool              upd_status )
 {
-    SQLULEN           rows_to_fetch;
-    long              cur_row, max_row;
-    SQLULEN           i;
-    SQLRETURN         row_res, res, row_book= SQL_SUCCESS;
-    STMT              *stmt= (STMT *) hstmt;
-    MYSQL_ROW         values= 0;
-    MYSQL_ROW_OFFSET  save_position= 0;
-    SQLULEN           dummy_pcrow;
-    BOOL              disconnected= FALSE;
-    long              brow= 0;
-    DECLARE_LOCALE_HANDLE
-
+  SQLULEN           rows_to_fetch;
+  long              cur_row, max_row;
+  SQLULEN           i;
+  SQLRETURN         row_res, res, row_book= SQL_SUCCESS;
+  STMT              *stmt= (STMT *) hstmt;
+  MYSQL_ROW         values= 0;
+  MYSQL_ROW_OFFSET  save_position= 0;
+  SQLULEN           dummy_pcrow;
+  BOOL              disconnected= FALSE;
+  long              brow= 0;
+  DECLARE_LOCALE_HANDLE
+  try
+  {
     if ( !stmt->result )
       return stmt->set_error("24000", "Fetch without a SELECT", 0);
 
@@ -2316,18 +2323,9 @@ SQLRETURN SQL_API my_SQLExtendedFetch( SQLHSTMT             hstmt,
     /* for scrollable cursor("scroller") max_row is max row for currently
        fetched part of resultset */
     max_row= (long) num_rows(stmt);
-
     stmt->reset_getdata_position();
     stmt->current_values= 0;          /* For SQLGetData */
-
-    try
-    {
-      cur_row = stmt->compute_cur_row(fFetchType, irow);
-    }
-    catch (MYERROR &e)
-    {
-      return e.retcode;
-    }
+    cur_row = stmt->compute_cur_row(fFetchType, irow);
 
     if (scroller_exists(stmt)
       || (if_forward_cache(stmt) && !stmt->result_array)
@@ -2541,8 +2539,12 @@ SQLRETURN SQL_API my_SQLExtendedFetch( SQLHSTMT             hstmt,
         return SQL_NO_DATA_FOUND;
       }
     }
-
-    return res;
+  }
+  catch(MYERROR &e)
+  {
+    res = e.retcode;
+  }
+  return res;
 }
 
 

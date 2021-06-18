@@ -109,7 +109,14 @@ BOOL ssps_get_out_params(STMT *stmt)
     /* Thus function interface has to be changed */
     if (stmt->ssps_bind_result() == 0)
     {
-      values= fetch_row(stmt);
+      try
+      {
+        values = fetch_row(stmt);
+      }
+      catch(MYERROR &e)
+      {
+        return FALSE;
+      }
 
       /* We need this for fetch_varlength_columns pointed by fix_fields, so it omits
          streamed parameters */
@@ -741,7 +748,7 @@ SQLRETURN STMT::set_error(const char *state, const char *msg,
                           SQLINTEGER errcode)
 {
     error = MYERROR(state, msg, errcode, dbc->st_error_prefix);
-    return SQL_ERROR;
+    return error.retcode;
 }
 
 SQLRETURN STMT::set_error(const char *state)

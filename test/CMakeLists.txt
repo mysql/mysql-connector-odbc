@@ -50,7 +50,7 @@ FOREACH(FN my_basics.c my_blob.c my_bulk.c my_catalog1.c my_catalog2.c
 		my_prepare.c my_relative.c my_result1.c my_result2.c my_scroll.c
     my_setup.c my_tran.c my_types.c my_unicode.c my_unixodbc.c
     my_use_result.c my_bug13766.c my_pooling.c my_auth.c my_data.c
-    my_options.cc)
+    my_options.cc my_param2.cc)
     
   GET_FILENAME_COMPONENT(T ${FN} NAME_WE)
     

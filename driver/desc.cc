@@ -745,7 +745,7 @@ SQLRETURN DESC::set_field(SQLSMALLINT recnum, SQLSMALLINT fldid,
   void *dest_struct;
   void *dest;
 
-  CLEAR_ERROR(error);
+  error.clear();
 
   /* check for invalid IRD modification */
   if (is_ird())

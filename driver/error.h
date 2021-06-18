@@ -54,16 +54,10 @@
 #define MYODBC_ERROR_PREFIX	 "[MySQL][ODBC " MYODBC_STRDRIVERID " Driver]"
 #define MYODBC_ERROR_CODE_START  500
 
-
-#define CLEAR_ERROR(error) do {\
-  error.message[0]= '\0'; \
-  error.current= 0; \
-} while (0)
-
-#define CLEAR_ENV_ERROR(env)   CLEAR_ERROR(((ENV *)env)->error)
-#define CLEAR_DBC_ERROR(dbc)   CLEAR_ERROR(((DBC *)dbc)->error)
-#define CLEAR_STMT_ERROR(stmt) CLEAR_ERROR(((STMT *)stmt)->error)
-#define CLEAR_DESC_ERROR(desc) CLEAR_ERROR(((DESC *)desc)->error)
+#define CLEAR_ENV_ERROR(env)   (((ENV *)env)->error.clear())
+#define CLEAR_DBC_ERROR(dbc)   (((DBC *)dbc)->error.clear())
+#define CLEAR_STMT_ERROR(stmt) (((STMT *)stmt)->error.clear())
+#define CLEAR_DESC_ERROR(desc) (((DESC *)desc)->error.clear())
 
 #define NEXT_ERROR(error) \
   (error.current ? 2 : (error.current= 1))
@@ -138,14 +132,13 @@ typedef enum myodbc_errid
 */
 struct MYERROR
 {
-  SQLRETURN   retcode;
-  char        current;
+  SQLRETURN   retcode = 0;
+  char	      sqlstate[6] = {'\0', '\0', '\0', '\0', '\0', '\0'};
+  char        current = 0;
+  char	      message[SQL_MAX_MESSAGE_LENGTH + 1] = { '\0' };
+  SQLINTEGER  native_error = 0;
 
-  char	   sqlstate[6];
-  char	   message[SQL_MAX_MESSAGE_LENGTH + 1];
-  SQLINTEGER  native_error;
-
-  MYERROR() : retcode(0), current(0), native_error(0)
+  MYERROR()
   {}
 
   MYERROR(SQLRETURN rc) : MYERROR()
@@ -158,6 +151,20 @@ struct MYERROR
 
   MYERROR(const char *sqlstate, const char *errtext, SQLINTEGER errcode,
     const char *prefix);
+
+  operator bool() const
+  {
+    return native_error != 0 || retcode != 0;
+  }
+
+  void clear()
+  {
+    retcode = 0;
+    message[0] = '\0';
+    current = 0;
+    native_error = 0;
+    sqlstate[0] = '\0';
+  }
 };
 
 /*
