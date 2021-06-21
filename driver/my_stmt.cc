@@ -146,17 +146,17 @@ int get_result(STMT *stmt)
 }
 
 
-unsigned int field_count(STMT *stmt)
+size_t STMT::field_count()
 {
-  if (ssps_used(stmt))
+  if (ssps)
   {
-    return mysql_stmt_field_count(stmt->ssps);
+    return mysql_stmt_field_count(ssps);
   }
   else
   {
-    return stmt->result && stmt->result->field_count > 0 ?
-      stmt->result->field_count :
-      mysql_field_count(stmt->dbc->mysql);
+    return result && result->field_count > 0 ?
+      result->field_count :
+      mysql_field_count(dbc->mysql);
   }
 }
 
@@ -202,34 +202,45 @@ my_ulonglong num_rows(STMT *stmt)
 }
 
 
-MYSQL_ROW fetch_row(STMT *stmt)
+MYSQL_ROW STMT::fetch_row(bool read_unbuffered)
 {
-  if (ssps_used(stmt))
+  if (ssps)
   {
-    if (stmt->ssps_bind_result())
+    if (ssps_bind_result())
     {
       return nullptr;
     }
-    int error = mysql_stmt_fetch(stmt->ssps);
+    int err = 0;
 
-    switch (error)
+    if (read_unbuffered || m_row_storage.eof())
+    {
+      /* Reading results from network */
+      err = mysql_stmt_fetch(ssps);
+    }
+    else
+    {
+      /* Row is already buffered in row storage, use the row storage */
+      m_row_storage.fill_data(result_bind);
+    }
+
+    switch (err)
     {
       case 1:
-        stmt->set_error("HY000", mysql_stmt_error(stmt->ssps),
-          mysql_stmt_errno(stmt->ssps));
-        throw stmt->error;
+        set_error("HY000", mysql_stmt_error(ssps),
+          mysql_stmt_errno(ssps));
+        throw error;
       case MYSQL_NO_DATA:
         return nullptr;
     }
 
-    if (stmt->fix_fields)
-      return stmt->fix_fields(stmt, nullptr); // it returns stmt->array
+    if (fix_fields)
+      return fix_fields(this, nullptr); // it returns stmt->array
 
-    return stmt->array;
+    return array;
   }
   else
   {
-    return mysql_fetch_row(stmt->result);
+    return mysql_fetch_row(result);
   }
 }
 

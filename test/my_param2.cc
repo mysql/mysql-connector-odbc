@@ -85,17 +85,15 @@ DECLARE_TEST(t_bug32552965)
 */
 DECLARE_TEST(t_bug27499789)
 {
+  for (int no_cache = 0; no_cache < 2; ++no_cache)
   try
   {
-    odbc::connection con(nullptr, nullptr, nullptr, nullptr, ";NO_CACHE=1");
+    odbc::xstring opts = ";NO_CACHE=" + odbc::xstring(no_cache);
+    odbc::connection con(nullptr, nullptr, nullptr, nullptr, opts);
+
     SQLHSTMT hstmt = con.hstmt;
     odbc::stmt_prepare(hstmt, "SELECT 1 + 9223372036854775807;");
-    ok_stmt(hstmt, SQLExecute(hstmt));
-    err_stmt(hstmt, SQLFetch(hstmt));
-
-    SQLBIGINT val = 0;
-    SQLLEN len = 0;
-    err_stmt(hstmt, SQLGetData(hstmt, 1, SQL_C_SBIGINT, &val, 0, &len));
+    is_err(SQLExecute(hstmt));
   }
   ENDCATCH;
 }
@@ -147,9 +145,140 @@ DECLARE_TEST(t_bug32763378)
 }
 
 
+/*
+  Test that the row is buffered before the actual data is requested by
+  SQLGetData.
+*/
+DECLARE_TEST(t_bug30578291_in_param)
+{
+  for (int no_cache = 0; no_cache < 2; ++no_cache)
+  try
+  {
+    odbc::xstring opts = ";NO_CACHE=" + odbc::xstring(no_cache);
+    odbc::connection con(nullptr, nullptr, nullptr, nullptr, opts);
+    SQLHSTMT hstmt = con.hstmt;
+    odbc::table tab(hstmt, "bug30578291", "id int, A TEXT");
+    odbc::sql(hstmt, "INSERT INTO " + tab.table_name +
+      " VALUES(1,'ABC'),(2,'DEF'),(3,'GHI')");
+
+    odbc::stmt_prepare(hstmt, "SELECT * FROM " + tab.table_name + " WHERE 'Z' > ?");
+
+    SQLLEN rows_fetched = 0;
+    SQLCHAR buffers[2][10];
+    SQLLEN lengths[2] = { 0, 0 };
+    memset(buffers, 0, sizeof(buffers));
+    odbc::xbuf buff(128);
+    buff.setval("A");
+    ok_stmt(hstmt, SQLBindParameter(hstmt, 1, SQL_PARAM_INPUT, SQL_C_CHAR,
+	    SQL_VARCHAR, 0, 0, buff, buff.size, NULL));
+    odbc::stmt_execute(hstmt);
+    while(SQLFetch(hstmt) == SQL_SUCCESS)
+    {
+      buff.setval(0);
+      int col1 = my_fetch_int(hstmt, 1);
+      const char *col2 = my_fetch_str(hstmt, buff, 2);
+      std::cout << "[id: " << col1 << "] [A: " << col2 << "]\n";
+    }
+  }
+  ENDCATCH;
+}
+
+
+/*
+  Get INOUT parameter from stored procedure with NO_CACHE=1
+*/
+DECLARE_TEST(t_bug30578291_inout_param)
+{
+  for (int no_cache = 0; no_cache < 2; ++no_cache)
+  try
+  {
+    odbc::xstring opts = ";NO_CACHE=" + odbc::xstring(no_cache);
+    odbc::connection con(nullptr, nullptr, nullptr, nullptr, opts);
+    SQLHSTMT hstmt = con.hstmt;
+    odbc::procedure proc(hstmt, "proc_bug30578291",
+      "(INOUT p1 INT, OUT p2 VARCHAR(32))"
+      "BEGIN "
+      "  SELECT p1 + 200; "
+      "  SET p1 = 400, p2 = 'String from MySQL'; "
+      "END");
+    odbc::stmt_prepare(hstmt, "CALL " + proc.proc_name + "(?,?)");
+
+    SQLLEN len1 = 0, len2 = 0;
+    int p1 = 100;
+    odbc::xbuf p2(32);
+
+    ok_stmt(hstmt, SQLBindParameter(hstmt, 1, SQL_PARAM_INPUT_OUTPUT,
+            SQL_C_LONG, SQL_INTEGER, 0, 0, &p1, 0, &len1));
+    ok_stmt(hstmt, SQLBindParameter(hstmt, 2, SQL_PARAM_OUTPUT,
+            SQL_C_CHAR, SQL_CHAR, 0, 0, p2, p2.size, &len2));
+
+    odbc::stmt_execute(hstmt);
+    ok_stmt(hstmt, SQLFetch(hstmt));
+    is_num(300, my_fetch_int(hstmt, 1));
+    is_no_data(SQLFetch(hstmt));
+    ok_stmt(hstmt, SQLMoreResults(hstmt));
+    is_num(400, p1);
+    odbc::xstring str = "String from MySQL";
+    is_str((char*)str, (char*)p2, str.length());
+
+    p2.setval(0);
+    odbc::stmt_close(hstmt);
+    odbc::stmt_execute(hstmt);
+
+    ok_stmt(hstmt, SQLFetch(hstmt));
+    is_num(600, my_fetch_int(hstmt, 1));
+    is_no_data(SQLFetch(hstmt));
+    ok_stmt(hstmt, SQLMoreResults(hstmt));
+    is_num(400, p1);
+    is_str((char*)str, (char*)p2, str.length());
+
+  }
+  ENDCATCH;
+
+}
+
+/*
+  Get rows with parametrized query when NO_CACHE=1
+*/
+DECLARE_TEST(t_bug30578291_just_rows)
+{
+  for (int no_cache = 0; no_cache < 2; ++no_cache)
+  try
+  {
+    odbc::xstring opts = ";NO_CACHE=" + odbc::xstring(no_cache);
+    odbc::connection con(nullptr, nullptr, nullptr, nullptr, opts);
+    SQLHSTMT hstmt = con.hstmt;
+    odbc::table tab(hstmt, "tab30578291", "id int, vc varchar(32)");
+    tab.insert("(100, 'MySQL 100'),(200, 'MySQL 200'),(300, 'MySQL 300'),(400, 'MySQL 400'),(500, 'MySQL 500')");
+    odbc::stmt_prepare(hstmt, "SELECT * FROM " + tab.table_name + " WHERE id > ? ORDER BY id");
+    SQLLEN len1 = 0;
+    int p1 = -1;
+    ok_stmt(hstmt, SQLBindParameter(hstmt, 1, SQL_PARAM_INPUT_OUTPUT,
+            SQL_C_LONG, SQL_INTEGER, 0, 0, &p1, 0, &len1));
+
+    odbc::stmt_execute(hstmt);
+    for (int i = 100; i < 600; i += 100)
+    {
+      ok_stmt(hstmt, SQLFetch(hstmt));
+      odbc::xstring str = "MySQL " + odbc::xstring(i);
+      odbc::xbuf buf(32);
+      is_num(i, my_fetch_int(hstmt, 1));
+      is_str((char*)str, my_fetch_str(hstmt, buf, 2), str.length());
+    }
+    is_no_data(SQLFetch(hstmt));
+
+
+  }
+  ENDCATCH;
+}
+
+
 BEGIN_TESTS
-  ADD_TEST(t_bug32763378)
+  ADD_TEST(t_bug30578291_inout_param)
+  ADD_TEST(t_bug30578291_in_param)
+  ADD_TEST(t_bug30578291_just_rows)
   ADD_TEST(t_bug27499789)
+  ADD_TEST(t_bug32763378)
   ADD_TEST(t_bug32552965)
 
   END_TESTS

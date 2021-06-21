@@ -181,13 +181,20 @@ SQLRETURN do_query(STMT *stmt,char *query, SQLULEN query_length)
       }
     }
 
+    if (bind_result(stmt) || get_result(stmt))
+    {
+        stmt->set_error(MYERR_S1000);
+        goto exit;
+    }
+    /* Caching row counts for queries returning resultset as well */
+    //update_affected_rows(stmt);
+    fix_result_types(stmt);
+
     /* If the only resultset is OUT params, then we can only detect
        corresponding server_status right after execution.
        If the RS is OUT params - we do not need to do store_result obviously */
     if (IS_PS_OUT_PARAMS(stmt))
     {
-      /* For out parameters resultset we do not need to get result and bind it */
-      fix_result_types(stmt);
       /* This status(SERVER_PS_OUT_PARAMS) can be only if we used PS */
       ssps_get_out_params(stmt);
 
@@ -197,17 +204,7 @@ SQLRETURN do_query(STMT *stmt,char *query, SQLULEN query_length)
         goto exit;
       }
     }
-    else
-    {
-      if (bind_result(stmt) || get_result(stmt))
-      {
-          stmt->set_error(MYERR_S1000);
-          goto exit;
-      }
-      /* Caching row counts for queries returning resultset as well */
-      //update_affected_rows(stmt);
-      fix_result_types(stmt);
-    }
+
 
     error= SQL_SUCCESS;
 

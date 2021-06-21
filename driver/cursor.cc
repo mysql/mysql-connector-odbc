@@ -297,7 +297,7 @@ void set_current_cursor_data(STMT *stmt, SQLUINTEGER irow)
     if (ssps_used(stmt))
     {
        data_seek(stmt, row_pos);
-       IGNORE_THROW(fetch_row(stmt));
+       IGNORE_THROW(stmt->fetch_row());
     }
     else
     {
@@ -1676,7 +1676,7 @@ SQLRETURN SQL_API my_SQLSetPos(SQLHSTMT hstmt, SQLSETPOSIROW irow,
                 ret= SQL_SUCCESS;
                 stmt->cursor_row= (long)(stmt->current_row+irow);
                 data_seek(stmt, (my_ulonglong)stmt->cursor_row);
-                stmt->current_values= fetch_row(stmt);
+                stmt->current_values = stmt->fetch_row();
                 stmt->reset_getdata_position();
                 if ( stmt->fix_fields )
                     stmt->current_values= (*stmt->fix_fields)(stmt,stmt->current_values);

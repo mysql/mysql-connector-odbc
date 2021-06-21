@@ -541,6 +541,9 @@ SQLRETURN SQL_API my_SQLFreeStmtExtended(SQLHSTMT hstmt,SQLUSMALLINT fOption,
     }
     stmt->cursor.pk_count= 0;
 
+    if (fOption == SQL_CLOSE)
+        return SQL_SUCCESS;
+
     if (clearAllResults)
     {
       x_free(stmt->array);
@@ -551,9 +554,6 @@ SQLRETURN SQL_API my_SQLFreeStmtExtended(SQLHSTMT hstmt,SQLUSMALLINT fOption,
         free_result_bind(stmt);
       }
     }
-
-    if (fOption == SQL_CLOSE)
-        return SQL_SUCCESS;
 
     /* At this point, only MYSQL_RESET and SQL_DROP left out */
     reset_parsed_query(&stmt->orig_query, NULL, NULL, NULL);

@@ -1564,11 +1564,11 @@ DECLARE_TEST(t_bug14560916)
 
   ok_stmt(hstmt, SQLFreeStmt(hstmt, SQL_CLOSE));
 
+  ok_stmt(hstmt, SQLPrepare(hstmt, "CALL b14560916(?)", SQL_NTS));
+  ok_stmt(hstmt, SQLExecute(hstmt));
 
-  ok_sql(hstmt, "CALL b14560916(?)");
-
-  is_num(len, 2);
-  is_str(param, "\2A", 2);
+  len = 0;
+  param[0] = 0;
 
   /* Only 1 row always - we still can get them as a result */
   ok_stmt(hstmt, SQLFetch(hstmt));
@@ -1581,6 +1581,12 @@ DECLARE_TEST(t_bug14560916)
   is_str(param, "\2A", 2);
 
   ok_stmt(hstmt, SQLFreeStmt(hstmt, SQL_CLOSE));
+
+  len = 0;
+  param[0] = 0;
+  ok_stmt(hstmt, SQLMoreResults(hstmt));
+  is_num(len, 2);
+  is_str(param, "\2A", 2);
 
   ok_sql(hstmt, "DROP PROCEDURE b14560916");
 
@@ -2078,7 +2084,6 @@ DECLARE_TEST(t_bug28175772)
           " BEGIN"\
           " SET param1 := CONCAT(param1, 'bar'); "\
           " SET param2 := CONCAT(param2, 'bar'); "\
-          " SELECT 1; "\
           " END; ");
   sprintf(sql_drop_proc, "%s", "DROP PROCEDURE if exists inoutproc");
   sprintf(sql_select, "%s", "call inoutproc(?, ?)");
@@ -2403,26 +2408,21 @@ DECLARE_TEST(t_wl14217)
 
 
 BEGIN_TESTS
+  ADD_TEST(t_odbcoutparams)
+  ADD_TEST(t_bug14501952)
+  ADD_TEST(t_bug14563386)
+  ADD_TEST(t_bug28175772)
+  ADD_TEST(t_bug14551229)
+  //ADD_TEST(t_bug14560916)
+  ADD_TEST(t_bug14586094)
+  ADD_TEST(t_longtextoutparam)
+
   ADD_TEST(t_wl14217)
   ADD_TEST(tmysql_fix)
   ADD_TEST(my_param_data)
   ADD_TEST(t_bug31373948)
   ADD_TEST(t_bug30591722)
   ADD_TEST(t_sp_return)
-  /*
-    the libmysqlclient SERVER_PS_OUT_PARAMS flag
-    is not working the test should be re-enabled
-    after bug 30566136 is fixed
-
-    ADD_TEST(t_bug14501952)
-    ADD_TEST(t_bug14563386)
-    ADD_TEST(t_bug28175772)
-    ADD_TEST(t_bug14551229)
-    ADD_TEST(t_bug14560916)
-    ADD_TEST(t_bug14586094)
-    ADD_TEST(t_odbcoutparams)
-    ADD_TEST(t_longtextoutparam)
-*/
   ADD_TEST(t_bug30428851)
   ADD_TEST(my_init_table)
   ADD_TEST(t_bug59772)

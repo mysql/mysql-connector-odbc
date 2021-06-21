@@ -1672,7 +1672,7 @@ SQLRETURN SQL_API SQLMoreResults( SQLHSTMT hStmt )
   if (!stmt->result)
   {
     /* no fields means; INSERT, UPDATE or DELETE so no resultset is fine */
-    if (!field_count(stmt))
+    if (!stmt->field_count())
     {
       stmt->state = ST_EXECUTED;
       stmt->affected_rows = affected_rows(stmt);
@@ -1683,12 +1683,17 @@ SQLRETURN SQL_API SQLMoreResults( SQLHSTMT hStmt )
     goto exitSQLMoreResults;
   }
 
+  free_result_bind(stmt);
+  if (bind_result(stmt) || get_result(stmt))
+  {
+    nReturn= stmt->set_error("HY000");
+  }
+  fix_result_types(stmt);
+
   /* checking if next result is SP OUT params and fetch them if needed */
   if (IS_PS_OUT_PARAMS(stmt))
   {
     int out_params= got_out_parameters(stmt);
-
-    fix_result_types(stmt);
 
     /* We prefetch out params row even if application did not specify any out parameter.
        In this way we can do the "magical" fetch safely right after that */
@@ -1700,16 +1705,6 @@ SQLRETURN SQL_API SQLMoreResults( SQLHSTMT hStmt )
     {
       nReturn= SQL_PARAM_DATA_AVAILABLE;
     }
-  }
-  else
-  {
-    free_result_bind(stmt);
-    if (bind_result(stmt) || get_result(stmt))
-    {
-      nReturn= stmt->set_error("HY000");
-    }
-
-    fix_result_types(stmt);
   }
 
 exitSQLMoreResults:
@@ -1757,6 +1752,12 @@ void fill_ird_data_lengths(DESC *ird, ulong *lengths, uint fields)
 {
   uint i;
   DESCREC *irrec;
+
+  if (ird->rcount() == 0 && fields > 0)
+  {
+    // Expand IRD if it has no records
+    desc_get_rec(ird, fields - 1, true);
+  }
 
   assert(fields == ird->rcount());
 
@@ -2121,7 +2122,7 @@ SQLRETURN SQL_API myodbc_single_fetch( SQLHSTMT             hstmt,
     {
       save_position= row_tell(stmt);
       /* - Actual fetching happens here - */
-      if (!(values= fetch_row(stmt)) )
+      if (!(values = stmt->fetch_row()) )
       {
         if (scroller_exists(stmt))
         {
@@ -2134,7 +2135,7 @@ SQLRETURN SQL_API myodbc_single_fetch( SQLHSTMT             hstmt,
             goto exitSQLSingleFetch;
           }
 
-          if ( !(values= fetch_row(stmt)) )
+          if ( !(values = stmt->fetch_row()) )
           {
             goto exitSQLSingleFetch;
           }
@@ -2382,7 +2383,7 @@ SQLRETURN SQL_API my_SQLExtendedFetch( SQLHSTMT             hstmt,
         }
         /* - Actual fetching happens here - */
         if ( stmt->out_params_state == OPS_UNKNOWN
-          && !(values= fetch_row(stmt)) )
+          && !(values = stmt->fetch_row()) )
         {
           if (scroller_exists(stmt))
           {
@@ -2395,7 +2396,7 @@ SQLRETURN SQL_API my_SQLExtendedFetch( SQLHSTMT             hstmt,
               break;
             }
 
-            if ( !(values= fetch_row(stmt)) )
+            if ( !(values = stmt->fetch_row()) )
             {
               break;
             }

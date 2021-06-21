@@ -67,7 +67,7 @@ void ssps_init(STMT *stmt)
 {
   stmt->ssps= mysql_stmt_init(stmt->dbc->mysql);
 
-  stmt->result_bind= 0;
+  stmt->result_bind = 0;
 }
 /* }}} */
 
@@ -111,7 +111,7 @@ BOOL ssps_get_out_params(STMT *stmt)
     {
       try
       {
-        values = fetch_row(stmt);
+        values = stmt->fetch_row();
       }
       catch(MYERROR &e)
       {
@@ -148,7 +148,7 @@ BOOL ssps_get_out_params(STMT *stmt)
       if (out_params)
       {
         for (i= 0;
-             i < myodbc_min(stmt->ipd->rcount(), stmt->apd->rcount()) && counter < field_count(stmt);
+             i < myodbc_min(stmt->ipd->rcount(), stmt->apd->rcount()) && counter < stmt->field_count();
              ++i)
         {
           /* Making bit field look "normally" */
@@ -258,13 +258,50 @@ BOOL ssps_get_out_params(STMT *stmt)
 
 int ssps_get_result(STMT *stmt)
 {
-  if (stmt->result)
+  try
   {
-    if (!if_forward_cache(stmt))
+    if (stmt->result)
     {
-      return mysql_stmt_store_result(stmt->ssps);
-    }
+      if (!if_forward_cache(stmt))
+      {
+        return mysql_stmt_store_result(stmt->ssps);
+      }
+      else
+      {
+        /*
+          There is no way of telling beforehand if the result set is the
+          normal result set or out parameters.
 
+          In order to get the server status GOT_OUT_PARAMETERS we need
+          to read at least two rows from the result set.
+          1st row is the data for the OUT parameters, 2nd read attempt should
+          return no data and pick up the EOF and the server status.
+        */
+
+        size_t field_count = stmt->field_count();
+        // Try fetching 1st row, return if no data is available.
+        if(stmt->fetch_row(true) == nullptr)
+          return 0;
+        stmt->m_row_storage.set_size(1, field_count);
+        stmt->m_row_storage.set_data(stmt->result_bind);
+        // Add 2nd row if it is fetched
+        if (stmt->fetch_row(true))
+        {
+          stmt->m_row_storage.next_row();
+          stmt->m_row_storage.set_data(stmt->result_bind);
+        }
+        // Set row counter to start before reading rows
+        stmt->m_row_storage.first_row();
+      }
+    }
+  }
+  catch(MYERROR &e)
+  {
+    return e.retcode;
+  }
+  catch(...)
+  {
+    return SQL_ERROR;
   }
 
   return 0;
@@ -275,7 +312,7 @@ void free_result_bind(STMT *stmt)
 {
   if (stmt->result_bind != NULL)
   {
-    int i, field_cnt= field_count(stmt);
+    int i, field_cnt = stmt->field_count();
 
     x_free(stmt->result_bind[0].is_null);
     x_free(stmt->result_bind[0].length);
@@ -518,7 +555,7 @@ allocate_buffer_for_field(const MYSQL_FIELD * const field, BOOL outparams)
 
 static MYSQL_ROW fetch_varlength_columns(STMT *stmt, MYSQL_ROW values)
 {
-  const unsigned int  num_fields= field_count(stmt);
+  const unsigned int  num_fields = stmt->field_count();
   unsigned int i;
   uint desc_index= ~0L, stream_column= ~0L;
 
@@ -719,7 +756,6 @@ STMT::~STMT()
 
   LOCK_DBC(dbc);
   dbc->stmt_list.remove(this);
-  //dbc->statements = list_delete(dbc->statements, &list);
 }
 
 void STMT::reset_getdata_position()
@@ -868,7 +904,7 @@ long STMT::compute_cur_row(unsigned fFetchType, SQLLEN irow)
 
 int STMT::ssps_bind_result()
 {
-  const unsigned int  num_fields= field_count(this);
+  const unsigned int num_fields = field_count();
   unsigned int        i;
 
   if (num_fields == 0)
@@ -1041,23 +1077,15 @@ SQLRETURN STMT::bind_query_attrs(bool use_ssps)
 */
 BOOL ssps_buffers_need_extending(STMT *stmt)
 {
-  //if (stmt->fix_fields == NULL)
-  //{
-  //  /* That is enough to tell that not */
-  //  return FALSE;
-  //}
-  //else
-  {
-    const unsigned int  num_fields= field_count(stmt);
-    unsigned int i;
+  const unsigned int  num_fields = stmt->field_count();
+  unsigned int i;
 
-    for (i= 0; i < num_fields; ++i)
+  for (i= 0; i < num_fields; ++i)
+  {
+    if (*stmt->result_bind[i].error != 0
+      && stmt->result_bind[i].buffer_length < (*stmt->result_bind[i].length))
     {
-      if (*stmt->result_bind[i].error != 0
-        && stmt->result_bind[i].buffer_length < (*stmt->result_bind[i].length))
-      {
-        return TRUE;
-      }
+      return TRUE;
     }
   }
 

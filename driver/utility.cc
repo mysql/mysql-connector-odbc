@@ -187,7 +187,8 @@ void fix_result_types(STMT *stmt)
   stmt->state= ST_EXECUTED;  /* Mark set found */
 
   /* Populate the IRD records */
-  for (i= 0; i < field_count(stmt); ++i)
+  size_t f_count = stmt->field_count();
+  for (i= 0; i < f_count; ++i)
   {
     irrec= desc_get_rec(stmt->ird, i, TRUE);
     /* TODO function for this */

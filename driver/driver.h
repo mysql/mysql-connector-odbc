@@ -806,6 +806,7 @@ struct ROW_STORAGE
   typedef std::vector<xstring> vstr;
   typedef std::vector<const char*> pstr;
   size_t m_rnum = 0, m_cnum = 0, m_cur_row = 0, m_cur_col = 0;
+  bool m_eof = true;
 
   /*
     Data and pointers are in separate containers because for the pointers
@@ -826,15 +827,55 @@ struct ROW_STORAGE
   bool invalidate()
   {
     bool was_invalidated = is_valid();
+    m_eof = true;
     set_size(0, 0);
     return was_invalidated;
   }
+
+  /* Returns true if current row was last */
+  bool eof() { return m_eof; }
 
   bool is_valid() { return m_rnum * m_cnum > 0; }
 
   bool next_row();
 
+  /* Set the row counter to the first row */
+  void first_row() { m_cur_row = 0; m_eof = m_rnum == 0; }
+
   xstring& operator[](size_t idx);
+
+  void set_data(size_t idx, void *data, size_t size)
+  {
+    m_data[m_cur_row * m_cnum + idx].assign((const char*)data, size);
+    m_eof = false;
+  }
+
+  /* Copy row data from bind buffer into the storage one row at a time */
+  void set_data(MYSQL_BIND *bind)
+  {
+    for(size_t i = 0; i < m_cnum; ++i)
+    {
+      set_data(i, bind[i].buffer, *(bind[i].length));
+    }
+  }
+
+  /* Copy data from the storage into the bind buffer one row at a time */
+  void fill_data(MYSQL_BIND *bind)
+  {
+    if (m_cur_row >= m_rnum || m_eof)
+      return;
+
+    for(size_t i = 0; i < m_cnum; ++i)
+    {
+      auto &data = m_data[m_cur_row * m_cnum + i];
+      *(bind[i].length) = data.length();
+      memcpy(bind[i].buffer, data.data(), *(bind[i].length));
+    }
+    // Set EOF if the last row was filled
+    m_eof = (m_rnum <= (m_cur_row + 1));
+    // Increment row counter only if not EOF
+    m_cur_row += m_eof ? 0 : 1;
+  }
 
   const xstring & operator=(const xstring &val);
 
@@ -911,7 +952,6 @@ struct STMT
 
   MYSQL_STMT *ssps;
   MYSQL_BIND *result_bind;
-  MYSQL_BIND *param_place_bind;
 
   MY_LIMIT_SCROLLER scroller;
 
@@ -936,6 +976,8 @@ struct STMT
   char* endbuf() { return tempbuf.buf + tempbuf.cur_pos; }
   size_t buf_pos() { return tempbuf.cur_pos; }
   size_t buf_len() { return tempbuf.buf_len; }
+  size_t field_count();
+  MYSQL_ROW fetch_row(bool read_unbuffered = false);
   void buf_set_pos(size_t pos) { tempbuf.cur_pos = pos; }
   void buf_add_pos(size_t pos) { tempbuf.cur_pos += pos; }
   void buf_remove_trail_zeroes() { tempbuf.remove_trail_zeroes(); }
@@ -979,8 +1021,7 @@ struct STMT
     rows_found_in_set(0),
     state(ST_UNKNOWN), dummy_state(ST_DUMMY_UNKNOWN),
     setpos_row(0), setpos_lock(0), setpos_op(0),
-    ssps(NULL), result_bind(NULL), param_place_bind(NULL),
-    out_params_state(OPS_UNKNOWN),
+    ssps(NULL), result_bind(NULL), out_params_state(OPS_UNKNOWN),
 
     m_ard(this, SQL_DESC_ALLOC_AUTO, DESC_APP, DESC_ROW),
     ard(&m_ard),
