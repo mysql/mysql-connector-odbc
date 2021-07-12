@@ -478,6 +478,33 @@ SQLRETURN DBC::connect(DataSource *dsrc)
                   dsrc->load_data_local_dir8);
   }
 
+  if(dsrc->pwd1 && dsrc->pwd1[0])
+  {
+    ds_get_utf8attr(dsrc->pwd1, &dsrc->pwd18);
+    int fator = 1;
+    mysql_options4(mysql, MYSQL_OPT_USER_PASSWORD,
+                   &fator,
+                   dsrc->pwd18);
+  }
+
+  if(dsrc->pwd2 && dsrc->pwd2[0])
+  {
+    ds_get_utf8attr(dsrc->pwd2, &dsrc->pwd28);
+    int fator = 2;
+    mysql_options4(mysql, MYSQL_OPT_USER_PASSWORD,
+                   &fator,
+                   dsrc->pwd28);
+  }
+
+  if(dsrc->pwd3 && dsrc->pwd3[0])
+  {
+    ds_get_utf8attr(dsrc->pwd3, &dsrc->pwd38);
+    int fator = 3;
+    mysql_options4(mysql, MYSQL_OPT_USER_PASSWORD,
+                   &fator,
+                   dsrc->pwd38);
+  }
+
 #if MYSQL_VERSION_ID >= 50711
   if (dsrc->sslmode)
   {

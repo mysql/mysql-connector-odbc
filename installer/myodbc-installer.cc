@@ -494,6 +494,9 @@ int list_datasource_details(DataSource *ds)
   if (ds->server     ) printf("Server:              %s\n", ds_get_utf8attr(ds->server, &ds->server8));
   if (ds->uid        ) printf("Uid:                 %s\n", ds_get_utf8attr(ds->uid, &ds->uid8));
   if (ds->pwd        ) printf("Pwd:                 %s\n", ds_get_utf8attr(ds->pwd, &ds->pwd8));
+  if (ds->pwd1       ) printf("Pwd1:                %s\n", ds_get_utf8attr(ds->pwd1, &ds->pwd18));
+  if (ds->pwd2       ) printf("Pwd2:                %s\n", ds_get_utf8attr(ds->pwd2, &ds->pwd28));
+  if (ds->pwd3       ) printf("Pwd3:                %s\n", ds_get_utf8attr(ds->pwd3, &ds->pwd38));
   if (ds->database   ) printf("Database:            %s\n", ds_get_utf8attr(ds->database, &ds->database8));
   if (ds->socket     ) printf("Socket:              %s\n", ds_get_utf8attr(ds->socket, &ds->socket8));
   if (ds->initstmt   ) printf("Initial statement:   %s\n", ds_get_utf8attr(ds->initstmt, &ds->initstmt8));
