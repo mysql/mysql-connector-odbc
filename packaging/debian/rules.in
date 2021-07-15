@@ -1,5 +1,5 @@
 #!/usr/bin/make -f
-# Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved. 
+# Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
 # 
 # This program is free software; you can redistribute it and/or modify 
 # it under the terms of the GNU General Public License, version 2.0, as 
@@ -58,6 +58,12 @@ override_dh_auto_configure:
 # Do nothing; the test suite requires a sql server, so we can't run it
 # as part of the build.
 override_dh_auto_test:
+
+# Because we need a custom tarball to use unixodbc 2.3.9 dh_shlibdeps will fail
+# to find the correct source and throw an error, thinking a user won't
+# be able to satisfy the dependency.
+override_dh_shlibdeps:
+	dh_shlibdeps --dpkg-shlibdeps-params=--ignore-missing-info
 
 TMP_INSTDIR = $(CURDIR)/debian/tmp
 
