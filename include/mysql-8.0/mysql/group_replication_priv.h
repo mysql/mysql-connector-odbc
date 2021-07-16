@@ -1,4 +1,4 @@
-/* Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+/* Copyright (c) 2013, 2021, Oracle and/or its affiliates.
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License, version 2.0,
@@ -20,194 +20,187 @@
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301  USA */
 
-#ifndef GROUP_REPLICATION_PRIV_INCLUDE
-#define GROUP_REPLICATION_PRIV_INCLUDE
+#ifndef MYSQL_PLUGIN_GROUP_REPLICATION_INCLUDED
+#define MYSQL_PLUGIN_GROUP_REPLICATION_INCLUDED
 
 /**
-  @file include/mysql/group_replication_priv.h
+  @file include/mysql/plugin_group_replication.h
+  API for Group Replication plugin. (MYSQL_GROUP_REPLICATION_PLUGIN)
 */
 
-#include "my_sys.h"
-#include "my_thread.h"
-#include "sql/binlog_ostream.h"
-#include "sql/binlog_reader.h"
-#include "sql/debug_sync.h"
-#include "sql/log_event.h"
-#include "sql/replication.h"
-#include "sql/rpl_channel_service_interface.h"
-#include "sql/rpl_gtid.h"
-#include "sql/rpl_write_set_handler.h"
+#include <mysql/plugin.h>
+#define MYSQL_GROUP_REPLICATION_INTERFACE_VERSION 0x0104
 
-/**
-  Server side initializations.
+enum enum_group_replication_consistency_level {
+  // allow executing reads from newer primary even when backlog isn't applied
+  GROUP_REPLICATION_CONSISTENCY_EVENTUAL = 0,
+  // hold data reads and writes on the new primary until applies all the backlog
+  GROUP_REPLICATION_CONSISTENCY_BEFORE_ON_PRIMARY_FAILOVER = 1,
+  GROUP_REPLICATION_CONSISTENCY_BEFORE = 2,
+  GROUP_REPLICATION_CONSISTENCY_AFTER = 3,
+  GROUP_REPLICATION_CONSISTENCY_BEFORE_AND_AFTER = 4
+};
+
+/*
+  Callbacks for get_connection_status_info function.
+
+  context field can have NULL value, plugin will always pass it
+  through all callbacks, independent of its value.
+  Its value will not be used by plugin.
+
+  All callbacks are mandatory.
 */
-int group_replication_init();
+struct GROUP_REPLICATION_CONNECTION_STATUS_CALLBACKS {
+  void *const context;
+  void (*set_channel_name)(void *const context, const char &value,
+                           size_t length);
+  void (*set_group_name)(void *const context, const char &value, size_t length);
+  void (*set_source_uuid)(void *const context, const char &value,
+                          size_t length);
+  void (*set_service_state)(void *const context, bool state);
+};
 
-/**
-  Returns the server connection attribute
+/*
+  Callbacks for get_group_members_info function.
 
-  @note This method implementation is on sql_class.cc
+  context field can have NULL value, plugin will always pass it
+  through all callbacks, independent of its value.
+  Its value will not be used by plugin.
 
-  @return the pthread for the connection attribute.
+  All callbacks are mandatory.
 */
-my_thread_attr_t *get_connection_attrib();
+struct GROUP_REPLICATION_GROUP_MEMBERS_CALLBACKS {
+  void *const context;
+  void (*set_channel_name)(void *const context, const char &value,
+                           size_t length);
+  void (*set_member_id)(void *const context, const char &value, size_t length);
+  void (*set_member_host)(void *const context, const char &value,
+                          size_t length);
+  void (*set_member_port)(void *const context, unsigned int value);
+  void (*set_member_state)(void *const context, const char &value,
+                           size_t length);
+  void (*set_member_role)(void *const context, const char &value,
+                          size_t length);
+  void (*set_member_version)(void *const context, const char &value,
+                             size_t length);
+  void (*set_member_incoming_communication_protocol)(void *const context,
+                                                     const char &value,
+                                                     size_t length);
+};
 
-/**
-  Returns the server hostname, port and uuid.
+/*
+  Callbacks for get_group_member_stats_info function.
 
-  @param[out] hostname
-  @param[out] port
-  @param[out] uuid
-  @param[out] server_version
+  context field can have NULL value, plugin will always pass it
+  through all callbacks, independent of its value.
+  Its value will not be used by plugin.
+
+  All callbacks are mandatory.
 */
-void get_server_parameters(char **hostname, uint *port, char **uuid,
-                           unsigned int *server_version);
+struct GROUP_REPLICATION_GROUP_MEMBER_STATS_CALLBACKS {
+  void *const context;
+  void (*set_channel_name)(void *const context, const char &value,
+                           size_t length);
+  void (*set_view_id)(void *const context, const char &value, size_t length);
+  void (*set_member_id)(void *const context, const char &value, size_t length);
+  void (*set_transactions_committed)(void *const context, const char &value,
+                                     size_t length);
+  void (*set_last_conflict_free_transaction)(void *const context,
+                                             const char &value, size_t length);
+  void (*set_transactions_in_queue)(void *const context,
+                                    unsigned long long int value);
+  void (*set_transactions_certified)(void *const context,
+                                     unsigned long long int value);
+  void (*set_transactions_conflicts_detected)(void *const context,
+                                              unsigned long long int value);
+  void (*set_transactions_rows_in_validation)(void *const context,
+                                              unsigned long long int value);
+  void (*set_transactions_remote_applier_queue)(void *const context,
+                                                unsigned long long int value);
+  void (*set_transactions_remote_applied)(void *const context,
+                                          unsigned long long int value);
+  void (*set_transactions_local_proposed)(void *const context,
+                                          unsigned long long int value);
+  void (*set_transactions_local_rollback)(void *const context,
+                                          unsigned long long int value);
+};
 
-/**
-  Returns the server ssl configuration values.
+struct st_mysql_group_replication {
+  int interface_version;
 
-  @param[out] server_ssl_variables
-*/
-void get_server_ssl_parameters(st_server_ssl_variables *server_ssl_variables);
+  /*
+    This function is used to start the group replication.
+  */
+  int (*start)(char **error_message);
+  /*
+    This function is used to stop the group replication.
+  */
+  int (*stop)(char **error_message);
+  /*
+    This function is used to get the current group replication running status.
+  */
+  bool (*is_running)();
+  /*
+    This function is used to get the current group replication status about
+    its internal cloning process for data provisioning.
+  */
+  bool (*is_cloning)();
+  /*
+   This function initializes conflict checking module with info received
+   from group on this member.
 
-/**
-  Returns the server_id.
+   @param info  View_change_log_event with conflict checking info.
+  */
+  int (*set_retrieved_certification_info)(void *info);
 
-  @return server_id
-*/
-ulong get_server_id();
+  /*
+    This function is used to fetch information for group replication kernel
+    stats.
 
-/**
-  Returns the server auto_increment_increment
+    @param callbacks The set of callbacks and its context used to set the
+                     information on caller.
 
-  @return auto_increment_increment
-*/
-ulong get_auto_increment_increment();
+    @note The caller is responsible to free memory from the info structure and
+          from all its fields.
+  */
+  bool (*get_connection_status_info)(
+      const GROUP_REPLICATION_CONNECTION_STATUS_CALLBACKS &callbacks);
 
-/**
-  Returns the server auto_increment_offset
+  /*
+    This function is used to fetch information for group replication members.
 
-  @return auto_increment_offset
-*/
-ulong get_auto_increment_offset();
+    @param index     Row index for which information needs to be fetched
 
-/**
-  Set server auto_increment_increment
+    @param callbacks The set of callbacks and its context used to set the
+                     information on caller.
 
-  @param[in] auto_increment_increment
-*/
-void set_auto_increment_increment(ulong auto_increment_increment);
+    @note The caller is responsible to free memory from the info structure and
+          from all its fields.
+  */
+  bool (*get_group_members_info)(
+      unsigned int index,
+      const GROUP_REPLICATION_GROUP_MEMBERS_CALLBACKS &callbacks);
 
-/**
-  Set server auto_increment_offset
+  /*
+    This function is used to fetch information for group replication members
+    statistics.
 
-  @param[in] auto_increment_offset
-*/
-void set_auto_increment_offset(ulong auto_increment_offset);
+    @param index     Row index for which information needs to be fetched
 
-/**
-  Returns a struct containing all server startup information needed to evaluate
-  if one has conditions to proceed executing circular replication.
+    @param callbacks The set of callbacks and its context used to set the
+                     information on caller.
 
-  @param[out] requirements
+    @note The caller is responsible to free memory from the info structure and
+          from all its fields.
+  */
+  bool (*get_group_member_stats_info)(
+      unsigned int index,
+      const GROUP_REPLICATION_GROUP_MEMBER_STATS_CALLBACKS &callbacks);
 
-  @param[in] has_lock Caller should set this to true if the calling
-  thread holds gtid_mode_lock; otherwise set it to false.
-*/
-void get_server_startup_prerequirements(Trans_context_info &requirements,
-                                        bool has_lock);
+  /*
+    Get number of group replication members.
+  */
+  unsigned int (*get_members_number_info)();
+};
 
-/**
-  Returns the server GTID_EXECUTED encoded as a binary string.
-
-  @note Memory allocated to encoded_gtid_executed must be release by caller.
-
-  @param[out] encoded_gtid_executed binary string
-  @param[out] length                binary string length
-*/
-bool get_server_encoded_gtid_executed(uchar **encoded_gtid_executed,
-                                      size_t *length);
-
-#if !defined(DBUG_OFF)
-/**
-  Returns a text representation of a encoded GTID set.
-
-  @note Memory allocated to returned pointer must be release by caller.
-
-  @param[in] encoded_gtid_set      binary string
-  @param[in] length                binary string length
-
-  @return a pointer to text representation of the encoded set
-*/
-char *encoded_gtid_set_to_string(uchar *encoded_gtid_set, size_t length);
 #endif
-
-/**
-  Return last gno for a given sidno, see
-  Gtid_state::get_last_executed_gno() for details.
-*/
-rpl_gno get_last_executed_gno(rpl_sidno sidno);
-
-/**
-  Return sidno for a given sid, see Sid_map::add_sid() for details.
-*/
-rpl_sidno get_sidno_from_global_sid_map(rpl_sid sid);
-
-/**
-  Set replica thread default options.
-
-  @param[in] thd  The thread
-*/
-void set_replica_thread_options(THD *thd);
-
-/**
-  Add thread to Global_THD_manager singleton.
-
-  @param[in] thd  The thread
-*/
-void global_thd_manager_add_thd(THD *thd);
-
-/**
-  Remove thread from Global_THD_manager singleton.
-
-  @param[in] thd  The thread
-*/
-void global_thd_manager_remove_thd(THD *thd);
-
-/**
-  Function that returns the write set extraction algorithm name.
-
-  @param[in] algorithm  The algorithm value
-
-  @return the algorithm name
-*/
-const char *get_write_set_algorithm_string(unsigned int algorithm);
-
-/**
-  Returns true if the given transaction is committed.
-
-  @param[in] gtid  The transaction identifier
-
-  @return true   the transaction is committed
-          false  otherwise
-*/
-bool is_gtid_committed(const Gtid &gtid);
-
-/**
-  Returns the value of replica_max_allowed_packet.
-
-  @return replica_max_allowed_packet
-*/
-unsigned long get_replica_max_allowed_packet();
-
-/**
-  @returns the maximum value of replica_max_allowed_packet.
- */
-unsigned long get_max_replica_max_allowed_packet();
-
-/**
-  @returns if the server is restarting after a clone
-*/
-bool is_server_restarting_after_clone();
-
-#endif /* GROUP_REPLICATION_PRIV_INCLUDE */

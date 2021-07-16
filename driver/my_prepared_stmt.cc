@@ -38,8 +38,8 @@
 /* {{{ my_l_to_a() -I- */
 static char * my_l_to_a(char * buf, size_t buf_size, long long a)
 {
-	myodbc_snprintf(buf, buf_size, "%lld", (long long) a);
-	return buf;
+  myodbc_snprintf(buf, buf_size, "%lld", (long long) a);
+  return buf;
 }
 /* }}} */
 
@@ -47,8 +47,8 @@ static char * my_l_to_a(char * buf, size_t buf_size, long long a)
 /* {{{ my_ul_to_a() -I- */
 static char * my_ul_to_a(char * buf, size_t buf_size, unsigned long long a)
 {
-	myodbc_snprintf(buf, buf_size, "%llu", (unsigned long long) a);
-	return buf;
+  myodbc_snprintf(buf, buf_size, "%llu", (unsigned long long) a);
+  return buf;
 }
 /* }}} */
 
@@ -56,8 +56,8 @@ static char * my_ul_to_a(char * buf, size_t buf_size, unsigned long long a)
 /* {{{ my_f_to_a() -I- */
 static char * my_f_to_a(char * buf, size_t buf_size, double a)
 {
-	myodbc_snprintf(buf, buf_size, "%.17e", a);
-	return buf;
+  myodbc_snprintf(buf, buf_size, "%.17e", a);
+  return buf;
 }
 /* }}} */
 
@@ -716,7 +716,7 @@ void STMT::free_fake_result(bool clear_all_results)
     {
       /* We seiously CLOSEing statement for preparing handle object for
          new query */
-      free_root(&alloc_root, MYF(0));
+      alloc_root.Clear();
       while (!next_result(this))
       {
         get_result_metadata(this, TRUE);
@@ -731,7 +731,7 @@ void STMT::free_fake_result(bool clear_all_results)
 #endif
       )
     {
-      free_root(result->field_alloc, MYF(0));
+      result->field_alloc->Clear();
     }
 
     stmt_result_free(this);

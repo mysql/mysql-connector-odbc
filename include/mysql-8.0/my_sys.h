@@ -1,4 +1,4 @@
-/* Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+/* Copyright (c) 2000, 2021, Oracle and/or its affiliates.
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License, version 2.0,
@@ -51,23 +51,28 @@
 #include <sys/types.h>
 #include <time.h>
 
+#include <atomic>  // error_handler_hook
+
 #include "m_string.h" /* IWYU pragma: keep */
 #include "my_compiler.h"
 #include "my_compress.h"
 #include "my_inttypes.h"
 #include "my_loglevel.h"
+
+/* HAVE_PSI_*_INTERFACE */
 #include "my_psi_config.h" /* IWYU pragma: keep */
+
 #include "my_sharedlib.h"
+#include "mysql/components/services/bits/psi_bits.h"
 #include "mysql/components/services/my_io_bits.h"
 #include "mysql/components/services/mysql_cond_bits.h"
 #include "mysql/components/services/mysql_mutex_bits.h"
 #include "mysql/components/services/psi_file_bits.h"
 #include "mysql/components/services/psi_memory_bits.h"
 #include "mysql/components/services/psi_stage_bits.h"
-#include "mysql/psi/psi_base.h"
 //#include "sql/stream_cipher.h"
 
-struct Stream_cipher;
+class Stream_cipher;
 
 struct CHARSET_INFO;
 struct MY_CHARSET_LOADER;
@@ -88,6 +93,7 @@ struct PSI_system_bootstrap;
 struct PSI_table_bootstrap;
 struct PSI_thread_bootstrap;
 struct PSI_transaction_bootstrap;
+struct PSI_tls_channel_bootstrap;
 struct MEM_ROOT;
 
 #define MY_INIT(name)   \
@@ -111,7 +117,7 @@ struct MEM_ROOT;
 #define MY_FILE_ERROR ((size_t)-1)
 
 /* General bitmaps for my_func's */
-#define MY_FFNF 1          /* Fatal if file not found */
+// 1 used to be MY_FFNF which has been removed
 #define MY_FNABP 2         /* Fatal if not all bytes read/writen */
 #define MY_NABP 4          /* Error if not all bytes read/writen */
 #define MY_FAE 8           /* Fatal if any error */
@@ -168,10 +174,6 @@ struct MEM_ROOT;
 #define MIN_COMPRESS_LENGTH 50           /* Don't compress small bl. */
 #define DFLT_INIT_HITS 3
 
-/* root_alloc flags */
-#define MY_KEEP_PREALLOC 1
-#define MY_MARK_BLOCKS_FREE 2 /* move used to free list and reuse them */
-
 /* Internal error numbers (for assembler functions) */
 #define MY_ERRNO_EDOM 33
 #define MY_ERRNO_ERANGE 34
@@ -191,7 +193,9 @@ extern PSI_memory_key key_memory_max_alloca;
   if (size > max_alloca_sz) my_free(ptr)
 
 #if defined(ENABLED_DEBUG_SYNC)
-extern "C" void (*debug_sync_C_callback_ptr)(const char *, size_t);
+using DebugSyncCallbackFp = void (*)(const char *, size_t);
+extern DebugSyncCallbackFp debug_sync_C_callback_ptr;
+
 #define DEBUG_SYNC_C(_sync_point_name_)                                 \
   do {                                                                  \
     if (debug_sync_C_callback_ptr != NULL)                              \
@@ -217,11 +221,11 @@ extern uint my_get_large_page_size(void);
 
 extern char *home_dir;          /* Home directory for user */
 extern const char *my_progname; /* program-name (printed in errors) */
-extern void (*error_handler_hook)(uint my_err, const char *str, myf MyFlags);
-extern void (*fatal_error_handler_hook)(uint my_err, const char *str,
-                                        myf MyFlags);
+
+using ErrorHandlerFunctionPointer = void (*)(uint, const char *, myf);
+extern std::atomic<ErrorHandlerFunctionPointer> error_handler_hook;
 extern void (*local_message_hook)(enum loglevel ll, uint ecode, va_list args);
-extern uint my_file_limit;
+
 extern MYSQL_PLUGIN_IMPORT ulong my_thread_stack_size;
 
 /*
@@ -262,7 +266,9 @@ extern MYSQL_PLUGIN_IMPORT CHARSET_INFO *all_charsets[MY_ALL_CHARSETS_SIZE];
 extern CHARSET_INFO compiled_charsets[];
 
 /* statistics */
-extern ulong my_file_opened, my_stream_opened, my_tmp_file_created;
+extern ulong my_tmp_file_created;
+extern ulong my_file_opened;
+extern ulong my_stream_opened;
 extern ulong my_file_total_opened;
 extern bool my_init_done;
 
@@ -295,31 +301,6 @@ enum flush_type {
   FLUSH_FORCE_WRITE
 };
 
-/*
- How was this file opened (for debugging purposes).
- The important part is whether it is UNOPEN or not.
- */
-enum file_type {
-  UNOPEN = 0,
-  FILE_BY_OPEN,
-  FILE_BY_CREATE,
-  STREAM_BY_FOPEN,
-  STREAM_BY_FDOPEN,
-  FILE_BY_MKSTEMP,
-  FILE_BY_O_TMPFILE
-};
-
-struct st_my_file_info {
-  char *name;
-#ifdef _WIN32
-  HANDLE fhandle; /* win32 file handle */
-  int oflag;      /* open flags, e.g O_APPEND */
-#endif
-  enum file_type type;
-};
-
-extern struct st_my_file_info *my_file_info;
-
 struct DYNAMIC_ARRAY {
   uchar *buffer{nullptr};
   uint elements{0}, max_element{0};
@@ -336,7 +317,7 @@ struct MY_TMPDIR {
 
 struct DYNAMIC_STRING {
   char *str;
-  size_t length, max_length, alloc_increment;
+  size_t length, max_length;
 };
 
 struct IO_CACHE;
@@ -478,6 +459,11 @@ struct IO_CACHE /* Used when cacheing files */
   Stream_cipher *m_encryptor = nullptr;
   // This is a decryptor for decrypting the temporary file of the IO cache.
   Stream_cipher *m_decryptor = nullptr;
+  // Synchronize flushed buffer with disk.
+  bool disk_sync{false};
+  // Delay in milliseconds after disk synchronization of the flushed buffer.
+  // Requires disk_sync = true.
+  uint disk_sync_delay{0};
 };
 
 typedef int (*qsort2_cmp)(const void *, const void *, const void *);
@@ -558,8 +544,6 @@ inline size_t my_b_bytes_in_cache(const IO_CACHE *info) {
   return *info->current_end - *info->current_pos;
 }
 
-typedef uint32 ha_checksum;
-
 /*
   How much overhead does malloc have. The code often allocates
   something like 1024-MALLOC_OVERHEAD bytes
@@ -586,13 +570,11 @@ extern void *my_once_alloc(size_t Size, myf MyFlags);
 extern void my_once_free(void);
 extern char *my_once_strdup(const char *src, myf myflags);
 extern void *my_once_memdup(const void *src, size_t len, myf myflags);
-extern File my_open(const char *FileName, int Flags, myf MyFlags);
-extern File my_register_filename(File fd, const char *FileName,
-                                 enum file_type type_of_file,
-                                 uint error_message_number, myf MyFlags);
+extern File my_open(const char *filename, int Flags, myf MyFlags);
+
 extern File my_create(const char *FileName, int CreateFlags, int AccessFlags,
                       myf MyFlags);
-extern int my_close(File Filedes, myf MyFlags);
+extern int my_close(File fd, myf MyFlags);
 extern int my_mkdir(const char *dir, int Flags, myf MyFlags);
 extern int my_readlink(char *to, const char *filename, myf MyFlags);
 extern int my_is_symlink(const char *filename, ST_FILE_ID *file_id);
@@ -667,11 +649,11 @@ extern void my_osmaperr(unsigned long last_error);
 
 extern const char *get_global_errmsg(int nr);
 extern void wait_for_free_space(const char *filename, int errors);
-extern FILE *my_fopen(const char *FileName, int Flags, myf MyFlags);
-extern FILE *my_fdopen(File Filedes, const char *name, int Flags, myf MyFlags);
-extern FILE *my_freopen(const char *path, const char *mode, FILE *stream);
-extern int my_fclose(FILE *fd, myf MyFlags);
-extern File my_fileno(FILE *fd);
+extern FILE *my_fopen(const char *filename, int Flags, myf MyFlags);
+extern FILE *my_fdopen(File fd, const char *filename, int Flags, myf MyFlags);
+extern FILE *my_freopen(const char *filename, const char *mode, FILE *stream);
+extern int my_fclose(FILE *stream, myf MyFlags);
+extern File my_fileno(FILE *stream);
 extern int my_chsize(File fd, my_off_t newlength, int filler, myf MyFlags);
 extern int my_fallocator(File fd, my_off_t newlength, int filler, myf MyFlags);
 extern void thr_set_sync_wait_callback(void (*before_sync)(void),
@@ -691,17 +673,30 @@ extern void my_message(uint my_err, const char *str, myf MyFlags);
 extern void my_message_stderr(uint my_err, const char *str, myf MyFlags);
 void my_message_local_stderr(enum loglevel, uint ecode, va_list args);
 extern void my_message_local(enum loglevel ll, uint ecode, ...);
+
+/**
+  Convenience wrapper for OS error messages which report
+  errno/my_errno with %d followed by strerror as %s, as the last
+  conversions in the error message.
+
+  The OS error message (my_errno) is formatted in a stack buffer and
+  the errno value and a pointer to the buffer is added to the end of
+  the parameter pack passed to my_error().
+
+  @param errno_val errno/my_errno number.
+  @param ppck parameter pack of additional arguments to pass to my_error().
+ */
+template <class... Ts>
+inline void MyOsError(int errno_val, Ts... ppck) {
+  char errbuf[MYSYS_STRERROR_SIZE];
+  my_error(ppck..., errno_val, my_strerror(errbuf, sizeof(errbuf), errno_val));
+}
+
 extern bool my_init(void);
 extern void my_end(int infoflag);
 extern const char *my_filename(File fd);
 extern MY_MODE get_file_perm(ulong perm_flags);
 extern bool my_chmod(const char *filename, ulong perm_flags, myf my_flags);
-
-#ifdef EXTRA_DEBUG
-void my_print_open_files(void);
-#else
-#define my_print_open_files()
-#endif
 
 extern bool init_tmpdir(MY_TMPDIR *tmpdir, const char *pathlist);
 extern char *my_tmpdir(MY_TMPDIR *tmpdir);
@@ -778,6 +773,11 @@ extern bool real_open_cached_file(IO_CACHE *cache);
 extern void close_cached_file(IO_CACHE *cache);
 
 enum UnlinkOrKeepFile { UNLINK_FILE, KEEP_FILE };
+#ifdef WIN32
+// Maximum temporary filename length is 3 chars for prefix + 16 chars for base
+// 32 encoded UUID (excluding MAC address)
+const size_t MY_MAX_TEMP_FILENAME_LEN = 19;
+#endif
 File create_temp_file(char *to, const char *dir, const char *pfx, int mode,
                       UnlinkOrKeepFile unlink_or_keep, myf MyFlags);
 
@@ -796,11 +796,13 @@ extern void *alloc_dynamic(DYNAMIC_ARRAY *array);
 extern void delete_dynamic(DYNAMIC_ARRAY *array);
 
 extern bool init_dynamic_string(DYNAMIC_STRING *str, const char *init_str,
-                                size_t init_alloc, size_t alloc_increment);
+                                size_t init_alloc);
 extern bool dynstr_append(DYNAMIC_STRING *str, const char *append);
 bool dynstr_append_mem(DYNAMIC_STRING *str, const char *append, size_t length);
 extern bool dynstr_append_os_quoted(DYNAMIC_STRING *str, const char *append,
                                     ...);
+extern bool dynstr_append_quoted(DYNAMIC_STRING *str, const char *quote_str,
+                                 const uint quote_len, const char *append, ...);
 extern bool dynstr_set(DYNAMIC_STRING *str, const char *init_str);
 extern bool dynstr_realloc(DYNAMIC_STRING *str, size_t additional_size);
 extern bool dynstr_trunc(DYNAMIC_STRING *str, size_t n);
@@ -816,10 +818,8 @@ extern bool my_uncompress(mysql_compress_context *, uchar *, size_t, size_t *);
 extern uchar *my_compress_alloc(mysql_compress_context *comp_ctx,
                                 const uchar *packet, size_t *len,
                                 size_t *complen);
-extern ha_checksum my_checksum(ha_checksum crc, const uchar *mem, size_t count);
 
 extern uint my_set_max_open_files(uint files);
-void my_free_open_file_info(void);
 
 extern bool my_gethwaddr(uchar *to);
 
@@ -967,6 +967,8 @@ extern MYSQL_PLUGIN_IMPORT PSI_thread_bootstrap *psi_thread_hook;
 extern void set_psi_thread_service(void *psi);
 extern MYSQL_PLUGIN_IMPORT PSI_transaction_bootstrap *psi_transaction_hook;
 extern void set_psi_transaction_service(void *psi);
+extern MYSQL_PLUGIN_IMPORT PSI_tls_channel_bootstrap *psi_tls_channel_hook;
+extern void set_psi_tls_channel_service(void *psi);
 #endif /* HAVE_PSI_INTERFACE */
 
 /**
@@ -974,7 +976,7 @@ extern void set_psi_transaction_service(void *psi);
 */
 
 // True if the temporary file of binlog cache is encrypted.
-#ifndef DBUG_OFF
+#ifndef NDEBUG
 extern bool binlog_cache_temporary_file_is_encrypted;
 #endif
 
@@ -1024,17 +1026,7 @@ size_t mysql_encryption_file_read(IO_CACHE *cache, uchar *buffer, size_t count,
                 MY_WME | MY_FAE | MY_NABP | MY_FNABP |
                 MY_DONT_CHECK_FILESIZE and so on
 
-   if (flags & (MY_NABP | MY_FNABP)) {
-     @retval 0 if count == 0
-     @retval 0 success
-     @retval MY_FILE_ERROR error
-   } else {
-     @retval 0 if count == 0
-     @retval The number of bytes written on success.
-     @retval MY_FILE_ERROR error
-     @retval The actual number of bytes written on partial success (if
-             less than count bytes were written).
-   }
+   @return The number of bytes written
 */
 size_t mysql_encryption_file_write(IO_CACHE *cache, const uchar *buffer,
                                    size_t count, myf flags);

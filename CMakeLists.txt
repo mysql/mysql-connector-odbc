@@ -152,9 +152,55 @@ IF(SYSCONFDIR)
   SET(DEFAULT_SYSCONFDIR "${SYSCONFDIR}")
 ENDIF()
 
-# Enable C++11
-if (CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang" OR CMAKE_SYSTEM_NAME MATCHES "SunOS")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+#
+# Macro to enable C++14 for all targets in the current directory and below.
+#
+
+macro(enable_cxx14)
+
+if((CMAKE_VERSION VERSION_LESS 3.1) OR (CMAKE_CXX_COMPILER_ID MATCHES "SunPro"))
+
+  # Note: cmake does not know how to enable C++14 for SunPro compiler
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14")
+
+else()
+
+  # use C++14
+  set(CMAKE_CXX_STANDARD 14)
+  # error out if not supported
+  set(CMAKE_CXX_STANDARD_REQUIRED ON)
+  # do not use compiler specific extensions
+  set(CMAKE_CXX_EXTENSIONS OFF)
+
+endif()
+
+endmacro()
+
+macro(enable_cxx17)
+
+if((CMAKE_VERSION VERSION_LESS 3.1) OR (CMAKE_CXX_COMPILER_ID MATCHES "SunPro"))
+
+  # Note: cmake does not know how to enable C++17 for SunPro compiler
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")
+
+else()
+
+  # use C++14
+  set(CMAKE_CXX_STANDARD 17)
+  # error out if not supported
+  set(CMAKE_CXX_STANDARD_REQUIRED ON)
+  # do not use compiler specific extensions
+  set(CMAKE_CXX_EXTENSIONS OFF)
+
+endif()
+
+endmacro()
+
+# With new mysys headers, windows needs c++17, and other platforms c++14.
+if(WIN32)
+  enable_cxx17()
+else()
+  enable_cxx14()
 endif()
 
 if(APPLE)
@@ -242,7 +288,7 @@ IF(NOT WIN32 AND NOT ${CMAKE_SYSTEM_NAME} MATCHES "Linux" AND NOT ${CMAKE_SYSTEM
 ENDIF(NOT WIN32 AND NOT ${CMAKE_SYSTEM_NAME} MATCHES "Linux" AND NOT ${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD")
 
 # Disable mysql client debug and PSI
-ADD_DEFINITIONS(-DDBUG_OFF -DDISABLE_ALL_PSI)
+ADD_DEFINITIONS(-DNDEBUG -DDISABLE_ALL_PSI)
 
 #-------------- unixodbc/iodbc/win -------------------
 IF(WIN32)
@@ -425,30 +471,6 @@ ELSE(WIN32)
   endif()
 
 ENDIF(WIN32)
-
-#
-# Macro to enable C++14 for all targets in the current directory and below.
-#
-
-macro(enable_cxx14)
-
-if((CMAKE_VERSION VERSION_LESS 3.1) OR (CMAKE_CXX_COMPILER_ID MATCHES "SunPro"))
-
-  # Note: cmake does not know how to enable C++14 for SunPro compiler
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14")
-
-else()
-
-  # use C++14
-  set(CMAKE_CXX_STANDARD 14)
-  # error out if not supported
-  set(CMAKE_CXX_STANDARD_REQUIRED ON)
-  # do not use compiler specific extensions
-  set(CMAKE_CXX_EXTENSIONS OFF)
-
-endif()
-
-endmacro()
 
 #-----------------------------------------------------
 

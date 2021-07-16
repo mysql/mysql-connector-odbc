@@ -1,4 +1,4 @@
-/* Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+/* Copyright (c) 2000, 2021, Oracle and/or its affiliates.
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License, version 2.0,
@@ -42,7 +42,7 @@
 #include "mysys_err.h"
 #include "template_utils.h"  // pointer_cast
 #if defined(_WIN32)
-#include "mysys_priv.h"  // my_win_x
+#include "mysys/mysys_priv.h"  // my_win_x
 #endif
 
 namespace {
@@ -75,13 +75,9 @@ size_t my_fread(FILE *stream, uchar *Buffer, size_t Count, myf MyFlags) {
   if ((readbytes = fread(Buffer, sizeof(char), Count, stream)) != Count) {
     if (MyFlags & (MY_WME | MY_FAE | MY_FNABP)) {
       if (ferror(stream)) {
-        char errbuf[MYSYS_STRERROR_SIZE];
-        my_error(EE_READ, MYF(0), my_filename(my_fileno(stream)), errno,
-                 my_strerror(errbuf, sizeof(errbuf), errno));
+        MyOsError(my_errno(), EE_READ, MYF(0), my_filename(my_fileno(stream)));
       } else if (MyFlags & (MY_NABP | MY_FNABP)) {
-        char errbuf[MYSYS_STRERROR_SIZE];
-        my_error(EE_EOFERR, MYF(0), my_filename(my_fileno(stream)), errno,
-                 my_strerror(errbuf, sizeof(errbuf), errno));
+        MyOsError(errno, EE_EOFERR, MYF(0), my_filename(my_fileno(stream)));
       }
     }
     set_my_errno(errno ? errno : -1);
@@ -118,7 +114,7 @@ size_t my_fwrite(FILE *stream, const uchar *Buffer, size_t Count, myf MyFlags) {
     if (written != Count) {
       set_my_errno(errno);
 
-      DBUG_ASSERT(written != MY_FILE_ERROR);
+      assert(written != MY_FILE_ERROR);
       seekptr += written;
       Buffer += written;
       writtenbytes += written;
@@ -130,9 +126,7 @@ size_t my_fwrite(FILE *stream, const uchar *Buffer, size_t Count, myf MyFlags) {
       }
       if (ferror(stream) || (MyFlags & (MY_NABP | MY_FNABP))) {
         if (MyFlags & (MY_WME | MY_FAE | MY_FNABP)) {
-          char errbuf[MYSYS_STRERROR_SIZE];
-          my_error(EE_WRITE, MYF(0), my_filename(my_fileno(stream)), errno,
-                   my_strerror(errbuf, sizeof(errbuf), errno));
+          MyOsError(errno, EE_WRITE, MYF(0), my_filename(my_fileno(stream)));
         }
         writtenbytes = MY_FILE_ERROR; /* Return that we got error */
         break;
@@ -183,7 +177,7 @@ my_off_t my_ftell(FILE *stream) {
 /**
    Portable fileno() wrapper.
 */
-int my_fileno(FILE *f) {
+File my_fileno(FILE *f) {
 #ifdef _WIN32
   return my_win_fileno(f);
 #else

@@ -215,7 +215,7 @@ if(CMAKE_BUILD_TYPE STREQUAL Debug)
 else()
   set(_lib_suffix_dist opt)
   set(_lib_suffix_build Release)
-  add_definitions(-DDBUG_OFF)   # FIXME what?!
+  add_definitions(-DNDEBUG)   # FIXME what?!
 endif()
 
 set(_exe_fallback_path

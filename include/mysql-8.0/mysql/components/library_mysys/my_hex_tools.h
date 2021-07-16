@@ -1,4 +1,4 @@
-/* Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+/* Copyright (c) 2021, Oracle and/or its affiliates.
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License, version 2.0,
@@ -11,11 +11,6 @@
    permission to link the program and your derivative works with the
    separately licensed software that they have included with MySQL.
 
-   Without limiting anything contained in the foregoing, this file,
-   which is part of C Driver for MySQL (Connector/C), is also subject to the
-   Universal FOSS Exception, version 1.0, a copy of which can be found at
-   http://oss.oracle.com/licenses/universal-foss-exception.
-
    This program is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -25,30 +20,31 @@
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301  USA */
 
+#ifndef COMPONENT_HEX_TOOLS_H_
+#define COMPONENT_HEX_TOOLS_H_
+
 /**
-  @file mysys/my_div.cc
+  Convert byte array to hex string
+
+  @param [out] to      Output buffer
+  @param [in]  from    Input byte array
+  @param [in]  length  Length of input
+
+  @returns Length of output string
 */
+extern "C" unsigned long hex_string(char *to, const char *from,
+                                    unsigned long length);
 
-#include <sys/types.h>
+/**
+  Convert hex string to byte array.
 
-#include "my_dbug.h"
-#include "my_io.h"
-#include "my_sys.h"
+  @param [in]  first  Pointer to first element of range to convert
+  @param [in]  last   Pointer to one-after-last element of range to convert
+  @param [out] output Beginning of destination range.
 
-/*
-  Get filename of file
-
-  SYNOPSIS
-    my_filename()
-      fd	File descriptor
+  @returns Length of output string
 */
+extern "C" unsigned long unhex_string(const char *first, const char *last,
+                                      char *output);
 
-const char *my_filename(File fd) {
-  DBUG_TRACE;
-  if (static_cast<uint>(fd) >= static_cast<uint>(my_file_limit))
-    return "UNKNOWN";
-  if (fd >= 0 && my_file_info[fd].type != UNOPEN) {
-    return my_file_info[fd].name;
-  } else
-    return "UNOPENED"; /* Debug message */
-}
+#endif  // COMPONENT_HEX_TOOLS_H_

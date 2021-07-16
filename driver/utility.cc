@@ -2515,7 +2515,7 @@ int myodbc_casecmp(const char *s, const char *t, uint len)
 
 void free_internal_result_buffers(STMT *stmt)
 {
-  free_root(&stmt->alloc_root, MYF(0));
+  stmt->alloc_root.Clear();
 }
 
 /*
