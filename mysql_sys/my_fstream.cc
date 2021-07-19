@@ -42,7 +42,7 @@
 #include "mysys_err.h"
 #include "template_utils.h"  // pointer_cast
 #if defined(_WIN32)
-#include "mysys/mysys_priv.h"  // my_win_x
+#include "mysys_priv.h"  // my_win_x
 #endif
 
 namespace {

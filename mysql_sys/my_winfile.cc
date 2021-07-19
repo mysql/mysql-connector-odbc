@@ -70,7 +70,7 @@
 #include "mysql/psi/mysql_mutex.h"
 #include "mysys_priv.h"
 #include "scope_guard.h"
-#include "sql/malloc_allocator.h"
+#include "mysql/malloc_allocator.h"
 
 namespace {
 

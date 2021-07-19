@@ -46,7 +46,7 @@
 #include "my_thread_local.h"
 #include "mysys_err.h"
 #ifdef _WIN32
-#include "mysys/mysys_priv.h"
+#include "mysys_priv.h"
 #endif
 
 #ifndef _WIN32
