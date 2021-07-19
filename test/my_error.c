@@ -700,12 +700,9 @@ DECLARE_TEST(t_passwordexpire)
 
   /* Expecting error as password has not been reset */
   ok_con(hdbc1, get_connection(&hdbc1, NULL, "t_pwd_expire", "foo",
-                                NULL, "CAN_HANDLE_EXP_PWD=1"));
+                                NULL, "CAN_HANDLE_EXP_PWD=1;INITSTMT={set password='bar'}"));
 
-  /*strcat((char *)conn_in, ";INITSTMT={set password= password('bar')}");*/
   ok_con(hdbc1, SQLAllocStmt(hdbc1, &hstmt1));
-
-  ok_sql(hstmt1, "SET PASSWORD='bar'");
 
   /* Just to verify that we got normal connection */
   ok_sql(hstmt1, "select 1");
