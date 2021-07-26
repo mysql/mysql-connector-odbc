@@ -120,16 +120,16 @@ void SwitchTcpOrPipe(HWND hwnd, BOOL usePipe)
 
 void InitStaticValues()
 {
-	BusyIndicator= true;
-	pParams      = NULL;
-	pCaption     = NULL;
-	OkPressed    = 0;
+  BusyIndicator= true;
+  pParams      = NULL;
+  pCaption     = NULL;
+  OkPressed    = 0;
 
-	mod          = 1;
-	flag         = false;
-	BusyIndicator= false;
+  mod          = 1;
+  flag         = false;
+  BusyIndicator= false;
 
-	gHelpButtonPressedCallback= NULL;
+  gHelpButtonPressedCallback= NULL;
 }
 
 
@@ -140,12 +140,12 @@ BOOL FormMain_DlgProc (HWND, UINT, WPARAM, LPARAM);
 
 void DoEvents (void)
 {
-	MSG Msg;
-	while (PeekMessage(&Msg,NULL,0,0,PM_REMOVE))
-	{
-		TranslateMessage(&Msg);
-		DispatchMessage(&Msg);
-	}
+  MSG Msg;
+  while (PeekMessage(&Msg,NULL,0,0,PM_REMOVE))
+  {
+    TranslateMessage(&Msg);
+    DispatchMessage(&Msg);
+  }
 }
 
 
@@ -154,8 +154,8 @@ VOID OnWMNotify(WPARAM wParam, LPARAM lParam);
 
 static BOOL FormMain_OnNotify (HWND hwnd, WPARAM wParam, LPARAM lParam)
 {
-	OnWMNotify(wParam, lParam);
-	int id = (int)wParam;
+  OnWMNotify(wParam, lParam);
+  int id = (int)wParam;
 
   switch(id)
   {
@@ -176,7 +176,7 @@ static BOOL FormMain_OnNotify (HWND hwnd, WPARAM wParam, LPARAM lParam)
     break;
   }
 
-	return FALSE;
+  return FALSE;
 }
 
 
@@ -345,11 +345,11 @@ void OnDialogClose();
 
 void FormMain_OnClose(HWND hwnd)
 {
-	//PostQuitMessage(0);// turn off message loop
+  //PostQuitMessage(0);// turn off message loop
     //Unhooks hook(s) :)
   OnDialogClose();
 
-	TabControl_Destroy(&TabCtrl_1);
+  TabControl_Destroy(&TabCtrl_1);
   EndDialog(hwnd, NULL);
 }
 
@@ -366,29 +366,30 @@ void FormMain_OnClose(HWND hwnd)
  ****************************************************************************/
 void btnDetails_Click (HWND hwnd)
 {
-	RECT rect;
-	GetWindowRect( hwnd, &rect );
-	mod *= -1;
-	ShowWindow( GetDlgItem(hwnd,IDC_TAB1), mod > 0? SW_SHOW: SW_HIDE );
+  RECT rect;
+  GetWindowRect( hwnd, &rect );
+  mod *= -1;
+  ShowWindow( GetDlgItem(hwnd,IDC_TAB1), mod > 0? SW_SHOW: SW_HIDE );
 
-	if(!flag && mod==1)
-	{
-    static PWSTR tabnames[]= {L"Connection", L"Metadata", L"Cursors/Results", L"Debug", L"SSL", L"Misc", 0};
-		static PWSTR dlgnames[]= {MAKEINTRESOURCE(IDD_TAB1),
-							  	  MAKEINTRESOURCE(IDD_TAB2),
-							  	  MAKEINTRESOURCE(IDD_TAB3),
-							  	  MAKEINTRESOURCE(IDD_TAB4),
-								    MAKEINTRESOURCE(IDD_TAB5),
-                    MAKEINTRESOURCE(IDD_TAB6),0};
+  if(!flag && mod==1)
+  {
+    static PWSTR tabnames[]= {L"Connection", L"MFA" ,L"Metadata", L"Cursors/Results", L"Debug", L"SSL", L"Misc", 0};
+    static PWSTR dlgnames[]= {MAKEINTRESOURCE(IDD_TAB1),
+                    MAKEINTRESOURCE(IDD_TAB2),
+                    MAKEINTRESOURCE(IDD_TAB3),
+                    MAKEINTRESOURCE(IDD_TAB4),
+                    MAKEINTRESOURCE(IDD_TAB5),
+                    MAKEINTRESOURCE(IDD_TAB6),
+                    MAKEINTRESOURCE(IDD_TAB7),0};
 
-		New_TabControl( &TabCtrl_1,                 // address of TabControl struct
-					          GetDlgItem(hwnd, IDC_TAB1), // handle to tab control
-					          tabnames,                   // text for each tab
-					          dlgnames,                   // dialog id's of each tab page dialog
-					          &FormMain_DlgProc,          // address of main windows proc
-					          NULL,                       // address of size function
-					          TRUE);                      // stretch tab page to fit tab ctrl
-		flag = true;
+    New_TabControl( &TabCtrl_1,                 // address of TabControl struct
+                    GetDlgItem(hwnd, IDC_TAB1), // handle to tab control
+                    tabnames,                   // text for each tab
+                    dlgnames,                   // dialog id's of each tab page dialog
+                    &FormMain_DlgProc,          // address of main windows proc
+                    NULL,                       // address of size function
+                    TRUE);                      // stretch tab page to fit tab ctrl
+    flag = true;
 
 
     HWND ssl_tab = TabCtrl_1.hTabPages[4];
@@ -404,8 +405,8 @@ void btnDetails_Click (HWND hwnd)
     ComboBox_AddString(combo, LSTR(ODBC_SSL_MODE_VERIFY_IDENTITY));
 
     syncTabs(hwnd, pParams);
-	}
-	MoveWindow( hwnd, rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top + 310*mod, TRUE );
+  }
+  MoveWindow( hwnd, rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top + 310*mod, TRUE );
 }
 
 
@@ -440,73 +441,73 @@ void btnTest_Click (HWND hwnd)
 void btnHelp_Click (HWND hwnd)
 {
   ShellExecute(NULL, L"open",
-	       L"https://dev.mysql.com/doc/connector-odbc/en/connector-odbc-configuration-dsn-windows.html",
-	       NULL, NULL, SW_SHOWNORMAL);
+         L"https://dev.mysql.com/doc/connector-odbc/en/connector-odbc-configuration-dsn-windows.html",
+         NULL, NULL, SW_SHOWNORMAL);
 }
 
 
 void chooseFile( HWND parent, int hostCtlId )
 {
-	OPENFILENAMEW	dialog;
+  OPENFILENAMEW	dialog;
 
-	HWND			hostControl = GetDlgItem( parent, hostCtlId );
+  HWND			hostControl = GetDlgItem( parent, hostCtlId );
 
-	wchar_t			szFile[MAX_PATH];    // buffer for file name
+  wchar_t			szFile[MAX_PATH];    // buffer for file name
 
-	Edit_GetText( hostControl, szFile, sizeof(szFile) );
-	// Initialize OPENFILENAME
-	ZeroMemory(&dialog, sizeof(dialog));
+  Edit_GetText( hostControl, szFile, sizeof(szFile) );
+  // Initialize OPENFILENAME
+  ZeroMemory(&dialog, sizeof(dialog));
 
-	dialog.lStructSize			= sizeof(dialog);
-	dialog.lpstrFile			= szFile;
+  dialog.lStructSize			= sizeof(dialog);
+  dialog.lpstrFile			= szFile;
 
-	dialog.lpstrTitle			= L"Select File";
-	dialog.nMaxFile				= sizeof(szFile);
-	dialog.lpstrFileTitle		= NULL;
-	dialog.nMaxFileTitle		= 0;
-	dialog.lpstrInitialDir		= NULL;
-	dialog.Flags				= OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST ;
-	dialog.hwndOwner			= parent;
-	dialog.lpstrCustomFilter	= L"All Files\0*.*\0PEM\0*.pem\0";
-	dialog.nFilterIndex			= 2;
+  dialog.lpstrTitle			= L"Select File";
+  dialog.nMaxFile				= sizeof(szFile);
+  dialog.lpstrFileTitle		= NULL;
+  dialog.nMaxFileTitle		= 0;
+  dialog.lpstrInitialDir		= NULL;
+  dialog.Flags				= OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST ;
+  dialog.hwndOwner			= parent;
+  dialog.lpstrCustomFilter	= L"All Files\0*.*\0PEM\0*.pem\0";
+  dialog.nFilterIndex			= 2;
 
-	if ( GetOpenFileNameW( &dialog ) )
-	{
-		Edit_SetText( hostControl, dialog.lpstrFile );
-	}
+  if ( GetOpenFileNameW( &dialog ) )
+  {
+    Edit_SetText( hostControl, dialog.lpstrFile );
+  }
 }
 
 
 void choosePath( HWND parent, int hostCtlId )
 {
-	HWND			hostControl = GetDlgItem( parent, hostCtlId );
+  HWND			hostControl = GetDlgItem( parent, hostCtlId );
 
-	BROWSEINFOW		dialog;
-	wchar_t			path[MAX_PATH];    // buffer for file name
+  BROWSEINFOW		dialog;
+  wchar_t			path[MAX_PATH];    // buffer for file name
 
-	Edit_GetText( hostControl, path, sizeof(path) );
+  Edit_GetText( hostControl, path, sizeof(path) );
 
-	ZeroMemory(&dialog,sizeof(dialog));
+  ZeroMemory(&dialog,sizeof(dialog));
 
-	dialog.lpszTitle		= L"Pick a CA Path";
-	dialog.hwndOwner		= parent;
-	dialog.pszDisplayName	= path;
+  dialog.lpszTitle		= L"Pick a CA Path";
+  dialog.hwndOwner		= parent;
+  dialog.pszDisplayName	= path;
 
-	LPITEMIDLIST pidl = SHBrowseForFolder ( &dialog );
+  LPITEMIDLIST pidl = SHBrowseForFolder ( &dialog );
 
-	if ( pidl )
-	{
-		SHGetPathFromIDList ( pidl, path );
+  if ( pidl )
+  {
+    SHGetPathFromIDList ( pidl, path );
 
-		Edit_SetText( hostControl, path );
+    Edit_SetText( hostControl, path );
 
-		IMalloc * imalloc = 0;
-		if ( SUCCEEDED( SHGetMalloc ( &imalloc )) )
-		{
-			imalloc->Free ( pidl );
-			imalloc->Release ( );
-		}
-	}
+    IMalloc * imalloc = 0;
+    if ( SUCCEEDED( SHGetMalloc ( &imalloc )) )
+    {
+      imalloc->Free ( pidl );
+      imalloc->Release ( );
+    }
+  }
 }
 
 #ifndef MAX_VISIBLE_CB_ITEMS
@@ -677,9 +678,9 @@ void FormMain_OnCommand(HWND hwnd, int id, HWND hwndCtl, UINT codeNotify)
 
     case IDC_EDIT_charset:
       processCharsetCombobox(hwnd, hwndCtl, codeNotify);
-	}
+  }
 
-	return;
+  return;
 }
 
 
@@ -689,7 +690,7 @@ void AdjustLayout(HWND hwnd);
 
 void FormMain_OnSize(HWND hwnd, UINT state, int cx, int cy)
 {
-	AdjustLayout(hwnd);
+  AdjustLayout(hwnd);
 }
 
 static int yCurrentScroll = 0;   // current vertical scroll value
@@ -743,47 +744,47 @@ void FormMain_OnScroll(HWND hwnd, HWND hCtrl, UINT code, int pos)
 
 void AdjustLayout(HWND hwnd)
 {
-	RECT  rc;
-   	GetClientRect(hwnd,&rc);
+  RECT  rc;
+    GetClientRect(hwnd,&rc);
 
-	BOOL Visible = (mod==-1)?0:1;
+  BOOL Visible = (mod==-1)?0:1;
 
-	if(TabCtrl_1.hTab)
-	{
-		EnableWindow( TabCtrl_1.hTab, Visible );
-		ShowWindow( TabCtrl_1.hTab, Visible );
-	}
+  if(TabCtrl_1.hTab)
+  {
+    EnableWindow( TabCtrl_1.hTab, Visible );
+    ShowWindow( TabCtrl_1.hTab, Visible );
+  }
 
-	PWSTR pButtonCaption = Visible? L"Details <<" : L"Details >>";
-	SetWindowText( GetDlgItem(hwnd,IDC_BUTTON_DETAILS), pButtonCaption );
-	const int dY = 20;
-	AlignWindowToBottom( GetDlgItem(hwnd,IDC_BUTTON_DETAILS), dY);
-	AlignWindowToBottom( GetDlgItem(hwnd,IDOK), dY);
-	AlignWindowToBottom( GetDlgItem(hwnd,IDCANCEL), dY);
-	AlignWindowToBottom( GetDlgItem(hwnd,IDC_BUTTON_HELP), dY);
+  PWSTR pButtonCaption = Visible? L"Details <<" : L"Details >>";
+  SetWindowText( GetDlgItem(hwnd,IDC_BUTTON_DETAILS), pButtonCaption );
+  const int dY = 20;
+  AlignWindowToBottom( GetDlgItem(hwnd,IDC_BUTTON_DETAILS), dY);
+  AlignWindowToBottom( GetDlgItem(hwnd,IDOK), dY);
+  AlignWindowToBottom( GetDlgItem(hwnd,IDCANCEL), dY);
+  AlignWindowToBottom( GetDlgItem(hwnd,IDC_BUTTON_HELP), dY);
 
-	Refresh(hwnd);
+  Refresh(hwnd);
 }
 
 
 void AlignWindowToBottom(HWND hwnd, int dY)
 {
-	if(!hwnd)
-		return;
-	RECT rect;
-	GetWindowRect( hwnd, &rect );
-	int h, w;
-	RECT rc;
-	GetWindowRect(GetParent(hwnd), &rc);
+  if(!hwnd)
+    return;
+  RECT rect;
+  GetWindowRect( hwnd, &rect );
+  int h, w;
+  RECT rc;
+  GetWindowRect(GetParent(hwnd), &rc);
 
-	h=rect.bottom-rect.top;
-	w=rect.right-rect.left;
+  h=rect.bottom-rect.top;
+  w=rect.right-rect.left;
 
-	rc.top = rc.bottom;
-	MapWindowPoints(HWND_DESKTOP, GetParent(hwnd), (LPPOINT)&rect, 2);
-	MapWindowPoints(HWND_DESKTOP, GetParent(hwnd), (LPPOINT)&rc, 2);
+  rc.top = rc.bottom;
+  MapWindowPoints(HWND_DESKTOP, GetParent(hwnd), (LPPOINT)&rect, 2);
+  MapWindowPoints(HWND_DESKTOP, GetParent(hwnd), (LPPOINT)&rc, 2);
 
-	MoveWindow(hwnd, rect.left, rc.top -dY-h,w,h,FALSE);
+  MoveWindow(hwnd, rect.left, rc.top -dY-h,w,h,FALSE);
 }
 
 
@@ -793,15 +794,15 @@ BOOL DoCreateDialogTooltip(void);
 
 BOOL FormMain_OnInitDialog(HWND hwnd, HWND hwndFocus, LPARAM lParam)
 {
-	g_hwndDlg = hwnd;
-	SetWindowText(hwnd, pCaption);
-	//----Everything else must follow the above----//
-	btnDetails_Click(hwnd);
-	AdjustLayout(hwnd);
-	//Get the initial Width and height of the dialog
-	//in order to fix the minimum size of dialog
+  g_hwndDlg = hwnd;
+  SetWindowText(hwnd, pCaption);
+  //----Everything else must follow the above----//
+  btnDetails_Click(hwnd);
+  AdjustLayout(hwnd);
+  //Get the initial Width and height of the dialog
+  //in order to fix the minimum size of dialog
 
-	syncForm(hwnd, pParams);
+  syncForm(hwnd, pParams);
 
   /* Disable fields if in prompt mode */
   if (g_isPrompt)
@@ -821,26 +822,26 @@ BOOL FormMain_OnInitDialog(HWND hwnd, HWND hwndFocus, LPARAM lParam)
     RedrawWindow(hwnd,NULL,NULL,RDW_INVALIDATE);
   }
 
-	BOOL b = DoCreateDialogTooltip();
-	return 0;
+  BOOL b = DoCreateDialogTooltip();
+  return 0;
 }
 
 
 BOOL FormMain_DlgProc (HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam)
 {
-	switch(msg)
-	{
-		HANDLE_MSG (hwndDlg, WM_CLOSE, FormMain_OnClose);
-		HANDLE_MSG (hwndDlg, WM_COMMAND, FormMain_OnCommand);
-		HANDLE_MSG (hwndDlg, WM_INITDIALOG, FormMain_OnInitDialog);
-		HANDLE_MSG (hwndDlg, WM_SIZE, FormMain_OnSize);
+  switch(msg)
+  {
+    HANDLE_MSG (hwndDlg, WM_CLOSE, FormMain_OnClose);
+    HANDLE_MSG (hwndDlg, WM_COMMAND, FormMain_OnCommand);
+    HANDLE_MSG (hwndDlg, WM_INITDIALOG, FormMain_OnInitDialog);
+    HANDLE_MSG (hwndDlg, WM_SIZE, FormMain_OnSize);
     HANDLE_MSG (hwndDlg, WM_VSCROLL, FormMain_OnScroll);
-	// There is no message cracker for WM_NOTIFY so redirect manually
-	case WM_NOTIFY:
-		return FormMain_OnNotify (hwndDlg,wParam,lParam);
+  // There is no message cracker for WM_NOTIFY so redirect manually
+  case WM_NOTIFY:
+    return FormMain_OnNotify (hwndDlg,wParam,lParam);
 
-	default: return FALSE;
-	}
+  default: return FALSE;
+  }
 }
 
 
@@ -855,11 +856,11 @@ BOOL FormMain_DlgProc (HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam)
 extern "C"
 int ShowOdbcParamsDialog(DataSource* params, HWND ParentWnd, BOOL isPrompt)
 {
-	assert(!BusyIndicator);
-	InitStaticValues();
+  assert(!BusyIndicator);
+  InitStaticValues();
 
-	pParams= params;
-	pCaption= L"MySQL Connector/ODBC Data Source Configuration";
+  pParams= params;
+  pCaption= L"MySQL Connector/ODBC Data Source Configuration";
   g_isPrompt= isPrompt;
 
   /*
@@ -887,6 +888,6 @@ int ShowOdbcParamsDialog(DataSource* params, HWND ParentWnd, BOOL isPrompt)
   DialogBox(ghInstance, MAKEINTRESOURCE(IDD_DIALOG1), ParentWnd,
             (DLGPROC)FormMain_DlgProc);
 
-	BusyIndicator= false;
-	return OkPressed;
+  BusyIndicator= false;
+  return OkPressed;
 }

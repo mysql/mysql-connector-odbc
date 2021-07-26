@@ -1,5 +1,5 @@
 /////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License, version 2.0, as
@@ -54,7 +54,7 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 VS_VERSION_INFO VERSIONINFO
   FILEVERSION MYODBC_FILEVER
   PRODUCTVERSION MYODBC_PRODUCTVER
-  FILEFLAGSMASK 0x3L
+ FILEFLAGSMASK 0x3L
 #ifdef _DEBUG
  FILEFLAGS 0x29L
 #else
@@ -124,7 +124,7 @@ BEGIN
     DEFPUSHBUTTON   "OK",IDOK,211,405,50,15
     PUSHBUTTON      "&Cancel",IDCANCEL,265,405,50,15
     PUSHBUTTON      "&Help",IDC_BUTTON_HELP,317,405,49,15
-    CONTROL         130,IDC_STATIC,"Static",SS_BITMAP,0,0,379,39
+    CONTROL         IDB_LOGO,IDC_STATIC,"Static",SS_BITMAP,0,0,379,39
 END
 
 IDD_TAB1 DIALOGEX 0, 0, 209, 231
@@ -164,10 +164,21 @@ BEGIN
     PUSHBUTTON      "...",IDC_CHOOSER_plugin_dir,292,132,12,12,BS_CENTER
     RTEXT           "Authentication Library:",IDC_STATIC,12,147,67,8
     EDITTEXT        IDC_EDIT_default_auth,90,147,197,12,ES_AUTOHSCROLL
-
 END
 
-IDD_TAB2 DIALOGEX 0, 0, 209, 181
+
+IDD_TAB2 DIALOGEX 0, 0, 509, 181
+STYLE DS_SETFONT | DS_FIXEDSYS | WS_CHILD
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    RTEXT           "Password &2",IDC_STATIC,18,9,67,8
+    EDITTEXT        IDC_EDIT_pwd2,90,7,97,12,ES_PASSWORD | ES_AUTOHSCROLL
+    RTEXT           "Password &3",IDC_STATIC,6,27,78,11
+    EDITTEXT        IDC_EDIT_pwd3,90,25,97,12,ES_PASSWORD | ES_AUTOHSCROLL
+END
+
+
+IDD_TAB3 DIALOGEX 0, 0, 209, 181
 STYLE DS_SETFONT | DS_FIXEDSYS | WS_CHILD
 FONT 8, "MS Shell Dlg", 400, 0, 0x1
 BEGIN
@@ -188,7 +199,7 @@ BEGIN
 
 END
 
-IDD_TAB3 DIALOGEX 0, 0, 209, 181
+IDD_TAB4 DIALOGEX 0, 0, 209, 181
 STYLE DS_SETFONT | DS_FIXEDSYS | WS_CHILD
 FONT 8, "MS Shell Dlg", 400, 0, 0x1
 BEGIN
@@ -215,7 +226,7 @@ BEGIN
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,125,138,10
 END
 
-IDD_TAB4 DIALOGEX 0, 0, 209, 181
+IDD_TAB5 DIALOGEX 0, 0, 209, 181
 STYLE DS_SETFONT | DS_FIXEDSYS | WS_CHILD
 FONT 8, "MS Shell Dlg", 400, 0, 0x1
 BEGIN
@@ -223,7 +234,7 @@ BEGIN
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,12,148,10
 END
 
-IDD_TAB5 DIALOGEX 0, 0, 209, 181
+IDD_TAB6 DIALOGEX 0, 0, 509, 181
 STYLE DS_SETFONT | DS_FIXEDSYS | WS_CHILD
 FONT 8, "MS Shell Dlg", 400, 0, 0x1
 BEGIN
@@ -251,10 +262,10 @@ BEGIN
     CONTROL         "Disable TLS Version 1.&1", IDC_CHECK_no_tls_1_1, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, 35,  146, 87, 10
     CONTROL         "Disable TLS Version 1.&2", IDC_CHECK_no_tls_1_2, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, 155, 133, 87, 10
     CONTROL         "Disable TLS Version 1.&3", IDC_CHECK_no_tls_1_3, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, 155, 146, 87, 10
-    END
+END
 
 
-IDD_TAB6 DIALOGEX 0, 0, 209, 181
+IDD_TAB7 DIALOGEX 0, 0, 209, 181
 STYLE DS_SETFONT | DS_FIXEDSYS | WS_CHILD
 FONT 8, "MS Shell Dlg", 400, 0, 0x1
 BEGIN
@@ -331,7 +342,7 @@ IDB_LOGO                BITMAP                  "connector_odbc_header.bmp"
 #ifdef APSTUDIO_INVOKED
 GUIDELINES DESIGNINFO
 BEGIN
-    IDD_TAB5, DIALOG
+    IDD_TAB6, DIALOG
     BEGIN
         VERTGUIDE, 85
     END

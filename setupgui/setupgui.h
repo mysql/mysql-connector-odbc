@@ -1,30 +1,30 @@
-// Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved. 
-// 
-// This program is free software; you can redistribute it and/or modify 
-// it under the terms of the GNU General Public License, version 2.0, as 
-// published by the Free Software Foundation. 
-// 
-// This program is also distributed with certain software (including 
-// but not limited to OpenSSL) that is licensed under separate terms, 
-// as designated in a particular file or component or in included license 
-// documentation. The authors of MySQL hereby grant you an 
-// additional permission to link the program and your derivative works 
-// with the separately licensed software that they have included with 
-// MySQL. 
-// 
-// Without limiting anything contained in the foregoing, this file, 
-// which is part of MySQL Connector/ODBC, is also subject to the 
-// Universal FOSS Exception, version 1.0, a copy of which can be found at 
-// http://oss.oracle.com/licenses/universal-foss-exception. 
-// 
-// This program is distributed in the hope that it will be useful, but 
-// WITHOUT ANY WARRANTY; without even the implied warranty of 
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-// See the GNU General Public License, version 2.0, for more details. 
-// 
-// You should have received a copy of the GNU General Public License 
-// along with this program; if not, write to the Free Software Foundation, Inc., 
-// 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA 
+// Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
+//
+// This program is free software; you can redistribute it and/or modify
+// it under the terms of the GNU General Public License, version 2.0, as
+// published by the Free Software Foundation.
+//
+// This program is also distributed with certain software (including
+// but not limited to OpenSSL) that is licensed under separate terms,
+// as designated in a particular file or component or in included license
+// documentation. The authors of MySQL hereby grant you an
+// additional permission to link the program and your derivative works
+// with the separately licensed software that they have included with
+// MySQL.
+//
+// Without limiting anything contained in the foregoing, this file,
+// which is part of MySQL Connector/ODBC, is also subject to the
+// Universal FOSS Exception, version 1.0, a copy of which can be found at
+// http://oss.oracle.com/licenses/universal-foss-exception.
+//
+// This program is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+// See the GNU General Public License, version 2.0, for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program; if not, write to the Free Software Foundation, Inc.,
+// 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 
 #ifndef _SETUPGUI_H
 #define _SETUPGUI_H
@@ -34,11 +34,12 @@
 # include <windows.h>
 
 #define CONNECTION_TAB  1
-#define METADATA_TAB    2
-#define CURSORS_TAB     3
-#define DEBUG_TAB       4
-#define SSL_TAB         5
-#define MISC_TAB        6
+#define MFA_TAB         2
+#define METADATA_TAB    3
+#define CURSORS_TAB     4
+#define DEBUG_TAB       5
+#define SSL_TAB         6
+#define MISC_TAB        7
 
 #else
 # include <gtk/gtk.h>
@@ -94,11 +95,11 @@ void syncForm(HWND hwnd, DataSource *params);
 void syncTabsData(HWND hwnd, DataSource *params);
 void syncTabs(HWND hwnd, DataSource *params);
 void FillParameters(HWND hwnd, DataSource *params);
-  
+
 #define _W(string) wchar_t_as_sqlwchar((wchar_t*)string, (SQLWCHAR*)tmpbuf, \
                                           sizeof(string) / sizeof(wchar_t))
 
- 
+
 /**
   This is the function implemented by the platform-specific code.
 
@@ -234,7 +235,7 @@ void setUnsignedFieldData(gchar *widget_name, unsigned int param);
 
 #define GET_COMBO_TAB(UNUSED_PARAM, name) \
   GET_COMBO(name)
-  
+
 #define GET_UNSIGNED(name) \
   getUnsignedFieldData(#name, &(params->name))
 
@@ -246,10 +247,10 @@ void setUnsignedFieldData(gchar *widget_name, unsigned int param);
 
 #define SET_UNSIGNED_TAB(UNUSED_PARAM, name) \
   SET_UNSIGNED(name)
-  
+
 #define SET_SENSITIVE(name, state) \
   setSensitive((gchar*) #name, (gboolean)state)
-  
+
 #endif
 
 #define GET_BOOL(hwnd, name) \

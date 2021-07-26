@@ -1,4 +1,4 @@
-// Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License, version 2.0, as
@@ -350,6 +350,288 @@ DECLARE_TEST(t_ldap_auth)
 }
 
 
+struct MFA_TEST_DATA
+{
+  SQLCHAR* user;
+  SQLCHAR* pwd;
+  SQLCHAR* pwd1;
+  SQLCHAR* pwd2;
+  SQLCHAR* pwd3;
+  BOOL succeed;
+};
+
+SQLCHAR * get_connection_string(SQLCHAR   *conn,struct MFA_TEST_DATA *data, BOOL alternative_name)
+{
+  sprintf((char *)conn, "DSN=%s;DATABASE=test;ENABLE_CLEARTEXT_PLUGIN=1;UID=%s",
+                       (char *)mydsn,data->user);
+  if(data->pwd)
+  {
+    strcat((char *)conn, alternative_name ? ";PWD=" : ";PASSWORD=");
+    strcat((char *)conn, (const char*)data->pwd);
+  }
+  if(data->pwd1)
+  {
+    strcat((char *)conn, alternative_name ? ";PWD1=" : ";PASSWORD1=");
+    strcat((char *)conn, (const char*)data->pwd1);
+  }
+  if(data->pwd2)
+  {
+    strcat((char *)conn, alternative_name ? ";PWD2=" : ";PASSWORD2=");
+    strcat((char *)conn, (const char*)data->pwd2);
+  }
+  if(data->pwd3)
+  {
+    strcat((char *)conn, alternative_name ? ";PWD3=" : ";PASSWORD3=");
+    strcat((char *)conn, (const char*)data->pwd3);
+  }
+  if (mydriver != NULL)
+  {
+    strcat((char *)conn, ";DRIVER=");
+    strcat((char *)conn, (char *)mydriver);
+  }
+  if (mysock != NULL)
+  {
+    strcat((char *)conn, ";SOCKET=");
+    strcat((char *)conn, (char *)mysock);
+  }
+  if (myport)
+  {
+    char pbuff[20];
+    sprintf(pbuff, ";PORT=%d", myport);
+    strcat((char *)conn, pbuff);
+  }
+
+  printf("%s\n",conn);
+
+  return conn;
+}
+
+DECLARE_TEST(t_mfa_auth)
+{
+#if MYSQL_VERSION_ID >= 80027
+  SQLCHAR   conn[1024], conn_out[1024];
+  SQLCHAR   buf[512];
+  SQLLEN buflen;
+  SQLSMALLINT conn_out_len;
+  DECLARE_BASIC_HANDLES(henv1, hdbc1, hstmt1);
+  SQLRETURN rc;
+
+  if (!mysql_min_version(hdbc, "8.0.27", 6))
+    skip("server does not support mfa");
+
+
+  struct MFA_TEST_DATA test_data[] =
+  {
+    //default test
+  {myuid, mypwd, NULL   , NULL   , NULL   , TRUE  },
+  // user1 tests
+  {"user_1f", "pass1", NULL   , NULL   , NULL   , TRUE  },
+  {"user_1f", "pass1", "pass1", NULL   , NULL   , TRUE  },
+  {"user_1f", "badp1", "pass1", NULL   , NULL   , TRUE  },
+  {"user_1f", NULL   , "pass1", NULL   , NULL   , TRUE  },
+
+  {"user_1f", NULL   , NULL   , NULL   , NULL   , FALSE },
+  {"user_1f", "badp1", "badp1", "pass1", NULL   , FALSE },
+  {"user_1f", NULL   , NULL   , "pass1", NULL   , FALSE },
+  {"user_1f", NULL   , NULL   , NULL   , "pass1", FALSE },
+
+  // user2 tests
+  {"user_2f", "pass1", NULL   , "pass2", NULL   , TRUE  },
+  {"user_2f", "pass1", "pass1", "pass2", NULL   , TRUE  },
+  {"user_2f", "badp1", "pass1", "pass2", NULL   , TRUE  },
+  {"user_2f", NULL   , "pass1", "pass2", NULL   , TRUE  },
+
+  {"user_2f", "pass2", NULL   , "pass1", NULL   , FALSE },
+  {"user_2f", "pass2", "pass2", "pass1", NULL   , FALSE },
+  {"user_2f", "pass2", "badp2", "pass1", NULL   , FALSE },
+  {"user_2f", NULL   , "pass2", "pass1", NULL   , FALSE },
+
+  {"user_2f", "pass1", NULL   , NULL   , "pass2", FALSE },
+  {"user_2f", "pass1", "pass1", NULL   , "pass2", FALSE },
+  {"user_2f", "badp1", "pass1", NULL   , "pass2", FALSE },
+  {"user_2f", NULL   , "pass1", NULL   , "pass2", FALSE },
+
+  {"user_2f", "pass1", NULL   , "badp1", "pass2", FALSE },
+  {"user_2f", "pass1", "pass1", "badp1", "pass2", FALSE },
+  {"user_2f", "badp1", "pass1", "badp1", "pass2", FALSE },
+  {"user_2f", NULL   , "pass1", "badp1", "pass2", FALSE },
+
+  // user3 tests
+  {"user_3f", "pass1", NULL   , "pass2", "pass3", TRUE  },
+  {"user_3f", "pass1", "pass1", "pass2", "pass3", TRUE  },
+  {"user_3f", "badp1", "pass1", "pass2", "pass3", TRUE  },
+  {"user_3f", NULL   , "pass1", "pass2", "pass3", TRUE  },
+
+  {"user_3f", "pass1", NULL   , "pass3", "pass2", FALSE },
+  {"user_3f", "pass1", "pass1", "pass3", "pass2", FALSE },
+  {"user_3f", "badp1", "pass1", "pass3", "pass2", FALSE },
+  {"user_3f", NULL   , "pass1", "pass3", "pass2", FALSE },
+
+  {"user_3f", "pass3", NULL   , "badp1", "pass2", FALSE },
+  {"user_3f", "pass3", "pass3", "badp1", "pass2", FALSE },
+  {"user_3f", "pass3", "badp3", "badp1", "pass2", FALSE },
+  {"user_3f", NULL   , "pass3", "badp1", "pass2", FALSE },
+
+  {"user_3f", "pass1", NULL   , "pass2", "badp3", FALSE },
+  {"user_3f", "pass1", "pass1", "pass2", "badp3", FALSE },
+  {"user_3f", "badp1", "pass1", "pass2", "badp3", FALSE },
+  {"user_3f", NULL   , "pass1", "pass2", "badp3", FALSE },
+
+  };
+
+  SQLExecDirect(hstmt,(SQLCHAR *) "UNINSTALL PLUGIN cleartext_plugin_server",SQL_NTS);
+
+  rc = SQLExecDirect(hstmt,(SQLCHAR *) "INSTALL PLUGIN cleartext_plugin_server SONAME 'auth_test_plugin.so'",SQL_NTS);
+
+  if (rc != SQL_SUCCESS && rc != SQL_SUCCESS_WITH_INFO)
+  {
+    SKIP_REASON = "Server doesn't support cleartext_plugin_server";
+    return SKIP;
+  }
+
+  ok_sql(hstmt, "drop user if exists  user_1f");
+  ok_sql(hstmt, "drop user if exists  user_2f");
+  ok_sql(hstmt, "drop user if exists  user_3f");
+
+  ok_sql(hstmt, "create user user_1f IDENTIFIED WITH cleartext_plugin_server BY 'pass1'");
+  ok_sql(hstmt, "grant all on *.* to user_1f");
+  ok_sql(hstmt, "create user user_2f IDENTIFIED WITH cleartext_plugin_server BY 'pass1' "\
+                "AND IDENTIFIED WITH cleartext_plugin_server BY 'pass2'; ");
+  ok_sql(hstmt, "grant all on *.* to user_2f");
+  ok_sql(hstmt, "create user user_3f IDENTIFIED WITH cleartext_plugin_server by 'pass1' "\
+                "AND IDENTIFIED WITH cleartext_plugin_server BY 'pass2' "\
+                "AND IDENTIFIED WITH cleartext_plugin_server BY 'pass3'; ");
+  ok_sql(hstmt, "grant all on *.* to user_3f");
+
+
+  if(myenable_pooling)
+  {
+    //Enable pooling
+    rc = SQLSetEnvAttr(NULL, SQL_ATTR_CONNECTION_POOLING,
+                       (SQLPOINTER)SQL_CP_ONE_PER_HENV, 0);
+    if(!SQL_SUCCEEDED(rc))
+      TEST_RETURN_FAIL;
+  }
+
+
+  ok_env(henv1, SQLAllocHandle(SQL_HANDLE_ENV, SQL_NULL_HANDLE, &henv1));
+
+  if(myenable_pooling)
+  {
+    ok_env(henv1, SQLSetEnvAttr(henv1, SQL_ATTR_ODBC_VERSION,
+                                (SQLPOINTER)SQL_OV_ODBC3_80, 0));
+  }
+  else
+  {
+    ok_env(henv1, SQLSetEnvAttr(henv1, SQL_ATTR_ODBC_VERSION,
+                                (SQLPOINTER)SQL_OV_ODBC3, 0));
+  }
+
+  if(myenable_pooling)
+  {
+
+    ok_env(henv1,SQLSetEnvAttr(henv1, SQL_ATTR_CP_MATCH, (SQLPOINTER)SQL_CP_RELAXED_MATCH, 0));
+  }
+
+
+  for(int i=0; i < sizeof(test_data)/sizeof(struct MFA_TEST_DATA); ++i)
+  {
+    ok_env(henv1, SQLAllocHandle(SQL_HANDLE_DBC, henv1, &hdbc1));
+
+    struct MFA_TEST_DATA *data = &test_data[i];
+
+    printf("User: %s\n", data->user);
+    printf("PWD: %s\n", data->pwd ? data->pwd : "-");
+    printf("PWD1: %s\n", data->pwd1 ? data->pwd1 : "-");
+    printf("PWD2: %s\n", data->pwd2 ? data->pwd2 : "-");
+    printf("PWD3: %s\n", data->pwd3 ? data->pwd3 : "-");
+
+    BOOL use_alternative_parameter_name = rand()%2;
+
+    if(data->succeed)
+    {
+      expect_dbc(hdbc1,
+                 SQLDriverConnect(
+                   hdbc1, NULL,
+                   get_connection_string(conn, data, use_alternative_parameter_name),
+                   SQL_NTS, conn_out,
+                   sizeof(conn_out), &conn_out_len,
+                   SQL_DRIVER_NOPROMPT),
+                 SQL_SUCCESS);
+
+    }
+    else
+    {
+      rc = SQLDriverConnect(
+        hdbc1, NULL,
+        get_connection_string(conn, data, use_alternative_parameter_name),
+        SQL_NTS, conn_out,
+        sizeof(conn_out), &conn_out_len,
+        SQL_DRIVER_NOPROMPT);
+      if (rc == SQL_SUCCESS || rc == SQL_SUCCESS_WITH_INFO)
+      {
+        TEST_RETURN_FAIL;
+      }
+
+      ok_con(hdbc1, SQLFreeConnect(hdbc1));
+
+      //we will continue, since no connection is available
+      continue;
+    }
+
+    ok_con(hdbc1, SQLAllocStmt(hdbc1, &hstmt1));
+
+    ok_sql(hstmt1, "select @@version");
+    ok_stmt(hstmt1,SQLFetch(hstmt1));
+
+    SQLGetData(hstmt1, 1, SQL_CHAR, buf, sizeof(buf), &buflen);
+    printf("Server version: %s\n",buf);
+
+    ok_stmt(hstmt1, SQLFreeStmt(hstmt1, SQL_CLOSE));
+
+    ok_con(hdbc1, SQLDisconnect(hdbc1));
+    ok_con(hdbc1, SQLFreeConnect(hdbc1));
+
+    ok_env(henv1, SQLAllocHandle(SQL_HANDLE_DBC, henv1, &hdbc1));
+
+    expect_dbc(hdbc1,
+               SQLDriverConnect(
+                 hdbc1, NULL,
+                 get_connection_string(conn, data, use_alternative_parameter_name),
+                 SQL_NTS, conn_out,
+                 sizeof(conn_out), &conn_out_len,
+                 SQL_DRIVER_NOPROMPT),
+               SQL_SUCCESS);
+
+    ok_con(hdbc1, SQLAllocStmt(hdbc1, &hstmt1));
+
+    ok_sql(hstmt1, "select @@version");
+    ok_stmt(hstmt1,SQLFetch(hstmt1));
+
+    SQLGetData(hstmt1, 1, SQL_CHAR, buf, sizeof(buf), &buflen);
+    printf("Server version: %s\n",buf);
+
+    ok_stmt(hstmt1, SQLFreeStmt(hstmt1, SQL_CLOSE));
+
+    ok_con(hdbc1, SQLDisconnect(hdbc1));
+    ok_con(hdbc1, SQLFreeConnect(hdbc1));
+
+  }
+
+
+  ok_sql(hstmt, "drop user if exists  user_1f");
+  ok_sql(hstmt, "drop user if exists  user_2f");
+  ok_sql(hstmt, "drop user if exists  user_3f");
+
+  ok_env(henv1, SQLFreeEnv(henv1));
+
+#endif
+
+  return OK;
+}
+
+
+
 DECLARE_TEST(t_dummy_test)
 {
   return OK;
@@ -360,6 +642,7 @@ BEGIN_TESTS
   // ADD_TEST(t_plugin_auth) TODO: Fix
   ADD_TEST(t_dummy_test)
   ADD_TEST(t_ldap_auth)
+  ADD_TEST(t_mfa_auth)
   END_TESTS
 
 RUN_TESTS
