@@ -516,15 +516,18 @@ DECLARE_TEST(t_mfa_auth)
 
   ok_env(henv1, SQLAllocHandle(SQL_HANDLE_ENV, SQL_NULL_HANDLE, &henv1));
 
+#ifdef SQL_OV_ODBC3_80
   if(myenable_pooling)
   {
     ok_env(henv1, SQLSetEnvAttr(henv1, SQL_ATTR_ODBC_VERSION,
                                 (SQLPOINTER)SQL_OV_ODBC3_80, 0));
   }
   else
+#endif
   {
     ok_env(henv1, SQLSetEnvAttr(henv1, SQL_ATTR_ODBC_VERSION,
                                 (SQLPOINTER)SQL_OV_ODBC3, 0));
+
   }
 
   if(myenable_pooling)
@@ -550,14 +553,14 @@ DECLARE_TEST(t_mfa_auth)
 
     if(data->succeed)
     {
-      expect_dbc(hdbc1,
-                 SQLDriverConnect(
-                   hdbc1, NULL,
-                   get_connection_string(conn, data, use_alternative_parameter_name),
-                   SQL_NTS, conn_out,
-                   sizeof(conn_out), &conn_out_len,
-                   SQL_DRIVER_NOPROMPT),
-                 SQL_SUCCESS);
+      rc = SQLDriverConnect(
+            hdbc1, NULL,
+            get_connection_string(conn, data, use_alternative_parameter_name),
+            SQL_NTS, conn_out,
+            sizeof(conn_out), &conn_out_len,
+            SQL_DRIVER_NOPROMPT);
+      if(!SQL_IS_SUCCESS(rc))
+        TEST_RETURN_FAIL;
 
     }
     else
@@ -594,14 +597,15 @@ DECLARE_TEST(t_mfa_auth)
 
     ok_env(henv1, SQLAllocHandle(SQL_HANDLE_DBC, henv1, &hdbc1));
 
-    expect_dbc(hdbc1,
-               SQLDriverConnect(
-                 hdbc1, NULL,
-                 get_connection_string(conn, data, use_alternative_parameter_name),
-                 SQL_NTS, conn_out,
-                 sizeof(conn_out), &conn_out_len,
-                 SQL_DRIVER_NOPROMPT),
-               SQL_SUCCESS);
+    rc = SQLDriverConnect(
+          hdbc1, NULL,
+          get_connection_string(conn, data, use_alternative_parameter_name),
+          SQL_NTS, conn_out,
+          sizeof(conn_out), &conn_out_len,
+          SQL_DRIVER_NOPROMPT);
+
+    if(!SQL_IS_SUCCESS(rc))
+      TEST_RETURN_FAIL;
 
     ok_con(hdbc1, SQLAllocStmt(hdbc1, &hstmt1));
 
