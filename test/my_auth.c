@@ -562,6 +562,8 @@ DECLARE_TEST(t_mfa_auth)
       if(!SQL_IS_SUCCESS(rc))
         TEST_RETURN_FAIL;
 
+      printf("CONN OUT: %s\n", conn_out);
+
     }
     else
     {
@@ -606,6 +608,8 @@ DECLARE_TEST(t_mfa_auth)
 
     if(!SQL_IS_SUCCESS(rc))
       TEST_RETURN_FAIL;
+
+    printf("CONN OUT: %s\n", conn_out);
 
     ok_con(hdbc1, SQLAllocStmt(hdbc1, &hstmt1));
 
