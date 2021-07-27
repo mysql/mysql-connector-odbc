@@ -51,6 +51,7 @@
 #define IDD_TAB4                        134
 #define IDD_TAB5                        136
 #define IDD_TAB6                        137
+#define IDD_TAB7                        138
 #define IDC_LOGO                        1000
 #define IDC_EDIT_DRVNAME                1004
 #define IDC_EDIT_DRVDESC                1005
@@ -144,6 +145,8 @@
 #define IDC_CHECK_multi_host            10066
 #define IDC_EDIT_load_data_local_dir    10067
 #define IDC_CHOOSER_load_data_local_dir 10068
+#define IDC_EDIT_pwd2                   10069
+#define IDC_EDIT_pwd3                   10070
 #define IDC_BUTTON_TEST                 11014
 #define IDC_BUTTON_HELP                 11015
 #define IDC_STATIC                      -1

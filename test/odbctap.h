@@ -184,7 +184,7 @@ char *SKIP_REASON= NULL;
 
 typedef int (*test_func)(SQLHDBC, SQLHSTMT, SQLHENV);
 static void print_diag(SQLRETURN rc, SQLSMALLINT htype, SQLHANDLE handle,
-		       const char *text, const char *file, int line);
+           const char *text, const char *file, int line);
 
 /* Disable _attribute__ on non-gcc compilers. */
 #if !defined(__attribute__) && !defined(__GNUC__)
@@ -651,7 +651,7 @@ int check_sqlstate_ex(SQLHANDLE hnd, SQLSMALLINT hndtype, char *sqlstate)
   finish with SQL_SUCCESS(_WITH_INFO) result
 */
 static void print_diag(SQLRETURN rc, SQLSMALLINT htype, SQLHANDLE handle,
-		       const char *text, const char *file, int line)
+           const char *text, const char *file, int line)
 {
   if (rc != SQL_SUCCESS)
   {
@@ -856,12 +856,12 @@ static int my_print_data(SQLHSTMT hstmt, SQLUSMALLINT index,
 /* If we just return FAIL from my_print_non_format_result - it will
    considered as 1 row by caller */
 #define mystmt_rows(hstmt,r, row)  \
-	do { \
-	print_diag(r, SQL_HANDLE_STMT, (hstmt), "mystmt_row(hstmt,r,row)", \
-	__FILE__, __LINE__); \
-	if (!SQL_IS_SUCCESS(r)) \
-	  return row; \
-	} while (0)
+  do { \
+  print_diag(r, SQL_HANDLE_STMT, (hstmt), "mystmt_row(hstmt,r,row)", \
+  __FILE__, __LINE__); \
+  if (!SQL_IS_SUCCESS(r)) \
+    return row; \
+  } while (0)
 /**
 RESULT SET
 */
@@ -1141,7 +1141,7 @@ int mysql_min_version(SQLHDBC hdbc, char *min_version, unsigned int length)
       major1 == major2 && (minor1 > minor2 ||
                           minor1 ==  minor2 && build1 >= build2))
     {
-		  return TRUE;
+      return TRUE;
     }
   }
 

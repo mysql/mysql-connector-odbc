@@ -289,6 +289,34 @@ int wakeup_connection(DBC *dbc)
 {
   DataSource *ds= dbc->ds;
 
+  if(ds->pwd1 && ds->pwd1[0])
+  {
+    ds_get_utf8attr(ds->pwd1, &ds->pwd18);
+    int fator = 2;
+    mysql_options4(dbc->mysql, MYSQL_OPT_USER_PASSWORD,
+                   &fator,
+                   ds->pwd18);
+  }
+
+  if(ds->pwd2 && ds->pwd2[0])
+  {
+    ds_get_utf8attr(ds->pwd2, &ds->pwd28);
+    int fator = 2;
+    mysql_options4(dbc->mysql, MYSQL_OPT_USER_PASSWORD,
+                   &fator,
+                   ds->pwd28);
+  }
+
+  if(ds->pwd3 && ds->pwd3[0])
+  {
+    ds_get_utf8attr(ds->pwd3, &ds->pwd38);
+    int fator = 3;
+    mysql_options4(dbc->mysql, MYSQL_OPT_USER_PASSWORD,
+                   &fator,
+                   ds->pwd38);
+  }
+
+
   if (mysql_change_user(dbc->mysql, ds_get_utf8attr(ds->uid, &ds->uid8),
                                      ds_get_utf8attr(ds->pwd, &ds->pwd8),
                                      ds_get_utf8attr(ds->database, &ds->database8)))
@@ -355,7 +383,7 @@ void STMT::allocate_param_bind(uint elements)
 
   myodbc_init_dynamic_array(param_bind, sizeof(MYSQL_BIND), elements, 10);
   memset(param_bind->buffer, 0, sizeof(MYSQL_BIND) *
-				 param_bind->max_element);
+         param_bind->max_element);
 }
 
 

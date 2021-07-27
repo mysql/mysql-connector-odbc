@@ -353,7 +353,11 @@ void syncTabsData(HWND hwnd, DataSource *params)
   GET_STRING_TAB(CONNECTION_TAB, plugin_dir);
   GET_STRING_TAB(CONNECTION_TAB, default_auth);
 
-  /* 2 - Metadata*/
+  /* 2 - MFA*/
+  GET_STRING_TAB(MFA_TAB, pwd2);
+  GET_STRING_TAB(MFA_TAB, pwd3);
+
+  /* 3 - Metadata*/
   GET_BOOL_TAB(METADATA_TAB, change_bigint_columns_to_int);
   GET_BOOL_TAB(METADATA_TAB, handle_binary_as_char);
   GET_BOOL_TAB(METADATA_TAB, return_table_names_for_SqlDescribeCol);
@@ -362,7 +366,7 @@ void syncTabsData(HWND hwnd, DataSource *params)
   GET_BOOL_TAB(METADATA_TAB, limit_column_size);
   GET_BOOL_TAB(METADATA_TAB, no_information_schema);
 
-  /* 3 - Cursors/Results */
+  /* 4 - Cursors/Results */
   GET_BOOL_TAB(CURSORS_TAB, return_matching_rows);
   GET_BOOL_TAB(CURSORS_TAB, auto_increment_null_search);
   GET_BOOL_TAB(CURSORS_TAB, dynamic_cursor);
@@ -380,10 +384,10 @@ void syncTabsData(HWND hwnd, DataSource *params)
   {
     params->cursor_prefetch_number= 0;
   }
-  /* 4 - debug*/
+  /* 5 - debug*/
   GET_BOOL_TAB(DEBUG_TAB,save_queries);
 
-  /* 5 - ssl related */
+  /* 6 - ssl related */
   GET_STRING_TAB(SSL_TAB, sslkey);
   GET_STRING_TAB(SSL_TAB, sslcert);
   GET_STRING_TAB(SSL_TAB, sslca);
@@ -398,7 +402,7 @@ void syncTabsData(HWND hwnd, DataSource *params)
   GET_BOOL_TAB(SSL_TAB, no_tls_1_2);
   GET_BOOL_TAB(SSL_TAB, no_tls_1_3);
 
-  /* 6 - Misc*/
+  /* 7 - Misc*/
   GET_BOOL_TAB(MISC_TAB, safe);
   GET_BOOL_TAB(MISC_TAB, dont_use_set_locale);
   GET_BOOL_TAB(MISC_TAB, ignore_space_after_function_names);
@@ -441,7 +445,12 @@ void syncTabs(HWND hwnd, DataSource *params)
     SET_STRING_TAB(CONNECTION_TAB,default_auth);
   }
 
-  /* 2 - Metadata*/
+  /* 2- MFA*/
+  /* 2 - MFA*/
+  SET_STRING_TAB(MFA_TAB, pwd2);
+  SET_STRING_TAB(MFA_TAB, pwd3);
+
+  /* 3 - Metadata*/
   SET_BOOL_TAB(METADATA_TAB, change_bigint_columns_to_int);
   SET_BOOL_TAB(METADATA_TAB, handle_binary_as_char);
   SET_BOOL_TAB(METADATA_TAB, return_table_names_for_SqlDescribeCol);
@@ -450,7 +459,7 @@ void syncTabs(HWND hwnd, DataSource *params)
   SET_BOOL_TAB(METADATA_TAB, limit_column_size);
   SET_BOOL_TAB(METADATA_TAB, no_information_schema);
 
-  /* 3 - Cursors/Results */
+  /* 4 - Cursors/Results */
   SET_BOOL_TAB(CURSORS_TAB, return_matching_rows);
   SET_BOOL_TAB(CURSORS_TAB, auto_increment_null_search);
   SET_BOOL_TAB(CURSORS_TAB, dynamic_cursor);
@@ -469,10 +478,10 @@ void syncTabs(HWND hwnd, DataSource *params)
     SET_UNSIGNED_TAB(CURSORS_TAB, cursor_prefetch_number);
   }
 
-  /* 4 - debug*/
+  /* 5 - debug*/
   SET_BOOL_TAB(DEBUG_TAB,save_queries);
 
-  /* 5 - ssl related */
+  /* 6 - ssl related */
 #ifdef _WIN32
   if ( getTabCtrlTabPages(SSL_TAB-1) )
 #endif
@@ -504,7 +513,7 @@ void syncTabs(HWND hwnd, DataSource *params)
     SET_BOOL_TAB(SSL_TAB, no_tls_1_3);
   }
 
-  /* 6 - Misc*/
+  /* 7 - Misc*/
   SET_BOOL_TAB(MISC_TAB, safe);
   SET_BOOL_TAB(MISC_TAB, dont_use_set_locale);
   SET_BOOL_TAB(MISC_TAB, ignore_space_after_function_names);

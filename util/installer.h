@@ -77,6 +77,9 @@ typedef struct {
   SQLWCHAR *server;
   SQLWCHAR *uid;
   SQLWCHAR *pwd;
+  SQLWCHAR *pwd1;
+  SQLWCHAR *pwd2;
+  SQLWCHAR *pwd3;
   SQLWCHAR *database;
   SQLWCHAR *socket;
   SQLWCHAR *initstmt;
@@ -105,6 +108,9 @@ typedef struct {
   SQLCHAR *server8;
   SQLCHAR *uid8;
   SQLCHAR *pwd8;
+  SQLCHAR *pwd18;
+  SQLCHAR *pwd28;
+  SQLCHAR *pwd38;
   SQLCHAR *database8;
   SQLCHAR *socket8;
   SQLCHAR *initstmt8;

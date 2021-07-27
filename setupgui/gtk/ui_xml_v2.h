@@ -792,6 +792,88 @@ static char *ui_xml ="<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" \
                   "</packing>\n" \
                 "</child>\n" \
                 "<child>\n" \
+                  "<object class=\"GtkVBox\" id=\"vboxMFA\">\n" \
+                    "<property name=\"visible\">True</property>\n" \
+                    "<property name=\"can_focus\">False</property>\n" \
+                    "<property name=\"border_width\">8</property>\n" \
+                    "<child>\n" \
+                      "<object class=\"GtkTable\">\n" \
+                        "<property name=\"visible\">True</property>\n" \
+                        "<property name=\"can_focus\">False</property>\n" \
+                        "<property name=\"n_rows\">2</property>\n" \
+                        "<property name=\"n_columns\">2</property>\n" \
+                        "<property name=\"column_spacing\">8</property>\n" \
+                        "<property name=\"row_spacing\">5</property>\n" \
+                        "<child>\n" \
+                          "<object class=\"GtkLabel\">\n" \
+                            "<property name=\"visible\">True</property>\n" \
+                            "<property name=\"can_focus\">False</property>\n" \
+                            "<property name=\"label\" translatable=\"yes\">Password 2:</property>\n" \
+                            "<property name=\"xalign\">1</property>\n" \
+                          "</object>\n" \
+                        "</child>\n" \
+                        "<child>\n" \
+                          "<object class=\"GtkLabel\" id=\"label4\">\n" \
+                            "<property name=\"visible\">True</property>\n" \
+                            "<property name=\"can_focus\">False</property>\n" \
+                            "<property name=\"label\" translatable=\"yes\">Password 3:</property>\n" \
+                            "<property name=\"xalign\">1</property>\n" \
+                          "</object>\n" \
+                          "<packing>\n" \
+                            "<property name=\"top_attach\">1</property>\n" \
+                            "<property name=\"bottom_attach\">2</property>\n" \
+                          "</packing>\n" \
+                        "</child>\n" \
+                        "<child>\n" \
+                          "<object class=\"GtkEntry\" id=\"pwd2\">\n" \
+                            "<property name=\"visible\">True</property>\n" \
+                            "<property name=\"can_focus\">True</property>\n" \
+                            "<property name=\"visibility\">False</property>\n" \
+                            "<property name=\"invisible_char\">●</property>\n" \
+                          "</object>\n" \
+                          "<packing>\n" \
+                            "<property name=\"left_attach\">1</property>\n" \
+                            "<property name=\"right_attach\">2</property>\n" \
+                          "</packing>\n" \
+                        "</child>\n" \
+                        "<child>\n" \
+                          "<object class=\"GtkEntry\" id=\"pwd3\">\n" \
+                            "<property name=\"visible\">True</property>\n" \
+                            "<property name=\"can_focus\">True</property>\n" \
+                            "<property name=\"visibility\">False</property>\n" \
+                            "<property name=\"invisible_char\">●</property>\n" \
+                          "</object>\n" \
+                          "<packing>\n" \
+                            "<property name=\"left_attach\">1</property>\n" \
+                            "<property name=\"right_attach\">2</property>\n" \
+                            "<property name=\"top_attach\">1</property>\n" \
+                            "<property name=\"bottom_attach\">2</property>\n" \
+                          "</packing>\n" \
+                        "</child>\n" \
+                      "</object>\n" \
+                      "<packing>\n" \
+                        "<property name=\"expand\">False</property>\n" \
+                        "<property name=\"fill\">True</property>\n" \
+                        "<property name=\"position\">0</property>\n" \
+                      "</packing>\n" \
+                    "</child>\n" \
+                  "</object>\n" \
+                  "<packing>\n" \
+                    "<property name=\"position\">1</property>\n" \
+                  "</packing>\n" \
+                "</child>\n" \
+                "<child type=\"tab\">\n" \
+                  "<object class=\"GtkLabel\">\n" \
+                    "<property name=\"visible\">True</property>\n" \
+                    "<property name=\"can_focus\">False</property>\n" \
+                    "<property name=\"label\" translatable=\"yes\">MFA Options</property>\n" \
+                  "</object>\n" \
+                  "<packing>\n" \
+                    "<property name=\"position\">1</property>\n" \
+                    "<property name=\"tab-fill\">False</property>\n" \
+                  "</packing>\n" \
+                "</child>\n" \
+                "<child>\n" \
                   "<object class=\"GtkVBox\" id=\"vboxMetadata\">\n" \
                     "<property name=\"visible\">True</property>\n" \
                     "<property name=\"can_focus\">False</property>\n" \
@@ -925,7 +1007,7 @@ static char *ui_xml ="<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" \
                     "</child>\n" \
                   "</object>\n" \
                   "<packing>\n" \
-                    "<property name=\"position\">1</property>\n" \
+                    "<property name=\"position\">2</property>\n" \
                   "</packing>\n" \
                 "</child>\n" \
                 "<child type=\"tab\">\n" \
@@ -936,7 +1018,7 @@ static char *ui_xml ="<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" \
                     "<property name=\"label\" translatable=\"yes\">Metadata</property>\n" \
                   "</object>\n" \
                   "<packing>\n" \
-                    "<property name=\"position\">1</property>\n" \
+                    "<property name=\"position\">2</property>\n" \
                     "<property name=\"tab_fill\">False</property>\n" \
                   "</packing>\n" \
                 "</child>\n" \
@@ -1168,7 +1250,7 @@ static char *ui_xml ="<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" \
                     "</child>\n" \
                   "</object>\n" \
                   "<packing>\n" \
-                    "<property name=\"position\">2</property>\n" \
+                    "<property name=\"position\">3</property>\n" \
                   "</packing>\n" \
                 "</child>\n" \
                 "<child type=\"tab\">\n" \
@@ -1179,7 +1261,7 @@ static char *ui_xml ="<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" \
                     "<property name=\"label\" translatable=\"yes\">Cursors/Results</property>\n" \
                   "</object>\n" \
                   "<packing>\n" \
-                    "<property name=\"position\">2</property>\n" \
+                    "<property name=\"position\">3</property>\n" \
                     "<property name=\"tab_fill\">False</property>\n" \
                   "</packing>\n" \
                 "</child>\n" \
@@ -1209,7 +1291,7 @@ static char *ui_xml ="<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" \
                     "</child>\n" \
                   "</object>\n" \
                   "<packing>\n" \
-                    "<property name=\"position\">3</property>\n" \
+                    "<property name=\"position\">4</property>\n" \
                   "</packing>\n" \
                 "</child>\n" \
                 "<child type=\"tab\">\n" \
@@ -1221,7 +1303,7 @@ static char *ui_xml ="<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" \
                   "</object>\n" \
                   "<packing>\n" \
                     "<property name=\"menu_label\">lTabDebug</property>\n" \
-                    "<property name=\"position\">3</property>\n" \
+                    "<property name=\"position\">4</property>\n" \
                     "<property name=\"tab_fill\">False</property>\n" \
                   "</packing>\n" \
                 "</child>\n" \
@@ -1591,7 +1673,7 @@ static char *ui_xml ="<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" \
                     "</child>\n" \
                   "</object>\n" \
                   "<packing>\n" \
-                    "<property name=\"position\">4</property>\n" \
+                    "<property name=\"position\">5</property>\n" \
                   "</packing>\n" \
                 "</child>\n" \
                 "<child type=\"tab\">\n" \
@@ -1602,7 +1684,7 @@ static char *ui_xml ="<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" \
                     "<property name=\"label\" translatable=\"yes\">SSL</property>\n" \
                   "</object>\n" \
                   "<packing>\n" \
-                    "<property name=\"position\">4</property>\n" \
+                    "<property name=\"position\">5</property>\n" \
                     "<property name=\"tab_fill\">False</property>\n" \
                   "</packing>\n" \
                 "</child>\n" \
@@ -1876,7 +1958,7 @@ static char *ui_xml ="<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" \
                     "</child>\n" \
                   "</object>\n" \
                   "<packing>\n" \
-                    "<property name=\"position\">5</property>\n" \
+                    "<property name=\"position\">6</property>\n" \
                   "</packing>\n" \
                 "</child>\n" \
                 "<child type=\"tab\">\n" \
@@ -1887,7 +1969,7 @@ static char *ui_xml ="<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" \
                     "<property name=\"label\" translatable=\"yes\">Misc</property>\n" \
                   "</object>\n" \
                   "<packing>\n" \
-                    "<property name=\"position\">5</property>\n" \
+                    "<property name=\"position\">6</property>\n" \
                     "<property name=\"tab_fill\">False</property>\n" \
                   "</packing>\n" \
                 "</child>\n" \
