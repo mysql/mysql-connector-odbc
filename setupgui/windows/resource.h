@@ -147,6 +147,8 @@
 #define IDC_CHOOSER_load_data_local_dir 10068
 #define IDC_EDIT_pwd2                   10069
 #define IDC_EDIT_pwd3                   10070
+#define IDC_EDIT_oci_config_file        10071
+#define IDC_CHOOSER_oci_config_file     10072
 #define IDC_BUTTON_TEST                 11014
 #define IDC_BUTTON_HELP                 11015
 #define IDC_STATIC                      -1

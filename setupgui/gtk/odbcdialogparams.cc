@@ -389,7 +389,7 @@ void on_charset_popup (GtkComboBox *widget, gpointer user_data)
 }
 #endif
 
-void on_ssl_file_button_clicked(GtkComboBox *widget, gpointer user_data)
+void on_file_button_clicked(GtkComboBox *widget, gpointer user_data)
 {
   GtkWidget *dialog;
   dialog = gtk_file_chooser_dialog_new ("Choose File",
@@ -409,7 +409,7 @@ void on_ssl_file_button_clicked(GtkComboBox *widget, gpointer user_data)
 }
 
 
-void on_ssl_folder_button_clicked(GtkComboBox *widget, gpointer user_data)
+void on_folder_button_clicked(GtkComboBox *widget, gpointer user_data)
 {
   GtkWidget *dialog;
   dialog = gtk_file_chooser_dialog_new ("Choose Directory",
@@ -730,27 +730,27 @@ int ShowOdbcParamsDialog(DataSource* params, HWND ParentWnd, BOOL isPrompt)
   dummy= GTK_WIDGET (gtk_builder_get_object (builder, "sslkey_button"));
   entry= GTK_ENTRY (gtk_builder_get_object (builder, "sslkey"));
   g_signal_connect ((gpointer) dummy, "clicked",
-                    G_CALLBACK (on_ssl_file_button_clicked), entry);
+                    G_CALLBACK (on_file_button_clicked), entry);
 
   dummy= GTK_WIDGET (gtk_builder_get_object (builder, "sslcert_button"));
   entry= GTK_ENTRY (gtk_builder_get_object (builder, "sslcert"));
   g_signal_connect ((gpointer) dummy, "clicked",
-                    G_CALLBACK (on_ssl_file_button_clicked), entry);
+                    G_CALLBACK (on_file_button_clicked), entry);
 
   dummy= GTK_WIDGET (gtk_builder_get_object (builder, "sslca_button"));
   entry= GTK_ENTRY (gtk_builder_get_object (builder, "sslca"));
   g_signal_connect ((gpointer) dummy, "clicked",
-                    G_CALLBACK (on_ssl_file_button_clicked), entry);
+                    G_CALLBACK (on_file_button_clicked), entry);
 
   dummy= GTK_WIDGET (gtk_builder_get_object (builder, "sslcapath_button"));
   entry= GTK_ENTRY (gtk_builder_get_object (builder, "sslcapath"));
   g_signal_connect ((gpointer) dummy, "clicked",
-                    G_CALLBACK (on_ssl_folder_button_clicked), entry);
+                    G_CALLBACK (on_folder_button_clicked), entry);
 
   dummy= GTK_WIDGET (gtk_builder_get_object (builder, "rsakey_button"));
   entry= GTK_ENTRY (gtk_builder_get_object (builder, "rsakey"));
   g_signal_connect ((gpointer) dummy, "clicked",
-                    G_CALLBACK (on_ssl_file_button_clicked), entry);
+                    G_CALLBACK (on_file_button_clicked), entry);
 
 
   dummy= GTK_WIDGET (gtk_builder_get_object (builder, "cursor_prefetch_active"));
@@ -760,12 +760,17 @@ int ShowOdbcParamsDialog(DataSource* params, HWND ParentWnd, BOOL isPrompt)
   dummy= GTK_WIDGET (gtk_builder_get_object (builder, "plugindir_button"));
   entry= GTK_ENTRY (gtk_builder_get_object (builder, "plugin_dir"));
   g_signal_connect ((gpointer) dummy, "clicked",
-                    G_CALLBACK (on_ssl_folder_button_clicked), entry);
+                    G_CALLBACK (on_folder_button_clicked), entry);
 
   dummy= GTK_WIDGET (gtk_builder_get_object (builder, "load_data_local_dir_button"));
   entry= GTK_ENTRY (gtk_builder_get_object (builder, "load_data_local_dir"));
   g_signal_connect ((gpointer) dummy, "clicked",
-                    G_CALLBACK (on_ssl_folder_button_clicked), entry);
+                    G_CALLBACK (on_folder_button_clicked), entry);
+
+  dummy= GTK_WIDGET (gtk_builder_get_object (builder, "oci_config_file_button"));
+  entry= GTK_ENTRY (gtk_builder_get_object (builder, "oci_config_file"));
+  g_signal_connect ((gpointer) dummy, "clicked",
+                    G_CALLBACK (on_file_button_clicked), entry);
 
   gtk_builder_connect_signals(builder, NULL);
 
