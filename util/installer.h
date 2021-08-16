@@ -77,9 +77,11 @@ typedef struct {
   SQLWCHAR *server;
   SQLWCHAR *uid;
   SQLWCHAR *pwd;
+#if MFA_ENABLED
   SQLWCHAR *pwd1;
   SQLWCHAR *pwd2;
   SQLWCHAR *pwd3;
+#endif
   SQLWCHAR *database;
   SQLWCHAR *socket;
   SQLWCHAR *initstmt;
@@ -108,9 +110,11 @@ typedef struct {
   SQLCHAR *server8;
   SQLCHAR *uid8;
   SQLCHAR *pwd8;
+#if MFA_ENABLED
   SQLCHAR *pwd18;
   SQLCHAR *pwd28;
   SQLCHAR *pwd38;
+#endif
   SQLCHAR *database8;
   SQLCHAR *socket8;
   SQLCHAR *initstmt8;

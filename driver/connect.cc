@@ -478,6 +478,7 @@ SQLRETURN DBC::connect(DataSource *dsrc)
                   dsrc->load_data_local_dir8);
   }
 
+#if MFA_ENABLED
   if(dsrc->pwd1 && dsrc->pwd1[0])
   {
     ds_get_utf8attr(dsrc->pwd1, &dsrc->pwd18);
@@ -504,7 +505,7 @@ SQLRETURN DBC::connect(DataSource *dsrc)
                    &fator,
                    dsrc->pwd38);
   }
-
+#endif
 #if MYSQL_VERSION_ID >= 50711
   if (dsrc->sslmode)
   {

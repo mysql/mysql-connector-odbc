@@ -353,9 +353,11 @@ void syncTabsData(HWND hwnd, DataSource *params)
   GET_STRING_TAB(CONNECTION_TAB, plugin_dir);
   GET_STRING_TAB(CONNECTION_TAB, default_auth);
 
+#if MFA_ENABLED
   /* 2 - MFA*/
   GET_STRING_TAB(MFA_TAB, pwd2);
   GET_STRING_TAB(MFA_TAB, pwd3);
+#endif
 
   /* 3 - Metadata*/
   GET_BOOL_TAB(METADATA_TAB, change_bigint_columns_to_int);
@@ -445,10 +447,11 @@ void syncTabs(HWND hwnd, DataSource *params)
     SET_STRING_TAB(CONNECTION_TAB,default_auth);
   }
 
-  /* 2- MFA*/
+#if MFA_ENABLED
   /* 2 - MFA*/
   SET_STRING_TAB(MFA_TAB, pwd2);
   SET_STRING_TAB(MFA_TAB, pwd3);
+#endif
 
   /* 3 - Metadata*/
   SET_BOOL_TAB(METADATA_TAB, change_bigint_columns_to_int);
