@@ -650,7 +650,9 @@ BEGIN_TESTS
   // ADD_TEST(t_plugin_auth) TODO: Fix
   ADD_TEST(t_dummy_test)
   ADD_TEST(t_ldap_auth)
+#if MFA_ENABLED
   ADD_TEST(t_mfa_auth)
+#endif
   END_TESTS
 
 RUN_TESTS

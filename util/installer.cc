@@ -90,12 +90,14 @@ static SQLWCHAR W_UID[]= {'U', 'I', 'D', 0};
 static SQLWCHAR W_USER[]= {'U', 'S', 'E', 'R', 0};
 static SQLWCHAR W_PWD[]= {'P', 'W', 'D', 0};
 static SQLWCHAR W_PASSWORD[]= {'P', 'A', 'S', 'S', 'W', 'O', 'R', 'D', 0};
+#if MFA_ENABLED
 static SQLWCHAR W_PWD1[]= {'P', 'W', 'D', '1', 0};
 static SQLWCHAR W_PASSWORD1[]= {'P', 'A', 'S', 'S', 'W', 'O', 'R', 'D', '1', 0};
 static SQLWCHAR W_PWD2[]= {'P', 'W', 'D', '2', 0};
 static SQLWCHAR W_PASSWORD2[]= {'P', 'A', 'S', 'S', 'W', 'O', 'R', 'D', '2', 0};
 static SQLWCHAR W_PWD3[]= {'P', 'W', 'D', '3', 0};
 static SQLWCHAR W_PASSWORD3[]= {'P', 'A', 'S', 'S', 'W', 'O', 'R', 'D', '3', 0};
+#endif
 static SQLWCHAR W_DB[]= {'D', 'B', 0};
 static SQLWCHAR W_DATABASE[]= {'D', 'A', 'T', 'A', 'B', 'A', 'S', 'E', 0};
 static SQLWCHAR W_SOCKET[]= {'S', 'O', 'C', 'K', 'E', 'T', 0};
@@ -224,9 +226,11 @@ const SQLWCHAR W_INVALID_ATTR_STR[]= {'I', 'n', 'v', 'a', 'l', 'i', 'd', ' ',
 /* List of all DSN params, used when serializing to string */
 static const
 SQLWCHAR *dsnparams[]= {W_DSN, W_DRIVER, W_DESCRIPTION, W_SERVER,
-                        W_UID, W_PWD, W_PWD1, W_PWD2, W_PWD3, W_DATABASE,
-                        W_SOCKET, W_INITSTMT, W_PORT, W_OPTION, W_CHARSET,
-                        W_SSLKEY, W_SSLCERT, W_SSLCA, W_SSLCAPATH, W_SSLCIPHER,
+                        W_UID, W_PWD,
+#if MFA_ENABLED
+                        W_PWD1, W_PWD2, W_PWD3,
+#endif
+                        W_DATABASE, W_SOCKET, W_INITSTMT,
                         W_SSLVERIFY, W_READTIMEOUT, W_WRITETIMEOUT,
                         W_FOUND_ROWS, W_BIG_PACKETS, W_NO_PROMPT,
                         W_DYNAMIC_CURSOR, W_NO_DEFAULT_CURSOR,
@@ -683,9 +687,11 @@ void ds_delete(DataSource *ds)
   x_free(ds->server);
   x_free(ds->uid);
   x_free(ds->pwd);
+#if MFA_ENABLED
   x_free(ds->pwd1);
   x_free(ds->pwd2);
   x_free(ds->pwd3);
+#endif
   x_free(ds->database);
   x_free(ds->socket);
   x_free(ds->initstmt);
@@ -708,9 +714,11 @@ void ds_delete(DataSource *ds)
   x_free(ds->server8);
   x_free(ds->uid8);
   x_free(ds->pwd8);
+#if MFA_ENABLED
   x_free(ds->pwd18);
   x_free(ds->pwd28);
   x_free(ds->pwd38);
+#endif
   x_free(ds->database8);
   x_free(ds->socket8);
   x_free(ds->initstmt8);
@@ -801,6 +809,7 @@ void ds_map_param(DataSource *ds, const SQLWCHAR *param,
     *strdest= &ds->pwd;
   else if (!sqlwcharcasecmp(W_PASSWORD, param))
     *strdest= &ds->pwd;
+#if MFA_ENABLED
   else if (!sqlwcharcasecmp(W_PWD1, param))
     *strdest= &ds->pwd1;
   else if (!sqlwcharcasecmp(W_PASSWORD1, param))
@@ -813,6 +822,7 @@ void ds_map_param(DataSource *ds, const SQLWCHAR *param,
     *strdest= &ds->pwd3;
   else if (!sqlwcharcasecmp(W_PASSWORD3, param))
     *strdest= &ds->pwd3;
+#endif
   else if (!sqlwcharcasecmp(W_DB, param))
     *strdest= &ds->database;
   else if (!sqlwcharcasecmp(W_DATABASE, param))
@@ -1376,9 +1386,11 @@ int ds_add(DataSource *ds)
   if (ds_add_strprop(ds->name, W_SERVER     , ds->server     )) goto error;
   if (ds_add_strprop(ds->name, W_UID        , ds->uid        )) goto error;
   if (ds_add_strprop(ds->name, W_PWD        , ds->pwd        )) goto error;
+#if MFA_ENABLED
   if (ds_add_strprop(ds->name, W_PWD1       , ds->pwd1       )) goto error;
   if (ds_add_strprop(ds->name, W_PWD2       , ds->pwd2       )) goto error;
   if (ds_add_strprop(ds->name, W_PWD3       , ds->pwd3       )) goto error;
+#endif
   if (ds_add_strprop(ds->name, W_DATABASE   , ds->database   )) goto error;
   if (ds_add_strprop(ds->name, W_SOCKET     , ds->socket     )) goto error;
   if (ds_add_strprop(ds->name, W_INITSTMT   , ds->initstmt   )) goto error;

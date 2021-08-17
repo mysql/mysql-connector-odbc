@@ -373,14 +373,28 @@ void btnDetails_Click (HWND hwnd)
 
   if(!flag && mod==1)
   {
-    static PWSTR tabnames[]= {L"Connection", L"MFA" ,L"Metadata", L"Cursors/Results", L"Debug", L"SSL", L"Misc", 0};
+    static PWSTR tabnames[] = {
+      L"Connection",
+#if MFA_ENABLED
+      L"MFA",
+#endif
+      L"Metadata",
+      L"Cursors/Results",
+      L"Debug",
+      L"SSL",
+      L"Misc", 0
+    };
+
     static PWSTR dlgnames[]= {MAKEINTRESOURCE(IDD_TAB1),
                     MAKEINTRESOURCE(IDD_TAB2),
                     MAKEINTRESOURCE(IDD_TAB3),
                     MAKEINTRESOURCE(IDD_TAB4),
                     MAKEINTRESOURCE(IDD_TAB5),
                     MAKEINTRESOURCE(IDD_TAB6),
-                    MAKEINTRESOURCE(IDD_TAB7),0};
+#if MFA_ENABLED
+                    MAKEINTRESOURCE(IDD_TAB7),
+#endif
+0};
 
     New_TabControl( &TabCtrl_1,                 // address of TabControl struct
                     GetDlgItem(hwnd, IDC_TAB1), // handle to tab control
