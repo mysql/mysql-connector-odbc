@@ -30,6 +30,41 @@
 #include "odbctap.h"
 #include <sqlucode.h>
 
+DECLARE_TEST(emojibug)
+{
+  DECLARE_BASIC_HANDLES(henv1, hdbc1, hstmt1);
+  SQLWCHAR wbuff[MAX_ROW_DATA_LEN+1];
+  SQLLEN nLen = 0;
+
+  alloc_basic_handles_with_opt(&henv1, &hdbc1, &hstmt1, NULL, NULL, NULL,
+                               NULL, "CHARSET=utf8mb4");
+
+  ok_con(hdbc, SQLAllocStmt(hdbc1, &hstmt1));
+
+  ok_sql(hstmt1, "DROP TABLE IF EXISTS test_emoji");
+  ok_sql(hstmt1, "CREATE TABLE test_emoji (col1 varchar(32) character set utf8mb4)");
+  ok_sql(hstmt1, "INSERT INTO test_emoji VALUES (0xf09f988a)");
+
+  ok_stmt(hstmt1, SQLPrepareW(hstmt1, W(L"SELECT * FROM test_emoji"), SQL_NTS));
+
+  ok_stmt(hstmt1, SQLExecute(hstmt1));
+
+  ok_stmt(hstmt1, SQLFetch(hstmt1));
+
+  ok_stmt(hstmt1, SQLGetData(hstmt1, 1, SQL_WCHAR, wbuff, MAX_ROW_DATA_LEN + 1, &nLen));
+  printf("Fetched %d bytes (%d, %d)\n", (int)nLen, wbuff[0], wbuff[1]);
+  SQLWCHAR smile[2] = { 0xD83D, 0xDE0A };
+  is_num(smile[0], wbuff[0]);
+  is_num(smile[1], wbuff[1]);
+
+  expect_stmt(hstmt1, SQLFetch(hstmt1), SQL_NO_DATA_FOUND);
+
+  ok_stmt(hstmt1, SQLFreeStmt(hstmt1, SQL_CLOSE));
+
+  free_basic_handles(&henv1, &hdbc1, &hstmt1);
+  return OK;
+}
+
 
 DECLARE_TEST(sqlconnect)
 {
@@ -1287,7 +1322,7 @@ DECLARE_TEST(t_bug14363601)
                  "dc DOUBLE, bc BLOB)CHARSET=UTF8");
 
   ok_stmt(hstmt1, SQLPrepareW(hstmt1,
-		    W(L"INSERT INTO bug14363601 (id, vc, dc, bc) "
+        W(L"INSERT INTO bug14363601 (id, vc, dc, bc) "
                       L"VALUES (?, ?, ?, ?)"), SQL_NTS));
 
   /* Bind 1st INT param */
@@ -1296,7 +1331,7 @@ DECLARE_TEST(t_bug14363601)
 
   /* Bind 2nd VARCHAR param */
   ok_stmt(hstmt1, SQLBindParameter(hstmt1, 2, SQL_PARAM_INPUT, SQL_C_WCHAR,
-				   SQL_WCHAR, 10, 0, col_vc,
+           SQL_WCHAR, 10, 0, col_vc,
                                   10*sizeof(SQLWCHAR), NULL));
 
   /* Bind 3rd DECIMAL param */
@@ -1374,7 +1409,7 @@ DECLARE_TEST(t_bug14838690)
                  ")CHARSET=UTF8");
 
   ok_stmt(hstmt, SQLPrepareW(hstmt,
-		    W(L"INSERT INTO bug14838690 (id, vc) "
+        W(L"INSERT INTO bug14838690 (id, vc) "
                       L"VALUES (?, ?)"), SQL_NTS));
 
   /* Bind 1st INT param */
@@ -1450,6 +1485,7 @@ DECLARE_TEST(t_bug28864788)
 
 BEGIN_TESTS
   ADD_TEST(sqlconnect)
+  ADD_TEST_UNICODE(emojibug)
   ADD_TEST_UNICODE(sqlstatistics)
   ADD_TEST_UNICODE(sqlprepare)
   ADD_TEST(sqlprepare_ansi)

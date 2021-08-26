@@ -104,6 +104,14 @@ void myodbc_init(void)
 
     utf8_charset_info= get_charset_by_csname("utf8", MYF(MY_CS_PRIMARY),
                                              MYF(0));
+
+#ifdef IS_BIG_ENDIAN
+    utf16_charset_info = get_charset_by_csname("utf16", MYF(MY_CS_PRIMARY),
+                                             MYF(0));
+#else
+    utf16_charset_info = get_charset_by_csname("utf16le", MYF(MY_CS_PRIMARY),
+                                             MYF(0));
+#endif
   }
 }
 
