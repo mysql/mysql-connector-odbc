@@ -73,6 +73,15 @@ endif()
 
 #-----------------------------------------------------
 
+include(TestBigEndian)
+test_big_endian(BIG_ENDIAN)
+message(STATUS "BIG_ENDIAN: ${BIG_ENDIAN}")
+if (BIG_ENDIAN)
+  add_definitions(-DIS_BIG_ENDIAN)
+endif()
+
+#-----------------------------------------------------
+
 FIND_PACKAGE(Threads)
 
 INCLUDE(version.cmake)

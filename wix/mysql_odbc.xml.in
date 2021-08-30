@@ -235,6 +235,7 @@
       <ComponentRef Id="setup" />
       <ComponentRef Id="installer" />
       <ComponentRef Id="ssl" />
+      <ComponentRef Id="plugins" />
     <?if $(var.odbc_64bit) = 1 ?>
     </Feature>
     <?else ?>

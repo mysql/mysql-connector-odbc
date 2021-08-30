@@ -36,7 +36,8 @@
 #include "stringutil.h"
 
 
-CHARSET_INFO *utf8_charset_info= NULL;
+CHARSET_INFO *utf8_charset_info = NULL;
+CHARSET_INFO *utf16_charset_info = NULL;
 
 
 /**

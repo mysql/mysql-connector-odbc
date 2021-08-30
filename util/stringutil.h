@@ -58,6 +58,7 @@ extern "C" {
 #define MAX_BYTES_PER_UTF8_CP 4 /* max 4 bytes per utf8 codepoint */
 
 extern CHARSET_INFO *utf8_charset_info;
+extern CHARSET_INFO *utf16_charset_info;
 
 struct CHARSET_COLLATION_INFO
 {
