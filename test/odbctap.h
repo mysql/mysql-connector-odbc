@@ -597,9 +597,9 @@ do { \
 */
 #define is_wstr(a, b, c) \
 do { \
-  wchar_t *val_a= (a), *val_b= (b); \
+  SQLWCHAR *val_a= (a), *val_b= (b); \
   int val_len= (int)(c); \
-  if (memcmp(val_a, val_b, val_len * sizeof(wchar_t)) != 0) { \
+  if (memcmp(val_a, val_b, val_len * sizeof(SQLWCHAR)) != 0) { \
     printf("# %s ('%*ls') != '%*ls' in %s on line %d\n", \
            #a, val_len, val_a, val_len, val_b, __FILE__, __LINE__); \
     TEST_RETURN_FAIL; \

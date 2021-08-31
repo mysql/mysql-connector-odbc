@@ -289,6 +289,7 @@ int wakeup_connection(DBC *dbc)
 {
   DataSource *ds= dbc->ds;
 
+#if MFA_ENABLED
   if(ds->pwd1 && ds->pwd1[0])
   {
     ds_get_utf8attr(ds->pwd1, &ds->pwd18);
@@ -315,7 +316,7 @@ int wakeup_connection(DBC *dbc)
                    &fator,
                    ds->pwd38);
   }
-
+#endif
 
   if (mysql_change_user(dbc->mysql, ds_get_utf8attr(ds->uid, &ds->uid8),
                                      ds_get_utf8attr(ds->pwd, &ds->pwd8),

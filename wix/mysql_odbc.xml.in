@@ -40,7 +40,7 @@
     SetVersion updates: Name, Id, Version. Do not change them manually.
   -->
 
-  <Product Id="@CONNECTOR_PKG_ID1@" UpgradeCode="FF073FBB-32E2-4052-B6B2-830C5ED4A809"
+  <Product Id="@CONNECTOR_PKG_ID1@" UpgradeCode="FF073FBB-32E2-4052-B6B2-830C5ED4A809" Codepage="utf-8"
     Name="MySQL Connector/ODBC $(var.odbc_ver_short)" Version="$(var.odbc_ver_long)" Language="1033" Manufacturer="Oracle Corporation">
 
   <!-- *****************************************************************************************
@@ -235,6 +235,7 @@
       <ComponentRef Id="setup" />
       <ComponentRef Id="installer" />
       <ComponentRef Id="ssl" />
+      <ComponentRef Id="plugins" />
     <?if $(var.odbc_64bit) = 1 ?>
     </Feature>
     <?else ?>

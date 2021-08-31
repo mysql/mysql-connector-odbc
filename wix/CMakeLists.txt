@@ -1,4 +1,4 @@
-# Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved. 
+# Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
 # 
 # This program is free software; you can redistribute it and/or modify 
 # it under the terms of the GNU General Public License, version 2.0, as 
@@ -114,6 +114,28 @@ FILE(WRITE "${LICENSE_RTF}"
      "{\\rtf1\\ansi\\deff0{\\fonttbl{\\f0\\fnil\\fcharset0 Courier New;}}\\viewkind4\\uc1\\pard\\lang1031\\f0\\fs15")
 FILE(APPEND "${LICENSE_RTF}" "${CONTENTS}")
 FILE(APPEND "${LICENSE_RTF}" "\n}\n")
+
+#-----------------------------------------------------
+
+SET(XML_PLUGINS mysql_odbc_plugins.xml)
+SET(XML_COMPONENT_WIN64)
+SET(XML_FILE_SOURCE_ARCH x86)
+
+IF(${MSI_64})
+  SET(XML_COMPONENT_WIN64 "Win64=\"yes\"")
+  SET(XML_FILE_SOURCE_ARCH x64)
+ENDIF()
+
+FILE(WRITE "${XML_PLUGINS}" "<Include><Component Id=\"plugins\" Guid=\"593E8354-467A-4E02-A6A2-28CEF9ECD0BB\" SharedDllRefCount=\"yes\" ${XML_COMPONENT_WIN64}>")
+FILE(GLOB PLUGIN_DLL_LIST "${CMAKE_CURRENT_BINARY_DIR}/${XML_FILE_SOURCE_ARCH}/plugin/*.dll")
+MESSAGE("LOOKING INSIDE ${CMAKE_CURRENT_BINARY_DIR}/${XML_FILE_SOURCE_ARCH}/plugin/*.dll")
+MESSAGE("PLUGIN_DLL_LIST=${PLUGIN_DLL_LIST}")
+FOREACH(_PLUGIN_DLL ${PLUGIN_DLL_LIST})
+  get_filename_component(_PLUGIN_DLL_FILE ${_PLUGIN_DLL} NAME)
+  FILE(APPEND "${XML_PLUGINS}" "<File Id='${_PLUGIN_DLL_FILE}' Name='${_PLUGIN_DLL_FILE}' DiskId='1' Source='${XML_FILE_SOURCE_ARCH}\\plugin\\${_PLUGIN_DLL_FILE}' />")
+ENDFOREACH()
+
+FILE(APPEND "${XML_PLUGINS}" "</Component></Include>")
 
 #-----------------------------------------------------
 

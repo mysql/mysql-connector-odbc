@@ -353,6 +353,18 @@ SQLRETURN DBC::connect(DataSource *dsrc)
     mysql_options(mysql, MYSQL_PLUGIN_DIR,
                   ds_get_utf8attr(dsrc->plugin_dir, &dsrc->plugin_dir8));
   }
+#ifdef WIN32
+  else
+  {
+    static const char *default_plugin_location =
+#if _WIN64
+    "C:/Program Files/MySQL/Connector ODBC 8.0/plugin";
+#else
+    "C:/Program Files (x86)/MySQL/Connector ODBC 8.0/plugin";
+#endif
+    mysql_options(mysql, MYSQL_PLUGIN_DIR, default_plugin_location);
+  }
+#endif
 
   if (dsrc->default_auth)
   {
@@ -500,7 +512,7 @@ SQLRETURN DBC::connect(DataSource *dsrc)
                   dsrc->load_data_local_dir8);
   }
 
-
+#if MFA_ENABLED
   if(dsrc->pwd1 && dsrc->pwd1[0])
   {
     ds_get_utf8attr(dsrc->pwd1, &dsrc->pwd18);
@@ -527,7 +539,7 @@ SQLRETURN DBC::connect(DataSource *dsrc)
                    &fator,
                    dsrc->pwd38);
   }
-
+#endif
 #if MYSQL_VERSION_ID >= 50711
   if (dsrc->sslmode)
   {

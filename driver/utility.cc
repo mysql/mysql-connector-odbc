@@ -34,6 +34,7 @@
 #include "driver.h"
 #include "errmsg.h"
 #include <ctype.h>
+#include <iostream>
 
 #define DATETIME_DIGITS 14
 
@@ -829,9 +830,9 @@ copy_wchar_result(STMT *stmt,
   {
     /* Find the conversion functions. */
     auto mb_wc = from_cs->cset->mb_wc;
-    auto wc_mb = utf8_charset_info->cset->wc_mb;
-    my_wc_t wc;
-    uchar u8[5]; /* Max length of utf-8 string we'll see. */
+    auto wc_mb = utf16_charset_info->cset->wc_mb;
+    my_wc_t wc = 0;
+    UTF16 ubuf[5] = {0, 0, 0, 0, 0};
     SQLWCHAR dummy[2]; /* If SQLWCHAR is UTF-16, we may need two chars. */
     int to_cnvres;
 
@@ -855,56 +856,41 @@ copy_wchar_result(STMT *stmt,
                             "from server character set.", 0);
 
 convert_to_out:
-    /*
-     We always convert into a temporary buffer, so we can properly handle
-     characters that are going to get split across requests.
-    */
-    to_cnvres= (*wc_mb)(utf8_charset_info, wc, u8, u8 + sizeof(u8));
+    // SQLWCHAR data should be UTF-16 on all platforms
+    to_cnvres = (*wc_mb)(utf16_charset_info,
+      wc, (uchar *)ubuf, (uchar *)ubuf + sizeof(ubuf));
 
-    if (to_cnvres > 0)
+    // Get the number of wide chars written
+    size_t wchars_written = to_cnvres / 2;
+
+    if (wchars_written > 0)
     {
-      u8[to_cnvres]= '\0';
-
       src+= cnvres;
-
-      if (sizeof(SQLWCHAR) == 4)
+      if (result)
       {
-        utf8toutf32(u8, (UTF32 *)(result ? result : dummy));
-        if (result)
-          ++result;
-        used_chars+= 1;
+        if (stmt->stmt_options.retrieve_data)
+          *result = ubuf[0];
+        result++;
       }
-      else
+
+      used_chars += wchars_written;
+
+      if (wchars_written > 1)
       {
-        UTF32 u32;
-        UTF16 out[2];
-        int chars;
-        utf8toutf32(u8, &u32);
-        chars= utf32toutf16(u32, (UTF16 *)out);
-
-        if (result)
+        if (result && result != result_end)
         {
           if (stmt->stmt_options.retrieve_data)
-            *result= out[0];
+            *result = ubuf[1];
           result++;
         }
-
-        used_chars+= chars;
-
-        if (chars > 1 && result && result != result_end)
+        else if (result)
         {
+          *((SQLWCHAR *)stmt->getdata.latest) = ubuf[1];
+          stmt->getdata.latest_bytes = sizeof(SQLWCHAR);
+          stmt->getdata.latest_used = 0;
           if (stmt->stmt_options.retrieve_data)
-            *result= out[1];
-          result++;
-        }
-        else if (chars > 1 && result)
-        {
-          *((SQLWCHAR *)stmt->getdata.latest)= out[1];
-          stmt->getdata.latest_bytes= 2;
-          stmt->getdata.latest_used= 0;
-          if (stmt->stmt_options.retrieve_data)
-            *result= 0;
-          result= NULL;
+            *result = 0;
+          result = NULL;
 
           if (stmt->getdata.dst_bytes != (ulong)~0L)
           {
@@ -912,8 +898,10 @@ convert_to_out:
             break;
           }
         }
-        else if (chars > 1)
+        else
+        {
           continue;
+        }
       }
 
       if (result)

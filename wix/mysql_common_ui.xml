@@ -669,11 +669,7 @@
       <Control Id="DlgLine" Type="Line" X="0" Y="234" Width="378" Height="0" />
       
       <Control Id="Memo" Type="ScrollableText" X="8" Y="55" Width="358" Height="130" Sunken="yes">
-    <?if $(var.license) = "commercial"?>  
-        <Text SourceFile="resources/License.rtf" />
-    <?else ?>
-        <Text SourceFile="resources/License.rtf" />
-    <?endif?>
+        <Text SourceFile="resources/LICENSE.rtf" />
       </Control>
     </Dialog>
 
