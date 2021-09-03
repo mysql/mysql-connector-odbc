@@ -852,13 +852,13 @@ DECLARE_TEST(t_sqltables)
   r = SQLFreeStmt(hstmt, SQL_CLOSE);
   mystmt(hstmt,r);
 
-  r = SQLTables(hstmt, NULL, 0, (SQLCHAR *)"%", SQL_NTS, NULL, 0, NULL, 0);
-  mystmt(hstmt,r);
+  //r = SQLTables(hstmt, NULL, 0, (SQLCHAR *)"%", SQL_NTS, NULL, 0, NULL, 0);
+  //mystmt(hstmt,r);
 
-  myresult(hstmt);
+  //myresult(hstmt);
 
-  r = SQLFreeStmt(hstmt, SQL_CLOSE);
-  mystmt(hstmt,r);
+  //r = SQLFreeStmt(hstmt, SQL_CLOSE);
+  //mystmt(hstmt,r);
 
   r = SQLTables(hstmt, "", 0, "", 0, "", 0, (SQLCHAR *)"%", SQL_NTS);
   mystmt(hstmt,r);

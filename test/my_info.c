@@ -287,15 +287,23 @@ DECLARE_TEST(t_bug28385722)
   SQLUINTEGER schema_usage = 0;
   SQLSMALLINT val_len = 0;
 
-  ok_con(hdbc, SQLGetInfo(hdbc, SQL_MAX_SCHEMA_NAME_LEN, &schema_len,
+  DECLARE_BASIC_HANDLES(henv1, hdbc1, hstmt1);
+  SQLCHAR   conn[512];
+
+  is(OK == alloc_basic_handles_with_opt(&henv1, &hdbc1, &hstmt1, NULL,
+                                        NULL, NULL, NULL, "NO_SCHEMA=0"));
+
+  ok_con(hdbc, SQLGetInfo(hdbc1, SQL_MAX_SCHEMA_NAME_LEN, &schema_len,
                           sizeof(schema_len), &val_len));
   is(schema_len > 63);
 
-  ok_con(hdbc, SQLGetInfo(hdbc, SQL_SCHEMA_USAGE, &schema_usage,
+  ok_con(hdbc, SQLGetInfo(hdbc1, SQL_SCHEMA_USAGE, &schema_usage,
                           sizeof(schema_usage), &val_len));
   is_num(schema_usage, SQL_SU_DML_STATEMENTS | SQL_SU_PROCEDURE_INVOCATION |
          SQL_SU_TABLE_DEFINITION | SQL_SU_INDEX_DEFINITION |
          SQL_SU_PRIVILEGE_DEFINITION);
+
+  free_basic_handles(&henv1, &hdbc1, &hstmt1);
 
   return OK;
 }

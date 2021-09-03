@@ -670,6 +670,7 @@ DataSource *ds_new()
   /* non-zero DataSource defaults here */
   ds->port = 3306;
   ds->has_port = false;
+  ds->no_schema = 1;
   /* DS_PARAM */
 
   return ds;
@@ -1320,10 +1321,16 @@ int ds_add_strprop(const SQLWCHAR *name, const SQLWCHAR *propname,
  * Utility method for ds_add() to add a single integer
  * property via the installer api.
  */
-int ds_add_intprop(const SQLWCHAR *name, const SQLWCHAR *propname, int propval)
+int ds_add_intprop(const SQLWCHAR *name, const SQLWCHAR *propname, int propval,
+  bool write_zero = false)
 {
   SQLWCHAR buf[21];
   sqlwcharfromul(buf, propval);
+  if (!propval && write_zero)
+  {
+    buf[0] = (SQLWCHAR)'0';
+    buf[1] = 0;
+  }
   return ds_add_strprop(name, propname, buf);
 }
 
@@ -1425,7 +1432,7 @@ int ds_add(DataSource *ds)
   if (ds_add_intprop(ds->name, W_NAMED_PIPE, ds->force_use_of_named_pipes)) goto error;
   if (ds_add_intprop(ds->name, W_NO_BIGINT, ds->change_bigint_columns_to_int)) goto error;
   if (ds_add_intprop(ds->name, W_NO_CATALOG, ds->no_catalog)) goto error;
-  if (ds_add_intprop(ds->name, W_NO_SCHEMA, ds->no_schema)) goto error;
+  if (ds_add_intprop(ds->name, W_NO_SCHEMA, ds->no_schema, true)) goto error;
   if (ds_add_intprop(ds->name, W_USE_MYCNF, ds->read_options_from_mycnf)) goto error;
   if (ds_add_intprop(ds->name, W_SAFE, ds->safe)) goto error;
   if (ds_add_intprop(ds->name, W_NO_TRANSACTIONS, ds->disable_transactions)) goto error;
