@@ -788,10 +788,15 @@ if(MYSQL_INCLUDE_DIR AND NOT MYSQL_VERSION)
   # Write the C source file that will include the MySQL headers
   set(GETMYSQLVERSION_SOURCEFILE "${CMAKE_CURRENT_BINARY_DIR}/getmysqlversion.c")
   file(WRITE "${GETMYSQLVERSION_SOURCEFILE}"
+       "#ifdef WIN32\n"
+       "#include <winsock2.h>\n"
+       "#pragma comment(lib,\"Ws2_32.lib\")\n"
+       "#endif\n"
        "#include <mysql.h>\n"
        "#include <stdio.h>\n"
        "int main() {\n"
        "  printf(\"%s\", MYSQL_SERVER_VERSION);\n"
+       "  return 0;\n"
        "}\n"
   )
 
