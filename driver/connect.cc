@@ -389,7 +389,7 @@ SQLRETURN DBC::connect(DataSource *dsrc)
                             ds_get_utf8attr(dsrc->oci_config_file,
                                             &dsrc->oci_config_file8)))
     {
-      return set_error("HY000", "Failed to set plugin option 'oci-config-file'", 0);
+      return set_error("HY000", "Failed to set config file for authentication_oci_client plugin", 0);
     }
   }
 
