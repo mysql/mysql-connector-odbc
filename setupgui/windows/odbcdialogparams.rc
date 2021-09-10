@@ -164,6 +164,9 @@ BEGIN
     PUSHBUTTON      "...",IDC_CHOOSER_plugin_dir,292,132,12,12,BS_CENTER
     RTEXT           "Authentication Library:",IDC_STATIC,12,147,67,8
     EDITTEXT        IDC_EDIT_default_auth,90,147,197,12,ES_AUTOHSCROLL
+    RTEXT           "OCI Config File:",IDC_STATIC,12,162,67,8
+    EDITTEXT        IDC_EDIT_oci_config_file,90,162,197,12,ES_AUTOHSCROLL
+    PUSHBUTTON      "...",IDC_CHOOSER_oci_config_file,292,162,12,12,BS_CENTER
 END
 
 #if MFA_ENABLED

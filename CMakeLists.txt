@@ -632,6 +632,27 @@ ELSE(WIN32)
 
 ENDIF(WIN32)
 
+macro(bundle_lib lib)
+
+  message("Bundling library: ${lib}")
+  get_filename_component(lib_name ${lib} NAME)
+  set(bundled_${lib_name} true)
+
+  if(WIN32 OR APPLE)
+    install(FILES ${lib}
+      DESTINATION "${LIB_SUBDIR}"
+      COMPONENT OdbcDll
+      )
+  else()
+    install(FILES ${lib}
+      DESTINATION "${LIB_SUBDIR}/private"
+      COMPONENT OdbcDll
+      )
+  endif()
+
+endmacro(bundle_lib)
+
+
 IF(MYSQLCLIENT_STATIC_LINKING AND NOT RPM_BUILD)
 
   #Look for libraries and client-side plugins which are
@@ -639,6 +660,28 @@ IF(MYSQLCLIENT_STATIC_LINKING AND NOT RPM_BUILD)
   # required by it and bundle them as well.
 
   message("looking for bundled client lib deps")
+
+  # Start with OpenSSL libraries that were already found before
+
+  if(OPENSSL_LIBRARY)
+
+    get_filename_component(OPENSSL_DIR ${OPENSSL_LIBRARY} DIRECTORY)
+    file(GLOB _bundled "${OPENSSL_DIR}/*${CMAKE_SHARED_LIBRARY_SUFFIX}*")
+
+    foreach(lib IN LISTS _bundled)
+
+      get_filename_component(lib_name ${lib} NAME)
+
+      if(
+        lib_name MATCHES "libssl|libcrypto|ssleay|libeay"
+        AND NOT bundled_${lib_name}
+      )
+        bundle_lib(${lib})
+      endif()
+
+    endforeach(lib)
+
+  endif()
 
   #
   # Note: Currently we simply copy all libraries bundled in the server installation
@@ -654,31 +697,33 @@ IF(MYSQLCLIENT_STATIC_LINKING AND NOT RPM_BUILD)
   file(GLOB _bundled1 "${MYSQL_LIB_DIR}/*${CMAKE_SHARED_LIBRARY_SUFFIX}*")
   file(GLOB _bundled2 "${MYSQL_LIB_DIR}/private/*${CMAKE_SHARED_LIBRARY_SUFFIX}*")
 
+  # On windows, libs are on bin directory
+
+  if(WIN32)
+    file(GLOB _bundled3 "${MYSQL_DIR}/bin/*${CMAKE_SHARED_LIBRARY_SUFFIX}*")
+  endif()
 
   foreach(lib IN LISTS _bundled1 _bundled2 _bundled3)
 
-    get_filename_component(lib_name ${lib} NAME_WE)
+    get_filename_component(lib_name ${lib} NAME)
 
-    if(NOT lib_name MATCHES "mysql|protobuf|lber|ldap_r")
+    if(
+      NOT lib_name MATCHES "mysql|protobuf|lber|ldap_r|curl|mecab|^zlib"
+      AND NOT bundled_${lib_name}
+    )
 
-      message("found bundled libs: ${lib}")
+      bundle_lib(${lib})
 
-      if(WIN32 OR APPLE)
-        install(FILES ${lib}
-          DESTINATION "${LIB_SUBDIR}"
-          COMPONENT OdbcDll
-          )
-      else()
-        install(FILES ${lib}
-          DESTINATION "${LIB_SUBDIR}/private"
-          COMPONENT OdbcDll
-          )
-      endif()
+      # Also bundle modules required by the SASL library if they exist
+      # and the library is bundled.
 
-      # Also bundle modules required by the SASL library if it is bundled
+      if(
+        lib_name MATCHES "libsasl" AND NOT bundled_sasl_modules
+        AND EXISTS "${MYSQL_LIB_DIR}/private/sasl2"
+      )
 
-      if(lib_name MATCHES "libsasl")
-
+        message("Bundling SASL modules")
+        set(bundled_sasl_modules true)
         install(DIRECTORY "${MYSQL_LIB_DIR}/private/sasl2"
           DESTINATION "${LIB_SUBDIR}/private"
           COMPONENT OdbcDll
@@ -690,28 +735,7 @@ IF(MYSQLCLIENT_STATIC_LINKING AND NOT RPM_BUILD)
 
   endforeach()
 
-  if(WIN32)
-    # On windows, openssl libs are on bin directory
-    file(GLOB _bundled3 "${MYSQL_DIR}/bin/*${CMAKE_SHARED_LIBRARY_SUFFIX}*")
-
-    foreach(lib IN LISTS _bundled3)
-
-      get_filename_component(lib_name ${lib} NAME_WE)
-
-      if(lib_name MATCHES "ssl|crypto")
-
-        message("found bundled libs: ${lib}")
-
-        install(FILES ${lib}
-          DESTINATION "${LIB_SUBDIR}"
-          COMPONENT OdbcDll
-          )
-
-      endif()
-
-    endforeach()
-
-  endif()
+  # Now look at client-side plugins
 
   file(GLOB _bundled "${MYSQL_PLUGIN_DIR}/*${CMAKE_SHARED_LIBRARY_SUFFIX}*")
 
@@ -724,7 +748,7 @@ IF(MYSQLCLIENT_STATIC_LINKING AND NOT RPM_BUILD)
       AND NOT lib_name MATCHES "qa_auth_client"
     )
 
-    message("found client plugin: ${lib}")
+    message("Bundling client plugin: ${lib}")
 
     install(FILES "${lib}"
       DESTINATION "${LIB_SUBDIR}/plugin"

@@ -367,6 +367,28 @@ SQLRETURN DBC::connect(DataSource *dsrc)
     mysql_options(mysql, MYSQL_DEFAULT_AUTH,
                   ds_get_utf8attr(dsrc->default_auth, &dsrc->default_auth8));
   }
+
+  if(dsrc->oci_config_file && dsrc->oci_config_file[0])
+  {
+    /* load client authentication plugin if required */
+    struct st_mysql_client_plugin *plugin =
+        mysql_client_find_plugin(mysql,
+                                 "authentication_oci_client",
+                                 MYSQL_CLIENT_AUTHENTICATION_PLUGIN);
+
+    if(!plugin)
+    {
+      return set_error("HY000", "Couldn't load plugin authentication_oci_client", 0);
+    }
+
+    if(mysql_plugin_options(plugin, "oci-config-file",
+                            ds_get_utf8attr(dsrc->oci_config_file,
+                                            &dsrc->oci_config_file8)))
+    {
+      return set_error("HY000", "Failed to set config file for authentication_oci_client plugin", 0);
+    }
+  }
+
 #endif
 
   /* set SSL parameters */

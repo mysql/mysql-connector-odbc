@@ -352,6 +352,7 @@ void syncTabsData(HWND hwnd, DataSource *params)
   GET_STRING_TAB(CONNECTION_TAB, initstmt);
   GET_STRING_TAB(CONNECTION_TAB, plugin_dir);
   GET_STRING_TAB(CONNECTION_TAB, default_auth);
+  GET_STRING_TAB(CONNECTION_TAB, oci_config_file);
 
 #if MFA_ENABLED
   /* 2 - MFA*/
@@ -445,6 +446,7 @@ void syncTabs(HWND hwnd, DataSource *params)
     SET_STRING_TAB(CONNECTION_TAB,initstmt);
     SET_STRING_TAB(CONNECTION_TAB,plugin_dir);
     SET_STRING_TAB(CONNECTION_TAB,default_auth);
+    SET_STRING_TAB(CONNECTION_TAB,oci_config_file);
   }
 
 #if MFA_ENABLED

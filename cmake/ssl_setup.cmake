@@ -35,19 +35,41 @@ function(setup_ssl_libs)
       SET(CMAKE_FIND_LIBRARY_SUFFIXES ".dylib")
     ENDIF()
 
+    set(ssl_names libssl-1_1 libssl-1_1-x64 libssl ssl ssleay32)
+    set(crypto_names libcrypto-1_1 libcrypto-1_1-x64 libcrypto crypto libeay32)
+
+    if(DEFINED WITH_SSL)
+
+      find_library(OPENSSL_LIBRARY
+        NAMES ${ssl_names}
+        PATH_SUFFIXES lib bin
+        PATHS ${WITH_SSL}
+        NO_DEFAULT_PATH
+      )
+
+      find_library(CRYPTO_LIBRARY
+        NAMES ${crypto_names}
+        PATH_SUFFIXES lib bin
+        PATHS ${WITH_SSL}
+        NO_DEFAULT_PATH
+      )
+
+    endif()
+
     find_library(OPENSSL_LIBRARY
-      NAMES libssl-1_1 libssl-1_1-x64 libssl ssl ssleay32
+      NAMES ${ssl_names}
       PATH_SUFFIXES private
       PATHS ${MYSQL_DIR}/bin ${MYSQL_LIB_DIR}
       NO_DEFAULT_PATH
     )
 
     find_library(CRYPTO_LIBRARY
-      NAMES libcrypto-1_1 libcrypto-1_1-x64 libcrypto crypto libeay32
+      NAMES ${crypto_names}
       PATH_SUFFIXES private
       PATHS ${MYSQL_DIR}/bin ${MYSQL_LIB_DIR}
       NO_DEFAULT_PATH
     )
+
     message("-- OpenSSL library: ${OPENSSL_LIBRARY}")
     message("-- OpenSSL crypto library: ${CRYPTO_LIBRARY}")
 

@@ -97,6 +97,7 @@ typedef struct {
   SQLWCHAR *plugin_dir;
   SQLWCHAR *default_auth;
   SQLWCHAR *load_data_local_dir;
+  SQLWCHAR *oci_config_file;
 
   bool has_port;
   unsigned int port;
@@ -130,6 +131,7 @@ typedef struct {
   SQLCHAR *plugin_dir8;
   SQLCHAR *default_auth8;
   SQLCHAR *load_data_local_dir8;
+  SQLCHAR *oci_config_file8;
 
   /*  */
   BOOL return_matching_rows;
