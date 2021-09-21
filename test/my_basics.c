@@ -274,13 +274,12 @@ DECLARE_TEST(charset_utf8)
   DECLARE_BASIC_HANDLES(henv1, hdbc1, hstmt1);
   SQLCHAR buff1[512], buff2[512];
   SQLLEN len;
-  SQLINTEGER str_size;
-
   /**
    Bug #19345: Table column length multiplies on size session character set
   */
   ok_sql(hstmt, "DROP TABLE IF EXISTS t_bug19345");
-  ok_sql(hstmt, "CREATE TABLE t_bug19345 (a VARCHAR(10), b VARBINARY(10))");
+  ok_sql(hstmt, "CREATE TABLE t_bug19345 (a VARCHAR(10), b VARBINARY(10)) "
+                "DEFAULT CHARSET = utf8mb4");
   ok_sql(hstmt, "INSERT INTO t_bug19345 VALUES ('abc','def')");
 
   ok_stmt(hstmt, SQLFreeStmt(hstmt, SQL_CLOSE));
@@ -304,20 +303,9 @@ DECLARE_TEST(charset_utf8)
 
   ok_stmt(hstmt1, SQLFetch(hstmt1));
   is_num(my_fetch_int(hstmt1, 7), 10);
-  ok_stmt(hstmt1, SQLGetData(hstmt1, 8, SQL_C_LONG, &str_size, 0, NULL));
-  /* utf8 mbmaxlen = 3 in libmysql before MySQL 6.0 */
-  /*
-  if (str_size == 30)
-  {
-    is_num(my_fetch_int(hstmt1, 8), 30);
-    is_num(my_fetch_int(hstmt1, 16), 30);
-  }
-  else
-  {
-    is_num(my_fetch_int(hstmt1, 8), 40);
-    is_num(my_fetch_int(hstmt1, 16), 40);
-  }
-  */
+  is_num(my_fetch_int(hstmt1, 8), 40);
+  is_num(my_fetch_int(hstmt1, 16), 40);
+
   ok_stmt(hstmt1, SQLFetch(hstmt1));
   is_num(my_fetch_int(hstmt1, 7), 10);
   is_num(my_fetch_int(hstmt1, 8), 10);

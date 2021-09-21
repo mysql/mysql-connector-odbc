@@ -191,8 +191,12 @@ my_bool   is_connection_lost      (uint errcode);
 void      set_mem_error           (MYSQL *mysql);
 void      translate_error         (char *save_state, myodbc_errid errid, uint mysql_err);
 
+SQLSMALLINT get_sql_data_type_from_str(const char *mysql_type_name);
+SQLSMALLINT compute_sql_data_type(STMT *stmt, SQLSMALLINT sql_type,
+  char octet_length, size_t col_size);
 SQLSMALLINT get_sql_data_type           (STMT *stmt, MYSQL_FIELD *field, char *buff);
 SQLULEN     get_column_size             (STMT *stmt, MYSQL_FIELD *field);
+SQLULEN     get_column_size_from_str    (STMT *stmt, const char *size_str);
 SQLULEN     fill_column_size_buff       (char *buff, STMT *stmt, MYSQL_FIELD *field);
 SQLSMALLINT get_decimal_digits          (STMT *stmt, MYSQL_FIELD *field);
 SQLLEN      get_transfer_octet_length   (STMT *stmt, MYSQL_FIELD *field);

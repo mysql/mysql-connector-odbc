@@ -35,6 +35,7 @@
 #include "errmsg.h"
 #include <ctype.h>
 #include <iostream>
+#include <map>
 
 #define DATETIME_DIGITS 14
 
@@ -1094,6 +1095,83 @@ SQLRETURN wcopy_bit_result(STMT *stmt,
                             src, src_bytes);
 }
 
+std::map<std::string, int> sql_data_types_map = {
+  { "bit", SQL_BIT },
+  { "decimal", SQL_DECIMAL },
+  { "char", SQL_CHAR },
+  { "tinyint", SQL_TINYINT },
+  { "smallint", SQL_SMALLINT },
+  { "mediumint", SQL_INTEGER },
+  { "int", SQL_INTEGER },
+  { "bigint", SQL_BIGINT },
+  { "float", SQL_REAL },
+  { "double", SQL_DOUBLE },
+  { "year", SQL_SMALLINT },
+  { "timestamp", SQL_TIMESTAMP },
+  { "datetime", SQL_DATETIME },
+  { "date", SQL_TYPE_DATE },
+  { "time", SQL_TIME },
+  { "binary", SQL_BINARY },
+  { "varbinary", SQL_VARBINARY },
+  { "varchar", SQL_VARCHAR },
+  { "tinyblob", SQL_LONGVARBINARY },
+  { "tinytext", SQL_LONGVARCHAR },
+  { "mediumblob", SQL_LONGVARBINARY },
+  { "mediumtext", SQL_LONGVARCHAR },
+  { "blob", SQL_LONGVARBINARY },
+  { "text", SQL_LONGVARCHAR },
+  { "longblob", SQL_LONGVARBINARY },
+  { "longtext", SQL_LONGVARCHAR },
+  { "enum", SQL_CHAR },
+  { "set", SQL_CHAR },
+  { "geometry", SQL_LONGVARBINARY },
+  { "JSON", SQL_LONGVARCHAR },
+  { "json", SQL_LONGVARCHAR }
+};
+
+SQLSMALLINT get_sql_data_type_from_str(const char *mysql_type_name)
+{
+  return sql_data_types_map.at(mysql_type_name);
+}
+
+SQLSMALLINT compute_sql_data_type(STMT *stmt, SQLSMALLINT sql_type,
+  char octet_length, size_t col_size)
+{
+  switch(sql_type)
+  {
+    case SQL_TIMESTAMP:
+      if (stmt->dbc->env->odbc_ver == SQL_OV_ODBC3)
+        sql_type = SQL_TYPE_TIMESTAMP;
+      break;
+    case SQL_TYPE_DATE:
+      if (stmt->dbc->env->odbc_ver < SQL_OV_ODBC3)
+        sql_type = SQL_DATE;
+      break;
+    case SQL_TIME:
+      if (stmt->dbc->env->odbc_ver == SQL_OV_ODBC3)
+        sql_type = SQL_TYPE_TIME;
+      break;
+    case SQL_CHAR:
+      if (octet_length > '1')
+        sql_type = SQL_WCHAR;
+      break;
+    case SQL_VARCHAR:
+      if (octet_length > '1')
+        sql_type = SQL_WVARCHAR;
+      break;
+    case SQL_LONGVARCHAR:
+      if (octet_length > '1')
+        sql_type = SQL_WLONGVARCHAR;
+      break;
+    case SQL_BIT:
+      if (col_size > 1)
+        sql_type = SQL_BINARY;
+      break;
+  }
+  return sql_type;
+}
+
+
 /**
   Get the SQL data type and (optionally) type name for a MYSQL_FIELD.
 
@@ -1404,6 +1482,17 @@ static SQLLEN cap_length(STMT *stmt, unsigned long real_length)
 
   return real_length;
 }
+
+
+/**
+  Getting column size from string number
+*/
+SQLULEN get_column_size_from_str(STMT *stmt, const char *size_str)
+{
+  SQLULEN length = (SQLULEN)std::strtoll(size_str, nullptr, 10);
+  return cap_length(stmt, length);
+}
+
 
 /**
   Get the column size (in characters) of a field, as defined at:

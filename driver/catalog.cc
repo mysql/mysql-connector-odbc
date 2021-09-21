@@ -161,7 +161,8 @@ const char *my_next_token(const char *prev_token,
 */
 SQLRETURN
 create_fake_resultset(STMT *stmt, MYSQL_ROW rowval, size_t rowsize,
-                      my_ulonglong rowcnt, MYSQL_FIELD *fields, uint fldcnt)
+                      my_ulonglong rowcnt, MYSQL_FIELD *fields, uint fldcnt,
+                      bool copy_rowval = true)
 {
   free_internal_result_buffers(stmt);
   if (stmt->fake_result)
@@ -179,7 +180,11 @@ create_fake_resultset(STMT *stmt, MYSQL_ROW rowval, size_t rowsize,
     x_free(stmt->result_array);
 
   stmt->result= (MYSQL_RES*) myodbc_malloc(sizeof(MYSQL_RES), MYF(MY_ZEROFILL));
-  stmt->result_array= (MYSQL_ROW)myodbc_memdup((char *)rowval, rowsize, MYF(0));
+  if (copy_rowval)
+  {
+    stmt->result_array= (MYSQL_ROW)myodbc_memdup((char *)rowval, rowsize, MYF(0));
+  }
+
   if (!(stmt->result && stmt->result_array))
   {
     x_free(stmt->result);
@@ -691,30 +696,304 @@ MySQLTables(SQLHSTMT hstmt,
 SQLColumns
 ****************************************************************************
 */
+typedef std::vector<MYSQL_BIND> vec_bind;
+
+/**
+  Compute the buffer length for SQLColumns.
+  Mostly used for numeric values when I_S.COLUMNS.CHARACTER_OCTET_LENGTH is
+  NULL.
+*/
+SQLLEN get_buffer_length(vec_bind &results, SQLSMALLINT sqltype,
+  size_t col_size, bool is_null)
+{
+  size_t decimal_digits = 0;
+  bool is_unsigned = false;
+  // Check the type name
+  if (results[5].buffer)
+    is_unsigned = (bool)strstr((char*)results[5].buffer,"unsigned");
+
+  switch (sqltype)
+  {
+    case SQL_DECIMAL:
+      decimal_digits = std::strtoll((char*)results[6].buffer, nullptr, 10);
+      return decimal_digits + (is_unsigned ? 1 : 2);
+
+    case SQL_TINYINT:
+      return 1;
+
+    case SQL_SMALLINT:
+      return 2;
+
+    case SQL_INTEGER:
+      return 4;
+
+    case SQL_REAL:
+      return 4;
+
+    case SQL_DOUBLE:
+      return 8;
+
+    case SQL_BIGINT:
+      return 20;
+
+    case SQL_DATE:
+      return sizeof(SQL_DATE_STRUCT);
+
+    case SQL_TIME:
+      return sizeof(SQL_TIME_STRUCT);
+
+    case SQL_TIMESTAMP:
+      return sizeof(SQL_TIMESTAMP_STRUCT);
+
+    case SQL_BIT:
+      return col_size;
+  }
+
+  if (is_null)
+    return 0;
+
+  return (SQLULEN)std::strtoll((char*)results[7].buffer, nullptr, 10);
+}
+
 /**
   Get information about the columns in one or more tables.
 
   @param[in] hstmt           Handle of statement
-  @param[in] catalog_name    Name of catalog (database)
+  @param[in] catalog    Name of catalog (database)
   @param[in] catalog_len     Length of catalog
-  @param[in] schema_name     Name of schema (unused)
+  @param[in] schema     Name of schema (unused)
   @param[in] schema_len      Length of schema name
-  @param[in] table_name      Pattern of table names to match
+  @param[in] table      Pattern of table names to match
   @param[in] table_len       Length of table pattern
-  @param[in] column_name     Pattern of column names to match
+  @param[in] column     Pattern of column names to match
   @param[in] column_len      Length of column pattern
 */
 SQLRETURN
-columns_i_s(SQLHSTMT hstmt, SQLCHAR *catalog_name, SQLSMALLINT catalog_len,
-            SQLCHAR *schema_name,
-            SQLSMALLINT schema_len,
-            SQLCHAR *table_name, SQLSMALLINT table_len,
-            SQLCHAR *column_name, SQLSMALLINT column_len)
-
+columns_i_s(SQLHSTMT hstmt, SQLCHAR *catalog, unsigned long catalog_len,
+            SQLCHAR *schema, unsigned long schema_len,
+            SQLCHAR *table, unsigned long table_len,
+            SQLCHAR *column, unsigned long column_len)
 {
-  /* The function is just a stub. We call non-I_S version of the function before implementing the I_S one */
-  return columns_no_i_s((STMT*)hstmt, catalog_name, catalog_len,schema_name, schema_len,
-                        table_name, table_len, column_name, column_len);
+  STMT *stmt = (STMT*)hstmt;
+  vec_bind params, results;
+  const size_t ccount = 19;
+  std::vector<tempBuf> bufs;
+  bufs.reserve(ccount);
+  params.reserve(4);
+  results.reserve(ccount);
+  unsigned long lengths[ccount];
+  bool is_null[ccount];
+
+  std::string query;
+  query.reserve(2048);
+  query = "select "
+    "TABLE_SCHEMA as TABLE_CATALOG,"
+    "TABLE_SCHEMA,"
+    "TABLE_NAME,"
+    "COLUMN_NAME,"
+    "DATA_TYPE,"
+    "COLUMN_TYPE as TYPE_NAME,"
+    "IF(ISNULL(CHARACTER_MAXIMUM_LENGTH), IF(DATA_TYPE LIKE 'bit',CAST((NUMERIC_PRECISION+7)/8 AS UNSIGNED),NUMERIC_PRECISION), CHARACTER_MAXIMUM_LENGTH) as COLUMN_SIZE,"
+    "CHARACTER_OCTET_LENGTH as BUFFER_LENGTH,"
+    "NUMERIC_SCALE as DECIMAL_DIGITS,"
+    "IF(ISNULL(NUMERIC_PRECISION), NULL, 10) as NUM_PREC_RADIX,"
+    "IF(EXTRA LIKE \"%auto_increment%\", \"YES\", IS_NULLABLE) as NULLABLE,"
+    "COLUMN_COMMENT as REMARKS,"
+    "IF(ISNULL(COLUMN_DEFAULT), \"NULL\", IF(ISNULL(NUMERIC_PRECISION), CONCAT(\"\'\", COLUMN_DEFAULT, \"\'\"),COLUMN_DEFAULT)) as COLUMN_DEF,"
+    "0 as SQL_DATA_TYPE,"
+    "NULL as SQL_DATA_TYPE_SUB,"
+    "CHARACTER_OCTET_LENGTH as CHAR_OCTET_LENGTH,"
+    "ORDINAL_POSITION,"
+    "IF(EXTRA LIKE \"%auto_increment%\", \"YES\", IS_NULLABLE) AS IS_NULLABLE,"
+    "CAST(CHARACTER_OCTET_LENGTH/CHARACTER_MAXIMUM_LENGTH AS SIGNED) AS CHAR_SIZE "
+    "FROM information_schema.COLUMNS c WHERE 1=1";
+
+  auto do_bind = [](vec_bind &par, SQLCHAR *data, enum_field_types buf_type,
+    unsigned long &len, bool *isnull = nullptr)
+  {
+    par.emplace_back();
+    MYSQL_BIND &b = par.back();
+    memset(&b, 0, sizeof(b));
+    b.buffer_type = buf_type;
+    b.buffer = data;
+    b.length = &len;
+    b.buffer_length = len;
+    if (isnull)
+      b.is_null = isnull;
+  };
+
+  if (catalog && catalog_len)
+  {
+    query.append(" AND c.TABLE_SCHEMA  LIKE ?");
+    do_bind(params, catalog, MYSQL_TYPE_STRING, catalog_len);
+  }
+  else if (schema && schema_len)
+  {
+    query.append(" AND c.TABLE_SCHEMA LIKE ?");
+    do_bind(params, schema, MYSQL_TYPE_STRING, schema_len);
+  }
+
+  if (table && table_len)
+  {
+    query.append(" AND c.TABLE_NAME LIKE ?");
+    do_bind(params, table, MYSQL_TYPE_STRING, table_len);
+  }
+
+  if (column && column_len)
+  {
+    query.append(" AND c.COLUMN_NAME LIKE ?");
+    do_bind(params, column, MYSQL_TYPE_STRING, column_len);
+  }
+  query.append(" ORDER BY ORDINAL_POSITION");
+  ODBC_STMT local_stmt(stmt->dbc->mysql);
+
+  for (size_t i = 0; i < ccount; i++)
+  {
+    bufs.emplace_back(tempBuf(1024));
+    auto &buf = bufs.back();
+    lengths[i] = buf.buf_len;
+    do_bind(results, (SQLCHAR*)buf.buf, MYSQL_TYPE_STRING,
+      lengths[i], &is_null[i]);
+  }
+
+  try
+  {
+    if(set_sql_select_limit(stmt->dbc, stmt->stmt_options.max_rows, false))
+    {
+      stmt->set_error("HY000");
+      throw stmt->error;
+    }
+
+    stmt->dbc->execute_prep_stmt(local_stmt, query, params.data(), results.data());
+  }
+  catch (const MYERROR &e)
+  {
+    return e.retcode;
+  }
+  if (!stmt->m_row_storage.is_valid())
+    x_free(stmt->result_array);
+
+  bool is_access = false;
+#ifdef _WIN32
+  if (GetModuleHandle("msaccess.exe") != NULL)
+    is_access = true;
+#endif
+
+  size_t rows = mysql_stmt_num_rows(local_stmt);
+  stmt->m_row_storage.set_size(rows, SQLCOLUMNS_FIELDS);
+  if (rows == 0)
+  {
+    return create_empty_fake_resultset(stmt, SQLCOLUMNS_values,
+     sizeof(SQLCOLUMNS_values), SQLCOLUMNS_fields, SQLCOLUMNS_FIELDS);
+  }
+
+  auto &data = stmt->m_row_storage;
+  data.first_row();
+  std::string db = get_database_name(stmt, catalog, catalog_len,
+    schema, schema_len, false);
+  size_t rnum = 1;
+  while(!mysql_stmt_fetch(local_stmt))
+  {
+    CAT_SCHEMA_SET(data[0], data[1], db);
+    /* TABLE_NAME */
+    data[2] = (char*)results[2].buffer;
+    /* COLUMN_NAME */
+    data[3] = (char*)results[3].buffer;
+    /* DATA_TYPE */
+    size_t col_size = get_column_size_from_str(stmt, (const char*)results[6].buffer);
+    SQLSMALLINT odbc_sql_type = get_sql_data_type_from_str((const char*)results[4].buffer);
+    SQLSMALLINT sqltype = compute_sql_data_type(stmt, odbc_sql_type,
+      *(char*)results[18].buffer, col_size);
+    data[4] = sqltype;
+    /* TYPE_NAME */
+    data[5] = (char*)results[5].buffer;
+    /* COLUMN_SIZE */
+#if _WIN32 && !_WIN64
+#define COL_SIZE_VAL (int)col_size
+#else
+#define COL_SIZE_VAL data[6] = col_size
+#endif
+    if (is_null[6])
+      data[6] = nullptr;
+    else
+      data[6] = COL_SIZE_VAL;
+    /* BUFFER_LENGTH */
+    data[7] = get_buffer_length(results, odbc_sql_type, col_size, is_null[7]);
+    /* DECIMAL_DIGITS */
+    data[8] = is_null[8] ? nullptr : (char*)results[8].buffer;
+    /* NUM_PREC_RADIX */
+    data[9] = is_null[9] ? nullptr : (char*)results[9].buffer;
+    /* NULLABLE */
+    SQLSMALLINT nullable = (SQLSMALLINT)((*(char*)results[10].buffer == 'Y') ||
+      (sqltype == SQL_TIMESTAMP) || (sqltype == SQL_TYPE_TIMESTAMP) ? SQL_NULLABLE : SQL_NO_NULLS);
+
+    if (is_access && nullable == SQL_NO_NULLS)
+      nullable = SQL_NULLABLE_UNKNOWN;
+    data[10] = nullable;
+    /* REMARKS */
+    if (is_null[11])
+      data[11] = nullptr;
+    else
+      data[11] = lengths[11] ? (char*)results[8].buffer : "";
+    /* COLUMN_DEF */
+    data[12] = (char*)results[12].buffer;
+
+    if (sqltype == SQL_TYPE_DATE || sqltype == SQL_TYPE_TIME ||
+        sqltype == SQL_TYPE_TIMESTAMP)
+    {
+      /* SQL_DATA_TYPE */
+      data[13] = SQL_DATETIME;
+      /* SQL_DATETIME_SUB */
+      data[14] = sqltype;
+    }
+    else
+    {
+      /* SQL_DATA_TYPE */
+      data[13] = sqltype;
+      /* SQL_DATETIME_SUB */
+      data[14] = (sqltype == SQL_DATETIME ? SQL_TYPE_TIMESTAMP : 0);
+    }
+
+    /* CHAR_OCTET_LENGTH */
+    if (is_null[15])
+    {
+      if (is_char_sql_type(sqltype) || is_wchar_sql_type(sqltype) ||
+          is_binary_sql_type(sqltype))
+        data[15] = COL_SIZE_VAL;
+      else
+        data[15] = nullptr;
+    }
+    else
+    {
+      data[15] =  (char*)results[15].buffer;
+    }
+
+    /* ORDINAL_POSITION */
+    data[16] = (long long)rnum;
+    /* IS_NULLABLE */
+    data[17] = nullable ? "YES" : (char*)results[17].buffer;
+    if(rnum < rows)
+      data.next_row();
+    ++rnum;
+  }
+
+  if (rows)
+  {
+    /*
+      With the non-empty result the function should return from this block
+    */
+    stmt->result_array = (MYSQL_ROW)data.data();
+    create_fake_resultset(stmt, stmt->result_array, SQLCOLUMNS_FIELDS, rows,
+      SQLCOLUMNS_fields, SQLCOLUMNS_FIELDS, false);
+    myodbc_link_fields(stmt, SQLCOLUMNS_fields, SQLCOLUMNS_FIELDS);
+    return SQL_SUCCESS;
+  }
+
+  create_empty_fake_resultset(stmt, SQLCOLUMNS_values,
+                                     sizeof(SQLCOLUMNS_values),
+                                     SQLCOLUMNS_fields,
+                                     SQLCOLUMNS_FIELDS);
+  return SQL_SUCCESS;
 }
 
 

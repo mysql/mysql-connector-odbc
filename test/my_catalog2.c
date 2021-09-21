@@ -87,8 +87,11 @@ DECLARE_TEST(t_bug34272)
   ok_stmt(hstmt, SQLFetch(hstmt));
 
   ok_stmt(hstmt, SQLGetData(hstmt, 6, SQL_C_CHAR, dummy, col6+1, &length));
-  is_num(length,16);
-  is_str(dummy, "integer unsigned", length+1);
+  /* Can be "integer unsigned" (16) or "int unsigned" (12) */
+  is(length == 16 || length == 12);
+  is(strncmp(dummy, "int unsigned", 12) == 0 ||
+     strncmp(dummy, "integer unsigned", 16) == 0 ||
+     strncmp(dummy, "int(10) unsigned", 16) == 0);
 
   ok_stmt(hstmt, SQLGetData(hstmt, 18, SQL_C_CHAR, dummy, col18+1, &length));
   is_num(length,3);
@@ -237,16 +240,26 @@ DECLARE_TEST(t_bug53235)
   int col_size, buf_len;
 
   ok_sql(hstmt, "drop table if exists t_bug53235");
-  ok_sql(hstmt, "create table t_bug53235 (x decimal(10,3))");
+  ok_sql(hstmt, "create table t_bug53235 (x decimal(10,3), y decimal(8,4) unsigned, z integer)");
   ok_stmt(hstmt, SQLColumns(hstmt, NULL, 0, NULL, 0,
 			   (SQLCHAR *)"t_bug53235", SQL_NTS, NULL, 0));
   ok_stmt(hstmt, SQLFetch(hstmt));
-
   col_size= my_fetch_int(hstmt, 7);
   buf_len= my_fetch_int(hstmt, 8);
-
   is_num(col_size, 10);
   is_num(buf_len, 12);
+
+  ok_stmt(hstmt, SQLFetch(hstmt));
+  col_size= my_fetch_int(hstmt, 7);
+  buf_len= my_fetch_int(hstmt, 8);
+  is_num(col_size, 8);
+  is_num(buf_len, 9);
+
+  ok_stmt(hstmt, SQLFetch(hstmt));
+  col_size= my_fetch_int(hstmt, 7);
+  buf_len= my_fetch_int(hstmt, 8);
+  is_num(col_size, 10);
+  is_num(buf_len, 4);
 
   expect_stmt(hstmt, SQLFetch(hstmt), SQL_NO_DATA_FOUND);
   ok_stmt(hstmt, SQLFreeStmt(hstmt, SQL_CLOSE));
@@ -821,7 +834,8 @@ DECLARE_TEST(t_bug31067)
 
   ok_stmt(hstmt, SQLFetch(hstmt));
 
-  is_str(my_fetch_str(hstmt, buff, 13), "'bug31067'", 11);
+  const char *c = my_fetch_str(hstmt, buff, 13);
+  is_str(c, "'bug31067'", 10);
 
   expect_stmt(hstmt, SQLFetch(hstmt), SQL_NO_DATA_FOUND);
 

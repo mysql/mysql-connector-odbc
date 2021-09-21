@@ -1730,7 +1730,10 @@ SQLRETURN SQL_API SQLRowCount( SQLHSTMT hstmt,
 
     if ( stmt->result )
     {
-      /* for SetPos operations result is defined and they use direct execution */
+      if (stmt->fake_result)
+        *pcrow = stmt->result->row_count;
+      else
+        // for SetPos operations result is defined and they use direct execution
         *pcrow= (SQLLEN) affected_rows(stmt);
     }
     else

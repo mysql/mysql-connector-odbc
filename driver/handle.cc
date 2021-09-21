@@ -127,6 +127,14 @@ SQLRETURN DBC::set_error(char * state, const char * message, uint errcode)
   error.native_error= errcode;
   return SQL_ERROR;
 }
+
+
+SQLRETURN DBC::set_error(char * state)
+{
+  return set_error(state, mysql_error(mysql), mysql_errno(mysql));
+}
+
+
 /*
   @type    : myodbc3 internal
   @purpose : to allocate the environment handle and to maintain

@@ -611,7 +611,10 @@ struct DBC
   void add_desc(DESC* desc);
   void remove_desc(DESC *desc);
   SQLRETURN set_error(char *state, const char *message, uint errcode);
+  SQLRETURN set_error(char *state);
   SQLRETURN connect(DataSource *ds);
+  void execute_prep_stmt(MYSQL_STMT *pstmt, std::string &query,
+    MYSQL_BIND *param_bind, MYSQL_BIND *result_bind);
 
   inline bool transactions_supported()
   { return mysql->server_capabilities & CLIENT_TRANSACTIONS; }
@@ -781,6 +784,9 @@ struct xstring : public std::string
   xstring(T &&s) : Base(std::forward<T>(s))
   {}
 
+  xstring(SQLULEN v) : Base(std::to_string(v))
+  {}
+
   xstring(long long v) : Base(std::to_string(v))
   {}
 
@@ -792,6 +798,10 @@ struct xstring : public std::string
 
   xstring(int v) : Base(std::to_string(v))
   {}
+
+  xstring(unsigned int v) : Base(std::to_string(v))
+  {}
+
 
   const char *c_str() const { return m_is_null ? nullptr : Base::c_str(); }
   size_t size() const { return m_is_null ? 0 : Base::size(); }
@@ -899,6 +909,16 @@ struct ODBCEXCEPTION
   {}
 
 };
+
+struct ODBC_STMT
+{
+  MYSQL_STMT *m_stmt;
+
+  ODBC_STMT(MYSQL *mysql) { m_stmt = mysql_stmt_init(mysql); }
+  operator MYSQL_STMT*() { return m_stmt; }
+  ~ODBC_STMT() { mysql_stmt_close(m_stmt); }
+};
+
 
 struct STMT
 {

@@ -1565,6 +1565,7 @@ DECLARE_TEST(t_bug39957)
 
 
 BEGIN_TESTS
+  ADD_TEST(t_columns)
   ADD_TEST(t_sqlprocedures)
   ADD_TEST(my_columns_null)
   ADD_TEST(my_drop_table)
@@ -1572,7 +1573,6 @@ BEGIN_TESTS
   ADD_TEST(my_colpriv)
   ADD_TEST(t_catalog)
   ADD_TEST(tmysql_specialcols)
-  ADD_TEST(t_columns)
   ADD_TEST(t_tables_bug)
   ADD_TEST(t_current_catalog_unicode)
   ADD_TEST(t_current_catalog_ansi)

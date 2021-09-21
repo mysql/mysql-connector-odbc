@@ -233,6 +233,8 @@ SQLWCHAR *dsnparams[]= {W_DSN, W_DRIVER, W_DESCRIPTION, W_SERVER,
                         W_PWD1, W_PWD2, W_PWD3,
 #endif
                         W_DATABASE, W_SOCKET, W_INITSTMT,
+                        W_PORT, W_OPTION, W_CHARSET, W_SSLKEY,
+                        W_SSLCERT, W_SSLCA, W_SSLCAPATH, W_SSLCIPHER,
                         W_SSLVERIFY, W_READTIMEOUT, W_WRITETIMEOUT,
                         W_FOUND_ROWS, W_BIG_PACKETS, W_NO_PROMPT,
                         W_DYNAMIC_CURSOR, W_NO_DEFAULT_CURSOR,

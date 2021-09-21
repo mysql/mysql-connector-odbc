@@ -53,7 +53,7 @@ DECLARE_TEST(my_json)
   ok_stmt(hstmt2, SQLFetch(hstmt2)); // Fetch 2nd column
 
   is_num(my_fetch_int(hstmt2, 5), -1);             // DATA_TYPE
-  is_str(my_fetch_str(hstmt2, buf, 6), "JSON", 4); // TYPE_NAME
+  is_str(my_fetch_str(hstmt2, buf, 6), "json", 4); // TYPE_NAME
 
   expect_stmt(hstmt2, SQLFetch(hstmt2), SQL_NO_DATA);
   ok_stmt(hstmt2, SQLFreeStmt(hstmt2, SQL_CLOSE));
