@@ -851,6 +851,7 @@ columns_i_s(SQLHSTMT hstmt, SQLCHAR *catalog, unsigned long catalog_len,
   {
     bufs.emplace_back(tempBuf(1024));
     auto &buf = bufs.back();
+    buf.buf[0] = 0;
     lengths[i] = buf.buf_len;
     do_bind(results, (SQLCHAR*)buf.buf, MYSQL_TYPE_STRING,
       lengths[i], &is_null[i]);
