@@ -1151,37 +1151,62 @@ DECLARE_TEST(t_tls_opts)
   printf("TLS Versions supported by the server: %s\n", buf);
   is(SQL_NO_DATA == SQLFetch(hstmt));
 
-  char *vals[] = {
-    "TLSv1.2",
-    "TLSv1.3",
-    "TLSv1.3"
-  };
+#define VERSION_COUNT 2
 
-  int version_count = (sizeof(vals)/sizeof(char*));
+  // supported TLS versions, starting from the highest one.
+  // Tests below assume that ver[] covers all versions supported
+  // by both server and connector and ver[0] is the highest supported one.
+  //
+  // Note: this means that these tests will fail when tested against
+  // a server that supports a new version beyond ver[0].
 
-  for (int i = 0; i < version_count; ++i)
+  char *ver[VERSION_COUNT] = { "TLSv1.3", "TLSv1.2" };
+
+  // Corresponding NO_TLS_X options
+
+  char *opts[VERSION_COUNT] = { "NO_TLS_1_3=1;", "NO_TLS_1_2=1;" };
+
+  // Info about versions actually supported by server
+
+  unsigned supported_versions = 0;
+
+  for (unsigned i = 0; i < VERSION_COUNT; ++i)
+    if (strstr(buf, ver[i]) != NULL)
+      supported_versions |= (1u << i);
+
+
+  // Test disabling each of supported versions, the last iteration is
+  // testing a scenario where nothing is disabled.
+
+  for (int i = 0; i < VERSION_COUNT+1; ++i)
   {
-    if (strstr(buf, vals[i]) == NULL)
-    {
-      printf("Not all required TLS versions are supported by the server. Skipping the test\n");
-      return OK;
-    }
-  }
+    unsigned ver_bit = 1u << i;
 
-  char *opts[] = {
-    "NO_TLS_1_2=1;",
-    "NO_TLS_1_3=1;",
-    ""
-  };
+    // Skip testing NO_TLS_X options if server does not support any good TLS
+    // version - in this case only the last iteration is performed.
 
-  for (int i = 0; i < 3; ++i)
-  {
+    if (i < VERSION_COUNT && !supported_versions)
+      continue;
+
+    // Note: Empty SOCKET option forces use of TCP connection even for
+    // localhost
+
     char connstr[512] = "SOCKET=;";
-    strncat(connstr, opts[i], sizeof(connstr));
-    printf("TLS Parameters: %s\n", opts[i]);
+    if (i < VERSION_COUNT)
+      strncat(connstr, opts[i], sizeof(connstr));
+    printf("Connection options: %s\n", connstr);
 
-    is(OK == alloc_basic_handles_with_opt(&henv1, &hdbc1, &hstmt1, NULL,
-      NULL, NULL, NULL, connstr));
+    int ret = alloc_basic_handles_with_opt(&henv1, &hdbc1, &hstmt1, NULL,
+      NULL, NULL, NULL, connstr);
+
+    // We accept a failed connection only if server does not support any
+    // other versions except the one being disabled.
+
+    if (OK != ret)
+    {
+      is(0 == (supported_versions & ~ver_bit));
+      continue;
+    }
 
     /* Check the affected tows */
     ok_sql(hstmt1, "SHOW STATUS LIKE 'Ssl_version'");
@@ -1189,25 +1214,61 @@ DECLARE_TEST(t_tls_opts)
     ok_stmt(hstmt1, SQLGetData(hstmt1, 2, SQL_C_CHAR, buf, sizeof(buf), &len));
 
     printf("SSL Version: %s\n\n", buf);
-    /*
-      Set one NO_TLS_X option and the version applied must be
-      not the same as disabled by the option
-    */
-    if (i < 2)
+
+    // Note: Check that actual version does not equal the disabled one
+
+    if (i < VERSION_COUNT)
     {
-      is(strcmp(vals[i], buf) != 0);
+      is(strcmp(buf, ver[i]) != 0);
     }
     else
     {
-      is(strcmp(vals[i], buf) == 0);
+      /*
+        If no version was disabled, check that the highest available one
+        was selected.
+
+        But first check that server supports at lest one of the TLS
+        versions, bacause otherwise if connection was accepted then something
+        is wrong: either old server picked old TLS version that we do not
+        support or new server picked a new TLS version we are not aware of
+        and this test should be updated.
+      */
+
+      is(supported_versions);
+
+      int j = 0;
+
+      for (; j < VERSION_COUNT; ++j)
+        if (supported_versions & (1u << j))
+          break;
+
+      is(j < VERSION_COUNT);
+      is(strcmp(buf, ver[j]) == 0);
     }
 
     free_basic_handles(&henv1, &hdbc1, &hstmt1);
   }
 
-  /* Cannot disable TLS 1.2 and 1.3 at the same time */
-  is(FAIL == alloc_basic_handles_with_opt(&henv1, &hdbc1, &hstmt1, NULL,
-      NULL, NULL, NULL, "NO_TLS_1_2=1;NO_TLS_1_3=1;"));
+
+  // Test disabling all supported TLS versions.
+
+  {
+    /*
+      Disabling all TLS versions should lead to error. This is true also for
+      old servers that do not support any of the versions in ver[]. However,
+      a new server that supports a version beyond ver[0] might accept the
+      connection and this test will fail. In that case we need to update the
+      test to cover the new TLS version.
+    */
+
+    char connstr[512] = "SOCKET=;";
+    for (int i = 0; i < VERSION_COUNT; ++i)
+      strncat(connstr, opts[i], sizeof(connstr));
+    printf("Connection options: %s\n", connstr);
+
+    is(FAIL == alloc_basic_handles_with_opt(&henv1, &hdbc1, &hstmt1, NULL,
+      NULL, NULL, NULL, connstr));
+  }
 
   return OK;
 }
