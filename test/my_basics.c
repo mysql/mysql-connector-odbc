@@ -1145,25 +1145,43 @@ DECLARE_TEST(t_tls_opts)
   SQLCHAR buf[1024] = { 0 };
   SQLLEN len = 0;
 
-  char *opts[] = {
-    "NO_TLS_1_0=1;",
-    "NO_TLS_1_1=1;",
-    "NO_TLS_1_2=1;",
-    "NO_TLS_1_3=1;"
-  };
+  ok_sql(hstmt, "SHOW VARIABLES LIKE 'tls_version'");
+  ok_stmt(hstmt, SQLFetch(hstmt));
+  my_fetch_str(hstmt, buf, 2);
+  printf("TLS Versions supported by the server: %s\n", buf);
+  is(SQL_NO_DATA == SQLFetch(hstmt));
 
   char *vals[] = {
-    "TLSv1",
-    "TLSv1.1",
     "TLSv1.2",
+    "TLSv1.3",
     "TLSv1.3"
   };
 
-  for (int i = 0; i < 4; ++i)
+  int version_count = (sizeof(vals)/sizeof(char*));
+
+  for (int i = 0; i < version_count; ++i)
   {
+    if (strstr(buf, vals[i]) == NULL)
+    {
+      printf("Not all required TLS versions are supported by the server. Skipping the test\n");
+      return OK;
+    }
+  }
+
+  char *opts[] = {
+    "NO_TLS_1_2=1;",
+    "NO_TLS_1_3=1;",
+    ""
+  };
+
+  for (int i = 0; i < 3; ++i)
+  {
+    char connstr[512] = "SOCKET=;";
+    strncat(connstr, opts[i], sizeof(connstr));
     printf("TLS Parameters: %s\n", opts[i]);
+
     is(OK == alloc_basic_handles_with_opt(&henv1, &hdbc1, &hstmt1, NULL,
-      NULL, NULL, NULL, opts[i]));
+      NULL, NULL, NULL, connstr));
 
     /* Check the affected tows */
     ok_sql(hstmt1, "SHOW STATUS LIKE 'Ssl_version'");
@@ -1175,10 +1193,21 @@ DECLARE_TEST(t_tls_opts)
       Set one NO_TLS_X option and the version applied must be
       not the same as disabled by the option
     */
-    is(strcmp(vals[i], buf) != 0);
+    if (i < 2)
+    {
+      is(strcmp(vals[i], buf) != 0);
+    }
+    else
+    {
+      is(strcmp(vals[i], buf) == 0);
+    }
 
     free_basic_handles(&henv1, &hdbc1, &hstmt1);
   }
+
+  /* Cannot disable TLS 1.2 and 1.3 at the same time */
+  is(FAIL == alloc_basic_handles_with_opt(&henv1, &hdbc1, &hstmt1, NULL,
+      NULL, NULL, NULL, "NO_TLS_1_2=1;NO_TLS_1_3=1;"));
 
   return OK;
 }

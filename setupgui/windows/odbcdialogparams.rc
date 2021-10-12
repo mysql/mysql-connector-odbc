@@ -276,11 +276,8 @@ BEGIN
     PUSHBUTTON      "...",IDC_RSAKEYCHOOSER,192,111,12,12,BS_CENTER
     RTEXT           "SSL &Mode", IDC_STATIC, 18, 97, 67, 8
     COMBOBOX        IDC_EDIT_sslmode, 90, 95, 97, 8, CBS_DROPDOWN | CBS_AUTOHSCROLL | CBS_SORT | WS_VSCROLL | WS_TABSTOP
-//    CONTROL         "&Verify SSL Certificate", IDC_CHECK_sslverify, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, 290, 97, 87, 10
-    CONTROL         "&Disable TLS Version 1",   IDC_CHECK_no_tls_1,   "Button", BS_AUTOCHECKBOX | WS_TABSTOP, 35,  133, 87, 10
-    CONTROL         "Disable TLS Version 1.&1", IDC_CHECK_no_tls_1_1, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, 35,  146, 87, 10
-    CONTROL         "Disable TLS Version 1.&2", IDC_CHECK_no_tls_1_2, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, 155, 133, 87, 10
-    CONTROL         "Disable TLS Version 1.&3", IDC_CHECK_no_tls_1_3, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, 155, 146, 87, 10
+    CONTROL         "Disable TLS Version 1.&2", IDC_CHECK_no_tls_1_2, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, 90, 133, 87, 10
+    CONTROL         "Disable TLS Version 1.&3", IDC_CHECK_no_tls_1_3, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, 90, 146, 87, 10
 END
 
 
