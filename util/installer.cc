@@ -196,10 +196,6 @@ static SQLWCHAR W_PLUGIN_DIR[]=
   {'P','L','U','G','I','N','_','D','I','R',0};
 static SQLWCHAR W_DEFAULT_AUTH[]=
   {'D','E','F','A','U','L','T','_','A','U','T', 'H',0};
-static SQLWCHAR W_NO_TLS_1[] =
-{ 'N', 'O', '_', 'T', 'L', 'S', '_', '1', '_', '0', 0 };
-static SQLWCHAR W_NO_TLS_1_1[] =
-{ 'N', 'O', '_', 'T', 'L', 'S', '_', '1', '_', '1', 0 };
 static SQLWCHAR W_NO_TLS_1_2[] =
 { 'N', 'O', '_', 'T', 'L', 'S', '_', '1', '_', '2', 0 };
 static SQLWCHAR W_NO_TLS_1_3[] =
@@ -250,7 +246,7 @@ SQLWCHAR *dsnparams[]= {W_DSN, W_DRIVER, W_DESCRIPTION, W_SERVER,
                         W_CAN_HANDLE_EXP_PWD, W_ENABLE_CLEARTEXT_PLUGIN,
                         W_GET_SERVER_PUBLIC_KEY, W_ENABLE_DNS_SRV, W_MULTI_HOST,
                         W_SAVEFILE, W_RSAKEY, W_PLUGIN_DIR, W_DEFAULT_AUTH,
-                        W_NO_TLS_1, W_NO_TLS_1_1, W_NO_TLS_1_2, W_NO_TLS_1_3,
+                        W_NO_TLS_1_2, W_NO_TLS_1_3,
                         W_SSLMODE, W_NO_DATE_OVERFLOW, W_LOAD_DATA_LOCAL_DIR,
                         W_OCI_CONFIG_FILE};
 static const
@@ -946,10 +942,6 @@ void ds_map_param(DataSource *ds, const SQLWCHAR *param,
     *strdest= &ds->plugin_dir;
   else if (!sqlwcharcasecmp(W_DEFAULT_AUTH, param))
     *strdest= &ds->default_auth;
-  else if (!sqlwcharcasecmp(W_NO_TLS_1, param))
-    *booldest = &ds->no_tls_1;
-  else if (!sqlwcharcasecmp(W_NO_TLS_1_1, param))
-    *booldest = &ds->no_tls_1_1;
   else if (!sqlwcharcasecmp(W_NO_TLS_1_2, param))
     *booldest = &ds->no_tls_1_2;
   else if (!sqlwcharcasecmp(W_NO_TLS_1_3, param))
@@ -1465,8 +1457,6 @@ int ds_add(DataSource *ds)
   if (ds_add_intprop(ds->name, W_MULTI_HOST, ds->multi_host)) goto error;
   if (ds_add_strprop(ds->name, W_PLUGIN_DIR  , ds->plugin_dir  )) goto error;
   if (ds_add_strprop(ds->name, W_DEFAULT_AUTH, ds->default_auth)) goto error;
-  if (ds_add_intprop(ds->name, W_NO_TLS_1, ds->no_tls_1)) goto error;
-  if (ds_add_intprop(ds->name, W_NO_TLS_1_1, ds->no_tls_1_1)) goto error;
   if (ds_add_intprop(ds->name, W_NO_TLS_1_2, ds->no_tls_1_2)) goto error;
   if (ds_add_intprop(ds->name, W_NO_TLS_1_3, ds->no_tls_1_3)) goto error;
   if (ds_add_intprop(ds->name, W_NO_DATE_OVERFLOW, ds->no_date_overflow)) goto error;
