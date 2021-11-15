@@ -1142,7 +1142,7 @@ DECLARE_TEST(t_bug52996)
 DECLARE_TEST(t_tls_opts)
 {
   DECLARE_BASIC_HANDLES(henv1, hdbc1, hstmt1);
-  SQLCHAR buf[1024] = { 0 };
+  SQLCHAR buf[512] = { 0 }, versions[512] = { 0 };
   SQLLEN len = 0;
 
   char *opts[] = {
@@ -1159,8 +1159,31 @@ DECLARE_TEST(t_tls_opts)
     "TLSv1.3"
   };
 
-  for (int i = 0; i < 4; ++i)
+  ok_sql(hstmt, "SHOW VARIABLES LIKE 'tls_version'");
+  ok_stmt(hstmt, SQLFetch(hstmt));
+  my_fetch_str(hstmt, versions, 2);
+  printf("TLS Versions supported by the server: %s\n", versions);
+  is(SQL_NO_DATA == SQLFetch(hstmt));
+
+  int arr_size = sizeof(vals) / sizeof(char*);
+
+  for (int i = 0; i < arr_size; ++i)
   {
+    /*
+      TODO: this must be reviewed as the list of TLS versions changes.
+            Now it is not always possible to tell the versions supported
+
+            by the client as it varies by platform.
+    */
+    /* Stop if only one version supported by both the client and the server */
+    if ((i > 1) && (i + 1 < arr_size) &&
+        (strstr(versions, vals[i + 1]) == NULL))
+    {
+      printf("%s is the only TLS version supported by both client and server. "
+             "Disabling it will fail the connect. Skipping...\n", vals[i]);
+      break;;
+    }
+
     printf("TLS Parameters: %s\n", opts[i]);
     is(OK == alloc_basic_handles_with_opt(&henv1, &hdbc1, &hstmt1, NULL,
       NULL, NULL, NULL, opts[i]));
