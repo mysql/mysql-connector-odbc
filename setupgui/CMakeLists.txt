@@ -1,4 +1,4 @@
-# Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved. 
+# Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved. 
 # 
 # This program is free software; you can redistribute it and/or modify 
 # it under the terms of the GNU General Public License, version 2.0, as 
@@ -28,152 +28,183 @@
 
 ##########################################################################
 
-ADD_DEFINITIONS(-DUNICODE -D_UNICODE)
+add_definitions(-DUNICODE -D_UNICODE)
 
-IF (UNICODE OR NOT ANSI)
-  ADD_DEFINITIONS(-DDRIVER_UNICODE)
-ELSE (UNICODE OR NOT ANSI)
-  ADD_DEFINITIONS(-DDRIVER_ANSI)
-ENDIF (UNICODE OR NOT ANSI)
+if(UNICODE OR NOT ANSI)
+  add_definitions(-DDRIVER_UNICODE)
+else(UNICODE OR NOT ANSI)
+  add_definitions(-DDRIVER_ANSI)
+endif(UNICODE OR NOT ANSI)
 
+# Sources
 
-IF (WIN32)
-  SET(SETUP_SRCS ConfigDSN.cc
-                 callbacks.cc
-                 setupgui.h
-                 utils.cc
-                 myodbc8S.def
-                 windows/main.cpp
-                 windows/odbcdialogparams.cpp
-                 windows/odbcdialogparams.h
-                 windows/odbcdialogparams.rc
-                 windows/resource.h
-                 windows/TabCtrl.cpp
-                 windows/TabCtrl.h
-                 windows/tooltip.cpp
-                 windows/connector_odbc_header.bmp)
-  SET(PLATFORM_LIBS comctl32)
-ELSE (WIN32)
+if(WIN32)
 
-  # Sources for the main setup module
-  SET(SETUP_SRCS gtk/setup_loader.cc)
-  
-  # Sources for the GTK setup module
-  SET(SETUP_SRCS_GTK ConfigDSN.cc
-                     callbacks.cc
-                     setupgui.h
-                     utils.cc
-                     gtk/odbcdialogparams.cc
-                     gtk/ODBCINSTGetProperties.cc
+  set(SETUP_SRCS
+    ConfigDSN.cc
+    callbacks.cc
+    setupgui.h
+    utils.cc
+    myodbc8S.def
+    windows/main.cpp
+    windows/odbcdialogparams.cpp
+    windows/odbcdialogparams.h
+    windows/odbcdialogparams.rc
+    windows/resource.h
+    windows/TabCtrl.cpp
+    windows/TabCtrl.h
+    windows/tooltip.cpp
+    windows/connector_odbc_header.bmp
   )
 
-ENDIF (WIN32)
+  set(PLATFORM_LIBS comctl32 legacy_stdio_definitions.lib)
 
+else(WIN32)
 
-IF (APPLE)
-  ADD_LIBRARY(myodbc8S MODULE ${SETUP_SRCS})
-ELSE (APPLE)
-
-  # myodbc8S is common for Windows and GTK
+  # Sources for the main setup module
+  set(SETUP_SRCS gtk/setup_loader.cc)
   
-  ADD_LIBRARY(myodbc8S SHARED ${SETUP_SRCS})
-  
-  IF(NOT WIN32)
-    INCLUDE (FindPkgConfig)
-    PKG_CHECK_MODULES(GTK3 gtk+-3.0)
-  
-    IF (GTK3_INCLUDE_DIRS)
-      TRY_COMPILE(RESULT_VAR ${PROJECT_BINARY_DIR} SOURCES ${PROJECT_SOURCE_DIR}/setupgui/gtk/try.cc
-        CMAKE_FLAGS -DLINK_DIRECTORIES=${GTK3_LIBRARY_DIRS}
-        LINK_LIBRARIES ${GTK3_LIBRARIES})
+  # Sources for the GTK setup module
+  set(SETUP_SRCS_GTK
+    ConfigDSN.cc
+    callbacks.cc
+    setupgui.h
+    utils.cc
+    gtk/odbcdialogparams.cc
+    gtk/ODBCINSTGetProperties.cc
+  )
 
-      IF(RESULT_VAR)
-        ADD_LIBRARY(myodbc8S-gtk3 SHARED ${SETUP_SRCS_GTK})
-        TARGET_INCLUDE_DIRECTORIES(myodbc8S-gtk3 PUBLIC ${GTK3_INCLUDE_DIRS})
+  set(PLATFORM_LIBS dl)
+  set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} ${ODBC_LINK_FLAGS}")
+
+ENDIF(WIN32)
+
+if(NOT APPLE AND NOT WIN32)
+  set(use_gtk true)
+endif()
+
+
+include_directories(${CMAKE_SOURCE_DIR})
+include_directories(${CMAKE_SOURCE_DIR}/util)
+include_directories(${CMAKE_SOURCE_DIR}/driver)
+
+add_compile_options(${PLATFORM_CFLAGS})
+
+
+# The main GUI dialog module
+
+add_library(myodbc8S MODULE ${SETUP_SRCS})
+
+target_link_libraries(myodbc8S ${ODBCLIB} ${ODBCINSTLIB})
+
+# Note: When using GTK+, these libraries will be linked to -gtk modules.
+
+if(NOT use_gtk)
+  target_link_libraries(myodbc8S
+    myodbc-util ${MYSQL_CLIENT_LIBS} ${PLATFORM_LIBS}
+  )
+endif()
+
+if(MYSQL_CXX_LINKAGE)
+  set_target_properties(myodbc8S PROPERTIES LINKER_LANGUAGE CXX)
+endif()
+
+if(WITH_NODEFAULTLIB)
+  set_target_properties(myodbc8S PROPERTIES
+    LINK_FLAGS_DEBUG "/NODEFAULTLIB:${WITH_NODEFAULTLIB}"
+    LINK_FLAGS_RELWITHDEBINFO "/NODEFAULTLIB:${WITH_NODEFAULTLIB}"
+    LINK_FLAGS_RELEASE "/NODEFAULTLIB:${WITH_NODEFAULTLIB}"
+  )
+endif()
+
+
+# GTK GUI modules
+# Note: These are dlopened by the main myodbc8S module after detecting
+# GTK+ version in use (see gtk/setup_loader.cc)
+
+if(use_gtk)
+
+  set(GTK3_target myodbc8S-gtk3)
+  set(GTK3_pkg_name gtk+-3.0)
+
+  set(GTK2_target myodbc8S-gtk2)
+  set(GTK2_pkg_name gtk+-2.0)
+
+  include(FindPkgConfig)
+
+  foreach(gtk GTK3 GTK2)
+
+    pkg_check_modules(${gtk} ${${gtk}_pkg_name})
+
+    if(NOT ${gtk}_INCLUDE_DIRS)
+      continue()
+    endif()
+
+    # Extract only the top-level library, ignore its further dependencies
+
+    set(${gtk}_LIBS)
+    foreach(lib IN LISTS ${gtk}_LIBRARIES)
+      if(lib MATCHES "^gtk-")
+        list(APPEND ${gtk}_LIBS ${lib})
+      endif()
+    endforeach()
+
+    # Sanity check
+
+    try_compile(RESULT_VAR
+      ${PROJECT_BINARY_DIR}
+      SOURCES ${PROJECT_SOURCE_DIR}/setupgui/gtk/try.cc
+      CMAKE_FLAGS -DLINK_DIRECTORIES=${${gtk}_LIBRARY_DIRS}
+      LINK_LIBRARIES ${${gtk}_LIBS}
+    )
+
+    if(NOT RESULT_VAR)
+      continue()
+    endif()
+
+    # Add GUI module
+
+    message("-- Adding target: ${${gtk}_target}")
+    add_library(${${gtk}_target} MODULE ${SETUP_SRCS_GTK})
+
+    target_link_libraries(${${gtk}_target} PRIVATE
+       ${${gtk}_LIBS} myodbc-util ${MYSQL_CLIENT_LIBS} ${PLATFORM_LIBS}
+    )
+
+    target_include_directories(${${gtk}_target} PRIVATE ${${gtk}_INCLUDE_DIRS})
       
-        IF(GTK3_LIBRARY_DIRS)
-          TARGET_LINK_DIRECTORIES(myodbc8S-gtk3 PUBLIC ${GTK3_LIBRARY_DIRS})
-        ENDIF(GTK3_LIBRARY_DIRS)
-      
-        INSTALL(TARGETS myodbc8S-gtk3 DESTINATION ${LIB_SUBDIR})
-        SET_TARGET_PROPERTIES(myodbc8S-gtk3 PROPERTIES COMPILE_FLAGS "${PLATFORM_CFLAGS}")
-      ENDIF(RESULT_VAR)
-    ENDIF(GTK3_INCLUDE_DIRS)
+    if(${gtk}_LIBRARY_DIRS)
+      target_link_directories(${${gtk}_target} PRIVATE ${${gtk}_LIBRARY_DIRS})
+    endif()
 
-    PKG_CHECK_MODULES(GTK2 gtk+-2.0)
-    
-    IF (GTK2_INCLUDE_DIRS)
+    #set_target_properties(${${gtk}_target} PROPERTIES LINKER_LANGUAGE CXX)
 
-      TRY_COMPILE(RESULT_VAR ${PROJECT_BINARY_DIR} SOURCES ${PROJECT_SOURCE_DIR}/setupgui/gtk/try.cc
-      CMAKE_FLAGS -DLINK_DIRECTORIES=${GTK2_LIBRARY_DIRS}
-      LINK_LIBRARIES ${GTK2_LIBRARIES})
+  endforeach(gtk)
 
-      IF(RESULT_VAR)
-        ADD_LIBRARY(myodbc8S-gtk2 SHARED ${SETUP_SRCS_GTK})
-        TARGET_INCLUDE_DIRECTORIES(myodbc8S-gtk2 PUBLIC ${GTK2_INCLUDE_DIRS})
-      
-        IF(GTK2_LIBRARY_DIRS)
-          TARGET_LINK_DIRECTORIES(myodbc8S-gtk2 PUBLIC ${GTK2_LIBRARY_DIRS})
-        ENDIF(GTK2_LIBRARY_DIRS)
-        INSTALL(TARGETS myodbc8S-gtk2 DESTINATION ${LIB_SUBDIR})
-        SET_TARGET_PROPERTIES(myodbc8S-gtk2 PROPERTIES COMPILE_FLAGS "${PLATFORM_CFLAGS}")      
-      ENDIF(RESULT_VAR)
-    ENDIF (GTK2_INCLUDE_DIRS)
-  
-    SET_TARGET_PROPERTIES(myodbc8S PROPERTIES COMPILE_FLAGS "${PLATFORM_CFLAGS}")
-  ENDIF(NOT WIN32)
-ENDIF (APPLE)
+  if(NOT TARGET ${GTK2_target} AND NOT TARGET ${GTK3_target})
+    message(FATAL_ERROR
+        "Could not find GTK+2 or GTK+3 required to build the configuration GUI,"
+        " please install them on your system or disable building the GUI module"
+        " (DISABLE_GUI=1)"
+    )
+  endif()
+
+endif(use_gtk)
 
 
-INSTALL(TARGETS myodbc8S DESTINATION ${LIB_SUBDIR})
+# Install specs
 
-INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR})
-INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/util)
-INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/driver)
+install(TARGETS myodbc8S DESTINATION ${LIB_SUBDIR})
+set_property(TARGET myodbc8S APPEND PROPERTY INSTALL_RPATH "$ORIGIN")
 
-IF (NOT WIN32)
-  SET(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} ${ODBC_LINK_FLAGS}")
-  
-  TARGET_LINK_LIBRARIES(myodbc8S
-                      myodbc-util ${ODBCLIB} ${ODBCINSTLIB} dl
-                      ${PLATFORM_LIBS})
-  
-  IF (TARGET myodbc8S-gtk3)
-    TARGET_LINK_LIBRARIES(myodbc8S-gtk3 ${GTK3_LIBRARIES}
-                          myodbc-util ${ODBCLIB} ${ODBCINSTLIB}
-                           ${PLATFORM_LIBS} ${MYSQL_CLIENT_LIBS})
-  ENDIF (TARGET myodbc8S-gtk3)
-  
-  IF (TARGET myodbc8S-gtk2)
-    TARGET_LINK_LIBRARIES(myodbc8S-gtk2 ${GTK2_LIBRARIES}
-                          myodbc-util ${ODBCLIB} ${ODBCINSTLIB}
-                          ${PLATFORM_LIBS} ${MYSQL_CLIENT_LIBS})
-  ENDIF (TARGET myodbc8S-gtk2)
-  
-ELSE (NOT WIN32)
-  TARGET_LINK_LIBRARIES(myodbc8S
-                      myodbc-util ${ODBCLIB} ${ODBCINSTLIB} ${MYSQL_CLIENT_LIBS}
-                      ${PLATFORM_LIBS} legacy_stdio_definitions.lib)
-  IF (WITH_NODEFAULTLIB)
-    SET_TARGET_PROPERTIES(myodbc8S PROPERTIES
-      LINK_FLAGS_DEBUG "/NODEFAULTLIB:${WITH_NODEFAULTLIB}"
-      LINK_FLAGS_RELWITHDEBINFO "/NODEFAULTLIB:${WITH_NODEFAULTLIB}"
-      LINK_FLAGS_RELEASE "/NODEFAULTLIB:${WITH_NODEFAULTLIB}")
-  ENDIF ()
+if(use_gtk)
 
-ENDIF (NOT WIN32)
+  if(TARGET ${GTK3_target})
+    install(TARGETS  ${GTK3_target} DESTINATION ${LIB_SUBDIR})
+  endif()
 
+  if(TARGET ${GTK2_target})
+    install(TARGETS  ${GTK2_target} DESTINATION ${LIB_SUBDIR})
+  endif()
 
-IF(MYSQL_CXX_LINKAGE)
-  SET_TARGET_PROPERTIES(myodbc8S PROPERTIES LINKER_LANGUAGE CXX)
-  set_property(TARGET myodbc8S APPEND PROPERTY INSTALL_RPATH "$ORIGIN")
-
-  IF (TARGET myodbc8S-gtk3)
-    SET_TARGET_PROPERTIES(myodbc8S-gtk3 PROPERTIES LINKER_LANGUAGE CXX)  
-  ENDIF (TARGET myodbc8S-gtk3)  
-  
-  IF (TARGET myodbc8S-gtk2)
-    SET_TARGET_PROPERTIES(myodbc8S-gtk2 PROPERTIES LINKER_LANGUAGE CXX)  
-  ENDIF (TARGET myodbc8S-gtk2)  
-  
-ENDIF(MYSQL_CXX_LINKAGE)
+endif()
