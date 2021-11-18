@@ -63,10 +63,11 @@ URL:		http://www.mysql.com/
 Group:		Applications/Databases
 Vendor:		%{mysql_vendor}
 Packager:	%{mysql_vendor} Product Engineering Team <mysql-build@oss.oracle.com>
-BuildRequires:	cmake 
+BuildRequires:	cmake
 %{?shared_mysqlclient:BuildRequires: mysql-community-devel}
 BuildRequires:	unixODBC-devel
-BuildRoot:	%(mktemp -ud %{_tmppath}/%{name}-%{version}-%{release}-XXXXXX)
+BuildRequires:  gtk2-devel
+BuildRequires:  gtk3-devel
 
 %if 0%{?odbc_gui}
 %package setup
