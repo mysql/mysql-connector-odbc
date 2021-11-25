@@ -36,6 +36,12 @@
 #include "setupgui.h"
 #include "stringutil.h"
 
+extern "C" {
+BOOL Driver_Prompt(HWND hWnd, SQLWCHAR *instr, SQLUSMALLINT completion,
+                   SQLWCHAR *outstr, SQLSMALLINT outmax, SQLSMALLINT *outlen);
+}
+
+
 /*
    Entry point for GUI prompting from SQLDriverConnect().
 */
