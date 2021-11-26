@@ -68,9 +68,8 @@ Packager:	%{mysql_vendor} Product Engineering Team <mysql-build@oss.oracle.com>
 BuildRequires:	cmake
 %{?shared_mysqlclient:BuildRequires: mysql-community-devel}
 BuildRequires:	unixODBC-devel
-%if 0%{?rhel} == 6 || 0%{?suse_version} == 1315
 BuildRequires:  gtk2-devel
-%else
+%if 0%{?rhel} != 6 && 0%{?suse_version} != 1315
 BuildRequires:  gtk3-devel
 %endif
 
