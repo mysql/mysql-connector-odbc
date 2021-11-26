@@ -1,4 +1,4 @@
-# Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved. 
+# Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License, version 2.0, as
@@ -168,11 +168,11 @@ if(use_gtk)
     add_library(${${gtk}_target} MODULE ${SETUP_SRCS_GTK})
 
     target_link_libraries(${${gtk}_target} PRIVATE
-       ${${gtk}_LIBS} myodbc-util ${MYSQL_CLIENT_LIBS} ${PLATFORM_LIBS}
+       ${${gtk}_LIBS} myodbc-util ${ODBCLIB} ${MYSQL_CLIENT_LIBS} ${PLATFORM_LIBS}
     )
 
     target_include_directories(${${gtk}_target} PRIVATE ${${gtk}_INCLUDE_DIRS})
-      
+
     if(${gtk}_LIBRARY_DIRS)
       target_link_directories(${${gtk}_target} PRIVATE ${${gtk}_LIBRARY_DIRS})
     endif()
