@@ -92,8 +92,11 @@ add_compile_options(${PLATFORM_CFLAGS})
 
 
 # The main GUI dialog module
+#
+# FIXME: It should be better a MODULE, not shared library, but for this
+# we need to also update WiX defintions (no import libraries for modules)
 
-add_library(myodbc8S MODULE ${SETUP_SRCS})
+add_library(myodbc8S SHARED ${SETUP_SRCS})
 
 target_link_libraries(myodbc8S ${ODBCLIB} ${ODBCINSTLIB})
 
@@ -165,7 +168,7 @@ if(use_gtk)
     # Add GUI module
 
     message("-- Adding target: ${${gtk}_target}")
-    add_library(${${gtk}_target} MODULE ${SETUP_SRCS_GTK})
+    add_library(${${gtk}_target} SHARED ${SETUP_SRCS_GTK})
 
     target_link_libraries(${${gtk}_target} PRIVATE
        ${${gtk}_LIBS} myodbc-util ${ODBCLIB} ${MYSQL_CLIENT_LIBS} ${PLATFORM_LIBS}
