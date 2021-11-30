@@ -157,10 +157,10 @@ void fix_row_lengths(STMT *stmt, const long* fix_rules, uint row, uint field_cou
   unsigned long* orig_lengths, *row_lengths;
   uint i;
 
-  if (stmt->lengths == NULL)
+  if (!stmt->lengths)
     return;
 
-  row_lengths=  stmt->lengths + row*field_count;
+  row_lengths =  stmt->lengths.get() + row * field_count;
   orig_lengths= mysql_fetch_lengths(stmt->result);
 
   for (i= 0; i < field_count; ++i)
