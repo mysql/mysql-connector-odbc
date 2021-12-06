@@ -944,13 +944,11 @@ struct STMT
   std::vector<MYSQL_BIND> query_attr_bind;
   std::vector<char*>      query_attr_names;
 
-  my_bool           lengths_allocated;
-  unsigned long     *lengths; /* used to set lengths if we shuffle field values
-                         of the resultset of auxiliary query or if we fix_fields. */
-                         /*
-                           We save a copy of the original query before we modify it for 'WHERE
-                           CURRENT OF' cursor handling.
-                         */
+  std::unique_ptr<my_bool[]> rb_is_null;
+  std::unique_ptr<my_bool[]> rb_err;
+  std::unique_ptr<unsigned long[]> rb_len;
+  std::unique_ptr<unsigned long[]> lengths;
+
   my_ulonglong      affected_rows;
   long              current_row;
   long              cursor_row;
@@ -1035,7 +1033,7 @@ struct STMT
     current_values(NULL), fields(NULL), end_of_set(NULL),
     tempbuf(),
     stmt_options(dbc->stmt_options),
-    param_bind(NULL), lengths_allocated(FALSE), lengths(NULL), affected_rows(0),
+    param_bind(NULL), lengths(nullptr), affected_rows(0),
     current_row(0), cursor_row(0), dae_type(0),
     order(NULL), order_count(0), param_count(0), current_param(0),
     rows_found_in_set(0),

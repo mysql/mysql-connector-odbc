@@ -547,8 +547,6 @@ int list_datasource_details(DataSource *ds)
   if (ds->default_bigint_bind_str) printf("\tDFLT_BIGINT_BIND_STR\n");
   if (ds->no_date_overflow) printf("\tNO_DATE_OVERFLOW\n");
   if (ds->enable_local_infile) printf("\tENABLE_LOCAL_INFILE\n");
-  if (ds->no_tls_1) printf("\tNO_TLS_1_0\n");
-  if (ds->no_tls_1_1) printf("\tNO_TLS_1_1\n");
   if (ds->no_tls_1_2) printf("\tNO_TLS_1_2\n");
   if (ds->no_tls_1_3) printf("\tNO_TLS_1_3\n");
   if (ds->no_ssps) printf("\tNO_SSPS\n");

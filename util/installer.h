@@ -175,8 +175,6 @@ typedef struct {
   unsigned int cursor_prefetch_number;
   BOOL no_ssps;
 
-  BOOL no_tls_1;
-  BOOL no_tls_1_1;
   BOOL no_tls_1_2;
   BOOL no_tls_1_3;
 

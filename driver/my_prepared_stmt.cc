@@ -314,10 +314,6 @@ void free_result_bind(STMT *stmt)
   {
     int i, field_cnt = stmt->field_count();
 
-    x_free(stmt->result_bind[0].is_null);
-    x_free(stmt->result_bind[0].length);
-    x_free(stmt->result_bind[0].error);
-
     /* buffer was allocated for each column */
     for (i= 0; i < field_cnt; i++)
     {
@@ -632,21 +628,12 @@ char *STMT::add_to_buffer(const char *from, size_t len)
 
 void STMT::free_lengths()
 {
-  if (lengths && lengths_allocated)
-  {
-    x_free(lengths);
-    lengths = nullptr;
-    lengths_allocated = false;
-  }
+  lengths.reset();
 }
 
 void STMT::alloc_lengths(size_t num)
 {
-  free_lengths();
-
-  lengths = (unsigned long*)myodbc_malloc(sizeof(unsigned long)*num,
-                                          MYF(MY_ZEROFILL));
-  lengths_allocated = true;
+  lengths.reset(new unsigned long[num]());
 }
 
 void STMT::reset_setpos_apd()
@@ -938,12 +925,12 @@ int STMT::ssps_bind_result()
   }
   else
   {
-    my_bool       *is_null= (my_bool*)myodbc_malloc(sizeof(my_bool)*num_fields,
-                                      MYF(MY_ZEROFILL));
-    my_bool       *err=     (my_bool*)myodbc_malloc(sizeof(my_bool)*num_fields,
-                                      MYF(MY_ZEROFILL));
-    unsigned long *len=     (unsigned long*)myodbc_malloc(sizeof(unsigned long)*num_fields,
-                                      MYF(MY_ZEROFILL));
+    rb_is_null.reset(new my_bool[num_fields]());
+    rb_err.reset(new my_bool[num_fields]());
+    rb_len.reset(new unsigned long[num_fields]());
+    my_bool *is_null = rb_is_null.get();
+    my_bool *err = rb_err.get();
+    unsigned long *len = rb_len.get();
 
     /*TODO care about memory allocation errors */
     result_bind=  (MYSQL_BIND*)myodbc_malloc(sizeof(MYSQL_BIND)*num_fields,

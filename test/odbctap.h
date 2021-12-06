@@ -1206,6 +1206,7 @@ SQLCHAR *make_conn_str(const SQLCHAR *dsn, const SQLCHAR *uid,
   SQLCHAR     db_buf[4096]= {0};
   /* Should fit 8 byte + ";port=" */
   SQLCHAR     port_buf[32]= {0};
+  BOOL skip_socket = 0;
 
   /* We never set the custom DSN, but sometimes use DRIVER instead */
   if (dsn == NULL)
@@ -1223,10 +1224,23 @@ SQLCHAR *make_conn_str(const SQLCHAR *dsn, const SQLCHAR *uid,
   if (hide_password)
     pwd = (SQLCHAR*)"*************";
 
-  snprintf((char *)connIn, sizeof(connIn), "%s;UID=%s;PWD=%s;OPTION=%d",
+  snprintf((char *)connIn, sizeof(connIn), "%s;UID=%s;PWD=%s;OPTION=%d;",
           (char *)dsn_buf, (char *)uid, (char *)pwd, myoption);
 
-  if (mysock && mysock[0])
+  if (strstr((const char*)options, "SOCKET=;") &&
+      strcmp((const char*)myserver, "localhost") == 0)
+  {
+    skip_socket = 1;
+    char *port = NULL;
+    if ((port = getenv("TEST_PORT")) ||
+        (port = getenv("MYSQL_PORT")))
+    {
+      myport = atoi(port);
+    }
+    strncat((char *)connIn, (char*)";SERVER=127.0.0.1;", sizeof(connIn) - 1);
+  }
+
+  if (mysock && mysock[0] && skip_socket == 0)
   {
     snprintf((char *)socket_buf, sizeof(socket_buf), ";SOCKET=%s", (char *)mysock);
     strncat((char *)connIn, (char*)socket_buf, sizeof(connIn) - 1);

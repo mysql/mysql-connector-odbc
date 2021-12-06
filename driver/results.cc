@@ -2439,7 +2439,7 @@ SQLRETURN SQL_API my_SQLExtendedFetch( SQLHSTMT             hstmt,
            lengths in ird*/
         if (stmt->lengths)
         {
-          fill_ird_data_lengths(stmt->ird, stmt->lengths + cur_row*stmt->result->field_count,
+          fill_ird_data_lengths(stmt->ird, stmt->lengths.get() + cur_row*stmt->result->field_count,
                                 stmt->result->field_count);
         }
         else
