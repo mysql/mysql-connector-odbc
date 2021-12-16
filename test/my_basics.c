@@ -1278,28 +1278,130 @@ DECLARE_TEST(t_ssl_mode)
 {
   DECLARE_BASIC_HANDLES(henv1, hdbc1, hstmt1);
   SQLCHAR buf[1024] = { 0 };
+  for(int i = 0; i < 2; ++i)
+  {
+    if(i == 0)
+    {
+      is(OK == alloc_basic_handles_with_opt(&henv1, &hdbc1, &hstmt1, NULL,
+                                            NULL, NULL, NULL, "SSLMODE=DISABLED"));
+    }
+    else
+    {
+      is(OK == alloc_basic_handles_with_opt(&henv1, &hdbc1, &hstmt1, NULL,
+                                            NULL, NULL, NULL, "ssl-mode=DISABLED"));
+    }
 
-  is(OK == alloc_basic_handles_with_opt(&henv1, &hdbc1, &hstmt1, NULL,
-    NULL, NULL, NULL, "SSLMODE=DISABLED"));
+    /* Check the affected tows */
+    ok_sql(hstmt1, "SHOW STATUS LIKE 'Ssl_cipher'");
+    ok_stmt(hstmt1, SQLFetch(hstmt1));
+    ok_stmt(hstmt1, SQLGetData(hstmt1, 2, SQL_C_CHAR, buf, sizeof(buf), NULL));
+    is(buf[0] == '\0');
 
-  /* Check the affected tows */
-  ok_sql(hstmt1, "SHOW STATUS LIKE 'Ssl_cipher'");
-  ok_stmt(hstmt1, SQLFetch(hstmt1));
-  ok_stmt(hstmt1, SQLGetData(hstmt1, 2, SQL_C_CHAR, buf, sizeof(buf), NULL));
-  is(buf[0] == '\0');
+    free_basic_handles(&henv1, &hdbc1, &hstmt1);
 
-  free_basic_handles(&henv1, &hdbc1, &hstmt1);
+    is(OK == alloc_basic_handles_with_opt(
+         &henv1, &hdbc1, &hstmt1, NULL,
+         NULL, NULL, NULL,
+         i == 0 ? "SSLMODE=REQUIRED" : "ssl-mode=REQUIRED"));
 
-  is(OK == alloc_basic_handles_with_opt(&henv1, &hdbc1, &hstmt1, NULL,
-    NULL, NULL, NULL, "SSLMODE=REQUIRED"));
 
-  /* Check the affected tows */
-  ok_sql(hstmt1, "SHOW STATUS LIKE 'Ssl_cipher'");
-  ok_stmt(hstmt1, SQLFetch(hstmt1));
-  ok_stmt(hstmt1, SQLGetData(hstmt1, 2, SQL_C_CHAR, buf, sizeof(buf), NULL));
-  is(buf[0] != '\0');
+    /* Check the affected tows */
+    ok_sql(hstmt1, "SHOW STATUS LIKE 'Ssl_cipher'");
+    ok_stmt(hstmt1, SQLFetch(hstmt1));
+    ok_stmt(hstmt1, SQLGetData(hstmt1, 2, SQL_C_CHAR, buf, sizeof(buf), NULL));
+    is(buf[0] != '\0');
 
-  free_basic_handles(&henv1, &hdbc1, &hstmt1);
+    free_basic_handles(&henv1, &hdbc1, &hstmt1);
+  }
+  return OK;
+}
+
+DECLARE_TEST(t_ssl_align)
+{
+  DECLARE_BASIC_HANDLES(henv1, hdbc1, hstmt1);
+  SQLCHAR buf[1024] = { 0 };
+
+  char* ssl_opts[] =
+  {"ssl-ca", "ssl-capath", "ssl-cert", "ssl-cipher", "ssl-key",
+   "SSLCA","SSLCAPATH", "SSLCERT", "SSLCIPHER", "SSLKEY"};
+
+  for(unsigned int i = 0; i < sizeof(ssl_opts)/sizeof(char*); ++i)
+  {
+    snprintf(buf, sizeof(buf),
+             i%2 ? "SSLMODE=DISABLED;%s=foo" : "ssl-mode=DISABLED;%s=foo",
+             ssl_opts[i]);
+
+    is(OK == alloc_basic_handles_with_opt(&henv1, &hdbc1, &hstmt1, NULL,
+                                            NULL, NULL, NULL, buf));
+
+
+    /* Check the affected tows */
+    ok_sql(hstmt1, "SHOW STATUS LIKE 'Ssl_cipher'");
+    ok_stmt(hstmt1, SQLFetch(hstmt1));
+    ok_stmt(hstmt1, SQLGetData(hstmt1, 2, SQL_C_CHAR, buf, sizeof(buf), NULL));
+    is(buf[0] == '\0');
+
+    free_basic_handles(&henv1, &hdbc1, &hstmt1);
+  }
+
+  //Defined twice is not an error
+
+  {
+
+    is(OK == alloc_basic_handles_with_opt(
+         &henv1, &hdbc1, &hstmt1, NULL,
+         NULL, NULL, NULL, "SSLMODE=DISABLED;SSLMODE=REQUIRED;"));
+
+
+    /* Check the affected tows */
+    ok_sql(hstmt1, "SHOW STATUS LIKE 'Ssl_cipher'");
+    ok_stmt(hstmt1, SQLFetch(hstmt1));
+    ok_stmt(hstmt1, SQLGetData(hstmt1, 2, SQL_C_CHAR, buf, sizeof(buf), NULL));
+    is(buf[0] != '\0');
+
+    free_basic_handles(&henv1, &hdbc1, &hstmt1);
+
+
+    is(OK == alloc_basic_handles_with_opt(
+         &henv1, &hdbc1, &hstmt1, NULL,
+         NULL, NULL, NULL, "SSLMODE=REQUIRED;SSLMODE=DISABLED;"));
+
+
+    /* Check the affected tows */
+    ok_sql(hstmt1, "SHOW STATUS LIKE 'Ssl_cipher'");
+    ok_stmt(hstmt1, SQLFetch(hstmt1));
+    ok_stmt(hstmt1, SQLGetData(hstmt1, 2, SQL_C_CHAR, buf, sizeof(buf), NULL));
+    is(buf[0] == '\0');
+
+    free_basic_handles(&henv1, &hdbc1, &hstmt1);
+
+    is(OK == alloc_basic_handles_with_opt(
+         &henv1, &hdbc1, &hstmt1, NULL,
+         NULL, NULL, NULL, "ssl-mode=DISABLED;ssl-mode=REQUIRED;"));
+
+
+    /* Check the affected tows */
+    ok_sql(hstmt1, "SHOW STATUS LIKE 'Ssl_cipher'");
+    ok_stmt(hstmt1, SQLFetch(hstmt1));
+    ok_stmt(hstmt1, SQLGetData(hstmt1, 2, SQL_C_CHAR, buf, sizeof(buf), NULL));
+    is(buf[0] != '\0');
+
+    free_basic_handles(&henv1, &hdbc1, &hstmt1);
+
+
+    is(OK == alloc_basic_handles_with_opt(
+         &henv1, &hdbc1, &hstmt1, NULL,
+         NULL, NULL, NULL, "ssl-mode=REQUIRED;ssl-mode=DISABLED;"));
+
+
+    /* Check the affected tows */
+    ok_sql(hstmt1, "SHOW STATUS LIKE 'Ssl_cipher'");
+    ok_stmt(hstmt1, SQLFetch(hstmt1));
+    ok_stmt(hstmt1, SQLGetData(hstmt1, 2, SQL_C_CHAR, buf, sizeof(buf), NULL));
+    is(buf[0] == '\0');
+
+    free_basic_handles(&henv1, &hdbc1, &hstmt1);
+  }
   return OK;
 }
 
@@ -1335,6 +1437,7 @@ BEGIN_TESTS
   ADD_TEST(t_bug45378)
   ADD_TEST(t_bug63844)
   ADD_TEST(t_bug52996)
+  ADD_TEST(t_ssl_align)
   END_TESTS
 
 

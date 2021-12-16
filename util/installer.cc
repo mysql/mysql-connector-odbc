@@ -104,13 +104,20 @@ static SQLWCHAR W_SOCKET[]= {'S', 'O', 'C', 'K', 'E', 'T', 0};
 static SQLWCHAR W_INITSTMT[]= {'I', 'N', 'I', 'T', 'S', 'T', 'M', 'T', 0};
 static SQLWCHAR W_OPTION[]= {'O', 'P', 'T', 'I', 'O', 'N', 0};
 static SQLWCHAR W_CHARSET[]= {'C', 'H', 'A', 'R', 'S', 'E', 'T', 0};
-static SQLWCHAR W_SSLKEY[]= {'S', 'S', 'L', 'K', 'E', 'Y', 0};
-static SQLWCHAR W_SSLCERT[]= {'S', 'S', 'L', 'C', 'E', 'R', 'T', 0};
-static SQLWCHAR W_SSLCA[]= {'S', 'S', 'L', 'C', 'A', 0};
+static SQLWCHAR W_SSLKEY[]= {'S', 'S', 'L', 'K', 'E', 'Y', 0}; //Old One Replace by:
+static SQLWCHAR W_SSL_KEY[]= {'S', 'S', 'L', '-', 'K', 'E', 'Y', 0};
+static SQLWCHAR W_SSLCERT[]= {'S', 'S', 'L', 'C', 'E', 'R', 'T', 0}; //Old One Replace by:
+static SQLWCHAR W_SSL_CERT[]= {'S', 'S', 'L', '-', 'C', 'E', 'R', 'T', 0};
+static SQLWCHAR W_SSLCA[]= {'S', 'S', 'L', 'C', 'A', 0}; //Old One Replace by:
+static SQLWCHAR W_SSL_CA[]= {'S', 'S', 'L', '-', 'C', 'A', 0};
 static SQLWCHAR W_SSLCAPATH[]=
-  {'S', 'S', 'L', 'C', 'A', 'P', 'A', 'T', 'H', 0};
+  {'S', 'S', 'L', 'C', 'A', 'P', 'A', 'T', 'H', 0}; //Old One Replace by:
+static SQLWCHAR W_SSL_CAPATH[]=
+  {'S', 'S', 'L', '-', 'C', 'A', 'P', 'A', 'T', 'H', 0};
 static SQLWCHAR W_SSLCIPHER[]=
-  {'S', 'S', 'L', 'C', 'I', 'P', 'H', 'E', 'R', 0};
+  {'S', 'S', 'L', 'C', 'I', 'P', 'H', 'E', 'R', 0}; //Old One Replace by:
+static SQLWCHAR W_SSL_CIPHER[]=
+  {'S', 'S', 'L', '-', 'C', 'I', 'P', 'H', 'E', 'R', 0};
 static SQLWCHAR W_SSLVERIFY[]=
   {'S', 'S', 'L', 'V', 'E', 'R', 'I', 'F', 'Y', 0};
 static SQLWCHAR W_RSAKEY[]= {'R', 'S', 'A', 'K', 'E', 'Y', 0};
@@ -201,7 +208,9 @@ static SQLWCHAR W_NO_TLS_1_2[] =
 static SQLWCHAR W_NO_TLS_1_3[] =
 { 'N', 'O', '_', 'T', 'L', 'S', '_', '1', '_', '3', 0 };
 static SQLWCHAR W_SSLMODE[] =
-{ 'S', 'S', 'L', 'M', 'O', 'D', 'E', 0 };
+{ 'S', 'S', 'L', 'M', 'O', 'D', 'E', 0 }; //Old One Replace by:
+static SQLWCHAR W_SSL_MODE[] =
+{ 'S', 'S', 'L', '-' ,'M', 'O', 'D', 'E', 0 };
 static SQLWCHAR W_NO_DATE_OVERFLOW[] =
 { 'N', 'O', '_', 'D', 'A', 'T', 'E', '_', 'O', 'V', 'E', 'R', 'F', 'L', 'O', 'W', 0 };
 static SQLWCHAR W_ENABLE_LOCAL_INFILE[] =
@@ -229,8 +238,9 @@ SQLWCHAR *dsnparams[]= {W_DSN, W_DRIVER, W_DESCRIPTION, W_SERVER,
                         W_PWD1, W_PWD2, W_PWD3,
 #endif
                         W_DATABASE, W_SOCKET, W_INITSTMT,
-                        W_PORT, W_OPTION, W_CHARSET, W_SSLKEY,
-                        W_SSLCERT, W_SSLCA, W_SSLCAPATH, W_SSLCIPHER,
+                        W_PORT, W_OPTION, W_CHARSET, W_SSLKEY, W_SSL_KEY,
+                        W_SSLCERT, W_SSLCERT, W_SSLCA, W_SSL_CA,
+                        W_SSLCAPATH,W_SSL_CAPATH, W_SSLCIPHER, W_SSL_CIPHER,
                         W_SSLVERIFY, W_READTIMEOUT, W_WRITETIMEOUT,
                         W_FOUND_ROWS, W_BIG_PACKETS, W_NO_PROMPT,
                         W_DYNAMIC_CURSOR, W_NO_DEFAULT_CURSOR,
@@ -839,15 +849,27 @@ void ds_map_param(DataSource *ds, const SQLWCHAR *param,
     *strdest= &ds->charset;
   else if (!sqlwcharcasecmp(W_SSLKEY, param))
     *strdest= &ds->sslkey;
+  else if (!sqlwcharcasecmp(W_SSL_KEY, param))
+    *strdest= &ds->sslkey;
   else if (!sqlwcharcasecmp(W_SSLCERT, param))
+    *strdest= &ds->sslcert;
+  else if (!sqlwcharcasecmp(W_SSL_CERT, param))
     *strdest= &ds->sslcert;
   else if (!sqlwcharcasecmp(W_SSLCA, param))
     *strdest= &ds->sslca;
+  else if (!sqlwcharcasecmp(W_SSL_CA, param))
+    *strdest= &ds->sslca;
   else if (!sqlwcharcasecmp(W_SSLCAPATH, param))
+    *strdest= &ds->sslcapath;
+  else if (!sqlwcharcasecmp(W_SSL_CAPATH, param))
     *strdest= &ds->sslcapath;
   else if (!sqlwcharcasecmp(W_SSLCIPHER, param))
     *strdest= &ds->sslcipher;
+  else if (!sqlwcharcasecmp(W_SSL_CIPHER, param))
+    *strdest= &ds->sslcipher;
   else if (!sqlwcharcasecmp(W_SSLMODE, param))
+    *strdest = &ds->sslmode;
+  else if (!sqlwcharcasecmp(W_SSL_MODE, param))
     *strdest = &ds->sslmode;
   else if (!sqlwcharcasecmp(W_SAVEFILE, param))
     *strdest= &ds->savefile;
@@ -1403,12 +1425,12 @@ int ds_add(DataSource *ds)
   if (ds_add_strprop(ds->name, W_SOCKET     , ds->socket     )) goto error;
   if (ds_add_strprop(ds->name, W_INITSTMT   , ds->initstmt   )) goto error;
   if (ds_add_strprop(ds->name, W_CHARSET    , ds->charset    )) goto error;
-  if (ds_add_strprop(ds->name, W_SSLKEY     , ds->sslkey     )) goto error;
-  if (ds_add_strprop(ds->name, W_SSLCERT    , ds->sslcert    )) goto error;
-  if (ds_add_strprop(ds->name, W_SSLCA      , ds->sslca      )) goto error;
-  if (ds_add_strprop(ds->name, W_SSLCAPATH  , ds->sslcapath  )) goto error;
-  if (ds_add_strprop(ds->name, W_SSLCIPHER  , ds->sslcipher  )) goto error;
-  if (ds_add_strprop(ds->name, W_SSLMODE    , ds->sslmode    )) goto error;
+  if (ds_add_strprop(ds->name, W_SSL_KEY    , ds->sslkey     )) goto error;
+  if (ds_add_strprop(ds->name, W_SSL_CERT   , ds->sslcert    )) goto error;
+  if (ds_add_strprop(ds->name, W_SSL_CA     , ds->sslca      )) goto error;
+  if (ds_add_strprop(ds->name, W_SSL_CAPATH , ds->sslcapath  )) goto error;
+  if (ds_add_strprop(ds->name, W_SSL_CIPHER , ds->sslcipher  )) goto error;
+  if (ds_add_strprop(ds->name, W_SSL_MODE   , ds->sslmode    )) goto error;
   if (ds_add_strprop(ds->name, W_RSAKEY, ds->rsakey          )) goto error;
   if (ds_add_strprop(ds->name, W_SAVEFILE   , ds->savefile   )) goto error;
 
