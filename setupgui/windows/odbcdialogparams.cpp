@@ -420,7 +420,11 @@ void btnDetails_Click (HWND hwnd)
 
     syncTabs(hwnd, pParams);
   }
-  MoveWindow( hwnd, rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top + 310*mod, TRUE );
+  // To increase the height of the window modify the expression:
+  int new_height = rect.bottom - rect.top + 355*mod;
+  MoveWindow( hwnd, rect.left, rect.top, rect.right - rect.left, new_height, TRUE );
+  // Then change the height for IDD_DIALOG1 and SysTabControl32 inside
+  // odbcdialogparams.rc
 }
 
 
