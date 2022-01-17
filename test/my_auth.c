@@ -639,14 +639,51 @@ DECLARE_TEST(t_mfa_auth)
 }
 
 
-
 DECLARE_TEST(t_dummy_test)
 {
   return OK;
 }
 
 
+/**
+ * Testing FIDO connection
+ *
+ * The test is designed for manual run.
+ * It requires the following preparation steps:
+ *
+ * 1. Install FIDO auth plugin on the server:
+ *   INSTALL PLUGIN authentication_fido SONAME 'authentication_fido.so'
+ *
+ * 2. Create user with FIDO authentication:
+ *   CREATE USER 'u2'@'localhost' IDENTIFIED WITH caching_sha2_password
+ *   BY 'sha2_password' AND IDENTIFIED WITH authentication_fido
+ *
+ * 3. Register FIDO:
+ *   mysql --port=13000 --protocol=tcp --user=u2 --password1
+ *   --fido-register-factor=2
+ * 
+ * 4. Set env variable MYSQL_FIDO to non-empty value
+ */
+DECLARE_TEST(t_fido_test)
+{
+  DECLARE_BASIC_HANDLES(henv1, hdbc1, hstmt1);
+
+  if (!getenv("MYSQL_FIDO"))
+  {
+    SKIP_REASON = "This test needs to be run manually. "
+      "Set MYSQL_FIDO environment variable to enable running this test";
+    return SKIP;
+  }
+
+  is(OK == alloc_basic_handles_with_opt(&henv1, &hdbc1, &hstmt1, NULL,
+                                        "u2", "sha2_password", NULL, NULL));
+
+  free_basic_handles(&henv1, &hdbc1, &hstmt1);
+  return OK;
+}
+
 BEGIN_TESTS
+  ADD_TEST(t_fido_test)
   // ADD_TEST(t_plugin_auth) TODO: Fix
   ADD_TEST(t_dummy_test)
   ADD_TEST(t_ldap_auth)
