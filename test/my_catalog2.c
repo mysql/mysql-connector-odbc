@@ -88,10 +88,9 @@ DECLARE_TEST(t_bug34272)
 
   ok_stmt(hstmt, SQLGetData(hstmt, 6, SQL_C_CHAR, dummy, col6+1, &length));
   /* Can be "integer unsigned" (16) or "int unsigned" (12) */
-  is(length == 16 || length == 12);
-  is(strncmp(dummy, "int unsigned", 12) == 0 ||
-     strncmp(dummy, "integer unsigned", 16) == 0 ||
-     strncmp(dummy, "int(10) unsigned", 16) == 0);
+  is(length == 16 || length == 3);
+  is(strncmp(dummy, "integer unsigned", 16) == 0 ||
+     strncmp(dummy, "int", 3) == 0);
 
   ok_stmt(hstmt, SQLGetData(hstmt, 18, SQL_C_CHAR, dummy, col18+1, &length));
   is_num(length,3);
@@ -1335,6 +1334,43 @@ DECLARE_TEST(t_bug32504915)
   return OK;
 }
 
+/*
+  SQLColumns() reports wrong type name with column length
+*/
+DECLARE_TEST(t_bug33599093)
+{
+  char *type_list[] =
+  {
+    "char", "varchar", "decimal", "bit", "binary", "varbinary", "tinyint"
+  };
+  int idx = 0;
+  
+  ok_sql(hstmt, "DROP TABLE IF EXISTS tab33599093");
+  ok_sql(hstmt, "CREATE TABLE tab33599093 (c1 char(16), c2 varchar(32),"
+                "c3 decimal(5,3), c4 bit(32), c5 binary(8), c6 varbinary(16),"
+                "c7 tinyint unsigned)");
+
+  ok_stmt(hstmt, SQLColumns(hstmt, NULL, SQL_NTS, NULL, SQL_NTS,
+    (SQLCHAR *)"tab33599093", SQL_NTS, NULL, 0));
+
+  while(SQL_SUCCESS == SQLFetch(hstmt))
+  {
+    SQLCHAR type_name[32] = { 0 };
+
+    // _no_i_s cannot filter out unsigned types, so skip it
+    if (idx > 5 && (myoption & (1 << 30)))
+      continue;
+
+    is_str(my_fetch_str(hstmt, type_name, 6), type_list[idx], SQL_NTS);
+    is_num(strlen(type_name), strlen(type_list[idx]));
+    ++idx;
+  }
+
+  ok_stmt(hstmt, SQLFreeStmt(hstmt, SQL_CLOSE));
+  ok_sql(hstmt, "DROP TABLE IF EXISTS tab33599093");
+  return OK;
+}
+
 
 BEGIN_TESTS
   ADD_TEST(t_bug32504915)
@@ -1359,6 +1395,7 @@ BEGIN_TESTS
   ADD_TEST(t_sqlcolumns_after_select)
   ADD_TEST(t_bug14555713)
   ADD_TEST(t_bug69448)
+  ADD_TEST(t_bug33599093)
 END_TESTS
 
 myoption &= ~(1 << 30);

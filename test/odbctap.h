@@ -579,7 +579,7 @@ do { \
 #define is_str(a, b, c) \
 do { \
   char *val_a= (char *)(a), *val_b= (char *)(b); \
-  int val_len= (int)(c); \
+  int val_len= (int)(c) == SQL_NTS ? strlen(val_a) : (int)(c); \
   if (strncmp(val_a, val_b, val_len) != 0) { \
     printf("# %s ('%*s') != '%*s' in %s on line %d\n", \
            #a, val_len, val_a, val_len, val_b, __FILE__, __LINE__); \
