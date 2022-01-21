@@ -1598,7 +1598,50 @@ DECLARE_TEST(t_bug28783266)
   return OK;
 }
 
+DECLARE_TEST(t_wide_character_info)
+{
+  SQLCHAR buf[64];
+  ok_stmt(hstmt, SQLGetTypeInfo(hstmt, SQL_WCHAR));
+  int is_wchar = 0;
+  int is_wvarchar = 0;
+  int is_wlongvarchar = 0;
+
+  while(SQLFetch(hstmt) == SQL_SUCCESS)
+  {
+    is_num(SQL_WCHAR, my_fetch_int(hstmt, 2));
+    is_str("char", my_fetch_str(hstmt, buf, 1), 4);
+    is_wchar = 1;
+  }
+
+  ok_stmt(hstmt, SQLGetTypeInfo(hstmt, SQL_WVARCHAR));
+  while(SQLFetch(hstmt) == SQL_SUCCESS)
+  {
+    is_num(SQL_WVARCHAR, my_fetch_int(hstmt, 2));
+    is_str("varchar", my_fetch_str(hstmt, buf, 1), 7);
+    is_wvarchar = 1;
+  }
+
+  ok_stmt(hstmt, SQLGetTypeInfo(hstmt, SQL_WLONGVARCHAR));
+  while(SQLFetch(hstmt) == SQL_SUCCESS)
+  {
+    is_num(SQL_WLONGVARCHAR, my_fetch_int(hstmt, 2));
+    my_fetch_str(hstmt, buf, 1);
+    is(strncmp(buf, "long varchar", 12) == 0 ||
+       strncmp(buf, "text", 4) == 0 ||
+       strncmp(buf, "mediumtext", 10) == 0 ||
+       strncmp(buf, "longtext", 8) == 0 ||
+       strncmp(buf, "tinytext", 8) == 0);
+    is_wlongvarchar = 1;
+  }
+
+  is(is_wchar & is_wvarchar & is_wlongvarchar);
+
+  return OK;
+}
+
 BEGIN_TESTS
+  ADD_TEST(t_wide_character_info)
+  ADD_TEST(t_bug28783266)
   ADD_TEST(t_bug28783266)
   ADD_TEST(t_bug32537000)
   ADD_TEST(t_bug32135124)

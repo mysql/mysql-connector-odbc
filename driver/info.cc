@@ -947,38 +947,39 @@ MYSQL_FIELD SQL_GET_TYPE_INFO_fields[] =
 };
 
 const uint SQL_GET_TYPE_INFO_FIELDS = array_elements(SQL_GET_TYPE_INFO_fields);
-#define MYSQL_DATA_TYPES 52
+#define MYSQL_DATA_TYPES 59
 
 char sql_searchable[6], sql_unsearchable[6], sql_nullable[6], sql_no_nulls[6],
 sql_bit[6], sql_tinyint[6], sql_smallint[6], sql_integer[6], sql_bigint[6],
 sql_float[6], sql_real[6], sql_double[6], sql_char[6], sql_varchar[6],
 sql_longvarchar[6], sql_timestamp[6], sql_decimal[6], sql_numeric[6],
 sql_varbinary[6], sql_time[6], sql_date[6], sql_binary[6],
-sql_longvarbinary[6], sql_datetime[6];
+sql_longvarbinary[6], sql_datetime[6], sql_wchar[6], sql_wvarchar[6],
+sql_wlongvarchar[6];
 
 char *SQL_GET_TYPE_INFO_values[MYSQL_DATA_TYPES][19] =
 {
   /* SQL_BIT= -7 */
-  { "bit",sql_bit,"1",NULL,NULL,NULL,sql_nullable,"0",sql_searchable,NULL,"0",NULL,"bit(1)",NULL,NULL,sql_bit,NULL,NULL,NULL },
+  { "bit",sql_bit,"1","'","'",NULL,sql_nullable,"0",sql_searchable,NULL,"0",NULL,"bit",NULL,NULL,sql_bit,NULL,NULL,NULL },
 
   /* SQL_TINY= -6 */
-  { "tinyint",sql_tinyint,"3",NULL,NULL,NULL,sql_nullable,"0",sql_searchable,"0","0","0","tinyint",NULL,NULL,sql_tinyint,NULL,"10",NULL },
-  { "tinyint unsigned",sql_tinyint,"3",NULL,NULL,NULL,sql_nullable,"0",sql_searchable,"1","0","0","tinyint unsigned",NULL,NULL,sql_tinyint,NULL,"10",NULL },
-  { "tinyint auto_increment",sql_tinyint,"3",NULL,NULL,NULL,sql_no_nulls,"0",sql_searchable,"0","0","1","tinyint auto_increment",NULL,NULL,sql_tinyint, NULL,"10",NULL },
-  { "tinyint unsigned auto_increment",sql_tinyint,"3",NULL,NULL,NULL,sql_no_nulls, "0",sql_searchable,"1","0","1","tinyint unsigned auto_increment",NULL,NULL, sql_tinyint,NULL,"10",NULL },
+  { "tinyint",sql_tinyint,"3","'","'",NULL,sql_nullable,"0",sql_searchable,"0","0","0","tinyint",NULL,NULL,sql_tinyint,NULL,"10",NULL },
+  { "tinyint unsigned",sql_tinyint,"3","'","'",NULL,sql_nullable,"0",sql_searchable,"1","0","0","tinyint unsigned",NULL,NULL,sql_tinyint,NULL,"10",NULL },
+  { "tinyint auto_increment",sql_tinyint,"3","'","'",NULL,sql_no_nulls,"0",sql_searchable,"0","0","1","tinyint auto_increment",NULL,NULL,sql_tinyint, NULL,"10",NULL },
+  { "tinyint unsigned auto_increment",sql_tinyint,"3","'","'",NULL,sql_no_nulls, "0",sql_searchable,"1","0","1","tinyint unsigned auto_increment",NULL,NULL, sql_tinyint,NULL,"10",NULL },
 
   /* SQL_BIGINT= -5 */
-  { "bigint",sql_bigint,"19",NULL,NULL,NULL,sql_nullable,"0",sql_searchable,"0","0","0","bigint",NULL,NULL,sql_bigint,NULL,"10",NULL },
-  { "bigint unsigned",sql_bigint,"20",NULL,NULL,NULL,sql_nullable,"0",sql_searchable,"1","0","0","bigint unsigned",NULL,NULL,sql_bigint,NULL,"10",NULL },
-  { "bigint auto_increment",sql_bigint,"19",NULL,NULL,NULL,sql_no_nulls,"0",sql_searchable,"0","0","1","bigint auto_increment",NULL,NULL,sql_bigint,NULL,"10",NULL },
-  { "bigint unsigned auto_increment",sql_bigint,"20",NULL,NULL,NULL,sql_no_nulls, "0",sql_searchable,"1","0","1","bigint unsigned auto_increment",NULL,NULL,sql_bigint, NULL,"10",NULL },
+  { "bigint",sql_bigint,"19","'","'",NULL,sql_nullable,"0",sql_searchable,"0","0","0","bigint",NULL,NULL,sql_bigint,NULL,"10",NULL },
+  { "bigint unsigned",sql_bigint,"20","'","'",NULL,sql_nullable,"0",sql_searchable,"1","0","0","bigint unsigned",NULL,NULL,sql_bigint,NULL,"10",NULL },
+  { "bigint auto_increment",sql_bigint,"19","'","'",NULL,sql_no_nulls,"0",sql_searchable,"0","0","1","bigint auto_increment",NULL,NULL,sql_bigint,NULL,"10",NULL },
+  { "bigint unsigned auto_increment",sql_bigint,"20","'","'",NULL,sql_no_nulls, "0",sql_searchable,"1","0","1","bigint unsigned auto_increment",NULL,NULL,sql_bigint, NULL,"10",NULL },
 
   /* SQL_LONGVARBINARY= -4 */
-  { "long varbinary",sql_longvarbinary,"16777215","0x",NULL,NULL,sql_nullable,"0",sql_searchable,NULL,"0",NULL,"mediumblob",NULL,NULL,sql_longvarbinary,NULL,NULL,NULL },
-  { "blob",sql_longvarbinary,"65535","'","'",NULL,sql_nullable,"0",sql_searchable,NULL,"0",NULL,"binary large object (0-65535)",NULL,NULL,sql_longvarbinary,NULL,NULL,NULL },
-  { "longblob",sql_longvarbinary,"2147483647","'","'",NULL,sql_nullable,"0",sql_searchable,NULL,"0",NULL,"binary large object, use mediumblob instead",NULL,NULL,sql_longvarbinary,NULL,NULL,NULL },
-  { "tinyblob",sql_longvarbinary,"255","'","'",NULL,sql_nullable,"0",sql_searchable,NULL,"0",NULL,"binary large object (0-255)",NULL,NULL,sql_longvarbinary,NULL,NULL,NULL },
-  { "mediumblob",sql_longvarbinary,"16777215","'","'",NULL,sql_nullable,"0",sql_searchable,NULL,"0",NULL,"binary large object",NULL,NULL,sql_longvarbinary,NULL,NULL,NULL },
+  { "long varbinary",sql_longvarbinary,"16777215","'","'",NULL,sql_nullable,"0",sql_searchable,NULL,"0",NULL,"long varbinary",NULL,NULL,sql_longvarbinary,NULL,NULL,NULL },
+  { "blob",sql_longvarbinary,"65535","'","'",NULL,sql_nullable,"0",sql_searchable,NULL,"0",NULL,"blob",NULL,NULL,sql_longvarbinary,NULL,NULL,NULL },
+  { "longblob",sql_longvarbinary,"2147483647","'","'",NULL,sql_nullable,"0",sql_searchable,NULL,"0",NULL,"longblob",NULL,NULL,sql_longvarbinary,NULL,NULL,NULL },
+  { "tinyblob",sql_longvarbinary,"255","'","'",NULL,sql_nullable,"0",sql_searchable,NULL,"0",NULL,"tinyblob",NULL,NULL,sql_longvarbinary,NULL,NULL,NULL },
+  { "mediumblob",sql_longvarbinary,"16777215","'","'",NULL,sql_nullable,"0",sql_searchable,NULL,"0",NULL,"mediumblob",NULL,NULL,sql_longvarbinary,NULL,NULL,NULL },
 
   /* SQL_VARBINARY= -3 */
   { "varbinary",sql_varbinary,"255","'","'","length",sql_nullable,"0",sql_searchable,NULL,"0",NULL,"varbinary",NULL,NULL,sql_varbinary,NULL,NULL,NULL },
@@ -988,51 +989,58 @@ char *SQL_GET_TYPE_INFO_values[MYSQL_DATA_TYPES][19] =
 
   /* SQL_LONGVARCHAR= -1 */
   { "long varchar",sql_longvarchar,"16777215","'","'",NULL,sql_nullable,"0",sql_searchable,NULL,"0",NULL,"mediumtext",NULL,NULL,sql_longvarchar,NULL,NULL,NULL },
-  { "text",sql_longvarchar,"65535","'","'",NULL,sql_nullable,"0",sql_searchable,NULL,"0",NULL,"text(0-65535)",NULL,NULL,sql_longvarchar,NULL,NULL,NULL },
+  { "text",sql_longvarchar,"65535","'","'",NULL,sql_nullable,"0",sql_searchable,NULL,"0",NULL,"text",NULL,NULL,sql_longvarchar,NULL,NULL,NULL },
   { "mediumtext",sql_longvarchar,"16777215","'","'",NULL,sql_nullable,"0",sql_searchable,NULL,"0",NULL,"mediumtext",NULL,NULL,sql_longvarchar,NULL,NULL,NULL },
   { "longtext",sql_longvarchar,"2147483647","'","'",NULL,sql_nullable,"0",sql_searchable,NULL,"0",NULL,"longtext",NULL,NULL,sql_longvarchar,NULL,NULL,NULL },
   { "tinytext",sql_longvarchar,"255","'","'",NULL,sql_nullable,"0",sql_searchable,NULL,"0",NULL,"tinytext",NULL,NULL,sql_longvarchar,NULL,NULL,NULL },
 
+  { "long varchar",sql_wlongvarchar,"16777215","'","'",NULL,sql_nullable,"0",sql_searchable,NULL,"0",NULL,"mediumtext",NULL,NULL,sql_longvarchar,NULL,NULL,NULL },
+  { "text",sql_wlongvarchar,"65535","'","'",NULL,sql_nullable,"0",sql_searchable,NULL,"0",NULL,"text",NULL,NULL,sql_longvarchar,NULL,NULL,NULL },
+  { "mediumtext",sql_wlongvarchar,"16777215","'","'",NULL,sql_nullable,"0",sql_searchable,NULL,"0",NULL,"mediumtext",NULL,NULL,sql_longvarchar,NULL,NULL,NULL },
+  { "longtext",sql_wlongvarchar,"2147483647","'","'",NULL,sql_nullable,"0",sql_searchable,NULL,"0",NULL,"longtext",NULL,NULL,sql_longvarchar,NULL,NULL,NULL },
+  { "tinytext",sql_wlongvarchar,"255","'","'",NULL,sql_nullable,"0",sql_searchable,NULL,"0",NULL,"tinytext",NULL,NULL,sql_longvarchar,NULL,NULL,NULL },
+
   /* SQL_CHAR= 1 */
-  { "char",sql_char,"255","'","'","length",sql_nullable,"0",sql_searchable,NULL,"0",NULL,"char",NULL,NULL,sql_char,NULL,NULL,NULL },
+  { "char",sql_char, "255","'","'","length",sql_nullable,"0",sql_searchable,NULL,"0",NULL,"char",NULL,NULL,sql_char,"0",NULL,NULL },
+  { "char",sql_wchar,"255","'","'","length",sql_nullable,"0",sql_searchable,NULL,"0",NULL,"char",NULL,NULL,sql_wchar,"0",NULL,NULL },
 
   /* SQL_NUMERIC= 2 */
-  { "numeric",sql_numeric,"19",NULL,NULL,"precision,scale",sql_nullable,"0",sql_searchable,"0","0","0","numeric","0","19",sql_numeric,NULL,"10",NULL },
+  { "numeric",sql_numeric,"19","'","'","precision,scale",sql_nullable,"0",sql_searchable,"0","0","0","numeric","0","19",sql_numeric,NULL,"10",NULL },
 
   /* SQL_DECIMAL= 3 */
-  { "decimal",sql_decimal,"19",NULL,NULL,"precision,scale",sql_nullable,"0",sql_searchable,"0","0","0","decimal","0","19",sql_decimal,NULL,"10",NULL },
+  { "decimal",sql_decimal,"19","'","'","precision,scale",sql_nullable,"0",sql_searchable,"0","0","0","decimal","0","19",sql_decimal,NULL,"10",NULL },
 
   /* SQL_INTEGER= 4 */
-  { "integer",sql_integer,"10",NULL,NULL,NULL,sql_nullable,"0",sql_searchable,"0","0","0","integer",NULL,NULL,sql_integer,NULL,"10",NULL },
-  { "integer unsigned",sql_integer,"10",NULL,NULL,NULL,sql_nullable,"0",sql_searchable,"1","0","0","integer unsigned",NULL,NULL,sql_integer,NULL,"10",NULL },
-  { "int",sql_integer,"10",NULL,NULL,NULL,sql_nullable,"0",sql_searchable,"0","0","0","integer",NULL,NULL,sql_integer,NULL,"10",NULL },
-  { "int unsigned",sql_integer,"10",NULL,NULL,NULL,sql_nullable,"0",sql_searchable,"1","0","0","integer unsigned",NULL,NULL,sql_integer,NULL,"10",NULL },
-  { "mediumint",sql_integer,"7",NULL,NULL,NULL,sql_nullable,"0",sql_searchable,"0","0","0","Medium integer",NULL,NULL,sql_integer,NULL,"10",NULL },
-  { "mediumint unsigned",sql_integer,"8",NULL,NULL,NULL,sql_nullable,"0",sql_searchable,"1","0","0","Medium integer unsigned",NULL,NULL,sql_integer,NULL,"10",NULL },
-  { "integer auto_increment",sql_integer,"10",NULL,NULL,NULL,sql_no_nulls,"0",sql_searchable,"0","0","1","integer auto_increment",NULL,NULL,sql_integer, NULL,"10",NULL },
-  { "integer unsigned auto_increment",sql_integer,"10",NULL,NULL,NULL,sql_no_nulls, "0",sql_searchable,"1","0","1","integer unsigned auto_increment",NULL,NULL, sql_integer,NULL,"10",NULL },
-  { "int auto_increment",sql_integer,"10",NULL,NULL,NULL,sql_no_nulls,"0",sql_searchable,"0","0","1","integer auto_increment",NULL,NULL,sql_integer, NULL,"10",NULL },
-  { "int unsigned auto_increment",sql_integer,"10",NULL,NULL,NULL,sql_no_nulls,"0",sql_searchable,"1","0","1","integer unsigned auto_increment",NULL,NULL,sql_integer,NULL,"10",NULL },
-  { "mediumint auto_increment",sql_integer,"7",NULL,NULL,NULL,sql_no_nulls,"0",sql_searchable,"0","0","1","Medium integer auto_increment",NULL,NULL,sql_integer,NULL,"10",NULL },
-  { "mediumint unsigned auto_increment",sql_integer,"8",NULL,NULL,NULL,sql_no_nulls, "0",sql_searchable,"1","0","1","Medium integer unsigned auto_increment",NULL,NULL, sql_integer,NULL,"10",NULL },
+  { "integer",sql_integer,"10","'","'",NULL,sql_nullable,"0",sql_searchable,"0","0","0","integer",NULL,NULL,sql_integer,NULL,"10",NULL },
+  { "integer unsigned",sql_integer,"10","'","'",NULL,sql_nullable,"0",sql_searchable,"1","0","0","integer unsigned",NULL,NULL,sql_integer,NULL,"10",NULL },
+  { "int",sql_integer,"10","'","'",NULL,sql_nullable,"0",sql_searchable,"0","0","0","integer",NULL,NULL,sql_integer,NULL,"10",NULL },
+  { "int unsigned",sql_integer,"10","'","'",NULL,sql_nullable,"0",sql_searchable,"1","0","0","integer unsigned",NULL,NULL,sql_integer,NULL,"10",NULL },
+  { "mediumint",sql_integer,"7","'","'",NULL,sql_nullable,"0",sql_searchable,"0","0","0","Medium integer",NULL,NULL,sql_integer,NULL,"10",NULL },
+  { "mediumint unsigned",sql_integer,"8","'","'",NULL,sql_nullable,"0",sql_searchable,"1","0","0","Medium integer unsigned",NULL,NULL,sql_integer,NULL,"10",NULL },
+  { "integer auto_increment",sql_integer,"10","'","'",NULL,sql_no_nulls,"0",sql_searchable,"0","0","1","integer auto_increment",NULL,NULL,sql_integer, NULL,"10",NULL },
+  { "integer unsigned auto_increment",sql_integer,"10","'","'",NULL,sql_no_nulls, "0",sql_searchable,"1","0","1","integer unsigned auto_increment",NULL,NULL, sql_integer,NULL,"10",NULL },
+  { "int auto_increment",sql_integer,"10","'","'",NULL,sql_no_nulls,"0",sql_searchable,"0","0","1","integer auto_increment",NULL,NULL,sql_integer, NULL,"10",NULL },
+  { "int unsigned auto_increment",sql_integer,"10","'","'",NULL,sql_no_nulls,"0",sql_searchable,"1","0","1","integer unsigned auto_increment",NULL,NULL,sql_integer,NULL,"10",NULL },
+  { "mediumint auto_increment",sql_integer,"7","'","'",NULL,sql_no_nulls,"0",sql_searchable,"0","0","1","Medium integer auto_increment",NULL,NULL,sql_integer,NULL,"10",NULL },
+  { "mediumint unsigned auto_increment",sql_integer,"8","'","'",NULL,sql_no_nulls, "0",sql_searchable,"1","0","1","Medium integer unsigned auto_increment",NULL,NULL, sql_integer,NULL,"10",NULL },
 
   /* SQL_SMALLINT= 5 */
-  { "smallint",sql_smallint,"5",NULL,NULL,NULL,sql_nullable,"0",sql_searchable,"0","0","0","smallint",NULL,NULL,sql_smallint,NULL,"10",NULL },
-  { "smallint unsigned",sql_smallint,"5",NULL,NULL,NULL,sql_nullable,"0",sql_searchable,"1","0","0","smallint unsigned",NULL,NULL,sql_smallint,NULL,"10",NULL },
-  { "smallint auto_increment",sql_smallint,"5",NULL,NULL,NULL,sql_no_nulls,"0",sql_searchable,"0","0","1","smallint auto_increment",NULL,NULL,sql_smallint,NULL,"10",NULL },
-  { "smallint unsigned auto_increment",sql_smallint,"5",NULL,NULL,NULL,sql_no_nulls, "0",sql_searchable,"1","0","1","smallint unsigned auto_increment",NULL,NULL, sql_smallint,NULL,"10",NULL },
+  { "smallint",sql_smallint,"5","'","'",NULL,sql_nullable,"0",sql_searchable,"0","0","0","smallint",NULL,NULL,sql_smallint,NULL,"10",NULL },
+  { "smallint unsigned",sql_smallint,"5","'","'",NULL,sql_nullable,"0",sql_searchable,"1","0","0","smallint unsigned",NULL,NULL,sql_smallint,NULL,"10",NULL },
+  { "smallint auto_increment",sql_smallint,"5","'","'",NULL,sql_no_nulls,"0",sql_searchable,"0","0","1","smallint auto_increment",NULL,NULL,sql_smallint,NULL,"10",NULL },
+  { "smallint unsigned auto_increment",sql_smallint,"5","'","'",NULL,sql_no_nulls, "0",sql_searchable,"1","0","1","smallint unsigned auto_increment",NULL,NULL, sql_smallint,NULL,"10",NULL },
 
   /* SQL_FLOAT= 6 */
-  { "double",sql_float,"15",NULL,NULL,NULL,sql_nullable,"0",sql_searchable,"0","0","0","double","0","4",sql_float, NULL,"10",NULL },
-  { "double auto_increment",sql_float,"15",NULL,NULL,NULL,sql_no_nulls,"0",sql_searchable,"0","0","1","double auto_increment","0","4",sql_float,NULL,"10",NULL },
+  { "double",sql_float,"15","'","'",NULL,sql_nullable,"0",sql_searchable,"0","0","0","double","0","4",sql_float, NULL,"2",NULL },
+  { "double auto_increment",sql_float,"15","'","'",NULL,sql_no_nulls,"0",sql_searchable,"0","0","1","double auto_increment","0","4",sql_float,NULL,"2",NULL },
 
   /* SQL_REAL= 7 */
-  { "float",sql_real,"7",NULL,NULL,NULL,sql_nullable, "0",sql_unsearchable,"0","0","0","float","0","2",sql_real, NULL,"10",NULL },
-  { "float auto_increment",sql_real,"7",NULL,NULL,NULL,sql_no_nulls,"0",sql_unsearchable,"0","0","1","float auto_increment","0","2",sql_real,NULL,"10",NULL },
+  { "float",sql_real,"7","'","'",NULL,sql_nullable, "0",sql_unsearchable,"0","0","0","float","0","2",sql_real, NULL,"2",NULL },
+  { "float auto_increment",sql_real,"7","'","'",NULL,sql_no_nulls,"0",sql_unsearchable,"0","0","1","float auto_increment","0","2",sql_real,NULL,"2",NULL },
 
   /* SQL_DOUBLE= 8 */
-  { "double",sql_double,"15",NULL,NULL,NULL,sql_nullable,"0",sql_searchable,"0","0","0","double","0","4",sql_double,NULL,"10",NULL },
-  { "double auto_increment",sql_double,"15",NULL,NULL,NULL,sql_no_nulls,"0",sql_searchable,"0","0","1","double auto_increment","0","4",sql_double,NULL,"10",NULL },
+  { "double",sql_double,"15","'","'",NULL,sql_nullable,"0",sql_searchable,"0","0","0","double","0","4",sql_double,NULL,"2",NULL },
+  { "double auto_increment",sql_double,"15","'","'",NULL,sql_no_nulls,"0",sql_searchable,"0","0","1","double auto_increment","0","4",sql_double,NULL,"2",NULL },
 
   /* SQL_TYPE_DATE= 91 */
   { "date",sql_date,"10","'","'",NULL,sql_nullable,"0",sql_searchable,NULL,"0",NULL,"date",NULL,NULL,sql_datetime,sql_date,NULL,NULL },
@@ -1041,14 +1049,15 @@ char *SQL_GET_TYPE_INFO_values[MYSQL_DATA_TYPES][19] =
   { "time",sql_time,"8","'","'",NULL,sql_nullable,"0",sql_searchable,NULL,"0",NULL,"time",NULL,NULL,sql_datetime,sql_time,NULL,NULL },
 
   /* YEAR - SQL_SMALLINT */
-  { "year",sql_smallint,"4",NULL,NULL,NULL,sql_nullable,"0",sql_searchable,"0","0","0","year",NULL,NULL,sql_smallint,NULL,"10",NULL },
+  { "year",sql_smallint,"4","'","'",NULL,sql_nullable,"0",sql_searchable,"0","0","0","year",NULL,NULL,sql_smallint,NULL,"10",NULL },
 
   /* SQL_TYPE_TIMESTAMP= 93 */
   { "datetime",sql_timestamp,"21","'","'",NULL,sql_nullable,"0",sql_searchable,NULL,"0",NULL,"datetime","0","0",sql_datetime,sql_timestamp,NULL,NULL },
   { "timestamp",sql_timestamp,"14","'","'",NULL,sql_no_nulls,"0",sql_searchable,NULL,"0",NULL,"timestamp","0","0",sql_datetime,sql_timestamp,NULL,NULL },
 
   /* SQL_VARCHAR= 12 */
-  { "varchar",sql_varchar,"255","'","'","length",sql_nullable,"0",sql_searchable,NULL,"0",NULL,"varchar",NULL,NULL,sql_varchar,NULL,NULL,NULL },
+  { "varchar",sql_varchar,"255","'","'","length",sql_nullable,"0",sql_searchable,NULL,"0",NULL,"varchar","0","0",sql_varchar,NULL,"10",NULL },
+  { "varchar",sql_wvarchar,"255","'","'","length",sql_nullable,"0",sql_searchable,NULL,"0",NULL,"varchar","0","0",sql_wvarchar,NULL,"10",NULL },
 
   /* ENUM and SET are not included -- it confuses some applications. */
 };
@@ -1159,6 +1168,9 @@ void init_getfunctions(void)
   my_int2str(SQL_LONGVARBINARY, sql_longvarbinary, -10, 0);
   my_int2str(SQL_BINARY, sql_binary, -10, 0);
   my_int2str(SQL_DATETIME, sql_datetime, -10, 0);
+  my_int2str(SQL_WCHAR, sql_wchar, -10, 0);
+  my_int2str(SQL_WVARCHAR, sql_wvarchar, -10, 0);
+  my_int2str(SQL_WLONGVARCHAR, sql_wlongvarchar, -10, 0);
 # if (ODBCVER < 0x0300)
   myodbc_sqlstate2_init();
   myodbc_ov2_inited = 1;
