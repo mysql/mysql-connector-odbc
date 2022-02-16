@@ -1344,7 +1344,7 @@ DECLARE_TEST(t_bug33599093)
     "char", "varchar", "decimal", "bit", "binary", "varbinary", "tinyint"
   };
   int idx = 0;
-  
+
   ok_sql(hstmt, "DROP TABLE IF EXISTS tab33599093");
   ok_sql(hstmt, "CREATE TABLE tab33599093 (c1 char(16), c2 varchar(32),"
                 "c3 decimal(5,3), c4 bit(32), c5 binary(8), c6 varbinary(16),"
@@ -1372,7 +1372,39 @@ DECLARE_TEST(t_bug33599093)
 }
 
 
+/*
+  Bug #33788407 -  Unable to add mysql views to ms access.
+  (Cannot define Field more than once)
+*/
+
+DECLARE_TEST(t_bug33788407)
+{
+  ok_sql(hstmt, "DROP DATABASE IF EXISTS db_33788407_01");
+  ok_sql(hstmt, "DROP DATABASE IF EXISTS db_33788407_02");
+
+  ok_sql(hstmt, "CREATE DATABASE db_33788407_01");
+  ok_sql(hstmt, "CREATE DATABASE db_33788407_02");
+
+  ok_sql(hstmt, "CREATE TABLE db_33788407_01.test_table_a (id INT)");
+  ok_sql(hstmt, "CREATE TABLE db_33788407_02.test_table_a (id INT)");
+
+  DECLARE_BASIC_HANDLES(henv1, hdbc1, hstmt1);
+  is(OK == alloc_basic_handles_with_opt(&henv1, &hdbc1, &hstmt1, NULL,
+                                        NULL, NULL, "db_33788407_02", NULL));
+
+  ok_stmt(hstmt1, SQLColumns(hstmt1, NULL, 0, NULL, 0, "test_table_a", SQL_NTS,
+    NULL, 0));
+
+  // The result should have one and only one row.
+  is(1 == my_print_non_format_result(hstmt1));
+
+  free_basic_handles(&henv1, &hdbc1, &hstmt1);
+  return OK;
+}
+
+
 BEGIN_TESTS
+  ADD_TEST(t_bug33788407)
   ADD_TEST(t_bug32504915)
   ADD_TEST(t_sqlprocedurecolumns)
   ADD_TEST(t_bug57182)
