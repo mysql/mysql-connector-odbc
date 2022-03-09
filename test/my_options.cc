@@ -48,6 +48,10 @@
 
 DECLARE_TEST(t_wl13883)
 {
+
+  if (strcmp((const char*)myserver, "localhost"))
+    return OK;
+
   struct dataObject
   {
     std::string m_path;
@@ -788,18 +792,27 @@ DECLARE_TEST(t_wl14490)
                 "CONSTRAINT `first_constraint1` FOREIGN KEY (`b`) REFERENCES `t_wl14490b` (`b`),"
                 "CONSTRAINT `second_constraint1` FOREIGN KEY (`a`) REFERENCES `t_wl14490a` (`a`)"
                 ") ENGINE=InnoDB");
-  ok_sql(hstmt, "SELECT USER()");
+  ok_sql(hstmt, "SELECT CURRENT_USER()");
   ok_stmt(hstmt, SQLFetch(hstmt));
   my_fetch_str(hstmt, (SQLCHAR*)buf, 1);
+
+  //escape %
+  std::string user;
+  const char *pAt = strstr(buf, "@");
+  user += std::string(buf, pAt - buf + 1);
+  user += "'";
+  user += pAt+1;
+  user += "'";
+
   SQLFetch(hstmt);
   SQLFreeStmt(hstmt, SQL_CLOSE);
 
   std::string query = "GRANT ALL ON ";
-  query.append((char*)mydb).append(".").append("t_wl14490a to ").append(buf);
+  query.append((char *)mydb).append(".").append("t_wl14490a to ").append(user);
   ok_stmt(hstmt, SQLExecDirect(hstmt, (SQLCHAR*)query.c_str(), query.length()));
 
   query = "GRANT INSERT (a), SELECT (a), REFERENCES (a), UPDATE (a) ON ";
-  query.append((char*)mydb).append(".").append("t_wl14490a to ").append(buf);
+  query.append((char *)mydb).append(".").append("t_wl14490a to ").append(user);
   ok_stmt(hstmt, SQLExecDirect(hstmt, (SQLCHAR*)query.c_str(), query.length()));
 
   ok_sql(hstmt, "DROP PROCEDURE IF EXISTS procwl14490");

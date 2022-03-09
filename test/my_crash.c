@@ -777,6 +777,9 @@ DECLARE_TEST(t_bug18286366_3)
   SQLCHAR buff[8192];
   int i, len = 0;
 
+  if (! mysql_min_version(hdbc, "8.0", 3))
+    return OK;
+
   is(OK == alloc_basic_handles_with_opt(&henv1, &hdbc1, &hstmt1, NULL, NULL,
                                         NULL, NULL, "NO_I_S=1"));
 

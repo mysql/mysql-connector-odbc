@@ -105,6 +105,9 @@ DECLARE_TEST(my_local_infile)
   SQLINTEGER num_rows = 0;
   FILE *csv_file = NULL;
 
+  if (strcmp(myserver, "localhost"))
+    return OK;
+
   DECLARE_BASIC_HANDLES(henv1, hdbc1, hstmt1);
 
   ok_sql(hstmt, "DROP TABLE IF EXISTS test_local_infile");

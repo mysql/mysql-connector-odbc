@@ -279,6 +279,7 @@ DECLARE_TEST(t_bug50195)
   int         i;
   SQLCHAR     priv[12];
   SQLLEN      len;
+  SQLCHAR     buffer[MAX_NAME_LEN];
 
   /*
     The patch for this issue can only work with Information_Schema.
@@ -287,23 +288,29 @@ DECLARE_TEST(t_bug50195)
   if (myoption && (1 << 30))
     return OK;
 
+  (void)SQLExecDirect(hstmt, (SQLCHAR *)"DROP USER `bug50195`@`%`", SQL_NTS);
   (void)SQLExecDirect(hstmt, (SQLCHAR *)"DROP USER `bug50195`@`127.0.0.1`", SQL_NTS);
   (void)SQLExecDirect(hstmt, (SQLCHAR *)"DROP USER `bug50195`@`localhost`", SQL_NTS);
 
+  ok_sql(hstmt, "CREATE USER `bug50195`@`%` IDENTIFIED BY 'a'");
   ok_sql(hstmt, "CREATE USER `bug50195`@`127.0.0.1` IDENTIFIED BY 'a'");
   ok_sql(hstmt, "CREATE USER `bug50195`@`localhost` IDENTIFIED BY 'a'");
+  ok_sql(hstmt, "grant all on *.* to `bug50195`@`%`");
   ok_sql(hstmt, "grant all on *.* to `bug50195`@`127.0.0.1`");
   ok_sql(hstmt, "grant all on *.* to `bug50195`@`localhost`");
 
-  ok_sql(hstmt, "revoke select on *.* from bug50195@127.0.0.1");
-  ok_sql(hstmt, "revoke select on *.* from bug50195@localhost");
+  ok_sql(hstmt, "revoke select on *.* from bug50195@`%`");
+  ok_sql(hstmt, "revoke select on *.* from bug50195@`127.0.0.1`");
+  ok_sql(hstmt, "revoke select on *.* from bug50195@`localhost`");
 
   /* revoking "global" select is enough, but revoking smth from mysql.tables_priv
      to have not empty result of SQLTablePrivileges */
-  ok_sql(hstmt, "grant all on mysql.tables_priv to bug50195@127.0.0.1");
-  ok_sql(hstmt, "grant all on mysql.tables_priv to bug50195@localhost");
-  ok_sql(hstmt, "revoke select on mysql.tables_priv from bug50195@127.0.0.1");
-  ok_sql(hstmt, "revoke select on mysql.tables_priv from bug50195@localhost");
+  ok_sql(hstmt, "grant all on mysql.tables_priv to bug50195@`%`");
+  ok_sql(hstmt, "grant all on mysql.tables_priv to bug50195@`127.0.0.1`");
+  ok_sql(hstmt, "grant all on mysql.tables_priv to bug50195@`localhost`");
+  ok_sql(hstmt, "revoke select on mysql.tables_priv from bug50195@`%`");
+  ok_sql(hstmt, "revoke select on mysql.tables_priv from bug50195@`127.0.0.1`");
+  ok_sql(hstmt, "revoke select on mysql.tables_priv from bug50195@`localhost`");
 
   ok_sql(hstmt, "FLUSH PRIVILEGES");
 
@@ -325,8 +332,9 @@ DECLARE_TEST(t_bug50195)
 
   free_basic_handles(&henv1, &hdbc1, &hstmt1);
 
-  ok_sql(hstmt, "DROP USER bug50195@127.0.0.1");
-  ok_sql(hstmt, "DROP USER bug50195@localhost");
+  ok_sql(hstmt, "DROP USER bug50195@`%`");
+  ok_sql(hstmt, "DROP USER bug50195@`127.0.0.1`");
+  ok_sql(hstmt, "DROP USER bug50195@`localhost`");
 
   return OK;
 }
