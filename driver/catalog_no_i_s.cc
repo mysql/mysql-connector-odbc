@@ -1201,6 +1201,12 @@ SQLRETURN foreign_keys_no_i_s(SQLHSTMT hstmt,
             /* get [FOREIGN KEY | REFERENCES] position */
             token= find_first_token(stmt->dbc->ansi_charset_info, token - 1,
                                       end, Fk_keywords[key_search]);
+            /* When tables don't have FOREIGN KEY, don't search more */
+            if(!token)
+            {
+              token = end_pos;
+              break;
+            }
             token += strlen(Fk_keywords[key_search]);
             token= skip_leading_spaces(token);
             *table_name= 0;
