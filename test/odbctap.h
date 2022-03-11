@@ -579,7 +579,7 @@ do { \
 #define is_str(a, b, c) \
 do { \
   char *val_a= (char *)(a), *val_b= (char *)(b); \
-  int val_len= (int)(c); \
+  int val_len= (int)(c) == SQL_NTS ? strlen(val_a) : (int)(c); \
   if (strncmp(val_a, val_b, val_len) != 0) { \
     printf("# %s ('%*s') != '%*s' in %s on line %d\n", \
            #a, val_len, val_a, val_len, val_b, __FILE__, __LINE__); \
@@ -1202,8 +1202,10 @@ SQLCHAR *make_conn_str(const SQLCHAR *dsn, const SQLCHAR *uid,
   static SQLCHAR connIn[4096]= {0};
   SQLCHAR dsn_buf[MAX_NAME_LEN]= {0};
   SQLCHAR socket_buf[MAX_NAME_LEN]= {0};
+  SQLCHAR server_buf[MAX_NAME_LEN] = {0};
   /* ";database="+ we make buffer bigger for one certain test */
   SQLCHAR     db_buf[4096]= {0};
+
   /* Should fit 8 byte + ";port=" */
   SQLCHAR     port_buf[32]= {0};
   BOOL skip_socket = 0;
@@ -1238,6 +1240,11 @@ SQLCHAR *make_conn_str(const SQLCHAR *dsn, const SQLCHAR *uid,
       myport = atoi(port);
     }
     strncat((char *)connIn, (char*)";SERVER=127.0.0.1;", sizeof(connIn) - 1);
+  }
+  else
+  {
+    snprintf((char *)server_buf, sizeof(server_buf), ";SERVER=%s", myserver);
+    strncat((char *)connIn, (char *)server_buf, sizeof(connIn) - 1);
   }
 
   if (mysock && mysock[0] && skip_socket == 0)

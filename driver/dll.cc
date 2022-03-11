@@ -39,6 +39,9 @@ uint decimal_point_length,thousands_sep_length;
 static int myodbc_inited=0;
 static int mysys_inited=0;
 
+std::string current_dll_location;
+std::string default_plugin_location;
+
 
 /*
   Sigpipe handler
@@ -156,14 +159,39 @@ void myodbc_end()
 */
 
 #ifdef _WIN32
+
+/*
+  Initialize a global variable with the current location of DLL.
+  It will be used for setting plugin and dll directory if needed.
+*/
+void dll_location_init(HMODULE inst)
+{
+  const size_t buflen = 4096;
+  std::string dll_loc;
+  dll_loc.reserve(buflen);
+
+  GetModuleFileNameA((HMODULE)inst, dll_loc.data(), buflen);
+  current_dll_location = dll_loc.data();
+  auto bs_pos = current_dll_location.find_last_of('\\');
+  if (bs_pos != std::string::npos)
+  {
+    current_dll_location = current_dll_location.substr(0, bs_pos + 1);
+    default_plugin_location = current_dll_location + "plugin\\";
+  }
+}
+
 static int inited= 0;
-int APIENTRY LibMain(HANDLE hInst, DWORD ul_reason_being_called,
+int APIENTRY LibMain(HANDLE inst, DWORD ul_reason_being_called,
 		     LPVOID lpReserved)
 {
+
   switch (ul_reason_being_called) {
   case DLL_PROCESS_ATTACH:  /* case of libentry call in win 3.x */
     if (!inited++)
+    {
+      dll_location_init((HMODULE)inst);
       myodbc_init();
+    }
     break;
   case DLL_PROCESS_DETACH:  /* case of wep call in win 3.x */
     if (!--inited)

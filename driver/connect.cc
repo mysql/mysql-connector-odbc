@@ -353,21 +353,11 @@ SQLRETURN DBC::connect(DataSource *dsrc)
 #ifdef WIN32
   else
   {
-    static const char *default_plugin_location =
-#if _WIN64
-    "C:/Program Files/MySQL/Connector ODBC 8.0/plugin";
-#else
-    "C:/Program Files (x86)/MySQL/Connector ODBC 8.0/plugin";
-#endif
-    mysql_options(mysql, MYSQL_PLUGIN_DIR, default_plugin_location);
-
-    static const char *default_dll_location =
-#if _WIN64
-    "C:\\Program Files\\MySQL\\Connector ODBC 8.0";
-#else
-    "C:\\Program Files (x86)\\MySQL\\Connector ODBC 8.0";
-#endif
-    SetDllDirectoryA(default_dll_location);
+    /*
+      If plugin directory is not set we can use the dll location
+      for a better chance of finding plugins.
+    */
+    mysql_options(mysql, MYSQL_PLUGIN_DIR, default_plugin_location.c_str());
   }
 #endif
 

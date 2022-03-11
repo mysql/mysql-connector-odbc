@@ -767,6 +767,85 @@ DECLARE_TEST(t_bug18286366_2)
   return OK;
 }
 
+/**
+  Bug #18286366_2: Segmentation fault in SQLForeignKeys() when there are other
+    tables without
+*/
+DECLARE_TEST(t_bug18286366_3)
+{
+  DECLARE_BASIC_HANDLES(henv1, hdbc1, hstmt1);
+  SQLCHAR buff[8192];
+  int i, len = 0;
+
+  if (! mysql_min_version(hdbc, "8.0", 3))
+    return OK;
+
+  is(OK == alloc_basic_handles_with_opt(&henv1, &hdbc1, &hstmt1, NULL, NULL,
+                                        NULL, NULL, "NO_I_S=1"));
+
+  ok_sql(hstmt, "DROP TABLE IF EXISTS bug182863662 ,t_bug182863662c,  t_bug182863662b, t_bug182863662a");
+
+  ok_sql(hstmt, "CREATE TABLE `bug182863662` (doc JSON, _id VARBINARY(32) GENERATED ALWAYS AS(JSON_UNQUOTE(JSON_EXTRACT(doc, '$._id'))) STORED PRIMARY KEY, _json_schema JSON GENERATED ALWAYS AS('{\" type \":\" object \"}'), CONSTRAINT `$bug182863662_constraint` CHECK(JSON_SCHEMA_VALID(_json_schema, doc)) NOT ENFORCED)");
+
+  len = sprintf(buff, "CREATE TABLE t_bug182863662a ( ");
+  for (i = 0; i < MAX_18286366_KEYS; i++)
+  {
+    len += sprintf(buff + len, "`id%03d` INT, UNIQUE(`id%03d`),", i, i);
+  }
+  len = sprintf(buff + len - 1, ")");
+  ok_stmt(hstmt, SQLExecDirect(hstmt, (SQLCHAR *)buff, SQL_NTS));
+
+  len = sprintf(buff, "CREATE TABLE t_bug182863662b ( ");
+  for (i = 0; i < MAX_18286366_KEYS; i++)
+  {
+    len += sprintf(buff + len, "`id%03d` INT, "
+                               "CONSTRAINT `consb%d` FOREIGN KEY "
+                               "(`id%03d`) REFERENCES `t_bug182863662a` (`id%03d`),",
+                   i, i, i, i);
+  }
+  len = sprintf(buff + len - 1, ")");
+  ok_stmt(hstmt, SQLExecDirect(hstmt, (SQLCHAR *)buff, SQL_NTS));
+
+  len = sprintf(buff, "CREATE TABLE t_bug182863662c ( ");
+  for (i = 0; i < MAX_18286366_KEYS; i++)
+  {
+    len += sprintf(buff + len, "`id%03d` INT, "
+                               "CONSTRAINT `consc%03d` FOREIGN KEY "
+                               "(`id%03d`) REFERENCES `t_bug182863662a` (`id%03d`),",
+                   i, i, i, i);
+  }
+  len = sprintf(buff + len - 1, ")");
+  ok_stmt(hstmt, SQLExecDirect(hstmt, (SQLCHAR *)buff, SQL_NTS));
+
+  ok_stmt(hstmt1, SQLForeignKeys(hstmt1, NULL, 0, NULL, 0,
+                                 (SQLCHAR *)"t_bug182863662a", SQL_NTS, NULL, 0,
+                                 NULL, 0, (SQLCHAR *)"", SQL_NTS));
+
+  for (i = 0; i < MAX_18286366_KEYS; i++)
+  {
+    ok_stmt(hstmt1, SQLFetch(hstmt1));
+    is_str(my_fetch_str(hstmt1, buff, 3), "t_bug182863662a", 14);
+    is_str(my_fetch_str(hstmt1, buff, 4), "id", 2);
+    is_str(my_fetch_str(hstmt1, buff, 7), "t_bug182863662b", 14);
+    is_str(my_fetch_str(hstmt1, buff, 8), "id", 2);
+    is_str(my_fetch_str(hstmt1, buff, 12), "consb", 5);
+  }
+
+  for (i = 0; i < MAX_18286366_KEYS; i++)
+  {
+    ok_stmt(hstmt1, SQLFetch(hstmt1));
+    is_str(my_fetch_str(hstmt1, buff, 3), "t_bug182863662a", 14);
+    is_str(my_fetch_str(hstmt1, buff, 4), "id", 2);
+    is_str(my_fetch_str(hstmt1, buff, 7), "t_bug182863662c", 14);
+    is_str(my_fetch_str(hstmt1, buff, 8), "id", 2);
+    is_str(my_fetch_str(hstmt1, buff, 12), "consc", 5);
+  }
+
+  ok_stmt(hstmt1, SQLFreeStmt(hstmt1, SQL_CLOSE));
+  ok_sql(hstmt, "DROP TABLE IF EXISTS bug182863662, t_bug169207502c, t_bug169207502b, t_bug169207502a");
+  free_basic_handles(&henv1, &hdbc1, &hstmt1);
+  return OK;
+}
 
 /*
   Bug #18286118 SEG FAULT IN SQLFOREIGNKEYS() WHEN COLUMN NAME CONTAINS
@@ -995,6 +1074,7 @@ BEGIN_TESTS
   ADD_TEST(t_bookmark_update_zero_rec)
   ADD_TEST(t_bug18286366)
   ADD_TEST(t_bug18286366_2)
+  ADD_TEST(t_bug18286366_3)
   ADD_TEST(t_bug17841121)
 #ifndef USE_IODBC
   ADD_TEST(t_bug18165197)

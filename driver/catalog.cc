@@ -832,6 +832,11 @@ columns_i_s(SQLHSTMT hstmt, SQLCHAR *catalog, unsigned long catalog_len,
     query.append(" AND c.TABLE_SCHEMA LIKE ?");
     do_bind(params, schema, MYSQL_TYPE_STRING, schema_len);
   }
+  else
+  {
+    query.append(" AND c.TABLE_SCHEMA=DATABASE()");
+  }
+
 
   if (table && table_len)
   {
@@ -865,6 +870,7 @@ columns_i_s(SQLHSTMT hstmt, SQLCHAR *catalog, unsigned long catalog_len,
       throw stmt->error;
     }
 
+    MYLOG_QUERY(stmt, query.c_str());
     stmt->dbc->execute_prep_stmt(local_stmt, query, params.data(), results.data());
   }
   catch (const MYERROR &e)
@@ -907,7 +913,7 @@ columns_i_s(SQLHSTMT hstmt, SQLCHAR *catalog, unsigned long catalog_len,
       *(char*)results[18].buffer, col_size);
     data[4] = sqltype;
     /* TYPE_NAME */
-    data[5] = (char*)results[5].buffer;
+    data[5] = (char*)results[4].buffer;
     /* COLUMN_SIZE */
 #if _WIN32 && !_WIN64
 #define COL_SIZE_VAL (int)col_size

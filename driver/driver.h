@@ -1071,6 +1071,11 @@ extern uint decimal_point_length,thousands_sep_length;
 extern HINSTANCE NEAR s_hModule;  /* DLL handle. */
 #endif
 
+#ifdef WIN32
+extern std::string current_dll_location;
+extern std::string default_plugin_location;
+#endif
+
 /*
   Resource defines for "SQLDriverConnect" dialog box
 */
