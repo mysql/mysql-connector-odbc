@@ -856,7 +856,10 @@ struct ROW_STORAGE
 
   void set_data(size_t idx, void *data, size_t size)
   {
-    m_data[m_cur_row * m_cnum + idx].assign((const char*)data, size);
+    if (data)
+      m_data[m_cur_row * m_cnum + idx].assign((const char*)data, size);
+    else
+      m_data[m_cur_row * m_cnum + idx] = nullptr;
     m_eof = false;
   }
 
@@ -865,7 +868,10 @@ struct ROW_STORAGE
   {
     for(size_t i = 0; i < m_cnum; ++i)
     {
-      set_data(i, bind[i].buffer, *(bind[i].length));
+      if (!(*bind[i].is_null))
+        set_data(i, bind[i].buffer, *(bind[i].length));
+      else
+        set_data(i, nullptr, 0);
     }
   }
 
@@ -878,9 +884,10 @@ struct ROW_STORAGE
     for(size_t i = 0; i < m_cnum; ++i)
     {
       auto &data = m_data[m_cur_row * m_cnum + i];
-      *(bind[i].length) = data.length();
-      memcpy(bind[i].buffer, data.data(), *(bind[i].length));
-    }
+      *(bind[i].is_null) = data.is_null();
+      *(bind[i].length) = data.is_null() ? -1 : data.length();
+      if (!data.is_null())
+        memcpy(bind[i].buffer, data.data(), *(bind[i].length));                                                                                                                                                              }
     // Set EOF if the last row was filled
     m_eof = (m_rnum <= (m_cur_row + 1));
     // Increment row counter only if not EOF

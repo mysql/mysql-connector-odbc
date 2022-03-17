@@ -169,7 +169,55 @@ END_TEST:
 }
 
 
+DECLARE_TEST(t_bug106683)
+{
+  DECLARE_BASIC_HANDLES(henv1, hdbc1, hstmt1);
+
+  ok_sql(hstmt, "DROP TABLE IF EXISTS bug106683");
+  ok_sql(hstmt, "CREATE TABLE bug106683(datetime0 varchar(32))");
+  ok_sql(hstmt, "INSERT INTO bug106683 VALUES ('2010-06-01 14:56:00'),(NULL),('2022-01-01 14:56:00')");
+
+  is(SQL_SUCCESS == alloc_basic_handles_with_opt(&henv1, &hdbc1, &hstmt1,
+                   NULL, NULL, NULL, NULL,
+                   "NO_CACHE=1"));
+
+  ok_stmt(hstmt1, SQLSetStmtAttr(hstmt1, SQL_ATTR_CURSOR_TYPE,
+    (SQLPOINTER)SQL_CURSOR_FORWARD_ONLY, SQL_IS_UINTEGER));
+  ok_stmt(hstmt1, SQLPrepare(hstmt1, "SELECT * FROM bug106683", SQL_NTS));
+  ok_stmt(hstmt1, SQLExecute(hstmt1));
+
+  int rnum = 1;
+  while(SQL_SUCCESS == SQLFetch(hstmt1))
+  {
+    char buf[64];
+    memset(buf, 0, sizeof(buf));
+    SQLLEN len = 0;
+    ok_stmt(hstmt1, SQLGetData(hstmt1, 1, SQL_C_CHAR, buf, sizeof(buf), &len));
+    switch(rnum)
+    {
+      case 1:
+      case 3:
+        is_num(19, len);
+        printf("Result [%s] ", buf);
+        break;
+      case 2:
+      default:
+        printf("Result [NULL] ");
+        is_num(-1, len);
+    }
+    ++rnum;
+    printf(" Length is %d\n", (int)len);
+  }
+
+  free_basic_handles(&henv1, &hdbc1, &hstmt1);
+  ok_sql(hstmt, "DROP TABLE IF EXISTS bug106683");
+
+  return OK;
+}
+
+
 BEGIN_TESTS
+  ADD_TEST(t_bug106683)
   ADD_TEST(my_json)
   ADD_TEST(my_local_infile)
 END_TESTS
