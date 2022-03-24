@@ -575,20 +575,23 @@ static MYSQL_ROW fetch_varlength_columns(STMT *stmt, MYSQL_ROW values)
     }
     else
     {
-      if (is_varlen_type(stmt->result_bind[i].buffer_type) &&
-        stmt->result_bind[i].buffer_length < *stmt->result_bind[i].length)
+      if (!(*stmt->result_bind[i].is_null) &&
+          is_varlen_type(stmt->result_bind[i].buffer_type) &&
+          stmt->result_bind[i].buffer_length < *stmt->result_bind[i].length)
       {
         /* TODO Realloc error proc */
         stmt->array[i]= (char*)myodbc_realloc(stmt->array[i], *stmt->result_bind[i].length,
           MYF(MY_ALLOW_ZERO_PTR));
+
         stmt->lengths[i]= *stmt->result_bind[i].length;
         stmt->result_bind[i].buffer_length = *stmt->result_bind[i].length;
         reallocated_buffers = true;
       }
 
+      // Result bind buffer should already be freed by now.
       stmt->result_bind[i].buffer = stmt->array[i];
 
-      if (stmt->lengths[i] > 0 /* || is_varlen_type(stmt->result_bind[i].buffer_type)*/)
+      if (stmt->lengths[i] > 0)
       {
        // For fixed-length types we should not set zero length
         stmt->result_bind[i].buffer_length = stmt->lengths[i];
@@ -899,31 +902,7 @@ int STMT::ssps_bind_result()
     return 0;
   }
 
-  if (result_bind)
-  {
-    ///* We have fields requiring to read real length first */
-    //if (fix_fields != NULL)
-    //{
-    //  for (i=0; i < num_fields; ++i)
-    //  {
-    //    /* length marks such fields */
-    //    if (lengths[i] > 0)
-    //    {
-    //      if (result_bind[i].buffer == array[i])
-    //      {
-    //        /* make sure we do not free it twice */
-    //        array[i]= NULL;
-    //        lengths[i]= 0;
-    //      }
-    //      /* Resetting buffer and buffer_length for those fields */
-    //      x_free(result_bind[i].buffer);
-    //      result_bind[i].buffer       = 0;
-    //      result_bind[i].buffer_length= 0;
-    //    }
-    //  }
-    //}
-  }
-  else
+  if (!result_bind)
   {
     rb_is_null.reset(new my_bool[num_fields]());
     rb_err.reset(new my_bool[num_fields]());
