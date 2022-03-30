@@ -80,6 +80,12 @@
 
 #define LOCK_ENV(E) std::unique_lock<std::mutex> elock(E->lock)
 
+// SQL_DRIVER_CONNECT_ATTR_BASE is not defined in all driver managers.
+// Therefore use a custom constant until it becomes a standard.
+#define MYSQL_DRIVER_CONNECT_ATTR_BASE 0x00004000
+
+#define CB_FIDO_GLOBAL MYSQL_DRIVER_CONNECT_ATTR_BASE + 0x00001000
+#define CB_FIDO_CONNECTION MYSQL_DRIVER_CONNECT_ATTR_BASE + 0x00001001
 
 #if defined(_WIN32) || defined(WIN32)
 # define INTFUNC  __stdcall
@@ -164,6 +170,10 @@ typedef enum { DESC_PARAM, DESC_ROW, DESC_UNKNOWN } desc_desc_type;
 
 /* header or record field? (location in descriptor) */
 typedef enum { DESC_HDR, DESC_REC } fld_loc;
+
+typedef void (*fido_callback_func)(const char*);
+extern fido_callback_func global_fido_callback;
+extern std::mutex global_fido_mutex;
 
 /* permissions - header, and base for record */
 #define P_RI 1 /* imp */
@@ -596,14 +606,21 @@ struct DBC
   bool          has_query_attrs = false;
   std::recursive_mutex lock;
 
-  bool          unicode = false;            /* Whether SQL*ConnectW was used */
-  CHARSET_INFO  *ansi_charset_info = nullptr, /* 'ANSI' charset (SQL_C_CHAR) */
-                *cxn_charset_info = nullptr;  /* Connection charset ('ANSI' or utf-8) */
+  // Whether SQL*ConnectW was used
+  bool          unicode = false;
+  // 'ANSI' charset (SQL_C_CHAR)
+  CHARSET_INFO  *ansi_charset_info = nullptr,
+  // Connection charset ('ANSI' or utf-8)
+                *cxn_charset_info = nullptr;
   MY_SYNTAX_MARKERS *syntax = nullptr;
-  DataSource    *ds = nullptr;                /* data source used to connect (parsed or stored) */
-  SQLULEN       sql_select_limit = -1;/* value of the sql_select_limit currently set for a session
-                                       (SQLULEN)(-1) if wasn't set */
-  int           need_to_wakeup = 0;      /* Connection have been put to the pool */
+  // data source used to connect (parsed or stored)
+  DataSource    *ds = nullptr;
+  // value of the sql_select_limit currently set for a session
+  //   (SQLULEN)(-1) if wasn't set
+  SQLULEN       sql_select_limit = -1;
+  // Connection have been put to the pool
+  int           need_to_wakeup = 0;
+  fido_callback_func fido_callback = nullptr;
 
   DBC(ENV *p_env);
   void free_explicit_descriptors();

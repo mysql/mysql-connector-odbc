@@ -424,6 +424,15 @@ MySQLSetConnectAttr(SQLHDBC hdbc, SQLINTEGER Attribute,
       return SQL_SUCCESS;
 #endif
 
+    case CB_FIDO_CONNECTION:
+      dbc->fido_callback = (fido_callback_func)ValuePtr;
+      break;
+    case CB_FIDO_GLOBAL:
+      {
+        std::unique_lock<std::mutex> fido_lock(global_fido_mutex);
+        global_fido_callback = (fido_callback_func)ValuePtr;
+        break;
+      }
     case SQL_ATTR_ENLIST_IN_DTC:
       return dbc->set_error( "HYC00",
                            "Optional feature not supported", 0);

@@ -58,6 +58,10 @@ typedef BOOL (*PromptFunc)(SQLHWND, SQLWCHAR *, SQLUSMALLINT,
 
 const char *my_os_charset_to_mysql_charset(const char *csname);
 
+bool fido_callback_is_set = false;
+fido_callback_func global_fido_callback = nullptr;
+std::mutex global_fido_mutex;
+
 /**
   Get the connection flags based on the driver options.
 
@@ -365,6 +369,44 @@ SQLRETURN DBC::connect(DataSource *dsrc)
   {
     mysql_options(mysql, MYSQL_DEFAULT_AUTH,
                   ds_get_utf8attr(dsrc->default_auth, &dsrc->default_auth8));
+  }
+
+  /*
+   * If fido callback is used the lock must remain till the end of
+   * the connection process.
+   */
+  std::unique_lock<std::mutex> fido_lock(global_fido_mutex);
+  /*
+  * Set callback even if the value is NULL, but only to reset the previously
+  * installed callback.
+  */
+  fido_callback_func fido_func = fido_callback;
+
+  if(!fido_func && global_fido_callback)
+    fido_func = global_fido_callback;
+
+  if (fido_func || fido_callback_is_set)
+  {
+    struct st_mysql_client_plugin* plugin =
+      mysql_client_find_plugin(mysql,
+        "authentication_fido_client",
+        MYSQL_CLIENT_AUTHENTICATION_PLUGIN);
+
+    if (!plugin)
+    {
+      return set_error("HY000", "Couldn't load plugin authentication_fido_client", 0);
+    }
+
+    if (mysql_plugin_options(plugin, "fido_messages_callback", (const void*)fido_func))
+    {
+      return set_error("HY000", "Failed to set a FIDO authentication callback function", 0);
+    }
+    fido_callback_is_set = fido_func;
+  }
+  else
+  {
+    // No need to keep the lock if callback is not used.
+    fido_lock.unlock();
   }
 
   if(dsrc->oci_config_file && dsrc->oci_config_file[0])

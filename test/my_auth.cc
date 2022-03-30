@@ -26,6 +26,9 @@
 // along with this program; if not, write to the Free Software Foundation, Inc.,
 // 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 
+#include <thread>
+#include <vector>
+
 #include "odbctap.h"
 #include "mysql_version.h"
 
@@ -54,7 +57,7 @@ DECLARE_TEST(t_plugin_auth)
   SQLGetData(hstmt, 1, SQL_CHAR, buf, sizeof(buf), &buflen);
 
   /* Check whether plugin already exist, if not install it. */
-  if(strcmp(buf, "test_plugin_server")!=0)
+  if(strcmp((const char*)buf, "test_plugin_server")!=0)
   {
     plugin_status= TRUE;
 #ifdef _WIN32
@@ -69,8 +72,8 @@ DECLARE_TEST(t_plugin_auth)
   ok_stmt(hstmt, SQLFreeStmt(hstmt, SQL_CLOSE));
 
   /* Can FAIL if user does not exists */
-  SQLExecDirect(hstmt, "DROP USER `plug_13070711`@`localhost`", SQL_NTS);
-  SQLExecDirect(hstmt, "DROP USER `plug_13070711`@`%`", SQL_NTS);
+  SQLExecDirect(hstmt, (SQLCHAR*)"DROP USER `plug_13070711`@`localhost`", SQL_NTS);
+  SQLExecDirect(hstmt, (SQLCHAR*)"DROP USER `plug_13070711`@`%`", SQL_NTS);
 
   ok_sql(hstmt, "CREATE USER `plug_13070711`@`%` "
                   "IDENTIFIED BY 'plug_dest_passwd';");
@@ -228,19 +231,19 @@ DECLARE_TEST(t_ldap_auth)
   {
     if(ldap_user_dn)
     {
-      sprintf(buf, "CREATE USER IF NOT EXISTS ldap_simple@'%%' IDENTIFIED WITH "
+      sprintf((char*)buf, "CREATE USER IF NOT EXISTS ldap_simple@'%%' IDENTIFIED WITH "
                    "authentication_ldap_simple AS '%s'",ldap_user_dn);
       rc = SQLExecDirect(hstmt, buf, SQL_NTS);
-      sprintf(buf, "GRANT ALL ON *.* to ldap_simple@'%%'");
+      sprintf((char*)buf, "GRANT ALL ON *.* to ldap_simple@'%%'");
       rc = SQLExecDirect(hstmt,(SQLCHAR*)buf, SQL_NTS);
     }
 
     if(ldap_user)
     {
-      sprintf(buf, "CREATE USER IF NOT EXISTS  %s@'%%' IDENTIFIED WITH authentication_ldap_sasl",
+      sprintf((char*)buf, "CREATE USER IF NOT EXISTS  %s@'%%' IDENTIFIED WITH authentication_ldap_sasl",
               ldap_user);
       rc = SQLExecDirect(hstmt, buf, SQL_NTS);
-      sprintf(buf, "GRANT ALL ON *.* to  %s@'%%'",
+      sprintf((char*)buf, "GRANT ALL ON *.* to  %s@'%%'",
               ldap_user);
       rc = SQLExecDirect(hstmt, buf, SQL_NTS);
     }
@@ -352,11 +355,11 @@ DECLARE_TEST(t_ldap_auth)
 
 struct MFA_TEST_DATA
 {
-  SQLCHAR* user;
-  SQLCHAR* pwd;
-  SQLCHAR* pwd1;
-  SQLCHAR* pwd2;
-  SQLCHAR* pwd3;
+  char* user;
+  char* pwd;
+  char* pwd1;
+  char* pwd2;
+  char* pwd3;
   BOOL succeed;
 };
 
@@ -423,7 +426,7 @@ DECLARE_TEST(t_mfa_auth)
   struct MFA_TEST_DATA test_data[] =
   {
     //default test
-  {myuid, mypwd, NULL   , NULL   , NULL   , TRUE  },
+  {(char*)myuid, (char*)mypwd, NULL   , NULL   , NULL   , TRUE  },
   // user1 tests
   {"user_1f", "pass1", NULL   , NULL   , NULL   , TRUE  },
   {"user_1f", "pass1", "pass1", NULL   , NULL   , TRUE  },
@@ -661,7 +664,7 @@ DECLARE_TEST(t_dummy_test)
  * 3. Register FIDO:
  *   mysql --port=13000 --protocol=tcp --user=u2 --password1
  *   --fido-register-factor=2
- * 
+ *
  * 4. Set env variable MYSQL_FIDO to non-empty value
  */
 DECLARE_TEST(t_fido_test)
@@ -676,13 +679,215 @@ DECLARE_TEST(t_fido_test)
   }
 
   is(OK == alloc_basic_handles_with_opt(&henv1, &hdbc1, &hstmt1, NULL,
-                                        "u2", "sha2_password", NULL, NULL));
+                                        (SQLCHAR*)"u2", (SQLCHAR*)"sha2_password",
+                                        NULL, (SQLCHAR*)"DATABASE=;"));
 
   free_basic_handles(&henv1, &hdbc1, &hstmt1);
   return OK;
 }
 
+#define FIDO_VAL_DEFAULT 0
+#define FIDO_VAL_GLOBAL 1
+#define FIDO_VAL_GLOBAL_2 11
+#define FIDO_VAL_PER_CONNECT 2
+
+int fido_var = FIDO_VAL_DEFAULT;
+int fido_var2[] = { FIDO_VAL_DEFAULT,
+                    FIDO_VAL_DEFAULT,
+                    FIDO_VAL_DEFAULT,
+                    FIDO_VAL_DEFAULT,
+                    FIDO_VAL_DEFAULT
+                    };
+
+#define SQL_DRIVER_CONNECT_ATTR_BASE 0x00004000
+#define CB_FIDO_NOFUNC 0
+#define CB_FIDO_GLOBAL SQL_DRIVER_CONNECT_ATTR_BASE + 0x00001000
+#define CB_FIDO_CONNECTION SQL_DRIVER_CONNECT_ATTR_BASE + 0x00001001
+
+DECLARE_TEST(t_fido_callback_test)
+{
+
+  if (!getenv("MYSQL_FIDO"))
+  {
+    SKIP_REASON = "This test needs to be run manually. "
+      "Set MYSQL_FIDO environment variable to enable running this test";
+    return SKIP;
+  }
+
+  SQLHDBC hdbc1 = NULL, hdbc2 = NULL;
+  SQLCHAR *connstr = make_conn_str(NULL, (SQLCHAR*)"u2", (SQLCHAR*)"sha2_password",
+    NULL, (SQLCHAR*)"DATABASE=;", 0);
+  fido_var = FIDO_VAL_DEFAULT;
+
+  /*
+   * Connect using the current value of `connstr`, setting
+   * `callback_func` as FIDO callback function of type given
+   * by `attr_type` (either CB_FIDO_GLOBAL for global, CB_FIDO_CONNECTION
+   * for connection and CB_FIDO_NOFUNC for not setting any callback) and
+   * check if after connection `fido_var` equals `result`.
+   */
+  auto fido_test_check = [henv, connstr](int attr_type, void (*callback_func)(const char*), int result)
+  {
+    SQLHDBC hdbc = NULL;
+    ok_env(henv, SQLAllocConnect(henv, &hdbc));
+    if (attr_type != CB_FIDO_NOFUNC)
+      ok_con(hdbc, SQLSetConnectAttr(hdbc, attr_type, (void*)callback_func, SQL_IS_POINTER));
+    fido_var = FIDO_VAL_DEFAULT;
+    SQLDriverConnect(hdbc, NULL, connstr, SQL_NTS, NULL, 0, NULL, SQL_DRIVER_NOPROMPT);
+    SQLDisconnect(hdbc);
+    SQLFreeHandle(SQL_HANDLE_DBC, hdbc);
+    is_num(result, fido_var);
+    return SQL_SUCCESS;
+  };
+
+  auto fido_func_global = [](const char * msg)
+  {
+    printf("This is GLOBAL callback [%s]\n", msg);
+    fido_var = FIDO_VAL_GLOBAL;
+  };
+
+  auto fido_func_global2 = [](const char * msg)
+  {
+    printf("This is GLOBAL callback #2 [%s]\n", msg);
+    fido_var = FIDO_VAL_GLOBAL_2;
+  };
+
+  auto fido_func_per_connection = [](const char * msg)
+  {
+    printf("This is PER-CONNECTION callback [%s]\n", msg);
+    fido_var = FIDO_VAL_PER_CONNECT;
+  };
+
+
+  /*
+   * Scenario 1. Register a global callback, connect. The global callback should be used.
+   * Connect again without registering a callback. The global callback should be
+   * used.
+   */
+  is(SQL_SUCCESS == fido_test_check(CB_FIDO_GLOBAL, fido_func_global, FIDO_VAL_GLOBAL));
+  is(SQL_SUCCESS == fido_test_check(CB_FIDO_NOFUNC, NULL, FIDO_VAL_GLOBAL));
+
+  /*
+   * 2. Register a global callback #1, connect. The global callback #1 should be
+   * used. Register a global callback #2, connect. The global callback #2 should be
+   * used. Connect again without registering a callback. The global callback #2
+   * should be used.
+   */
+  is(SQL_SUCCESS == fido_test_check(CB_FIDO_GLOBAL, fido_func_global, FIDO_VAL_GLOBAL));
+  is(SQL_SUCCESS == fido_test_check(CB_FIDO_GLOBAL, fido_func_global2, FIDO_VAL_GLOBAL_2));
+  is(SQL_SUCCESS == fido_test_check(CB_FIDO_NOFUNC, NULL, FIDO_VAL_GLOBAL_2));
+
+  // Reset global callback before Scenario #3
+  ok_con(hdbc, SQLSetConnectAttr(hdbc, CB_FIDO_GLOBAL, NULL, SQL_IS_POINTER));
+
+  /*
+   * 3. Register a per-connect callback, connect. The per-connect callback should be
+   * used. Connect again without registering a callback. Per-connect callback should
+   * not be used.
+   */
+  is(SQL_SUCCESS == fido_test_check(CB_FIDO_CONNECTION, fido_func_per_connection, FIDO_VAL_PER_CONNECT));
+  is(SQL_SUCCESS == fido_test_check(CB_FIDO_NOFUNC, NULL, FIDO_VAL_DEFAULT));
+
+  /*
+   * 4. Register a global callback, connect. The global callback should be used.
+   * Register a per-connect callback, connect. The per-connect callback should be
+   * used. Connect again without registering a callback. Global callback should be
+   * used.
+   */
+  is(SQL_SUCCESS == fido_test_check(CB_FIDO_GLOBAL, fido_func_global, FIDO_VAL_GLOBAL));
+  is(SQL_SUCCESS == fido_test_check(CB_FIDO_CONNECTION, fido_func_per_connection, FIDO_VAL_PER_CONNECT));
+  is(SQL_SUCCESS == fido_test_check(CB_FIDO_NOFUNC, NULL, FIDO_VAL_GLOBAL));
+
+  /*
+   * 5. Register a global callback, connect. The global callback should be used.
+   * Connect again without registering a callback. Global callback should be used.
+   * Un-register the global callback. Connect again without registering a callback.
+   * Global callback should not be used.
+   */
+  is(SQL_SUCCESS == fido_test_check(CB_FIDO_GLOBAL, fido_func_global, FIDO_VAL_GLOBAL));
+  is(SQL_SUCCESS == fido_test_check(CB_FIDO_NOFUNC, NULL, FIDO_VAL_GLOBAL));
+  is(SQL_SUCCESS == fido_test_check(CB_FIDO_GLOBAL, NULL, FIDO_VAL_DEFAULT));
+
+  /*
+  * 6. A test runs several concurrent threads. There should be threads setting a global
+  * FIDO callback. Other threads should set per-connect FIDO callbacks.
+  * Each thread has to run a loop where the following is repeated:
+  * - (global/per-connect) FIDO callback is set
+  * - connection is established
+  * - connection is closed
+  * For per-connection callbacks there should be a check that a correct
+  * callback was called.
+  * For global callbacks there should be a check that a callback was set at all.
+  */
+  auto fido_thr_global_check = [henv, connstr, fido_func_global]()
+  {
+    auto ptr = (void (*)(const char*))fido_func_global;
+    fido_var = FIDO_VAL_DEFAULT;
+    for (int i = 0; i < 10; ++i)
+    {
+      SQLHDBC hdbc = NULL;
+      ok_env(henv, SQLAllocConnect(henv, &hdbc));
+      ok_con(hdbc, SQLSetConnectAttr(hdbc, CB_FIDO_GLOBAL,
+        (void*)(ptr), SQL_IS_POINTER));
+
+      SQLDriverConnect(hdbc, NULL, (SQLCHAR*)connstr, SQL_NTS, NULL, 0, NULL, SQL_DRIVER_NOPROMPT);
+      SQLDisconnect(hdbc);
+      SQLFreeHandle(SQL_HANDLE_DBC, hdbc);
+
+      is(fido_var != FIDO_VAL_DEFAULT);
+    }
+    return SQL_SUCCESS;
+  };
+
+
+  auto fido_thr_conn_check = [henv, connstr](
+    void (*callback_func)(const char*), int idx)
+  {
+    for (int i = 0; i < 10; ++i)
+    {
+      SQLHDBC hdbc = NULL;
+      ok_env(henv, SQLAllocConnect(henv, &hdbc));
+      ok_con(hdbc, SQLSetConnectAttr(hdbc, CB_FIDO_CONNECTION,
+        (void *)(callback_func), SQL_IS_POINTER));
+      fido_var2[idx] = FIDO_VAL_DEFAULT;
+
+      SQLDriverConnect(hdbc, NULL, (SQLCHAR*)connstr, SQL_NTS, NULL, 0, NULL, SQL_DRIVER_NOPROMPT);
+      SQLDisconnect(hdbc);
+      SQLFreeHandle(SQL_HANDLE_DBC, hdbc);
+      int expected_val = idx + 1;
+      is_num(expected_val, fido_var2[idx]);
+    }
+    return SQL_SUCCESS;
+  };
+
+  std::vector<std::thread> threads;
+
+  for (int i = 0; i < 5; ++i)
+  {
+    threads.push_back(std::thread(fido_thr_global_check));
+  }
+
+  threads.push_back(std::thread(fido_thr_conn_check,
+    [](const char*msg) { printf ("Thread callback 1 [%s]\n", msg); fido_var2[0] = 1;}, 0));
+  threads.push_back(std::thread(fido_thr_conn_check,
+    [](const char*msg) { printf ("Thread callback 2 [%s]\n", msg); fido_var2[1] = 2;}, 1));
+  threads.push_back(std::thread(fido_thr_conn_check,
+    [](const char*msg) { printf ("Thread callback 3 [%s]\n", msg); fido_var2[2] = 3;}, 2));
+  threads.push_back(std::thread(fido_thr_conn_check,
+    [](const char*msg) { printf ("Thread callback 4 [%s]\n", msg); fido_var2[3] = 4;}, 3));
+  threads.push_back(std::thread(fido_thr_conn_check,
+    [](const char*msg) { printf ("Thread callback 5 [%s]\n", msg); fido_var2[4] = 5;}, 4));
+
+  for (auto &thread : threads)
+  {
+    thread.join();
+  }
+
+  return OK;
+}
+
 BEGIN_TESTS
+  ADD_TEST(t_fido_callback_test)
   ADD_TEST(t_fido_test)
   // ADD_TEST(t_plugin_auth) TODO: Fix
   ADD_TEST(t_dummy_test)
