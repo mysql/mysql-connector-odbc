@@ -59,6 +59,7 @@ extern "C" {
 
 extern CHARSET_INFO *utf8_charset_info;
 extern CHARSET_INFO *utf16_charset_info;
+extern const char* transport_charset;
 
 struct CHARSET_COLLATION_INFO
 {

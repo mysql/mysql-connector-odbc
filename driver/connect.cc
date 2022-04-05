@@ -116,7 +116,7 @@ SQLRETURN myodbc_set_initial_character_set(DBC *dbc, const char *charset)
       }
     }
 
-    charset= "utf8";
+    charset = transport_charset;
   }
 
   if (charset && charset[0])
@@ -500,7 +500,7 @@ SQLRETURN DBC::connect(DataSource *dsrc)
     /*
       We always use utf8 for the connection, and change it afterwards if needed.
     */
-    mysql_options(mysql, MYSQL_SET_CHARSET_NAME, "utf8");
+    mysql_options(mysql, MYSQL_SET_CHARSET_NAME, transport_charset);
     cxn_charset_info= utf8_charset_info;
   }
   else

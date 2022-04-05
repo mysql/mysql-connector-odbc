@@ -476,7 +476,7 @@ SQLGetConnectAttrWImpl(SQLHDBC hdbc, SQLINTEGER attribute, SQLPOINTER value,
     */
     if(!dbc->cxn_charset_info)
     {
-      result_charset_info= get_charset_by_csname("utf8", MYF(MY_CS_PRIMARY),
+      result_charset_info= get_charset_by_csname(transport_charset, MYF(MY_CS_PRIMARY),
                                                  MYF(0));
     }
 

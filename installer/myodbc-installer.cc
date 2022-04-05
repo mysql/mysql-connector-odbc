@@ -860,7 +860,7 @@ int main(int argc, char **argv)
 
   /* init libmysqlclient */
   my_sys_init();
-  utf8_charset_info= get_charset_by_csname("utf8", MYF(MY_CS_PRIMARY),
+  utf8_charset_info= get_charset_by_csname(transport_charset, MYF(MY_CS_PRIMARY),
                                            MYF(0));
 
   /* convert to SQLWCHAR for installer API */

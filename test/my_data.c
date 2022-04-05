@@ -35,7 +35,7 @@ DECLARE_TEST(my_json)
   SQLCHAR buf[255], qbuf[255];
   DECLARE_BASIC_HANDLES(henv2, hdbc2, hstmt2);
   alloc_basic_handles_with_opt(&henv2, &hdbc2, &hstmt2, NULL, NULL, NULL, NULL,
-                               "CHARSET=utf8");
+                               "CHARSET=utf8mb4");
 
   const char *json = "{\"key1\": \"value1\", \"key2\": \"value2\"}";
   const char *json2 = "{\"key1\": \"value10\", \"key2\": \"value20\"}";

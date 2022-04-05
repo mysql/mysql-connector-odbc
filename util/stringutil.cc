@@ -39,6 +39,7 @@
 CHARSET_INFO *utf8_charset_info = NULL;
 CHARSET_INFO *utf16_charset_info = NULL;
 
+const char *transport_charset = "utf8mb4";
 
 /**
   Duplicate a SQLCHAR in the specified character set as a SQLWCHAR.

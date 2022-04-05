@@ -105,7 +105,7 @@ void myodbc_init(void)
 
     __LOCALE_RESTORE()
 
-    utf8_charset_info= get_charset_by_csname("utf8", MYF(MY_CS_PRIMARY),
+    utf8_charset_info= get_charset_by_csname(transport_charset, MYF(MY_CS_PRIMARY),
                                              MYF(0));
 
 #ifdef IS_BIG_ENDIAN

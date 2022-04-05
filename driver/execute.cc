@@ -1032,7 +1032,7 @@ SQLRETURN insert_param(STMT *stmt, MYSQL_BIND *bind, DESC* apd,
             }
             else
             {
-              stmt->add_to_buffer("_utf8", 5);
+              stmt->add_to_buffer("_utf8mb4", 8);
             }
           }
           else if (aprec->concise_type != SQL_C_WCHAR &&
