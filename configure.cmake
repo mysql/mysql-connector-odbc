@@ -197,150 +197,162 @@ ENDIF()
 #
 INCLUDE (CheckIncludeFiles)
 
-CHECK_INCLUDE_FILES (alloca.h HAVE_ALLOCA_H)
-CHECK_INCLUDE_FILES (arpa/inet.h HAVE_ARPA_INET_H)
-CHECK_INCLUDE_FILES (dlfcn.h HAVE_DLFCN_H)
-CHECK_INCLUDE_FILES (endian.h HAVE_ENDIAN_H)
-CHECK_INCLUDE_FILES (execinfo.h HAVE_EXECINFO_H)
-CHECK_INCLUDE_FILES (fpu_control.h HAVE_FPU_CONTROL_H)
-CHECK_INCLUDE_FILES (grp.h HAVE_GRP_H)
-CHECK_INCLUDE_FILES (ieeefp.h HAVE_IEEEFP_H)
-CHECK_INCLUDE_FILES (langinfo.h HAVE_LANGINFO_H)
-CHECK_INCLUDE_FILES (malloc.h HAVE_MALLOC_H)
-CHECK_INCLUDE_FILES (netinet/in.h HAVE_NETINET_IN_H)
-CHECK_INCLUDE_FILES (poll.h HAVE_POLL_H)
-CHECK_INCLUDE_FILES (pwd.h HAVE_PWD_H)
-IF(WITH_ASAN)
-  CHECK_INCLUDE_FILES (sanitizer/lsan_interface.h HAVE_LSAN_INTERFACE_H)
-ENDIF()
-CHECK_INCLUDE_FILES (strings.h HAVE_STRINGS_H) # Used by NDB
-CHECK_INCLUDE_FILES (sys/cdefs.h HAVE_SYS_CDEFS_H) # Used by libedit
-CHECK_INCLUDE_FILES (sys/ioctl.h HAVE_SYS_IOCTL_H)
-CHECK_INCLUDE_FILES (sys/mman.h HAVE_SYS_MMAN_H)
-CHECK_INCLUDE_FILES (sys/prctl.h HAVE_SYS_PRCTL_H)
-CHECK_INCLUDE_FILES (sys/resource.h HAVE_SYS_RESOURCE_H)
-CHECK_INCLUDE_FILES (sys/select.h HAVE_SYS_SELECT_H)
-CHECK_INCLUDE_FILES (sys/socket.h HAVE_SYS_SOCKET_H)
-CHECK_INCLUDE_FILES ("curses.h;term.h" HAVE_TERM_H)
-CHECK_INCLUDE_FILES (termios.h HAVE_TERMIOS_H)
-CHECK_INCLUDE_FILES (termio.h HAVE_TERMIO_H)
-CHECK_INCLUDE_FILES (unistd.h HAVE_UNISTD_H)
-CHECK_INCLUDE_FILES (sys/wait.h HAVE_SYS_WAIT_H)
-CHECK_INCLUDE_FILES (sys/param.h HAVE_SYS_PARAM_H) # Used by NDB/libevent
-CHECK_INCLUDE_FILES (fnmatch.h HAVE_FNMATCH_H)
-CHECK_INCLUDE_FILES (sys/un.h HAVE_SYS_UN_H)
-CHECK_INCLUDE_FILES (vis.h HAVE_VIS_H) # Used by libedit
-CHECK_INCLUDE_FILES (sasl/sasl.h HAVE_SASL_SASL_H) # Used by memcached
+IF(NOT WIN32)
+  # TODO: Review which of these should be checked on Windows
+  CHECK_INCLUDE_FILES (alloca.h HAVE_ALLOCA_H)
+  CHECK_INCLUDE_FILES (arpa/inet.h HAVE_ARPA_INET_H)
+  CHECK_INCLUDE_FILES (dlfcn.h HAVE_DLFCN_H)
+  CHECK_INCLUDE_FILES (endian.h HAVE_ENDIAN_H)
+  CHECK_INCLUDE_FILES (execinfo.h HAVE_EXECINFO_H)
+  CHECK_INCLUDE_FILES (fpu_control.h HAVE_FPU_CONTROL_H)
+  CHECK_INCLUDE_FILES (grp.h HAVE_GRP_H)
+  CHECK_INCLUDE_FILES (ieeefp.h HAVE_IEEEFP_H)
+  CHECK_INCLUDE_FILES (langinfo.h HAVE_LANGINFO_H)
+  CHECK_INCLUDE_FILES (malloc.h HAVE_MALLOC_H)
+  CHECK_INCLUDE_FILES (netinet/in.h HAVE_NETINET_IN_H)
+  CHECK_INCLUDE_FILES (poll.h HAVE_POLL_H)
+  CHECK_INCLUDE_FILES (pwd.h HAVE_PWD_H)
+  IF(WITH_ASAN)
+    CHECK_INCLUDE_FILES (sanitizer/lsan_interface.h HAVE_LSAN_INTERFACE_H)
+  ENDIF()
+  CHECK_INCLUDE_FILES (strings.h HAVE_STRINGS_H) # Used by NDB
+  CHECK_INCLUDE_FILES (sys/cdefs.h HAVE_SYS_CDEFS_H) # Used by libedit
+  CHECK_INCLUDE_FILES (sys/ioctl.h HAVE_SYS_IOCTL_H)
+  CHECK_INCLUDE_FILES (sys/mman.h HAVE_SYS_MMAN_H)
+  CHECK_INCLUDE_FILES (sys/prctl.h HAVE_SYS_PRCTL_H)
+  CHECK_INCLUDE_FILES (sys/resource.h HAVE_SYS_RESOURCE_H)
+  CHECK_INCLUDE_FILES (sys/select.h HAVE_SYS_SELECT_H)
+  CHECK_INCLUDE_FILES (sys/socket.h HAVE_SYS_SOCKET_H)
+  CHECK_INCLUDE_FILES ("curses.h;term.h" HAVE_TERM_H)
+  CHECK_INCLUDE_FILES (termios.h HAVE_TERMIOS_H)
+  CHECK_INCLUDE_FILES (termio.h HAVE_TERMIO_H)
+  CHECK_INCLUDE_FILES (unistd.h HAVE_UNISTD_H)
+  CHECK_INCLUDE_FILES (sys/wait.h HAVE_SYS_WAIT_H)
+  CHECK_INCLUDE_FILES (sys/param.h HAVE_SYS_PARAM_H) # Used by NDB/libevent
+  CHECK_INCLUDE_FILES (fnmatch.h HAVE_FNMATCH_H)
+  CHECK_INCLUDE_FILES (sys/un.h HAVE_SYS_UN_H)
+  CHECK_INCLUDE_FILES (vis.h HAVE_VIS_H) # Used by libedit
+  CHECK_INCLUDE_FILES (sasl/sasl.h HAVE_SASL_SASL_H) # Used by memcached
 
-# For libevent
-CHECK_INCLUDE_FILES(sys/devpoll.h HAVE_DEVPOLL)
-IF(HAVE_DEVPOLL)
-  # Duplicate symbols, but keep it to avoid changing libevent code.
-  SET(HAVE_SYS_DEVPOLL_H 1)
-ENDIF()
-CHECK_INCLUDE_FILES(sys/epoll.h HAVE_SYS_EPOLL_H)
-CHECK_SYMBOL_EXISTS (TAILQ_FOREACH "sys/queue.h" HAVE_TAILQFOREACH)
+  # For libevent
+  CHECK_INCLUDE_FILES(sys/devpoll.h HAVE_DEVPOLL)
+  IF(HAVE_DEVPOLL)
+    # Duplicate symbols, but keep it to avoid changing libevent code.
+    SET(HAVE_SYS_DEVPOLL_H 1)
+  ENDIF()
+  CHECK_INCLUDE_FILES(sys/epoll.h HAVE_SYS_EPOLL_H)
+  CHECK_SYMBOL_EXISTS (TAILQ_FOREACH "sys/queue.h" HAVE_TAILQFOREACH)
+
+endif(NOT WIN32)
 
 #
 # Tests for functions
 #
-IF(WITH_ASAN)
-  CHECK_SYMBOL_EXISTS (__lsan_do_recoverable_leak_check
-    "sanitizer/lsan_interface.h" HAVE_LSAN_DO_RECOVERABLE_LEAK_CHECK)
-ENDIF()
-CHECK_FUNCTION_EXISTS (_aligned_malloc HAVE_ALIGNED_MALLOC)
-CHECK_FUNCTION_EXISTS (backtrace HAVE_BACKTRACE)
-CHECK_FUNCTION_EXISTS (printstack HAVE_PRINTSTACK)
-CHECK_FUNCTION_EXISTS (index HAVE_INDEX)
-CHECK_FUNCTION_EXISTS (chown HAVE_CHOWN)
-CHECK_FUNCTION_EXISTS (cuserid HAVE_CUSERID)
-CHECK_FUNCTION_EXISTS (directio HAVE_DIRECTIO)
-CHECK_FUNCTION_EXISTS (ftruncate HAVE_FTRUNCATE)
-CHECK_FUNCTION_EXISTS (fchmod HAVE_FCHMOD)
-CHECK_FUNCTION_EXISTS (fcntl HAVE_FCNTL)
-CHECK_FUNCTION_EXISTS (fdatasync HAVE_FDATASYNC)
-CHECK_SYMBOL_EXISTS(fdatasync "unistd.h" HAVE_DECL_FDATASYNC)
-CHECK_FUNCTION_EXISTS (fedisableexcept HAVE_FEDISABLEEXCEPT)
-CHECK_FUNCTION_EXISTS (fseeko HAVE_FSEEKO)
-CHECK_FUNCTION_EXISTS (fsync HAVE_FSYNC)
-CHECK_FUNCTION_EXISTS (gethrtime HAVE_GETHRTIME)
-CHECK_FUNCTION_EXISTS (getnameinfo HAVE_GETNAMEINFO)
-CHECK_FUNCTION_EXISTS (getpass HAVE_GETPASS)
-CHECK_FUNCTION_EXISTS (getpassphrase HAVE_GETPASSPHRASE)
-#
-# Note: we don't need this functionality and we intentionally
-# want HAVE_GETPWNAM undefined so that these parts of the
-# code are not used.
-#
-#CHECK_FUNCTION_EXISTS (getpwnam HAVE_GETPWNAM)
-CHECK_FUNCTION_EXISTS (getpwuid HAVE_GETPWUID)
-CHECK_FUNCTION_EXISTS (getrlimit HAVE_GETRLIMIT)
-CHECK_FUNCTION_EXISTS (getrusage HAVE_GETRUSAGE)
-CHECK_FUNCTION_EXISTS (initgroups HAVE_INITGROUPS)
-CHECK_FUNCTION_EXISTS (issetugid HAVE_ISSETUGID)
-CHECK_FUNCTION_EXISTS (getuid HAVE_GETUID)
-CHECK_FUNCTION_EXISTS (geteuid HAVE_GETEUID)
-CHECK_FUNCTION_EXISTS (getgid HAVE_GETGID)
-CHECK_FUNCTION_EXISTS (getegid HAVE_GETEGID)
-CHECK_FUNCTION_EXISTS (madvise HAVE_MADVISE)
-CHECK_FUNCTION_EXISTS (malloc_info HAVE_MALLOC_INFO)
-CHECK_FUNCTION_EXISTS (memrchr HAVE_MEMRCHR)
-CHECK_FUNCTION_EXISTS (mlock HAVE_MLOCK)
-CHECK_FUNCTION_EXISTS (mlockall HAVE_MLOCKALL)
-CHECK_FUNCTION_EXISTS (mmap64 HAVE_MMAP64)
-CHECK_FUNCTION_EXISTS (poll HAVE_POLL)
-CHECK_FUNCTION_EXISTS (posix_fallocate HAVE_POSIX_FALLOCATE)
-CHECK_FUNCTION_EXISTS (posix_memalign HAVE_POSIX_MEMALIGN)
-CHECK_FUNCTION_EXISTS (pread HAVE_PREAD) # Used by NDB
-CHECK_FUNCTION_EXISTS (pthread_condattr_setclock HAVE_PTHREAD_CONDATTR_SETCLOCK)
-CHECK_FUNCTION_EXISTS (pthread_sigmask HAVE_PTHREAD_SIGMASK)
-CHECK_FUNCTION_EXISTS (setfd HAVE_SETFD) # Used by libevent (never true)
-CHECK_FUNCTION_EXISTS (sigaction HAVE_SIGACTION)
-CHECK_FUNCTION_EXISTS (sleep HAVE_SLEEP)
-CHECK_FUNCTION_EXISTS (stpcpy HAVE_STPCPY)
-CHECK_FUNCTION_EXISTS (stpncpy HAVE_STPNCPY)
-CHECK_FUNCTION_EXISTS (strlcpy HAVE_STRLCPY)
-CHECK_FUNCTION_EXISTS (strndup HAVE_STRNDUP) # Used by libbinlogevents
-CHECK_FUNCTION_EXISTS (strlcat HAVE_STRLCAT)
-CHECK_FUNCTION_EXISTS (strsignal HAVE_STRSIGNAL)
-CHECK_FUNCTION_EXISTS (fgetln HAVE_FGETLN)
-CHECK_FUNCTION_EXISTS (strsep HAVE_STRSEP)
-CHECK_FUNCTION_EXISTS (tell HAVE_TELL)
-CHECK_FUNCTION_EXISTS (vasprintf HAVE_VASPRINTF)
-CHECK_FUNCTION_EXISTS (memalign HAVE_MEMALIGN)
-CHECK_FUNCTION_EXISTS (nl_langinfo HAVE_NL_LANGINFO)
-CHECK_FUNCTION_EXISTS (ntohll HAVE_HTONLL)
 
-CHECK_FUNCTION_EXISTS (epoll_create HAVE_EPOLL)
-# Temperarily  Quote event port out as we encounter error in port_getn
-# on solaris x86
-# CHECK_FUNCTION_EXISTS (port_create HAVE_EVENT_PORTS)
-CHECK_FUNCTION_EXISTS (inet_ntop HAVE_INET_NTOP)
-CHECK_FUNCTION_EXISTS (kqueue HAVE_WORKING_KQUEUE)
-CHECK_SYMBOL_EXISTS (timeradd "sys/time.h" HAVE_TIMERADD)
-CHECK_SYMBOL_EXISTS (timerclear "sys/time.h" HAVE_TIMERCLEAR)
-CHECK_SYMBOL_EXISTS (timercmp "sys/time.h" HAVE_TIMERCMP)
-CHECK_SYMBOL_EXISTS (timerisset "sys/time.h" HAVE_TIMERISSET)
+IF(NOT WIN32)
+
+  IF(WITH_ASAN)
+    CHECK_SYMBOL_EXISTS (__lsan_do_recoverable_leak_check
+      "sanitizer/lsan_interface.h" HAVE_LSAN_DO_RECOVERABLE_LEAK_CHECK)
+  ENDIF()
+  CHECK_FUNCTION_EXISTS (_aligned_malloc HAVE_ALIGNED_MALLOC)
+  CHECK_FUNCTION_EXISTS (backtrace HAVE_BACKTRACE)
+  CHECK_FUNCTION_EXISTS (printstack HAVE_PRINTSTACK)
+  CHECK_FUNCTION_EXISTS (index HAVE_INDEX)
+  CHECK_FUNCTION_EXISTS (chown HAVE_CHOWN)
+  CHECK_FUNCTION_EXISTS (cuserid HAVE_CUSERID)
+  CHECK_FUNCTION_EXISTS (directio HAVE_DIRECTIO)
+  CHECK_FUNCTION_EXISTS (ftruncate HAVE_FTRUNCATE)
+  CHECK_FUNCTION_EXISTS (fchmod HAVE_FCHMOD)
+  CHECK_FUNCTION_EXISTS (fcntl HAVE_FCNTL)
+  CHECK_FUNCTION_EXISTS (fdatasync HAVE_FDATASYNC)
+  CHECK_SYMBOL_EXISTS(fdatasync "unistd.h" HAVE_DECL_FDATASYNC)
+  CHECK_FUNCTION_EXISTS (fedisableexcept HAVE_FEDISABLEEXCEPT)
+  CHECK_FUNCTION_EXISTS (fseeko HAVE_FSEEKO)
+  CHECK_FUNCTION_EXISTS (fsync HAVE_FSYNC)
+  CHECK_FUNCTION_EXISTS (gethrtime HAVE_GETHRTIME)
+  CHECK_FUNCTION_EXISTS (getnameinfo HAVE_GETNAMEINFO)
+  CHECK_FUNCTION_EXISTS (getpass HAVE_GETPASS)
+  CHECK_FUNCTION_EXISTS (getpassphrase HAVE_GETPASSPHRASE)
+  #
+  # Note: we don't need this functionality and we intentionally
+  # want HAVE_GETPWNAM undefined so that these parts of the
+  # code are not used.
+  #
+  #CHECK_FUNCTION_EXISTS (getpwnam HAVE_GETPWNAM)
+  CHECK_FUNCTION_EXISTS (getpwuid HAVE_GETPWUID)
+  CHECK_FUNCTION_EXISTS (getrlimit HAVE_GETRLIMIT)
+  CHECK_FUNCTION_EXISTS (getrusage HAVE_GETRUSAGE)
+  CHECK_FUNCTION_EXISTS (initgroups HAVE_INITGROUPS)
+  CHECK_FUNCTION_EXISTS (issetugid HAVE_ISSETUGID)
+  CHECK_FUNCTION_EXISTS (getuid HAVE_GETUID)
+  CHECK_FUNCTION_EXISTS (geteuid HAVE_GETEUID)
+  CHECK_FUNCTION_EXISTS (getgid HAVE_GETGID)
+  CHECK_FUNCTION_EXISTS (getegid HAVE_GETEGID)
+  CHECK_FUNCTION_EXISTS (madvise HAVE_MADVISE)
+  CHECK_FUNCTION_EXISTS (malloc_info HAVE_MALLOC_INFO)
+  CHECK_FUNCTION_EXISTS (memrchr HAVE_MEMRCHR)
+  CHECK_FUNCTION_EXISTS (mlock HAVE_MLOCK)
+  CHECK_FUNCTION_EXISTS (mlockall HAVE_MLOCKALL)
+  CHECK_FUNCTION_EXISTS (mmap64 HAVE_MMAP64)
+  CHECK_FUNCTION_EXISTS (poll HAVE_POLL)
+  CHECK_FUNCTION_EXISTS (posix_fallocate HAVE_POSIX_FALLOCATE)
+  CHECK_FUNCTION_EXISTS (posix_memalign HAVE_POSIX_MEMALIGN)
+  CHECK_FUNCTION_EXISTS (pread HAVE_PREAD) # Used by NDB
+  CHECK_FUNCTION_EXISTS (pthread_condattr_setclock HAVE_PTHREAD_CONDATTR_SETCLOCK)
+  CHECK_FUNCTION_EXISTS (pthread_sigmask HAVE_PTHREAD_SIGMASK)
+  CHECK_FUNCTION_EXISTS (setfd HAVE_SETFD) # Used by libevent (never true)
+  CHECK_FUNCTION_EXISTS (sigaction HAVE_SIGACTION)
+  CHECK_FUNCTION_EXISTS (sleep HAVE_SLEEP)
+  CHECK_FUNCTION_EXISTS (stpcpy HAVE_STPCPY)
+  CHECK_FUNCTION_EXISTS (stpncpy HAVE_STPNCPY)
+  CHECK_FUNCTION_EXISTS (strlcpy HAVE_STRLCPY)
+  CHECK_FUNCTION_EXISTS (strndup HAVE_STRNDUP) # Used by libbinlogevents
+  CHECK_FUNCTION_EXISTS (strlcat HAVE_STRLCAT)
+  CHECK_FUNCTION_EXISTS (strsignal HAVE_STRSIGNAL)
+  CHECK_FUNCTION_EXISTS (fgetln HAVE_FGETLN)
+  CHECK_FUNCTION_EXISTS (strsep HAVE_STRSEP)
+  CHECK_FUNCTION_EXISTS (tell HAVE_TELL)
+  CHECK_FUNCTION_EXISTS (vasprintf HAVE_VASPRINTF)
+  CHECK_FUNCTION_EXISTS (memalign HAVE_MEMALIGN)
+  CHECK_FUNCTION_EXISTS (nl_langinfo HAVE_NL_LANGINFO)
+  CHECK_FUNCTION_EXISTS (ntohll HAVE_HTONLL)
+
+  CHECK_FUNCTION_EXISTS (epoll_create HAVE_EPOLL)
+  # Temperarily  Quote event port out as we encounter error in port_getn
+  # on solaris x86
+  # CHECK_FUNCTION_EXISTS (port_create HAVE_EVENT_PORTS)
+  CHECK_FUNCTION_EXISTS (inet_ntop HAVE_INET_NTOP)
+  CHECK_FUNCTION_EXISTS (kqueue HAVE_WORKING_KQUEUE)
+  CHECK_SYMBOL_EXISTS (timeradd "sys/time.h" HAVE_TIMERADD)
+  CHECK_SYMBOL_EXISTS (timerclear "sys/time.h" HAVE_TIMERCLEAR)
+  CHECK_SYMBOL_EXISTS (timercmp "sys/time.h" HAVE_TIMERCMP)
+  CHECK_SYMBOL_EXISTS (timerisset "sys/time.h" HAVE_TIMERISSET)
+
+ENDIF(NOT WIN32)
 
 #--------------------------------------------------------------------
 # Support for WL#2373 (Use cycle counter for timing)
 #--------------------------------------------------------------------
 
-CHECK_INCLUDE_FILES(sys/time.h HAVE_SYS_TIME_H)
-CHECK_INCLUDE_FILES(sys/times.h HAVE_SYS_TIMES_H)
+IF(NOT WIN32)
+  CHECK_INCLUDE_FILES(sys/time.h HAVE_SYS_TIME_H)
+  CHECK_INCLUDE_FILES(sys/times.h HAVE_SYS_TIMES_H)
 
-CHECK_FUNCTION_EXISTS(times HAVE_TIMES)
-CHECK_FUNCTION_EXISTS(gettimeofday HAVE_GETTIMEOFDAY)
-
+  CHECK_FUNCTION_EXISTS(times HAVE_TIMES)
+  CHECK_FUNCTION_EXISTS(gettimeofday HAVE_GETTIMEOFDAY)
+ENDIF(NOT WIN32)
 
 #
 # Tests for symbols
 #
 
-CHECK_SYMBOL_EXISTS(lrand48 "stdlib.h" HAVE_LRAND48)
-CHECK_SYMBOL_EXISTS(TIOCGWINSZ "sys/ioctl.h" GWINSZ_IN_SYS_IOCTL)
-CHECK_SYMBOL_EXISTS(FIONREAD "sys/ioctl.h" FIONREAD_IN_SYS_IOCTL)
-CHECK_SYMBOL_EXISTS(FIONREAD "sys/filio.h" FIONREAD_IN_SYS_FILIO)
+IF(NOT WIN32)
+  CHECK_SYMBOL_EXISTS(lrand48 "stdlib.h" HAVE_LRAND48)
+  CHECK_SYMBOL_EXISTS(TIOCGWINSZ "sys/ioctl.h" GWINSZ_IN_SYS_IOCTL)
+  CHECK_SYMBOL_EXISTS(FIONREAD "sys/ioctl.h" FIONREAD_IN_SYS_IOCTL)
+  CHECK_SYMBOL_EXISTS(FIONREAD "sys/filio.h" FIONREAD_IN_SYS_FILIO)
+ENDIF(NOT WIN32)
 
 # On Solaris, it is only visible in C99 mode
 CHECK_SYMBOL_EXISTS(isinf "math.h" HAVE_C_ISINF)
@@ -361,10 +373,13 @@ ENDIF()
 
 
 # The results of these four checks are only needed here, not in code.
-CHECK_FUNCTION_EXISTS (timer_create HAVE_TIMER_CREATE)
-CHECK_FUNCTION_EXISTS (timer_settime HAVE_TIMER_SETTIME)
-CHECK_FUNCTION_EXISTS (kqueue HAVE_KQUEUE)
-CHECK_SYMBOL_EXISTS(EVFILT_TIMER "sys/types.h;sys/event.h;sys/time.h" HAVE_EVFILT_TIMER)
+IF(NOT WIN32)
+  CHECK_FUNCTION_EXISTS (timer_create HAVE_TIMER_CREATE)
+  CHECK_FUNCTION_EXISTS (timer_settime HAVE_TIMER_SETTIME)
+  CHECK_FUNCTION_EXISTS (kqueue HAVE_KQUEUE)
+  CHECK_SYMBOL_EXISTS(EVFILT_TIMER "sys/types.h;sys/event.h;sys/time.h" HAVE_EVFILT_TIMER)
+ENDIF(NOT WIN32)
+
 IF(HAVE_KQUEUE AND HAVE_EVFILT_TIMER)
   SET(HAVE_KQUEUE_TIMERS 1 CACHE INTERNAL "Have kqueue timer-related filter")
 ELSEIF(HAVE_TIMER_CREATE AND HAVE_TIMER_SETTIME)
@@ -428,7 +443,9 @@ ENDIF()
 SET(CMAKE_EXTRA_INCLUDE_FILES)
 
 # Support for tagging symbols with __attribute__((visibility("hidden")))
-MY_CHECK_CXX_COMPILER_FLAG("-fvisibility=hidden" HAVE_VISIBILITY_HIDDEN)
+IF(NOT WIN32)
+  MY_CHECK_CXX_COMPILER_FLAG("-fvisibility=hidden" HAVE_VISIBILITY_HIDDEN)
+ENDIF(NOT WIN32)
 
 #
 # Code tests
@@ -474,8 +491,11 @@ IF(NOT STACK_DIRECTION)
    ENDIF()
 ENDIF()
 
-CHECK_INCLUDE_FILES("time.h;sys/time.h" TIME_WITH_SYS_TIME)
-CHECK_SYMBOL_EXISTS(O_NONBLOCK "unistd.h;fcntl.h" HAVE_FCNTL_NONBLOCK)
+IF(NOT WIN32)
+  CHECK_INCLUDE_FILES("time.h;sys/time.h" TIME_WITH_SYS_TIME)
+  CHECK_SYMBOL_EXISTS(O_NONBLOCK "unistd.h;fcntl.h" HAVE_FCNTL_NONBLOCK)
+ENDIF(NOT WIN32)
+
 IF(NOT HAVE_FCNTL_NONBLOCK)
  SET(NO_FCNTL_NONBLOCK 1)
 ENDIF()
@@ -530,97 +550,104 @@ IF(NOT CMAKE_CROSSCOMPILING AND NOT MSVC)
 ENDIF()
   
 INCLUDE (CheckIncludeFileCXX)
-CHECK_INCLUDE_FILE_CXX(cxxabi.h HAVE_CXXABI_H)
-IF(HAVE_CXXABI_H)
-CHECK_CXX_SOURCE_COMPILES("
- #include <cxxabi.h>
- int main(int argc, char **argv) 
-  {
-    char *foo= 0; int bar= 0;
-    foo= abi::__cxa_demangle(foo, foo, 0, &bar);
-    return 0;
-  }"
-  HAVE_ABI_CXA_DEMANGLE)
-ENDIF()
 
-CHECK_C_SOURCE_COMPILES("
-int main()
-{
-  __builtin_unreachable();
-  return 0;
-}" HAVE_BUILTIN_UNREACHABLE)
+IF(NOT WIN32)  # FIXME: Should be really for the case of using GCC
 
-CHECK_C_SOURCE_COMPILES("
-int main()
-{
-  long l= 0;
-  __builtin_expect(l, 0);
-  return 0;
-}" HAVE_BUILTIN_EXPECT)
+  CHECK_INCLUDE_FILE_CXX(cxxabi.h HAVE_CXXABI_H)
 
-# GCC has __builtin_stpcpy but still calls stpcpy
-IF(NOT CMAKE_SYSTEM_NAME MATCHES "SunOS" OR NOT CMAKE_COMPILER_IS_GNUCC)
-CHECK_C_SOURCE_COMPILES("
-int main()
-{
-  char foo1[1];
-  char foo2[1];
-  __builtin_stpcpy(foo1, foo2);
-  return 0;
-}" HAVE_BUILTIN_STPCPY)
-ENDIF()
+  IF(HAVE_CXXABI_H)
+    CHECK_CXX_SOURCE_COMPILES("
+      #include <cxxabi.h>
+      int main(int argc, char **argv) 
+        {
+          char *foo= 0; int bar= 0;
+          foo= abi::__cxa_demangle(foo, foo, 0, &bar);
+          return 0;
+        }"
+      HAVE_ABI_CXA_DEMANGLE)
+  ENDIF()
 
-CHECK_CXX_SOURCE_COMPILES("
-  int main()
-  {
-    int foo= -10; int bar= 10;
-    long long int foo64= -10; long long int bar64= 10;
-    if (!__atomic_fetch_add(&foo, bar, __ATOMIC_SEQ_CST) || foo)
-      return -1;
-    bar= __atomic_exchange_n(&foo, bar, __ATOMIC_SEQ_CST);
-    if (bar || foo != 10)
-      return -1;
-    bar= __atomic_compare_exchange_n(&bar, &foo, 15, 0,
-                                     __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST);
-    if (bar)
-      return -1;
-    if (!__atomic_fetch_add(&foo64, bar64, __ATOMIC_SEQ_CST) || foo64)
-      return -1;
-    bar64= __atomic_exchange_n(&foo64, bar64, __ATOMIC_SEQ_CST);
-    if (bar64 || foo64 != 10)
-      return -1;
-    bar64= __atomic_compare_exchange_n(&bar64, &foo64, 15, 0,
-                                       __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST);
-    if (bar64)
-      return -1;
-    return 0;
-  }"
-  HAVE_GCC_ATOMIC_BUILTINS)
+  CHECK_C_SOURCE_COMPILES("
+    int main()
+    {
+      __builtin_unreachable();
+      return 0;
+    }" HAVE_BUILTIN_UNREACHABLE)
 
-CHECK_CXX_SOURCE_COMPILES("
-  int main()
-  {
-    int foo= -10; int bar= 10;
-    long long int foo64= -10; long long int bar64= 10;
-    if (!__sync_fetch_and_add(&foo, bar) || foo)
-      return -1;
-    bar= __sync_lock_test_and_set(&foo, bar);
-    if (bar || foo != 10)
-      return -1;
-    bar= __sync_val_compare_and_swap(&bar, foo, 15);
-    if (bar)
-      return -1;
-    if (!__sync_fetch_and_add(&foo64, bar64) || foo64)
-      return -1;
-    bar64= __sync_lock_test_and_set(&foo64, bar64);
-    if (bar64 || foo64 != 10)
-      return -1;
-    bar64= __sync_val_compare_and_swap(&bar64, foo, 15);
-    if (bar64)
-      return -1;
-    return 0;
-  }"
-  HAVE_GCC_SYNC_BUILTINS)
+  CHECK_C_SOURCE_COMPILES("
+    int main()
+    {
+      long l= 0;
+      __builtin_expect(l, 0);
+      return 0;
+    }" HAVE_BUILTIN_EXPECT)
+
+  # GCC has __builtin_stpcpy but still calls stpcpy
+  IF(NOT CMAKE_SYSTEM_NAME MATCHES "SunOS" OR NOT CMAKE_COMPILER_IS_GNUCC)
+    CHECK_C_SOURCE_COMPILES("
+      int main()
+      {
+        char foo1[1];
+        char foo2[1];
+        __builtin_stpcpy(foo1, foo2);
+        return 0;
+      }" HAVE_BUILTIN_STPCPY)
+  ENDIF()
+
+  CHECK_CXX_SOURCE_COMPILES("
+    int main()
+    {
+      int foo= -10; int bar= 10;
+      long long int foo64= -10; long long int bar64= 10;
+      if (!__atomic_fetch_add(&foo, bar, __ATOMIC_SEQ_CST) || foo)
+        return -1;
+      bar= __atomic_exchange_n(&foo, bar, __ATOMIC_SEQ_CST);
+      if (bar || foo != 10)
+        return -1;
+      bar= __atomic_compare_exchange_n(&bar, &foo, 15, 0,
+                                      __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST);
+      if (bar)
+        return -1;
+      if (!__atomic_fetch_add(&foo64, bar64, __ATOMIC_SEQ_CST) || foo64)
+        return -1;
+      bar64= __atomic_exchange_n(&foo64, bar64, __ATOMIC_SEQ_CST);
+      if (bar64 || foo64 != 10)
+        return -1;
+      bar64= __atomic_compare_exchange_n(&bar64, &foo64, 15, 0,
+                                        __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST);
+      if (bar64)
+        return -1;
+      return 0;
+    }"
+    HAVE_GCC_ATOMIC_BUILTINS)
+
+  CHECK_CXX_SOURCE_COMPILES("
+    int main()
+    {
+      int foo= -10; int bar= 10;
+      long long int foo64= -10; long long int bar64= 10;
+      if (!__sync_fetch_and_add(&foo, bar) || foo)
+        return -1;
+      bar= __sync_lock_test_and_set(&foo, bar);
+      if (bar || foo != 10)
+        return -1;
+      bar= __sync_val_compare_and_swap(&bar, foo, 15);
+      if (bar)
+        return -1;
+      if (!__sync_fetch_and_add(&foo64, bar64) || foo64)
+        return -1;
+      bar64= __sync_lock_test_and_set(&foo64, bar64);
+      if (bar64 || foo64 != 10)
+        return -1;
+      bar64= __sync_val_compare_and_swap(&bar64, foo, 15);
+      if (bar64)
+        return -1;
+      return 0;
+    }"
+    HAVE_GCC_SYNC_BUILTINS)
+
+ENDIF(NOT WIN32)
+
 
 IF(WITH_VALGRIND)
   SET(VALGRIND_HEADERS "valgrind/memcheck.h;valgrind/valgrind.h")
@@ -632,51 +659,55 @@ IF(WITH_VALGRIND)
   ENDIF()
 ENDIF()
 
-# Check for gettid() system call
-CHECK_C_SOURCE_COMPILES("
-#include <sys/types.h>
-#include <sys/syscall.h>
-#include <unistd.h>
-int main(int ac, char **av)
-{
-  unsigned long long tid = syscall(SYS_gettid);
-  return (tid != 0 ? 0 : 1);
-}"
-HAVE_SYS_GETTID)
+if(NOT WIN32)
 
-# Check for pthread_getthreadid_np()
-CHECK_C_SOURCE_COMPILES("
-#include <pthread_np.h>
-int main(int ac, char **av)
-{
-  unsigned long long tid = pthread_getthreadid_np();
-  return (tid != 0 ? 0 : 1);
-}"
-HAVE_PTHREAD_GETTHREADID_NP)
+  # Check for gettid() system call
+  CHECK_C_SOURCE_COMPILES("
+    #include <sys/types.h>
+    #include <sys/syscall.h>
+    #include <unistd.h>
+    int main(int ac, char **av)
+    {
+      unsigned long long tid = syscall(SYS_gettid);
+      return (tid != 0 ? 0 : 1);
+    }"
+    HAVE_SYS_GETTID)
 
-# Check for pthread_threadid_np()
-CHECK_C_SOURCE_COMPILES("
-#include <pthread.h>
-int main(int ac, char **av)
-{
-  unsigned long long tid64;
-  pthread_threadid_np(NULL, &tid64);
-  return (tid64 != 0 ? 0 : 1);
-}"
-HAVE_PTHREAD_THREADID_NP)
+  # Check for pthread_getthreadid_np()
+  CHECK_C_SOURCE_COMPILES("
+    #include <pthread_np.h>
+    int main(int ac, char **av)
+    {
+      unsigned long long tid = pthread_getthreadid_np();
+      return (tid != 0 ? 0 : 1);
+    }"
+    HAVE_PTHREAD_GETTHREADID_NP)
 
-# Check for pthread_self() returning an integer type
-CHECK_C_SOURCE_COMPILES("
-#include <sys/types.h>
-#include <pthread.h>
-int main(int ac, char **av)
-{
-  unsigned long long tid = pthread_self();
-  return (tid != 0 ? 0 : 1);
-}"
-HAVE_INTEGER_PTHREAD_SELF
-FAIL_REGEX "warning: incompatible pointer to integer conversion"
-)
+  # Check for pthread_threadid_np()
+  CHECK_C_SOURCE_COMPILES("
+    #include <pthread.h>
+    int main(int ac, char **av)
+    {
+      unsigned long long tid64;
+      pthread_threadid_np(NULL, &tid64);
+      return (tid64 != 0 ? 0 : 1);
+    }"
+    HAVE_PTHREAD_THREADID_NP)
+
+  # Check for pthread_self() returning an integer type
+  CHECK_C_SOURCE_COMPILES("
+    #include <sys/types.h>
+    #include <pthread.h>
+    int main(int ac, char **av)
+    {
+      unsigned long long tid = pthread_self();
+      return (tid != 0 ? 0 : 1);
+    }"
+    HAVE_INTEGER_PTHREAD_SELF
+    FAIL_REGEX "warning: incompatible pointer to integer conversion"
+    )
+
+endif(NOT WIN32)
 
 CHECK_CXX_SOURCE_COMPILES(
   "

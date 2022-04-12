@@ -138,6 +138,7 @@ set(ENV_OR_OPT_PATH_VARS
   MYSQL_PLUGIN_DIR
 )
 
+
 foreach(_xvar ${ENV_OR_OPT_VARS})
 
   if((DEFINED ${_xvar}) AND
@@ -159,6 +160,7 @@ foreach(_xvar ${ENV_OR_OPT_VARS})
     list(FIND ENV_OR_OPT_PATH_VARS ${_xvar} _index)
     if (${_index} GREATER -1)
       file(TO_CMAKE_PATH "${${_xvar}}" ${_xvar})
+      get_filename_component(${_xvar} ${${_xvar}} ABSOLUTE)
     endif()
   endif()
 
