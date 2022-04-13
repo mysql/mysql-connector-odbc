@@ -1670,6 +1670,30 @@ static char *ui_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" \
                       "</packing>\n" \
                     "</child>\n" \
                     "<child>\n" \
+                      "<object class=\"GtkLabel\" id=\"label_tls_versions\">\n" \
+                        "<property name=\"visible\">True</property>\n" \
+                        "<property name=\"can_focus\">False</property>\n" \
+                        "<property name=\"label\" translatable=\"yes\">TLS Versions</property>\n" \
+                        "<property name=\"xalign\">1</property>\n" \
+                      "</object>\n" \
+                      "<packing>\n" \
+                        "<property name=\"top_attach\">7</property>\n" \
+                        "<property name=\"bottom_attach\">8</property>\n" \
+                      "</packing>\n" \
+                    "</child>\n" \
+                    "<child>\n" \
+                      "<object class=\"GtkEntry\" id=\"tls_versions\">\n" \
+                        "<property name=\"visible\">True</property>\n" \
+                        "<property name=\"can_focus\">True</property>\n" \
+                      "</object>\n" \
+                      "<packing>\n" \
+                        "<property name=\"left_attach\">1</property>\n" \
+                        "<property name=\"right_attach\">2</property>\n" \
+                        "<property name=\"top_attach\">7</property>\n" \
+                        "<property name=\"bottom_attach\">8</property>\n" \
+                      "</packing>\n" \
+                    "</child>\n" \
+                    "<child>\n" \
                       "<object class=\"GtkCheckButton\" id=\"no_tls_1_2\">\n" \
                         "<property name=\"label\" translatable=\"yes\">Disable TLS Version 1.2</property>\n" \
                         "<property name=\"visible\">True</property>\n" \
@@ -1681,8 +1705,8 @@ static char *ui_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" \
                       "<packing>\n" \
                         "<property name=\"left_attach\">1</property>\n" \
                         "<property name=\"right_attach\">2</property>\n" \
-                        "<property name=\"top_attach\">7</property>\n" \
-                        "<property name=\"bottom_attach\">8</property>\n" \
+                        "<property name=\"top_attach\">8</property>\n" \
+                        "<property name=\"bottom_attach\">9</property>\n" \
                       "</packing>\n" \
                     "</child>\n" \
                     "<child>\n" \
@@ -1697,8 +1721,8 @@ static char *ui_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" \
                       "<packing>\n" \
                         "<property name=\"left_attach\">1</property>\n" \
                         "<property name=\"right_attach\">2</property>\n" \
-                        "<property name=\"top_attach\">8</property>\n" \
-                        "<property name=\"bottom_attach\">9</property>\n" \
+                        "<property name=\"top_attach\">9</property>\n" \
+                        "<property name=\"bottom_attach\">10</property>\n" \
                       "</packing>\n" \
                     "</child>\n" \
                   "</object>\n" \
@@ -3613,13 +3637,11 @@ static char *ui_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" \
                       "</packing>\n" \
                     "</child>\n" \
                     "<child>\n" \
-                      "<object class=\"GtkCheckButton\" id=\"no_tls_1\">\n" \
-                        "<property name=\"label\" translatable=\"yes\">Disable TLS Version 1</property>\n" \
+                      "<object class=\"GtkLabel\" id=\"label_tls_versions\">\n" \
                         "<property name=\"visible\">True</property>\n" \
-                        "<property name=\"can_focus\">True</property>\n" \
-                        "<property name=\"receives_default\">False</property>\n" \
-                        "<property name=\"xalign\">0.5</property>\n" \
-                        "<property name=\"draw_indicator\">True</property>\n" \
+                        "<property name=\"can_focus\">False</property>\n" \
+                        "<property name=\"label\" translatable=\"yes\">TLS Versions</property>\n" \
+                        "<property name=\"xalign\">1</property>\n" \
                       "</object>\n" \
                       "<packing>\n" \
                         "<property name=\"top_attach\">7</property>\n" \
@@ -3627,17 +3649,15 @@ static char *ui_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" \
                       "</packing>\n" \
                     "</child>\n" \
                     "<child>\n" \
-                      "<object class=\"GtkCheckButton\" id=\"no_tls_1_1\">\n" \
-                        "<property name=\"label\" translatable=\"yes\">Disable TLS Version 1.1</property>\n" \
+                      "<object class=\"GtkEntry\" id=\"tls_versions\">\n" \
                         "<property name=\"visible\">True</property>\n" \
                         "<property name=\"can_focus\">True</property>\n" \
-                        "<property name=\"receives_default\">False</property>\n" \
-                        "<property name=\"xalign\">0.5</property>\n" \
-                        "<property name=\"draw_indicator\">True</property>\n" \
                       "</object>\n" \
                       "<packing>\n" \
-                        "<property name=\"top_attach\">8</property>\n" \
-                        "<property name=\"bottom_attach\">9</property>\n" \
+                        "<property name=\"left_attach\">1</property>\n" \
+                        "<property name=\"right_attach\">2</property>\n" \
+                        "<property name=\"top_attach\">7</property>\n" \
+                        "<property name=\"bottom_attach\">8</property>\n" \
                       "</packing>\n" \
                     "</child>\n" \
                     "<child>\n" \
@@ -3652,8 +3672,8 @@ static char *ui_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" \
                       "<packing>\n" \
                         "<property name=\"left_attach\">1</property>\n" \
                         "<property name=\"right_attach\">2</property>\n" \
-                        "<property name=\"top_attach\">7</property>\n" \
-                        "<property name=\"bottom_attach\">8</property>\n" \
+                        "<property name=\"top_attach\">8</property>\n" \
+                        "<property name=\"bottom_attach\">9</property>\n" \
                       "</packing>\n" \
                     "</child>\n" \
                     "<child>\n" \
@@ -3668,8 +3688,8 @@ static char *ui_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" \
                       "<packing>\n" \
                         "<property name=\"left_attach\">1</property>\n" \
                         "<property name=\"right_attach\">2</property>\n" \
-                        "<property name=\"top_attach\">8</property>\n" \
-                        "<property name=\"bottom_attach\">9</property>\n" \
+                        "<property name=\"top_attach\">9</property>\n" \
+                        "<property name=\"bottom_attach\">10</property>\n" \
                       "</packing>\n" \
                     "</child>\n" \
                     "<child>\n" \

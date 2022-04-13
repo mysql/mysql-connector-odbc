@@ -398,10 +398,10 @@ void syncTabsData(HWND hwnd, DataSource *params)
   GET_STRING_TAB(SSL_TAB, sslcipher);
   GET_COMBO_TAB(SSL_TAB, sslmode);
 
-  //GET_BOOL_TAB(SSL_TAB,sslverify);
   GET_STRING_TAB(SSL_TAB, rsakey);
   GET_BOOL_TAB(SSL_TAB, no_tls_1_2);
   GET_BOOL_TAB(SSL_TAB, no_tls_1_3);
+  GET_STRING_TAB(SSL_TAB, tls_versions);
 
   /* 7 - Misc*/
   GET_BOOL_TAB(MISC_TAB, safe);
@@ -512,6 +512,8 @@ void syncTabs(HWND hwnd, DataSource *params)
 
     SET_BOOL_TAB(SSL_TAB, no_tls_1_2);
     SET_BOOL_TAB(SSL_TAB, no_tls_1_3);
+
+    SET_STRING_TAB(SSL_TAB, tls_versions);
   }
 
   /* 7 - Misc*/

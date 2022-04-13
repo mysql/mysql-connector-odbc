@@ -1405,7 +1405,79 @@ DECLARE_TEST(t_ssl_align)
   return OK;
 }
 
+const char* make_tls_str(const char *str, char *out, char *expected, char ssl_disabled)
+{
+  if (ssl_disabled)
+  {
+    sprintf(out, "SSLMODE=DISABLED;TLS-VERSIONS=%s", str);
+    *expected = 0;
+    return str;
+  }
+
+  char ver[16];
+  int num = 0;
+  while (str && *str && *str != ',')
+  {
+    ver[num] = *str;
+    ++num;
+    ++str;
+  }
+  ver[num] = 0;
+
+  sprintf(out, "SSLMODE=REQUIRED;TLS-VERSIONS=%s;NO_TLS_%c_%c=1",
+          ver, ver[num - 3], ver[num - 1]);
+  memcpy(expected, ver, num + 1);
+
+  if (*str == ',')
+    return ++str;
+
+  return NULL;
+}
+
+DECLARE_TEST(t_tls_versions)
+{
+  ok_sql(hstmt, "SHOW VARIABLES LIKE 'tls_version'");
+  ok_stmt(hstmt, SQLFetch(hstmt));
+  char tls_versions_list[255] = { 0 };
+
+  my_fetch_str(hstmt, tls_versions_list, 2);
+  SQLFetch(hstmt);
+  ok_stmt(hstmt, SQLFreeStmt(hstmt, SQL_CLOSE));
+
+  DECLARE_BASIC_HANDLES(henv1, hdbc1, hstmt1);
+
+  char ssl_disabled = 1;
+  char con_str[255];
+  char exp_result[16];
+  const char *list = tls_versions_list;
+  while((list = make_tls_str(list, con_str, exp_result, ssl_disabled)))
+  {
+    SQLCHAR buf[1024] = { 0 };
+    ssl_disabled = 0;
+    int connect_res = alloc_basic_handles_with_opt(&henv1, &hdbc1, &hstmt1, NULL,
+                                          NULL, NULL, NULL, con_str);
+    if (connect_res == SQL_SUCCESS)
+    {
+      ok_sql(hstmt1, "SHOW STATUS LIKE 'Ssl_version'");
+
+      ok_stmt(hstmt1, SQLFetch(hstmt1));
+      ok_stmt(hstmt1, SQLGetData(hstmt1, 2, SQL_C_CHAR, buf, sizeof(buf), NULL));
+      is_str(exp_result, buf, strlen(exp_result));
+    }
+    else
+    {
+      is(OK == check_errmsg_ex(hdbc1, SQL_HANDLE_DBC,
+        "SSL connection error: No valid TLS version available"))
+    }
+
+    free_basic_handles(&henv1, &hdbc1, &hstmt1);
+  }
+
+  return OK;
+}
+
 BEGIN_TESTS
+  ADD_TEST(t_tls_versions)
   ADD_TEST(t_tls_opts)
   ADD_TEST(t_ssl_mode)
   ADD_TEST(my_basics)

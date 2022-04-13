@@ -458,26 +458,35 @@ SQLRETURN DBC::connect(DataSource *dsrc)
   {
     std::string tls_options;
 
-    std::map<std::string, bool> opts = {
-      { "TLSv1.2", !dsrc->no_tls_1_2 },
-      { "TLSv1.3", !dsrc->no_tls_1_3 },
-    };
-
-    for (auto &opt : opts)
+    if (dsrc->tls_versions)
     {
-      if (!opt.second)
-        continue;
+      // If tls-versions is used the NO_TLS_X options are deactivated
+      tls_options = ds_get_utf8attr(dsrc->tls_versions, &dsrc->tls_versions8);
+    }
+    else
+    {
+      std::map<std::string, bool> opts = {
+        { "TLSv1.2", !dsrc->no_tls_1_2 },
+        { "TLSv1.3", !dsrc->no_tls_1_3 },
+      };
 
-      if (!tls_options.empty())
-         tls_options.append(",");
-      tls_options.append(opt.first);
+      for (auto &opt : opts)
+      {
+        if (!opt.second)
+          continue;
+
+        if (!tls_options.empty())
+           tls_options.append(",");
+        tls_options.append(opt.first);
+      }
     }
 
-    if (tls_options.length())
-      mysql_options(mysql, MYSQL_OPT_TLS_VERSION, tls_options.c_str());
-    else
+    if (!tls_options.length() ||
+        mysql_options(mysql, MYSQL_OPT_TLS_VERSION, tls_options.c_str()))
+    {
       return set_error("HY000",
         "SSL connection error: No valid TLS version available", 0);
+    }
   }
 #endif
 

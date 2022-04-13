@@ -646,6 +646,23 @@ int check_sqlstate_ex(SQLHANDLE hnd, SQLSMALLINT hndtype, char *sqlstate)
 }
 
 
+int check_errmsg_ex(SQLHANDLE hnd, SQLSMALLINT hndtype, const char *msg)
+{
+  SQLCHAR     sql_state[6];
+  SQLINTEGER  err_code= 0;
+  SQLCHAR     err_msg[SQL_MAX_MESSAGE_LENGTH]= {0};
+  SQLSMALLINT err_len= 0;
+
+  memset(err_msg, 'C', SQL_MAX_MESSAGE_LENGTH);
+  SQLGetDiagRec(hndtype, hnd, 1, sql_state, &err_code, err_msg,
+                SQL_MAX_MESSAGE_LENGTH - 1, &err_len);
+
+  is(strstr((char*)err_msg, msg) != NULL);
+
+  return OK;
+}
+
+
 /**
   Print error and diagnostic information for ODBC API functions that did not
   finish with SQL_SUCCESS(_WITH_INFO) result

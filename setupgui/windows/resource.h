@@ -147,6 +147,7 @@
 #define IDC_EDIT_pwd3                   10070
 #define IDC_EDIT_oci_config_file        10071
 #define IDC_CHOOSER_oci_config_file     10072
+#define IDC_EDIT_tls_versions           10073
 #define IDC_BUTTON_TEST                 11014
 #define IDC_BUTTON_HELP                 11015
 #define IDC_STATIC                      -1
