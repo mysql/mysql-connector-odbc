@@ -612,10 +612,18 @@ IF(WIN32)
   # can't test for the location here, a IF(EXISTS ...) is run at
   # "cmake" invocation time, not when we are to install. So we do a
   # bit of a hack here until finding a better solution.
+
+  # FIXME: Have an option to install PDBs also for Release builds?
+  #
+  # FIXME: Better control over PDBs that we install/ship -- for example
+  # install only PDBs for specific targets using install(FILE ...) and
+  # generator expression $<TARGET_PDB_FILE:tgt>
+
   INSTALL(DIRECTORY
     ${PROJECT_BINARY_DIR}/bin/RelWithDebInfo/
     ${PROJECT_BINARY_DIR}/bin/Debug/
     DESTINATION bin
+    CONFIGURATIONS Debug RelWithDebInfo
     FILES_MATCHING
     PATTERN *.pdb
   )
@@ -623,6 +631,7 @@ IF(WIN32)
     ${PROJECT_BINARY_DIR}/lib/RelWithDebInfo/
     ${PROJECT_BINARY_DIR}/lib/Debug/
     DESTINATION lib
+    CONFIGURATIONS Debug RelWithDebInfo
     FILES_MATCHING
     PATTERN *.pdb
   )
@@ -633,132 +642,363 @@ ELSE(WIN32)
 
 ENDIF(WIN32)
 
-macro(bundle_lib lib)
+#
+# Bundle 3rd party dependencies if needed
+# =======================================
+
+if(MYSQLCLIENT_STATIC_LINKING AND NOT RPM_BUILD)
+  set(BUNDLE_DEPENDENCIES 1)
+endif()
+
+# List client-side plugins, their dependencies and dependencies of the client 
+# library that are bundled with the server and should be bundled with 
+# connector. Also list plugins and libraries that can be found with the server 
+# but which should be ignored.
+#
+# When building in MAINTAINER_MODE cmake will report error if it finds 
+# a plugin or 3rd party librariy which is not listed here. When that happens 
+# the lists should be updated.
+
+set(AUTH_PLUGINS
+  fido
+  kerberos
+  ldap_sasl
+  oci
+)
+
+
+# Plugin dependencies.
+#
+# Warning: If one library name is a prefix of the other, the longer name
+# should be listed first, otherwise the logic detecting missing dependencies 
+# will break... For example: `krb5support` must go before `krb5`
+
+set(AUTH_DEPS_fido fido2)
+
+# Note: Windows implementation does not depend on MIT Kerberos library, it uses 
+# native Win APIs
+
+if(NOT WIN32)
+  set(AUTH_DEPS_kerberos gssapi_krb5 k5crypto krb5support krb5 com_err)
+endif()
+
+set(AUTH_DEPS_ldap_sasl libsasl ${AUTH_DEPS_kerberos})
+if(WIN32)
+  list(APPEND AUTH_DEPS_ldap_sasl saslSCRAM)
+endif()
+
+# additional client-side plugins (if any)
+
+set(PLUGINS)
+
+# additional bundled dependencies of the client library
+
+set(BUNDLED_LIBS
+  libssl libcrypto ssleay libeay
+)
+
+set(IGNORED_PLUGINS qa_auth_client)
+
+set(IGNORED_LIBS
+  libmysql lber libprotobuf
+  ldap  # note: this is needed only by server-side plugin
+  libcurl libmecab zlib
+)
+
+
+# -------------
+
+function(bundle_lib lib)
+
+  get_filename_component(lib_name ${lib} NAME)
+
+  if(bundled_${lib_name})
+    return()
+  endif()
+  set(bundled_${lib_name} true PARENT_SCOPE)
 
   message("Bundling library: ${lib}")
-  get_filename_component(lib_name ${lib} NAME)
-  set(bundled_${lib_name} true)
 
   if(WIN32 OR APPLE)
     install(FILES ${lib}
       DESTINATION "${LIB_SUBDIR}"
       COMPONENT OdbcDll
-      )
+    )
   else()
     install(FILES ${lib}
       DESTINATION "${LIB_SUBDIR}/private"
       COMPONENT OdbcDll
-      )
+    )
   endif()
 
-endmacro(bundle_lib)
+endfunction(bundle_lib)
 
 
-IF(MYSQLCLIENT_STATIC_LINKING AND NOT RPM_BUILD)
+# Bundle libraries listed in a list variable ${to_bundle}.
+# Libraries that were found and bundled are removed from ${to_bundle} list. 
+# Other libraries found but not listed in ${to_bundle} are returned 
+# in ${ignored} variable.
+# If additional arguments are given, they are used as glob expressions to find 
+# the libraries to be bundled, otherwise 3rd parties bundled in with the server 
+# are searched in ${MYSQL_LIB_DIR} locations.
 
-  #Look for libraries and client-side plugins which are
-  #bundled with the mysql client library and which are
-  # required by it and bundle them as well.
+macro(bundle_libs to_bundle ignored)
 
-  message("looking for bundled client lib deps")
+  #message("== bundle_libs: ${${to_bundle}}")
 
-  # Start with OpenSSL libraries that were already found before
+  if(ARGN)
 
-  if(OPENSSL_LIBRARY)
+   file(GLOB _bundled ${ARGN})
+  
+  else()
 
-    get_filename_component(OPENSSL_DIR ${OPENSSL_LIBRARY} DIRECTORY)
-    file(GLOB _bundled "${OPENSSL_DIR}/*${CMAKE_SHARED_LIBRARY_SUFFIX}*")
-
-    foreach(lib IN LISTS _bundled)
-
-      get_filename_component(lib_name ${lib} NAME)
-
-      if(
-        lib_name MATCHES "libssl|libcrypto|ssleay|libeay"
-        AND NOT bundled_${lib_name}
-      )
-        bundle_lib(${lib})
-      endif()
-
-    endforeach(lib)
-
-  endif()
-
-  #
-  # Note: Currently we simply copy all libraries bundled in the server installation
-  # filtering-out these that we know are not needed on the client side.
-  #
-  # More precise approach would be to get information about external dependencies
-  # from mysql_config and other sources and bundle only these libraries that we
-  # know are needed. But this is not implemented yet. Note also that dependencies
-  # reported by mysql_config in MYSQL_EXTERNAL_DEPENDENCIES do not include things
-  # like client-side plugins and their dependencies.
-  #
-
-  file(GLOB _bundled1 "${MYSQL_LIB_DIR}/*${CMAKE_SHARED_LIBRARY_SUFFIX}*")
-  file(GLOB _bundled2 "${MYSQL_LIB_DIR}/private/*${CMAKE_SHARED_LIBRARY_SUFFIX}*")
-
-  # On windows, libs are on bin directory
-
-  if(WIN32)
-    file(GLOB _bundled3 "${MYSQL_DIR}/bin/*${CMAKE_SHARED_LIBRARY_SUFFIX}*")
-  endif()
-
-  foreach(lib IN LISTS _bundled1 _bundled2 _bundled3)
-
-    get_filename_component(lib_name ${lib} NAME)
-
-    if(
-      NOT lib_name MATCHES "mysql|protobuf|lber|ldap_r|curl|mecab|^zlib"
-      AND NOT bundled_${lib_name}
+    file(GLOB _bundled
+      "${MYSQL_LIB_DIR}/*${CMAKE_SHARED_LIBRARY_SUFFIX}*"
+      "${MYSQL_LIB_DIR}/private/*${CMAKE_SHARED_LIBRARY_SUFFIX}*"  
     )
 
-      bundle_lib(${lib})
+    # On windows, libs are in bin directory
 
-      # Also bundle modules required by the SASL library if they exist
-      # and the library is bundled.
+    if(WIN32)
+      file(GLOB _bundled1 "${MYSQL_DIR}/bin/*${CMAKE_SHARED_LIBRARY_SUFFIX}*")
+    endif()
+
+  endif()
+
+  # Process collected libraries
+  set(libs ${${to_bundle}})
+
+  foreach(lib IN LISTS _bundled _bundled1)
+
+    get_filename_component(lib_name ${lib} NAME)
+    #message("== looking at 3rd party lib: ${lib_name} (${bundled_${lib_name}})")
+
+    # Match library name against names in to_bundle list and in case of match remove that name from the list
+
+    unset(found)
+    foreach(name ${libs})
+
+      #message(STATUS "checking lib ${pos}: ${name}")
 
       if(
-        lib_name MATCHES "libsasl" AND NOT bundled_sasl_modules
-        AND EXISTS "${MYSQL_LIB_DIR}/private/sasl2"
+        (lib_name MATCHES "^${name}")
+        OR ((NOT WIN32) AND (lib_name MATCHES "^lib${name}"))
       )
-
-        message("Bundling SASL modules")
-        set(bundled_sasl_modules true)
-        install(DIRECTORY "${MYSQL_LIB_DIR}/private/sasl2"
-          DESTINATION "${LIB_SUBDIR}/private"
-          COMPONENT OdbcDll
-        )
-
+        #message(STATUS "removing from list: ${name}")
+        list(REMOVE_ITEM ${to_bundle} ${name})
+        bundle_lib(${lib})
+        set(found ${name})
+        break()
       endif()
 
+    endforeach()
+
+    if(NOT found)
+      #message(STATUS "ignoring it (${lib_name})")
+      list(APPEND ${ignored} ${lib_name})
     endif()
 
   endforeach()
 
-  # Now look at client-side plugins
+endmacro(bundle_libs)
+
+
+# Bundle plugins listed in PLUGINS list. Each bundled plugin P is removed from 
+# the list and its dependedencies listed in DEPS_${P} are also bundled. Client 
+# side plugins found with the server and not listed in PLUGINS are returned 
+# in ${ignored} list.
+
+macro(bundle_plugins ignored)
+
+  #message("== PLUGINS: ${PLUGINS}")
 
   file(GLOB _bundled "${MYSQL_PLUGIN_DIR}/*${CMAKE_SHARED_LIBRARY_SUFFIX}*")
+
+  set(plugins ${PLUGINS})
 
   foreach(lib ${_bundled})
 
     get_filename_component(lib_name ${lib} NAME_WE)
 
-    if(
-      lib_name MATCHES "_client"
-      AND NOT lib_name MATCHES "qa_auth_client"
-    )
+    if(NOT lib_name MATCHES "_client")
+      continue()
+    endif()
+
+    #message("== looking at client-side plugin: ${lib_name}")
+
+    # Match plugin name against names in PLUGINS list and in case of match 
+    # remove that name from the list
+
+    unset(plugin)
+    foreach(check ${plugins})
+
+      #message(STATUS "checking plugin ${pos}: ${check}")
+
+      if(
+        lib_name MATCHES "^${check}"
+      )
+        #message(STATUS "plugin name match")
+        set(plugin ${check})
+        list(REMOVE_ITEM PLUGINS ${plugin})
+        break()
+      endif()
+
+    endforeach()
+
+    if(NOT plugin)
+      #message(STATUS "ignoring it")
+      list(APPEND ${ignored} ${lib_name})
+      continue()
+    endif()
 
     message("Bundling client plugin: ${lib}")
 
     install(FILES "${lib}"
       DESTINATION "${LIB_SUBDIR}/plugin"
-      COMPONENT JDBCDll
+      COMPONENT JDBCDll  # FIXME: use ODBC name
     )
 
+    # See if libsasl is bundled to also bundle sasl plugins
+    if("${DEPS_${plugin}}" MATCHES "sasl")
+      set(sasl_bundled 1)
     endif()
+
+    # Bundle plugin dependencies
+
+    bundle_libs(DEPS_${plugin} ignored_deps)
+
+    # In MAINTAINER_MODE report error if some plugin dependencies were not found
+
+    if(DEPS_${plugin})
+
+      if("${DEPS_${plugin}}" MATCHES "sasl")
+        #message(STATUS "required SASL dependency not found, skipping SASL plugins")
+        set(sasl_bundled 0)
+      endif()
+
+      if(MAINTAINER_MODE)
+        message(SEND_ERROR
+          "The following dependencies of bundled plugin ${plugin}"
+          " were not found: ${DEPS_${plugin}}"
+        )
+      endif()
+
+    endif()
+
   endforeach()
 
-ENDIF()
+  # Also bundle modules required by the SASL library if they exist
+  # and the library was bundled.
+
+  if(
+    sasl_bundled AND NOT bundled_sasl_modules
+    AND EXISTS "${MYSQL_LIB_DIR}/private/sasl2"
+  )
+
+    message("Bundling SASL modules")
+    set(bundled_sasl_modules true)
+    install(DIRECTORY "${MYSQL_LIB_DIR}/private/sasl2"
+      DESTINATION "${LIB_SUBDIR}/private"
+      COMPONENT OdbcDll #FIXME
+    )
+
+  endif()
+
+endmacro(bundle_plugins)
+
+
+if(BUNDLE_DEPENDENCIES)
+
+  message(STATUS "Looking for bundled client-side plugins")
+
+  # add authentication plugins to the list of plugins
+
+  foreach(auth ${AUTH_PLUGINS})
+    set(plugin "authentication_${auth}")
+    list(APPEND PLUGINS ${plugin})
+    set(DEPS_${plugin} ${AUTH_DEPS_${auth}})
+    list(APPEND IGNORED_LIBS ${DEPS_${plugin}})
+  endforeach()
+
+  # Bundle the plugins and their dependencies.
+ 
+  unset(ingored)
+  bundle_plugins(ignored)
+
+  if(MAINTAINER_MODE)
+
+    foreach(plugin ${PLUGINS})
+      message(STATUS "known client-side plugin not found and not bundled: ${plugin}")
+    endforeach()
+
+    foreach(plugin ${IGNORED_PLUGINS})
+      list(FILTER ignored EXCLUDE REGEX "^${plugin}")
+    endforeach()
+
+    if(ignored)
+      message(SEND_ERROR
+        "Unrecognized client-side plugins bundled with the server were found,"
+        " please update definitions in cmake lists to either ignore them"
+        " or bundle with the conector: ${ignored}"
+      )
+    endif()
+
+  endif(MAINTAINER_MODE)
+
+
+  message(STATUS "Looking for bundled client lib dependencies")
+
+  # Bundle additional libraries listed in BUNDLED_LIBS 
+  # For OpenSSL libs, first look in the location of the library that 
+  # is actually being used in the build.
+
+  #message("== BUNDLED_LIBS: ${BUNDLED_LIBS}")
+  #message("== IGNORED_LIBS: ${IGNORED_LIBS}")
+
+  get_filename_component(OPENSSL_DIR ${OPENSSL_LIBRARY} DIRECTORY)
+
+  bundle_libs(BUNDLED_LIBS extra_libs
+   "${OPENSSL_DIR}/*${CMAKE_SHARED_LIBRARY_SUFFIX}*"
+  )
+  unset(extra_libs)
+  bundle_libs(BUNDLED_LIBS extra_libs)
+
+  # In MAINTAINER_MODE check whether all 3rd party libs found but not bundled 
+  # are listed in IGNORED_LIBS
+
+  if(MAINTAINER_MODE)
+
+    # Extend ignore list with libraries that are dependencies of known plugins 
+    # and are not listed in BUNDLED_LIBS. Otherwise we would get false errors
+    # below.
+
+    foreach(plugin PLUGINS)
+      list(APPEND IGNORED_LIBS ${DEPS_${plugin}})
+    endforeach()
+
+    # Remove from ${extra_libs} the libraries that we know we should ignore. 
+    # Also the openssl libs that might end up in ${extra_libs} bacause of two 
+    # stage search logic above.
+
+    #message("== extra_libs: ${extra_libs}")
+    foreach(lib ${IGNORED_LIBS} libssl libcrypto ssleay libeay)
+      #message(STATUS "removing: ${lib}")
+      list(FILTER extra_libs EXCLUDE REGEX "^${lib}")
+      list(FILTER extra_libs EXCLUDE REGEX "^lib${lib}")
+    endforeach()
+    #message("== extra_libs: ${extra_libs}")
+
+    if(extra_libs)
+      message(SEND_ERROR
+        "Unrecognized 3rd party library bundled with the server were found,"
+        " please update definitions in cmake lists to either ignore them"
+        " or bundle with the conector: ${extra_libs}"
+      )
+    endif()
+
+  endif()
+
+endif(BUNDLE_DEPENDENCIES)
+
 
 INCLUDE(CPack)

@@ -93,10 +93,9 @@ add_compile_options(${PLATFORM_CFLAGS})
 
 # The main GUI dialog module
 #
-# FIXME: It should be better a MODULE, not shared library, but for this
-# we need to also update WiX defintions (no import libraries for modules)
+# Note: MODULE will not produce import library (.lib) on Windows
 
-add_library(myodbc8S SHARED ${SETUP_SRCS})
+add_library(myodbc8S MODULE ${SETUP_SRCS})
 
 target_link_libraries(myodbc8S ${ODBCLIB} ${ODBCINSTLIB})
 

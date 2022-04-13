@@ -31,6 +31,8 @@
 ADD_EXECUTABLE(dltest dltest.c)
 set_target_properties(dltest PROPERTIES FOLDER Tests)
 
+INSTALL(TARGETS dltest DESTINATION test COMPONENT tests)
+
 IF(NOT WIN32)
 
   INCLUDE_DIRECTORIES(${DL_INCLUDES})

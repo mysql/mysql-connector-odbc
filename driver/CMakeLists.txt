@@ -77,12 +77,14 @@ WHILE(${DRIVER_INDEX} LESS ${DRIVERS_COUNT})
                                    error.h myutil.h parse.h ../MYODBC_MYSQL.h ../MYODBC_CONF.h ../MYODBC_ODBC.h)
   ENDIF(WIN32)
 
-  IF(APPLE)
-    ADD_LIBRARY(${DRIVER_NAME} MODULE ${DRIVER_SRCS})
-  ELSE(APPLE)
-    ADD_LIBRARY(${DRIVER_NAME} SHARED ${DRIVER_SRCS})
-  ENDIF(APPLE)
+  # Note: We build driver as a MODULE, because this is what it really is
+  # -- it is not a shared library meant to be linked to the user code
+  # but a dynamic module that will be loaded by ODBC manager. One
+  # consequence of this is that on Windows import libraries will not
+  # be generated nor installed.
 
+  ADD_LIBRARY(${DRIVER_NAME} MODULE ${DRIVER_SRCS})
+  
   ADD_COVERAGE(${DRIVER_NAME})
   INSTALL(TARGETS ${DRIVER_NAME} DESTINATION ${LIB_SUBDIR})
 
