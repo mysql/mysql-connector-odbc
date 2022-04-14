@@ -26,6 +26,7 @@
 // along with this program; if not, write to the Free Software Foundation, Inc.,
 // 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 
+#include <algorithm>
 #include <string>
 #include <vector>
 #include <fstream>
@@ -920,8 +921,154 @@ DECLARE_TEST(t_wl14586)
   return OK;
 }
 
+DECLARE_TEST(t_wl15114)
+{
+  DECLARE_BASIC_HANDLES(henv1, hdbc1, hstmt1);
+
+  // The list of ciphers even with TLSv1.2 still contains the TLSv1.3
+  // ciphersuites and currently we do not have a connection option that
+  // selects ciphersuites. So this test is limited to at most TLSv1.2
+  // but when the missing option is added the test should be extended to
+  // cover ciphersuites as well.
+  std::vector<std::string> suites = {
+    "TLS_AES_128_GCM_SHA256",
+    "TLS_AES_256_GCM_SHA384",
+    "TLS_CHACHA20_POLY1305_SHA256",
+    "TLS_AES_128_CCM_SHA256",
+    "TLS_AES_128_CCM_8_SHA256"
+  };
+
+  std::vector<std::string> approved_ciphers = {
+    "ECDHE-RSA-AES256-GCM-SHA384",
+    "DHE-RSA-AES128-GCM-SHA256",
+    "DHE-RSA-AES256-GCM-SHA384",
+    "ECDHE-RSA-AES128-SHA256",
+    "ECDHE-RSA-AES256-SHA384",
+    "DHE-RSA-AES256-SHA256",
+    "DHE-RSA-AES128-SHA256",
+    "ECDHE-RSA-AES128-SHA",
+    "ECDHE-RSA-AES256-SHA",
+    "DHE-RSA-AES128-SHA",
+    "DHE-RSA-AES256-SHA",
+    "AES128-GCM-SHA256",
+    "AES256-GCM-SHA384",
+    "AES128-SHA256",
+    "CAMELLIA256-SHA",
+    "CAMELLIA128-SHA"
+  };
+
+  std::vector<std::string> ciphers;
+
+  // Connect first time to get the list of available ciphers
+  is(OK == alloc_basic_handles_with_opt(&henv1, &hdbc1, &hstmt1, NULL,
+    NULL, NULL, NULL, (SQLCHAR*)"ssl-mode=REQUIRED;tls-versions=TLSv1.2;"));
+
+  auto get_status_var = [](SQLHSTMT stmt, std::string var, std::string &result) {
+    std::string buf;
+    const size_t bufsize = 32768;
+    buf.reserve(bufsize);
+    const char *data = buf.data();
+    std::string query = "SHOW SESSION STATUS LIKE '" + var + "'";
+
+    ok_stmt(stmt, SQLExecDirect(stmt, (SQLCHAR*)query.c_str(), SQL_NTS));
+    ok_stmt(stmt, SQLFetch(stmt));
+    ok_stmt(stmt, SQLGetData(stmt, 2, SQL_C_CHAR, (SQLPOINTER)data, bufsize, NULL));
+    is(SQL_NO_DATA == SQLFetch(stmt));
+    ok_stmt(stmt, SQLFreeStmt(stmt, SQL_CLOSE));
+    result = data;
+    return SQL_SUCCESS;
+  };
+
+  std::string str_cipher_list;
+  is(SQL_SUCCESS == get_status_var(hstmt1, "Ssl_cipher_list", str_cipher_list));
+
+  // Break the result string into individual cipher names
+  size_t pos = 0, prev = 0;
+  while ((pos = str_cipher_list.find(':', prev)) != std::string::npos)
+  {
+    const std::string item = str_cipher_list.substr(prev, pos - prev);
+    if (std::find(suites.begin(), suites.end(), item) == suites.end() &&
+      std::find(approved_ciphers.begin(),
+                approved_ciphers.end(), item) != approved_ciphers.end())
+    {
+      // Only add cipher names, but not suites
+      ciphers.push_back(item);
+    }
+    prev = pos + 1;
+  }
+
+  if (ciphers.size() < 3)
+  {
+    free_basic_handles(&henv1, &hdbc1, &hstmt1);
+    std::cout << "Server does not have enough ciphers to test the functionality\n";
+    return FAIL;
+  }
+
+  // Get the default cipher name used when the cipher is not specified
+  std::string str_cipher;
+  is(SQL_SUCCESS == get_status_var(hstmt1, "Ssl_cipher", str_cipher));
+
+  srand(time(0));
+  std::string new_str_ciphers[2];
+  int idx = 0;
+
+  // Get 1st cipher, which is not the same as used in the connection
+  do
+  {
+    idx = rand() % ciphers.size();
+  } while (str_cipher.compare(ciphers[idx]) == 0);
+  new_str_ciphers[0] = ciphers[idx];
+
+  // Get 2st cipher, which is not the same as used in the connection
+  do
+  {
+    idx = rand() % ciphers.size();
+  } while (str_cipher.compare(ciphers[idx]) == 0 ||
+    new_str_ciphers[0].compare(ciphers[idx]) == 0);
+
+  new_str_ciphers[1] = ciphers[idx];
+  std::cout << "Selected ciphers: " << new_str_ciphers[0] <<
+    ", " << new_str_ciphers[1] << std::endl;
+  free_basic_handles(&henv1, &hdbc1, &hstmt1);
+
+  // Check that when ssl-mode=DISABLED the encryption is not implicitly used
+  for (std::string mode :{ "REQUIRED", "DISABLED" })
+  {
+    // Check that the option names aliases work
+    for (std::string name : { "ssl-cipher", "SSLCIPHER" })
+    {
+      std::string new_opts = std::string("ssl-mode=" + mode +
+        ";tls-versions=TLSv1.2;") + name + "=" +  new_str_ciphers[0] +
+        ":" + new_str_ciphers[1];
+
+      is(OK == alloc_basic_handles_with_opt(&henv1, &hdbc1, &hstmt1, NULL,
+                                            NULL, NULL, NULL,
+                                            (SQLCHAR*)new_opts.c_str()));
+
+      str_cipher = "";
+      is(SQL_SUCCESS == get_status_var(hstmt1, "Ssl_cipher", str_cipher));
+      std::cout << "Current cipher is: " << str_cipher << std::endl;
+      if (mode.compare("REQUIRED") == 0)
+      {
+        // Must be one of previously selected ciphers
+        is(str_cipher.compare(new_str_ciphers[0]) == 0 ||
+           str_cipher.compare(new_str_ciphers[1]) == 0);
+      }
+      else
+      {
+        is(str_cipher.empty());
+      }
+
+      free_basic_handles(&henv1, &hdbc1, &hstmt1);
+    }
+  }
+
+  return OK;
+}
+
 
 BEGIN_TESTS
+  ADD_TEST(t_wl15114)
   ADD_TEST(t_wl13883)
   ADD_TEST(t_wl14490)
   ADD_TEST(t_wl14586)
