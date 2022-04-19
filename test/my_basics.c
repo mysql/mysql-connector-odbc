@@ -1415,14 +1415,25 @@ const char* make_tls_str(const char *str, char *out, char *expected, char ssl_di
   }
 
   char ver[16];
-  int num = 0;
-  while (str && *str && *str != ',')
+  int num;
+  do
   {
-    ver[num] = *str;
-    ++num;
-    ++str;
-  }
-  ver[num] = 0;
+    ver[0] = 0;
+    num = 0;
+    // Skip a leading comma
+    if (*str == ',')
+      ++str;
+
+    while (str && *str && *str != ',')
+    {
+      ver[num] = *str;
+      ++num;
+      ++str;
+    }
+    ver[num] = 0;
+    // Skip TLSv1 (len < 6) and TLSv1.1
+  } while (*str && (strlen((const char*)ver) < 6 ||
+                    strncmp((const char*)ver, "TLSv1.1", 7) == 0));
 
   sprintf(out, "SSLMODE=REQUIRED;TLS-VERSIONS=%s;NO_TLS_%c_%c=1",
           ver, ver[num - 3], ver[num - 1]);
