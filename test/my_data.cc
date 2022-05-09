@@ -26,7 +26,10 @@
 // along with this program; if not, write to the Free Software Foundation, Inc.,
 // 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 
-#include "odbctap.h"
+#include <string>
+#include <vector>
+
+#include "odbc_util.h"
 
 DECLARE_TEST(my_json)
 {
@@ -35,7 +38,7 @@ DECLARE_TEST(my_json)
   SQLCHAR buf[255], qbuf[255];
   DECLARE_BASIC_HANDLES(henv2, hdbc2, hstmt2);
   alloc_basic_handles_with_opt(&henv2, &hdbc2, &hstmt2, NULL, NULL, NULL, NULL,
-                               "CHARSET=utf8mb4");
+                               (SQLCHAR*)"CHARSET=utf8mb4");
 
   const char *json = "{\"key1\": \"value1\", \"key2\": \"value2\"}";
   const char *json2 = "{\"key1\": \"value10\", \"key2\": \"value20\"}";
@@ -43,7 +46,7 @@ DECLARE_TEST(my_json)
   ok_sql(hstmt2, "DROP TABLE IF EXISTS t_bug_json");
   ok_sql(hstmt2, "CREATE TABLE t_bug_json(id INT PRIMARY KEY, jdoc JSON)");
 
-  snprintf(qbuf, 255, "INSERT INTO t_bug_json VALUES (1, '%s')", json);
+  snprintf((char*)qbuf, 255, "INSERT INTO t_bug_json VALUES (1, '%s')", json);
   ok_stmt(hstmt2, SQLExecDirect(hstmt2, qbuf, SQL_NTS));
 
   ok_stmt(hstmt2, SQLColumns(hstmt2, mydb, SQL_NTS, NULL, 0,
@@ -57,7 +60,7 @@ DECLARE_TEST(my_json)
 
   expect_stmt(hstmt2, SQLFetch(hstmt2), SQL_NO_DATA);
   ok_stmt(hstmt2, SQLFreeStmt(hstmt2, SQL_CLOSE));
-  ok_stmt(hstmt2, SQLPrepare(hstmt2, "SELECT id, jdoc FROM t_bug_json WHERE id=?",
+  ok_stmt(hstmt2, SQLPrepare(hstmt2, (SQLCHAR*)"SELECT id, jdoc FROM t_bug_json WHERE id=?",
                             SQL_NTS));
   ok_stmt(hstmt2, SQLBindParameter(hstmt2, 1, SQL_PARAM_INPUT, SQL_C_DEFAULT,
                                   SQL_INTEGER, 10, 0, &id_value, 0, &out_bytes[0]));
@@ -68,7 +71,7 @@ DECLARE_TEST(my_json)
   expect_stmt(hstmt2, SQLFetch(hstmt2), SQL_NO_DATA);
 
   ok_stmt(hstmt2, SQLFreeStmt(hstmt2, SQL_CLOSE));
-  ok_stmt(hstmt2, SQLPrepare(hstmt2, "UPDATE t_bug_json SET jdoc = ? "\
+  ok_stmt(hstmt2, SQLPrepare(hstmt2, (SQLCHAR*)"UPDATE t_bug_json SET jdoc = ? "\
                                    "WHERE id = ?", SQL_NTS));
 
   out_bytes[0] = strlen(json2);
@@ -81,7 +84,7 @@ DECLARE_TEST(my_json)
 
   ok_stmt(hstmt2, SQLExecute(hstmt2));
 
-  ok_stmt(hstmt2, SQLPrepare(hstmt2, "SELECT id, jdoc FROM t_bug_json WHERE id=?",
+  ok_stmt(hstmt2, SQLPrepare(hstmt2, (SQLCHAR*)"SELECT id, jdoc FROM t_bug_json WHERE id=?",
                             SQL_NTS));
   out_bytes[0] = 0;
   ok_stmt(hstmt2, SQLBindParameter(hstmt2, 1, SQL_PARAM_INPUT, SQL_C_DEFAULT,
@@ -105,7 +108,7 @@ DECLARE_TEST(my_local_infile)
   SQLINTEGER num_rows = 0;
   FILE *csv_file = NULL;
 
-  if (strcmp(myserver, "localhost"))
+  if (strcmp((char*)myserver, "localhost"))
     return OK;
 
   DECLARE_BASIC_HANDLES(henv1, hdbc1, hstmt1);
@@ -120,7 +123,7 @@ DECLARE_TEST(my_local_infile)
   fclose(csv_file);
 
   ok_sql(hstmt, "SET GLOBAL local_infile=true");
-  rc = SQLExecDirect(hstmt, "LOAD DATA LOCAL INFILE 'test_local_infile.csv' " \
+  rc = SQLExecDirect(hstmt, (SQLCHAR*)"LOAD DATA LOCAL INFILE 'test_local_infile.csv' " \
                     "INTO TABLE test_local_infile " \
                     "FIELDS TERMINATED BY ',' " \
                     "LINES TERMINATED BY '\\n'", SQL_NTS);
@@ -132,10 +135,10 @@ DECLARE_TEST(my_local_infile)
 
   rc = alloc_basic_handles_with_opt(&henv1, &hdbc1, &hstmt1,
                                     NULL, NULL, NULL, NULL,
-                                    "ENABLE_LOCAL_INFILE=1");
+                                    (SQLCHAR*)"ENABLE_LOCAL_INFILE=1");
   if (rc != SQL_SUCCESS) goto END_TEST;
 
-  rc = SQLExecDirect(hstmt1,
+  rc = SQLExecDirect(hstmt1, (SQLCHAR*)
                      "LOAD DATA LOCAL INFILE 'test_local_infile.csv' " \
                      "INTO TABLE test_local_infile " \
                      "FIELDS TERMINATED BY ',' " \
@@ -147,7 +150,7 @@ DECLARE_TEST(my_local_infile)
       goto END_TEST;
   }
 
-  rc = SQLExecDirect(hstmt, "SELECT count(*) FROM test_local_infile", SQL_NTS);
+  rc = SQLExecDirect(hstmt, (SQLCHAR*)"SELECT count(*) FROM test_local_infile", SQL_NTS);
   if (rc != SQL_SUCCESS) goto END_TEST;
   rc = SQLFetch(hstmt);
   if (rc != SQL_SUCCESS) goto END_TEST;
@@ -179,11 +182,11 @@ DECLARE_TEST(t_bug106683)
 
   is(SQL_SUCCESS == alloc_basic_handles_with_opt(&henv1, &hdbc1, &hstmt1,
                    NULL, NULL, NULL, NULL,
-                   "NO_CACHE=1"));
+                   (SQLCHAR*)"NO_CACHE=1"));
 
   ok_stmt(hstmt1, SQLSetStmtAttr(hstmt1, SQL_ATTR_CURSOR_TYPE,
     (SQLPOINTER)SQL_CURSOR_FORWARD_ONLY, SQL_IS_UINTEGER));
-  ok_stmt(hstmt1, SQLPrepare(hstmt1, "SELECT * FROM bug106683", SQL_NTS));
+  ok_stmt(hstmt1, SQLPrepare(hstmt1, (SQLCHAR*)"SELECT * FROM bug106683", SQL_NTS));
   ok_stmt(hstmt1, SQLExecute(hstmt1));
 
   int rnum = 1;
@@ -216,7 +219,98 @@ DECLARE_TEST(t_bug106683)
 }
 
 
+DECLARE_TEST(t_bug34109678_collations)
+{
+  if (!mysql_min_version(hdbc, "8.0.30", 6))
+    skip("server does not support the additional collations");
+
+  try
+  {
+    std::vector<std::string> collations = {
+      "utf8mb4_nb_0900_ai_ci",
+      "utf8mb4_nb_0900_as_cs",
+      "utf8mb4_nn_0900_ai_ci",
+      "utf8mb4_nn_0900_as_cs",
+      "utf8mb4_sr_latn_0900_ai_ci",
+      "utf8mb4_sr_latn_0900_as_cs",
+      "utf8mb4_bs_0900_ai_ci",
+      "utf8mb4_bs_0900_as_cs",
+      "utf8mb4_bg_0900_ai_ci",
+      "utf8mb4_bg_0900_as_cs",
+      "utf8mb4_gl_0900_ai_ci",
+      "utf8mb4_gl_0900_as_cs",
+      "utf8mb4_mn_cyrl_0900_ai_ci",
+      "utf8mb4_mn_cyrl_0900_as_cs",
+      "utf8mb3_unicode_ci",
+      "utf8mb3_icelandic_ci",
+      "utf8mb3_latvian_ci",
+      "utf8mb3_romanian_ci",
+      "utf8mb3_slovenian_ci",
+      "utf8mb3_polish_ci",
+      "utf8mb3_estonian_ci",
+      "utf8mb3_spanish_ci",
+      "utf8mb3_swedish_ci",
+      "utf8mb3_turkish_ci",
+      "utf8mb3_czech_ci",
+      "utf8mb3_danish_ci",
+      "utf8mb3_lithuanian_ci",
+      "utf8mb3_slovak_ci",
+      "utf8mb3_spanish2_ci",
+      "utf8mb3_roman_ci",
+      "utf8mb3_persian_ci",
+      "utf8mb3_esperanto_ci",
+      "utf8mb3_hungarian_ci",
+      "utf8mb3_sinhala_ci",
+      "utf8mb3_german2_ci",
+      "utf8mb3_croatian_ci",
+      "utf8mb3_unicode_520_ci",
+      "utf8mb3_vietnamese_ci",
+      "utf8mb3_general_mysql500_ci"
+    };
+
+    odbc::connection conn(nullptr, nullptr, nullptr, nullptr, "PAD_SPACE=1;");
+    SQLHSTMT hstmt1 = conn.hstmt;
+
+    std::string tab_name = "t_bug34109678";
+    std::string fields = "id int primary key auto_increment";
+    std::string ins_query = "(NULL";
+    for (auto s : collations)
+    {
+      fields.append(",col_" + s + " CHAR(3) COLLATE " + s);
+      ins_query.append(",'abc'");
+    }
+    ins_query.append(")");
+    odbc::table tab(hstmt, tab_name, fields);
+    tab.insert(ins_query);
+    odbc::stmt_prepare(hstmt1, "SELECT * FROM " + tab_name);
+    odbc::stmt_execute(hstmt1);
+
+    size_t elem_num = collations.size() + 1;
+    std::vector<odbc::xbuf> databuf;
+    std::vector<SQLLEN> lenbuf;
+    databuf.reserve(elem_num);
+    lenbuf.reserve(elem_num);
+    for (int i = 0; i < collations.size() + 1; ++i)
+    {
+      databuf.emplace_back(odbc::xbuf(16));
+      lenbuf.emplace_back(16);
+      ok_stmt(hstmt, SQLBindCol(hstmt1, i + 1, SQL_C_CHAR, (char*)databuf[i], 16, &lenbuf[0]));
+    }
+
+    is(SQLFetch(hstmt1) == SQL_SUCCESS);
+    for (int i = 1; i < elem_num; ++i)
+    {
+      is_xstr(databuf[i].get_str(), "abc");
+    }
+    is_no_data(SQLFetch(hstmt1));
+    odbc::stmt_reset(hstmt1);
+  }
+  ENDCATCH;
+}
+
+
 BEGIN_TESTS
+  ADD_TEST(t_bug34109678_collations)
   ADD_TEST(t_bug106683)
   ADD_TEST(my_json)
   ADD_TEST(my_local_infile)

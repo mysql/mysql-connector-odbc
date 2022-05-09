@@ -32,6 +32,8 @@
 #include <string>
 #include <memory>
 #include <cstdio>
+#include <fstream>
+#include <iostream>
 
 #define X(s) odbc::xstring(s)
 
