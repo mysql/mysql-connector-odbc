@@ -38,6 +38,8 @@
  *    Add to the configuration GUIs
  *
  */
+
+#include <vector>
 #include "stringutil.h"
 #include "installer.h"
 
@@ -771,7 +773,6 @@ int ds_set_strattr(SQLWCHAR **attr, const SQLWCHAR *val)
   return *attr || 0;
 }
 
-
 /*
  * Same as ds_set_strattr, but allows truncating the given string. If
  * charcount is 0 or SQL_NTS, it will act the same as ds_set_strattr.
@@ -790,7 +791,27 @@ int ds_set_strnattr(SQLWCHAR **attr, const SQLWCHAR *val, size_t charcount)
   }
 
   if (val && *val)
-    *attr= sqlwchardup(val, charcount);
+  {
+    SQLWCHAR *temp = sqlwchardup(val, charcount);
+    SQLWCHAR *pos = temp;
+    while (charcount)
+    {
+      *pos = *val;
+      if (charcount > 1 && (
+        (*val == '}' && *(val + 1) == '}') ||
+        (*val == '{' && *(val + 1) == '{') ))
+      {
+        ++val;
+        --charcount;
+      }
+
+      ++pos;
+      ++val;
+      --charcount;
+    }
+    *pos = 0; // Terminate the string
+    *attr= temp;
+  }
   else
     *attr= NULL;
   return *attr || 0;
@@ -1142,8 +1163,26 @@ int ds_from_kvpair(DataSource *ds, const SQLWCHAR *attrs, SQLWCHAR delim)
     /* remove leading and trailing spaces on value */
     while (*(++split) == ' ');
 
+    auto find_bracket_end = [](const SQLWCHAR *wstr) {
+      const SQLWCHAR *e = wstr;
+      do
+      {
+        e = sqlwcharchr(e, '}');
+        if (e == nullptr || *(e + 1) == 0)
+          break;
+
+        // Found escape }}, skip to the next bracket
+        if (*(e + 1) == '}')
+          e += 2;
+        else
+          break;
+
+      } while (*e);
+      return e;
+    };
+
     /* check for an "escaped" value */
-    if ((*split == '{' && (end= sqlwcharchr(attrs, '}')) == NULL) ||
+    if ((*split == '{' && (end = find_bracket_end(attrs)) == NULL) ||
         /* or a delimited value */
         (*split != '{' && (end= sqlwcharchr(attrs, delim)) == NULL))
       /* otherwise, take the rest of the string */
@@ -1273,17 +1312,21 @@ int ds_to_kvpair(DataSource *ds, SQLWCHAR *attrs, size_t attrslen,
 
 
 /*
- * Calculate the length of serializing this DataSource to a string
- * including null terminator. Given in characters.
+ * Copy data source details into an attribute string. Use attrslen
+ * to limit the number of characters placed into the string.
+ *
+ * Return -1 for an error or truncation, otherwise the number of
+ * characters written.
  */
-size_t ds_to_kvpair_len(DataSource *ds)
+int ds_to_kvpair(DataSource *ds, SQLWSTRING &attrs, SQLWCHAR delim)
 {
-  size_t len= 0;
   int i;
   SQLWCHAR **strval;
   unsigned int *intval;
   BOOL *boolval;
   SQLWCHAR numbuf[21];
+
+  attrs.clear();
 
   for (i= 0; i < dsnparamcnt; ++i)
   {
@@ -1295,32 +1338,37 @@ size_t ds_to_kvpair_len(DataSource *ds)
 
     if (strval && *strval && **strval)
     {
-      len+= sqlwcharlen(dsnparams[i]);
-      len+= sqlwcharlen(*strval);
+      attrs.append(dsnparams[i]);
+      attrs.append({(SQLWCHAR)'='});
       if (value_needs_escaped(*strval))
-        len += 2; /* for escape braces */
-      len+= 2; /* for = and delimiter */
+      {
+        attrs.append({(SQLWCHAR)'{'});
+        attrs.append(escape_brackets(*strval, false));
+        attrs.append({(SQLWCHAR)'}'});
+      }
+      else
+        attrs.append(escape_brackets(*strval, false));
+
+      attrs.append({delim});
     }
+    /* only write out int values if they're non-zero */
     else if (intval && *intval)
     {
-      len+= sqlwcharlen(dsnparams[i]);
+      attrs.append(dsnparams[i]);
+      attrs.append({(SQLWCHAR)'='});
       sqlwcharfromul(numbuf, *intval);
-      len+= sqlwcharlen(numbuf);
-      len+= 2; /* for = and delimiter */
+      attrs.append(escape_brackets(numbuf, false));
+      attrs.append({delim});
     }
     else if (boolval && *boolval)
     {
-      len+= sqlwcharlen(dsnparams[i]);
-      len+= 3; /* for = and delimiter and '1' */
+      attrs.append(dsnparams[i]);
+      attrs.append({(SQLWCHAR)'=', (SQLWCHAR)'1'});
+      attrs.append({delim});
     }
   }
 
-  /*
-     delimiter is always counted at the end, so we don't add one
-     for the null terminator
-   */
-
-  return len;
+  return attrs.length();
 }
 
 
@@ -1421,7 +1469,8 @@ int ds_add(DataSource *ds)
   if (ds_add_strprop(ds->name, W_DESCRIPTION, ds->description)) goto error;
   if (ds_add_strprop(ds->name, W_SERVER     , ds->server     )) goto error;
   if (ds_add_strprop(ds->name, W_UID        , ds->uid        )) goto error;
-  if (ds_add_strprop(ds->name, W_PWD        , ds->pwd        )) goto error;
+  if (ds_add_strprop(ds->name, W_PWD        ,
+    ds->pwd ? escape_brackets(ds->pwd, false).c_str() : nullptr)) goto error;
 #if MFA_ENABLED
   if (ds_add_strprop(ds->name, W_PWD1       , ds->pwd1       )) goto error;
   if (ds_add_strprop(ds->name, W_PWD2       , ds->pwd2       )) goto error;

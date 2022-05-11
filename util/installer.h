@@ -207,9 +207,6 @@ int ds_set_strattr(SQLWCHAR **attr, const SQLWCHAR *val);
 int ds_set_strnattr(SQLWCHAR **attr, const SQLWCHAR *val, size_t charcount);
 int ds_lookup(DataSource *ds);
 int ds_from_kvpair(DataSource *ds, const SQLWCHAR *attrs, SQLWCHAR delim);
-int ds_to_kvpair(DataSource *ds, SQLWCHAR *attrs, size_t attrslen,
-                 SQLWCHAR delim);
-size_t ds_to_kvpair_len(DataSource *ds);
 int ds_add(DataSource *ds);
 int ds_exists(SQLWCHAR *name);
 char *ds_get_utf8attr(SQLWCHAR *attrw, SQLCHAR **attr8);
@@ -274,6 +271,8 @@ extern const SQLWCHAR W_INVALID_ATTR_STR[];
 #ifdef __cplusplus
 }
 #endif
+typedef std::basic_string<SQLWCHAR, std::char_traits<SQLWCHAR>, std::allocator<SQLWCHAR>> SQLWSTRING;
+int ds_to_kvpair(DataSource *ds, SQLWSTRING &attrs, SQLWCHAR delim);
 
 #endif /* _INSTALLER_H */
 

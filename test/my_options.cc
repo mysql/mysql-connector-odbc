@@ -37,7 +37,7 @@
 #include <vector>
 #include <stdlib.h>
 
-#include "odbctap.h"
+#include "odbc_util.h"
 
 #ifdef _WIN32
 #pragma warning (disable : 4996)
@@ -917,6 +917,8 @@ DECLARE_TEST(t_wl14586)
   print_diag(rc, SQL_HANDLE_DBC, hdbc1, "Expected Info in SQLConnect():",
              __FILE__, __LINE__);
   ok_con(hdbc1, SQLDisconnect(hdbc1));
+  ok_con(hdbc1, SQLFreeHandle(SQL_HANDLE_DBC, hdbc1));
+
   SQLRemoveDSNFromIni("wl14586");
   return OK;
 }
@@ -1066,8 +1068,66 @@ DECLARE_TEST(t_wl15114)
   return OK;
 }
 
+typedef std::basic_string<SQLWCHAR, std::char_traits<SQLWCHAR>, std::allocator<SQLWCHAR>> SQLWSTRING;
+
+SQLWSTRING escape_brackets(const SQLWCHAR* val)
+{
+  SQLWSTRING src = val;
+
+  if (src.empty() ||
+      (src.find((SQLWCHAR)'{') == SQLWSTRING::npos &&
+      src.find((SQLWCHAR)'}') == SQLWSTRING::npos)
+    )
+    return src;
+
+  SQLWSTRING temp = {(SQLWCHAR)'{'};
+  // Reserver extra in case we have to escape every bracket
+  temp.reserve(src.length() * 2);
+  for (SQLWCHAR c : src)
+  {
+    if (c == (SQLWCHAR)'{')
+      temp.append({(SQLWCHAR)'{', (SQLWCHAR)'{'});
+    else if (c == (SQLWCHAR)'}')
+      temp.append({(SQLWCHAR)'}', (SQLWCHAR)'}'});
+    else
+      temp.append(&c, 1);
+  }
+  temp.append({(SQLWCHAR)'}'});
+  return temp;
+}
+
+
+/*
+  Bug #33986051 MySQL ODBC Connector hangs in SQLDriverConnect
+  if password contains '}'
+*/
+DECLARE_TEST(t_password_hang)
+{
+
+  std::vector<std::pair<std::string, std::string>> pwds = {
+    {"{some}password", "{{{some}}password}"},
+    {"some{password", "{some{{password}"},
+    {"{}some{password}", "{{{}}some{{password}}}"},
+    {"some}p}assword", "{some}}p}}assword}"},
+    {"}somepassword{", "{}}somepassword{{}"},
+  };
+
+  try
+  {
+    for (auto p : pwds)
+    {
+      odbc::temp_user usr(hstmt, p.first);
+      odbc::xstring grant = "GRANT ALL PRIVILEGES ON " + odbc::xstring(mydb) +
+        ".* TO " + usr.username;
+      odbc::sql(hstmt, grant);
+      odbc::connection con(nullptr, usr.name,  p.second, nullptr);
+    }
+  }
+  ENDCATCH;
+}
 
 BEGIN_TESTS
+ ADD_TEST(t_password_hang)
   ADD_TEST(t_wl15114)
   ADD_TEST(t_wl13883)
   ADD_TEST(t_wl14490)

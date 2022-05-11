@@ -522,7 +522,7 @@ DECLARE_TEST(t_driverconnect_outstring)
 
   ok_env(henv, SQLAllocHandle(SQL_HANDLE_DBC, henv, &hdbc1));
 
-  ok_con(hdbc1, SQLDriverConnect(hdbc1, NULL, conn, sizeof(conn), conn_out,
+  ok_con(hdbc1, SQLDriverConnect(hdbc1, NULL, conn, SQL_NTS, conn_out,
                                  sizeof(conn_out), &conn_out_len,
                                  SQL_DRIVER_NOPROMPT));
 
