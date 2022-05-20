@@ -229,7 +229,8 @@ static my_bool check_if_usable_unique_key_exists(STMT *stmt)
 
   MYLOG_QUERY(stmt, buff);
 
-  LOCK_STMT(stmt);
+  assert(stmt);
+  LOCK_DBC(stmt->dbc);
   if (exec_stmt_query(stmt, buff, strlen(buff), FALSE) ||
       !(res= mysql_store_result(stmt->dbc->mysql)))
   {
@@ -556,6 +557,7 @@ static SQLRETURN append_all_fields_std(STMT *stmt, std::string &str)
   unsigned int  i,j;
   BOOL          found_field;
 
+  assert(stmt);
   /*
     Get the base table name. If there was more than one table underlying
     the result set, this will fail, and we couldn't build a suitable
@@ -571,7 +573,7 @@ static SQLRETURN append_all_fields_std(STMT *stmt, std::string &str)
 
   select = "SELECT * FROM `" + stmt->table_name + "` LIMIT 0";
   MYLOG_QUERY(stmt, select.c_str());
-  LOCK_STMT(stmt);
+  LOCK_DBC(stmt->dbc);
   if (exec_stmt_query_std(stmt, select, false) ||
       !(presultAllColumns= mysql_store_result(stmt->dbc->mysql)))
   {
@@ -1612,7 +1614,9 @@ static const char *alloc_error= "Driver Failed to set the internal dynamic resul
 SQLRETURN SQL_API my_SQLSetPos(SQLHSTMT hstmt, SQLSETPOSIROW irow,
                                SQLUSMALLINT fOption, SQLUSMALLINT fLock)
 {
-  STMT      *stmt = (STMT *) hstmt;
+  STMT *stmt = (STMT *) hstmt;
+  assert(stmt);
+
   SQLRETURN ret = SQL_SUCCESS;
   MYSQL_RES *result = stmt->result;
 
@@ -1671,7 +1675,7 @@ SQLRETURN SQL_API my_SQLSetPos(SQLHSTMT hstmt, SQLSETPOSIROW irow,
                     return stmt->set_error(MYERR_S1000, alloc_error, 0);
                 }
 
-                LOCK_STMT(stmt);
+                LOCK_DBC(stmt->dbc);
                 --irow;
                 ret= SQL_SUCCESS;
                 stmt->cursor_row= (long)(stmt->current_row+irow);
@@ -1883,8 +1887,7 @@ SQLRETURN SQL_API SQLBulkOperations(SQLHSTMT  Handle, SQLSMALLINT Operation)
   MYSQL_RES *result= stmt->result;
   SQLRETURN rc;
   SQLSETPOSIROW irow= 0;
-
-  CHECK_HANDLE(Handle);
+  LOCK_STMT(stmt);
 
   CLEAR_STMT_ERROR(stmt);
 

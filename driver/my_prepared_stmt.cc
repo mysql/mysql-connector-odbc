@@ -731,6 +731,9 @@ void STMT::free_fake_result(bool clear_all_results)
 
 STMT::~STMT()
 {
+  // Create a local mutex in the destructor.
+  std::unique_lock<std::recursive_mutex> slock(lock);
+
   free_lengths();
 
   if (ssps != NULL)

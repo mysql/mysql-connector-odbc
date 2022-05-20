@@ -131,7 +131,8 @@ SQLRETURN odbc_stmt(DBC *dbc, const char *query,
 void myodbc_link_fields(STMT *stmt, MYSQL_FIELD *fields, uint field_count)
 {
     MYSQL_RES *result;
-    LOCK_STMT(stmt);
+    assert(stmt);
+    LOCK_DBC(stmt->dbc);
     result= stmt->result;
     result->fields= fields;
     result->field_count= field_count;

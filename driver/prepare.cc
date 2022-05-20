@@ -274,7 +274,7 @@ SQLRETURN SQL_API SQLSetParam(SQLHSTMT        hstmt,
                               SQLPOINTER      rgbValue,
                               SQLLEN *        pcbValue)
 {
-  CHECK_HANDLE(hstmt);
+  LOCK_STMT(hstmt);
 
   return my_SQLBindParameter(hstmt, ipar, SQL_PARAM_INPUT_OUTPUT, fCType,
                              fSqlType, cbColDef, ibScale, rgbValue,
@@ -298,7 +298,7 @@ SQLRETURN SQL_API SQLBindParameter( SQLHSTMT        hstmt,
                                     SQLLEN          cbValueMax,
                                     SQLLEN *        pcbValue )
 {
-  CHECK_HANDLE(hstmt);
+  LOCK_STMT(hstmt);
 
   return my_SQLBindParameter(hstmt, ipar, fParamType, fCType, fSqlType,
                              cbColDef, ibScale, rgbValue, cbValueMax, pcbValue);

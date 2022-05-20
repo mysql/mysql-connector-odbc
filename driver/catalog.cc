@@ -668,7 +668,7 @@ MySQLTables(SQLHSTMT hstmt,
   STMT *stmt= (STMT *)hstmt;
 
   CLEAR_STMT_ERROR(hstmt);
-  my_SQLFreeStmt(hstmt, MYSQL_RESET);
+  my_SQLFreeStmt(hstmt, FREE_STMT_RESET);
 
   GET_NAME_LEN(stmt, catalog_name, catalog_len);
   GET_NAME_LEN(stmt, schema_name, schema_len);
@@ -1028,7 +1028,7 @@ MySQLColumns(SQLHSTMT hstmt, SQLCHAR *catalog_name, SQLSMALLINT catalog_len,
   STMT *stmt= (STMT *)hstmt;
 
   CLEAR_STMT_ERROR(hstmt);
-  my_SQLFreeStmt(hstmt, MYSQL_RESET);
+  my_SQLFreeStmt(hstmt, FREE_STMT_RESET);
 
   GET_NAME_LEN(stmt, catalog_name, catalog_len);
   GET_NAME_LEN(stmt, schema_name, schema_len);
@@ -1096,7 +1096,7 @@ MySQLStatistics(SQLHSTMT hstmt,
   STMT *stmt= (STMT *)hstmt;
 
   CLEAR_STMT_ERROR(hstmt);
-  my_SQLFreeStmt(hstmt,MYSQL_RESET);
+  my_SQLFreeStmt(hstmt, FREE_STMT_RESET);
 
   GET_NAME_LEN(stmt, catalog_name, catalog_len);
   GET_NAME_LEN(stmt, schema_name, schema_len);
@@ -1185,7 +1185,7 @@ MySQLTablePrivileges(SQLHSTMT hstmt,
     STMT     *stmt= (STMT *)hstmt;
 
     CLEAR_STMT_ERROR(hstmt);
-    my_SQLFreeStmt(hstmt,MYSQL_RESET);
+    my_SQLFreeStmt(hstmt, FREE_STMT_RESET);
 
     GET_NAME_LEN(stmt, catalog_name, catalog_len);
     GET_NAME_LEN(stmt, schema_name, schema_len);
@@ -1271,7 +1271,7 @@ MySQLColumnPrivileges(SQLHSTMT hstmt,
   STMT     *stmt= (STMT *)hstmt;
 
   CLEAR_STMT_ERROR(hstmt);
-  my_SQLFreeStmt(hstmt,MYSQL_RESET);
+  my_SQLFreeStmt(hstmt, FREE_STMT_RESET);
 
   GET_NAME_LEN(stmt, catalog_name, catalog_len);
   GET_NAME_LEN(stmt, schema_name, schema_len);
@@ -1337,7 +1337,7 @@ MySQLSpecialColumns(SQLHSTMT hstmt, SQLUSMALLINT fColType,
   STMT        *stmt=(STMT *) hstmt;
 
   CLEAR_STMT_ERROR(hstmt);
-  my_SQLFreeStmt(hstmt,MYSQL_RESET);
+  my_SQLFreeStmt(hstmt, FREE_STMT_RESET);
 
   GET_NAME_LEN(stmt, catalog, catalog_len);
   GET_NAME_LEN(stmt, schema, schema_len);
@@ -1396,7 +1396,7 @@ MySQLPrimaryKeys(SQLHSTMT hstmt,
   STMT *stmt= (STMT *) hstmt;
 
   CLEAR_STMT_ERROR(hstmt);
-  my_SQLFreeStmt(hstmt,MYSQL_RESET);
+  my_SQLFreeStmt(hstmt, FREE_STMT_RESET);
 
   GET_NAME_LEN(stmt, catalog_name, catalog_len);
   GET_NAME_LEN(stmt, schema_name, schema_len);
@@ -1622,7 +1622,7 @@ MySQLForeignKeys(SQLHSTMT hstmt,
     STMT *stmt=(STMT *) hstmt;
 
     CLEAR_STMT_ERROR(hstmt);
-    my_SQLFreeStmt(hstmt,MYSQL_RESET);
+    my_SQLFreeStmt(hstmt, FREE_STMT_RESET);
 
     GET_NAME_LEN(stmt, pk_catalog_name, pk_catalog_len);
     GET_NAME_LEN(stmt, fk_catalog_name, fk_catalog_len);
@@ -1684,7 +1684,7 @@ MySQLProcedures(SQLHSTMT hstmt,
   STMT *stmt= (STMT *)hstmt;
 
   CLEAR_STMT_ERROR(hstmt);
-  my_SQLFreeStmt(hstmt,MYSQL_RESET);
+  my_SQLFreeStmt(hstmt, FREE_STMT_RESET);
 
   GET_NAME_LEN(stmt, catalog_name, catalog_len);
   GET_NAME_LEN(stmt, schema_name, schema_len);
@@ -1830,7 +1830,7 @@ MySQLProcedureColumns(SQLHSTMT hstmt,
   STMT *stmt= (STMT *)hstmt;
 
   CLEAR_STMT_ERROR(hstmt);
-  my_SQLFreeStmt(hstmt,MYSQL_RESET);
+  my_SQLFreeStmt(hstmt, FREE_STMT_RESET);
 
   GET_NAME_LEN(stmt, catalog_name, catalog_len);
   GET_NAME_LEN(stmt, schema_name, schema_len);

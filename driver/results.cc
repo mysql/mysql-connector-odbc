@@ -1373,8 +1373,7 @@ SQLRETURN SQL_API SQLBindCol(SQLHSTMT      StatementHandle,
   DESCREC *arrec;
   /* TODO if this function fails, the SQL_DESC_COUNT should be unchanged in ard */
 
-  CHECK_HANDLE(stmt);
-
+  LOCK_STMT(stmt);
   CLEAR_STMT_ERROR(stmt);
 
   if (!TargetValuePtr && !StrLen_or_IndPtr) /* Handling unbinding */
@@ -1492,7 +1491,7 @@ SQLRETURN SQL_API SQLGetData(SQLHSTMT      StatementHandle,
     */
     SQLSMALLINT sColNum= ColumnNumber;
 
-    CHECK_HANDLE(stmt);
+    LOCK_STMT(stmt);
 
     if (!stmt->result || (!stmt->current_values && stmt->out_params_state != OPS_STREAMS_PENDING))
     {
@@ -1599,17 +1598,15 @@ SQLRETURN SQL_API SQLGetData(SQLHSTMT      StatementHandle,
   if so, initializes processing for those results
 */
 
-SQLRETURN SQL_API SQLMoreResults( SQLHSTMT hStmt )
+SQLRETURN SQL_API SQLMoreResults( SQLHSTMT hstmt )
 {
-  STMT *  stmt   = (STMT *)hStmt;
-  int         nRetVal;
-  SQLRETURN   nReturn = SQL_SUCCESS;
-
-  CHECK_HANDLE(hStmt);
+  STMT *stmt = (STMT *)hstmt;
+  int nRetVal = 0;
+  SQLRETURN nReturn = SQL_SUCCESS;
 
   LOCK_STMT(stmt);
-
-  CLEAR_STMT_ERROR( stmt );
+  LOCK_DBC(stmt->dbc);
+  CLEAR_STMT_ERROR(stmt);
 
   /*
     http://msdn.microsoft.com/en-us/library/ms714673%28v=vs.85%29.aspx
@@ -1660,7 +1657,7 @@ SQLRETURN SQL_API SQLMoreResults( SQLHSTMT hStmt )
   }
 
   /* cleanup existing resultset */
-  nReturn = my_SQLFreeStmtExtended((SQLHSTMT)stmt,SQL_CLOSE,0);
+  nReturn = my_SQLFreeStmtExtended((SQLHSTMT)stmt, SQL_CLOSE, 0);
   if (!SQL_SUCCEEDED( nReturn ))
   {
     goto exitSQLMoreResults;
@@ -2569,7 +2566,7 @@ SQLRETURN SQL_API SQLExtendedFetch( SQLHSTMT        hstmt,
     SQLULEN rows= 0;
     STMT_OPTIONS *options;
 
-    CHECK_HANDLE(hstmt);
+    LOCK_STMT(hstmt);
 
     options= &((STMT *)hstmt)->stmt_options;
     options->rowStatusPtr_ex= rgfRowStatus;
@@ -2596,7 +2593,7 @@ SQLRETURN SQL_API SQLFetchScroll( SQLHSTMT      StatementHandle,
     STMT *stmt = (STMT *)StatementHandle;
     STMT_OPTIONS *options;
 
-    CHECK_HANDLE(stmt);
+    LOCK_STMT(stmt);
 
     options= &stmt->stmt_options;
     options->rowStatusPtr_ex= NULL;
@@ -2616,9 +2613,10 @@ SQLRETURN SQL_API SQLFetchScroll( SQLHSTMT      StatementHandle,
                        stmt->stmt_options.bookmark_ptr);
     }
 
-    return my_SQLExtendedFetch(StatementHandle, FetchOrientation, FetchOffset,
+    SQLRETURN rc = my_SQLExtendedFetch(StatementHandle, FetchOrientation, FetchOffset,
                                stmt->ird->rows_processed_ptr, stmt->ird->array_status_ptr,
                                0);
+    return rc;
 }
 
 /*
@@ -2632,7 +2630,7 @@ SQLRETURN SQL_API SQLFetch(SQLHSTMT StatementHandle)
     STMT *stmt = (STMT *)StatementHandle;
     STMT_OPTIONS *options;
 
-    CHECK_HANDLE(stmt);
+    LOCK_STMT(stmt);
 
     options= &stmt->stmt_options;
     options->rowStatusPtr_ex= NULL;

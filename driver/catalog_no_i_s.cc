@@ -190,12 +190,13 @@ server_list_dbcolumns(STMT *stmt,
                       SQLCHAR *szTable, SQLSMALLINT cbTable,
                       SQLCHAR *szColumn, SQLSMALLINT cbColumn)
 {
+  assert(stmt);
   DBC *dbc= stmt->dbc;
   MYSQL *mysql= dbc->mysql;
   MYSQL_RES *result;
   char buff[NAME_LEN * 2 + 64], column_buff[NAME_LEN * 2 + 64];
 
-  LOCK_STMT(stmt);
+  LOCK_DBC(stmt->dbc);
 
   /* If a catalog was specified, we have to change working catalog
      to be able to use mysql_list_fields. */
@@ -268,10 +269,12 @@ columns_no_i_s(STMT * stmt, SQLCHAR *catalog, SQLSMALLINT catalog_len,
     return stmt->set_error("HY090", "Invalid string or buffer length", 4001);
   }
 
+  assert(stmt);
+  /* Get the list of tables that match szCatalog and table */
+  LOCK_DBC(stmt->dbc);
+
   db = get_database_name(stmt, catalog, catalog_len, schema, schema_len, false);
 
-  /* Get the list of tables that match szCatalog and table */
-  LOCK_STMT(stmt);
   res= table_status(stmt, (SQLCHAR*)db.c_str(), db.length(),
                     table, table_len, TRUE, TRUE, TRUE);
 
@@ -600,7 +603,8 @@ list_table_priv_no_i_s(SQLHSTMT hstmt,
     uint     row_count;
     std::string db;
 
-    LOCK_STMT(stmt);
+    assert(stmt);
+    LOCK_DBC(stmt->dbc);
 
     db = get_database_name(stmt, catalog, catalog_len,
                            schema, schema_len, false);
@@ -760,10 +764,11 @@ list_column_priv_no_i_s(SQLHSTMT hstmt,
   uint     row_count;
   std::string db;
 
+  assert(stmt);
   CLEAR_STMT_ERROR(hstmt);
-  my_SQLFreeStmt(hstmt,MYSQL_RESET);
+  my_SQLFreeStmt(hstmt, FREE_STMT_RESET);
 
-  LOCK_STMT(stmt);
+  LOCK_DBC(stmt->dbc);
   db = get_database_name(stmt, catalog, catalog_len,
                          schema, schema_len, false);
 
@@ -1121,8 +1126,9 @@ SQLRETURN foreign_keys_no_i_s(SQLHSTMT hstmt,
 
   myodbc_init_dynamic_array(&records, sizeof(MY_FOREIGN_KEY_FIELD), 0, 0);
 
+  assert(stmt);
   /* Get the list of tables that match szCatalog and szTable */
-  LOCK_STMT(stmt);
+  LOCK_DBC(stmt->dbc);
 
   try
   {
@@ -1557,7 +1563,8 @@ primary_keys_no_i_s(SQLHSTMT hstmt,
     MYSQL_ROW row;
     uint      row_count;
 
-    LOCK_STMT(stmt);
+    assert(stmt);
+    LOCK_DBC(stmt->dbc);
 
     auto db = get_database_name(stmt, catalog, catalog_len,
                                 schema, schema_len);
@@ -1567,18 +1574,6 @@ primary_keys_no_i_s(SQLHSTMT hstmt,
       SQLRETURN rc= handle_connection_error(stmt);
       return rc;
     }
-
-    /*
-    x_free(stmt->result_array);
-    stmt->result_array= (char**) myodbc_malloc(sizeof(char*)*SQLPRIM_KEYS_FIELDS*
-                                            (ulong) stmt->result->row_count,
-                                            MYF(MY_ZEROFILL));
-    if (!stmt->result_array)
-    {
-      set_mem_error(stmt->dbc->mysql);
-      return handle_connection_error(stmt);
-    }
-    */
 
     if (!stmt->m_row_storage.is_valid())
       x_free(stmt->result_array);
@@ -1782,8 +1777,9 @@ procedure_columns_no_i_s(SQLHSTMT hstmt,
   unsigned int i, j, total_params_num= 0;
   std::string db;
 
+  assert(stmt);
   /* get procedures list */
-  LOCK_STMT(stmt);
+  LOCK_DBC(stmt->dbc);
   try
   {
     db = get_database_name(stmt, catalog, catalog_len,
@@ -2022,7 +2018,7 @@ special_columns_no_i_s(SQLHSTMT hstmt, SQLUSMALLINT fColType,
     std::string db;
 
     /* Reset the statement in order to avoid memory leaks when working with ADODB */
-    my_SQLFreeStmt(hstmt, MYSQL_RESET);
+    my_SQLFreeStmt(hstmt, FREE_STMT_RESET);
 
     db = get_database_name(stmt, catalog, catalog_len, schema, schema_len,
                            false);
@@ -2188,12 +2184,14 @@ statistics_no_i_s(SQLHSTMT hstmt,
                   SQLUSMALLINT fAccuracy)
 {
     STMT *stmt= (STMT *)hstmt;
+    assert(stmt);
+
     MYSQL *mysql= stmt->dbc->mysql;
     DBC *dbc= stmt->dbc;
     char *db_val = nullptr;
     std::string db;
 
-    LOCK_STMT(stmt);
+    LOCK_DBC(stmt->dbc);
 
     if (!table_len)
         goto empty_set;
@@ -2305,7 +2303,8 @@ tables_no_i_s(SQLHSTMT hstmt,
     try
     {
       ODBC_RESULTSET db_res;
-      LOCK_STMT(stmt);
+      assert(stmt);
+      LOCK_DBC(stmt->dbc);
       stmt->result = nullptr;
       is_info_schema = server_has_i_s(stmt->dbc) &&
                        !stmt->dbc->ds->no_information_schema;

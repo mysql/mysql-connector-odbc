@@ -43,6 +43,7 @@
 SQLRETURN do_query(STMT *stmt,char *query, SQLULEN query_length)
 {
     int error= SQL_ERROR, native_error= 0;
+    assert(stmt);
     LOCK_STMT_DEFER(stmt);
 
     if (!query)
@@ -70,7 +71,6 @@ SQLRETURN do_query(STMT *stmt,char *query, SQLULEN query_length)
 
     MYLOG_QUERY(stmt, query);
     DO_LOCK_STMT();
-
     if ( check_if_server_is_alive( stmt->dbc ) )
     {
       stmt->set_error("08S01" /* "HYT00" */,
@@ -243,12 +243,13 @@ exit:
 SQLRETURN insert_params(STMT *stmt, SQLULEN row, char **finalquery,
                         SQLULEN *finalquery_length)
 {
+  assert(stmt);
   char *query= GET_QUERY(&stmt->query);
   uint i,length, had_info= 0;
   SQLRETURN rc= SQL_SUCCESS;
   DECLARE_LOCALE_HANDLE
 
-  LOCK_STMT(stmt);
+  LOCK_DBC(stmt->dbc);
 
   //to = stmt->buf() + (finalquery_length != NULL ? *finalquery_length : 0);
 
@@ -1330,7 +1331,7 @@ SQLRETURN do_my_pos_cursor_std( STMT *pStmt, STMT *pStmtCursor )
 
 SQLRETURN SQL_API SQLExecute(SQLHSTMT hstmt)
 {
-  CHECK_HANDLE(hstmt);
+  LOCK_STMT(hstmt);
 
   return my_SQLExecute((STMT *)hstmt);
 }
@@ -1418,7 +1419,7 @@ SQLRETURN my_SQLExecute( STMT *pStmt )
     return do_my_pos_cursor_std(pStmt, pStmtCursor);
   }
 
-  my_SQLFreeStmt((SQLHSTMT)pStmt,MYSQL_RESET_BUFFERS);
+  my_SQLFreeStmt((SQLHSTMT)pStmt,FREE_STMT_RESET_BUFFERS);
 
   query= GET_QUERY(&pStmt->query);
 
@@ -1437,7 +1438,7 @@ SQLRETURN my_SQLExecute( STMT *pStmt )
     *pStmt->ipd->rows_processed_ptr= (SQLULEN)0;
   }
 
-  LOCK_STMT(pStmt);
+  LOCK_DBC(pStmt->dbc);
 
   for (row= 0; row < pStmt->apd->array_size; ++row)
   {
@@ -1906,11 +1907,9 @@ SQLRETURN SQL_API SQLCancel(SQLHSTMT hstmt)
 {
   MYSQL *second= NULL;
   DBC *dbc;
+  STMT *stmt = (STMT *)hstmt;
 
-
-  CHECK_HANDLE(hstmt);
-
-  dbc= ((STMT *)hstmt)->dbc;
+  dbc= stmt->dbc;
 
   LOCK_DBC_DEFER(dbc); // implicitly declares dlock variable without locking
 
@@ -1918,10 +1917,12 @@ SQLRETURN SQL_API SQLCancel(SQLHSTMT hstmt)
   if (dlock.try_lock())
   {
     /*
-      Lock is acquired. STMT can be closed safely.
-      Lock will be released automatically
+      DBC lock can be released.
+      STMT lock will be acquired inside my_SQLFreeStmtExtended.
     */
-    return my_SQLFreeStmt(hstmt, SQL_CLOSE);
+    dlock.unlock();
+    return my_SQLFreeStmtExtended(hstmt, SQL_CLOSE,
+      FREE_STMT_CLEAR_RESULT | FREE_STMT_DO_LOCK);
   }
 
   /*
