@@ -911,7 +911,11 @@ struct ROW_STORAGE
       *(bind[i].is_null) = data.is_null();
       *(bind[i].length) = data.is_null() ? -1 : data.length();
       if (!data.is_null())
-        memcpy(bind[i].buffer, data.data(), *(bind[i].length));                                                                                                                                                              }
+      {
+        size_t copy_zero = bind[i].buffer_length > *(bind[i].length) ? 1 : 0;
+        memcpy(bind[i].buffer, data.data(), *(bind[i].length) + copy_zero);
+      }
+    }
     // Set EOF if the last row was filled
     m_eof = (m_rnum <= (m_cur_row + 1));
     // Increment row counter only if not EOF
