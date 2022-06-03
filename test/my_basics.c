@@ -1166,14 +1166,28 @@ DECLARE_TEST(t_tls_opts)
 
   char *opts[VERSION_COUNT] = { "NO_TLS_1_3=1;", "NO_TLS_1_2=1;" };
 
-  // Info about versions actually supported by server
+  // Info about versions actually supported by server and client
 
   unsigned supported_versions = 0;
 
   for (unsigned i = 0; i < VERSION_COUNT; ++i)
-    if (strstr(buf, ver[i]) != NULL)
-      supported_versions |= (1u << i);
+  {
+      if (strstr(buf, ver[i]) != NULL)
+      {
+        char connstr[512] = "SOCKET=;SSLMODE=REQUIRED;TLS-VERSIONS=";
+        strncat(connstr, ver[i], sizeof(connstr) - strlen(connstr));
+        printf("Connection options: %s\n", connstr);
 
+        // The version is marked as supported only when client
+        // supports it as well as the server.
+        if (OK == alloc_basic_handles_with_opt(&henv1, &hdbc1, &hstmt1, NULL,
+          NULL, NULL, NULL, connstr))
+        {
+          supported_versions |= (1u << i);
+        }
+        free_basic_handles(&henv1, &hdbc1, &hstmt1);
+      }
+  }
 
   // Test disabling each of supported versions, the last iteration is
   // testing a scenario where nothing is disabled.
@@ -1268,6 +1282,7 @@ DECLARE_TEST(t_tls_opts)
 
     is(FAIL == alloc_basic_handles_with_opt(&henv1, &hdbc1, &hstmt1, NULL,
       NULL, NULL, NULL, connstr));
+    free_basic_handles(&henv1, &hdbc1, &hstmt1);
   }
 
   return OK;
