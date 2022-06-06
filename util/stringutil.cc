@@ -1655,22 +1655,19 @@ SQLWSTRING escape_brackets(const SQLWCHAR* val, bool add_start_end)
 {
   SQLWSTRING src = val;
   if (!add_start_end &&
-      (src.empty() ||
-      (src.find((SQLWCHAR)'{') == SQLWSTRING::npos &&
-      src.find((SQLWCHAR)'}') == SQLWSTRING::npos))
+      (src.empty() || src.find((SQLWCHAR)'}') == SQLWSTRING::npos)
     )
     return src;
 
   SQLWSTRING temp;
   if (add_start_end)
-    temp = {(SQLWCHAR)'{'};
+    temp = { (SQLWCHAR)'{' };
   // Reserver extra in case we have to escape every bracket
   temp.reserve(src.length() * 2);
+
   for (SQLWCHAR c : src)
   {
-    if (c == (SQLWCHAR)'{')
-      temp.append({(SQLWCHAR)'{', (SQLWCHAR)'{'});
-    else if (c == (SQLWCHAR)'}')
+    if (c == (SQLWCHAR)'}')
       temp.append({(SQLWCHAR)'}', (SQLWCHAR)'}'});
     else
       temp.append(&c, 1);

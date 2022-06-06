@@ -1068,35 +1068,6 @@ DECLARE_TEST(t_wl15114)
   return OK;
 }
 
-typedef std::basic_string<SQLWCHAR, std::char_traits<SQLWCHAR>, std::allocator<SQLWCHAR>> SQLWSTRING;
-
-SQLWSTRING escape_brackets(const SQLWCHAR* val)
-{
-  SQLWSTRING src = val;
-
-  if (src.empty() ||
-      (src.find((SQLWCHAR)'{') == SQLWSTRING::npos &&
-      src.find((SQLWCHAR)'}') == SQLWSTRING::npos)
-    )
-    return src;
-
-  SQLWSTRING temp = {(SQLWCHAR)'{'};
-  // Reserver extra in case we have to escape every bracket
-  temp.reserve(src.length() * 2);
-  for (SQLWCHAR c : src)
-  {
-    if (c == (SQLWCHAR)'{')
-      temp.append({(SQLWCHAR)'{', (SQLWCHAR)'{'});
-    else if (c == (SQLWCHAR)'}')
-      temp.append({(SQLWCHAR)'}', (SQLWCHAR)'}'});
-    else
-      temp.append(&c, 1);
-  }
-  temp.append({(SQLWCHAR)'}'});
-  return temp;
-}
-
-
 /*
   Bug #33986051 MySQL ODBC Connector hangs in SQLDriverConnect
   if password contains '}'
@@ -1105,11 +1076,11 @@ DECLARE_TEST(t_password_hang)
 {
 
   std::vector<std::pair<std::string, std::string>> pwds = {
-    {"{some}password", "{{{some}}password}"},
-    {"some{password", "{some{{password}"},
-    {"{}some{password}", "{{{}}some{{password}}}"},
+    {"{some}password", "{{some}}password}"},
+    {"some{password", "{some{password}"},
+    {"{}some{password}", "{{}}some{password}}}"},
     {"some}p}assword", "{some}}p}}assword}"},
-    {"}somepassword{", "{}}somepassword{{}"},
+    {"}somepassword{", "{}}somepassword{}"},
   };
 
   try

@@ -797,9 +797,7 @@ int ds_set_strnattr(SQLWCHAR **attr, const SQLWCHAR *val, size_t charcount)
     while (charcount)
     {
       *pos = *val;
-      if (charcount > 1 && (
-        (*val == '}' && *(val + 1) == '}') ||
-        (*val == '{' && *(val + 1) == '{') ))
+      if (charcount > 1 && ((*val == '}' && *(val + 1) == '}')))
       {
         ++val;
         --charcount;
