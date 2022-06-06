@@ -18,7 +18,7 @@ Bug reports should be as complete as possible.  Please try and include the follo
 
 Contributing to this project is easy. You just need to follow these steps.
 
-* Sign the Oracle Contributor Agreement. You can find instructions for doing that at [OCA Page](https://www.oracle.com/technetwork/community/oca-486395.html)
+* Sign the Oracle Contributor Agreement. You can find instructions for doing that at [OCA Page](https://oca.opensource.oracle.com/)
 * Develop your pull request
   * Make sure you are aware of the requirements for the project (i.e. don't require C++17 if we are supporting C++11 and higher)
 * Validate your pull request by including tests that sufficiently cover the functionality

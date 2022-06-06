@@ -993,7 +993,7 @@ SQLGetEnvAttr(SQLHENV    henv,
 SQLRETURN SQL_API
 SQLGetStmtOption(SQLHSTMT hstmt,SQLUSMALLINT option, SQLPOINTER param)
 {
-  CHECK_HANDLE(hstmt);
+  LOCK_STMT(hstmt);
 
   return MySQLGetStmtAttr(hstmt, option, param, SQL_NTS, (SQLINTEGER *)NULL);
 }
@@ -1002,7 +1002,7 @@ SQLGetStmtOption(SQLHSTMT hstmt,SQLUSMALLINT option, SQLPOINTER param)
 SQLRETURN SQL_API
 SQLSetStmtOption(SQLHSTMT hstmt, SQLUSMALLINT option, SQLULEN param)
 {
-  CHECK_HANDLE(hstmt);
+  LOCK_STMT(hstmt);
 
   return MySQLSetStmtAttr(hstmt, option, (SQLPOINTER)param, SQL_NTS);
 }

@@ -1077,7 +1077,7 @@ SQLRETURN SQL_API MySQLGetTypeInfo(SQLHSTMT hstmt, SQLSMALLINT fSqlType)
   STMT *stmt = (STMT *)hstmt;
   uint i;
 
-  my_SQLFreeStmt(hstmt, MYSQL_RESET);
+  my_SQLFreeStmt(hstmt, FREE_STMT_RESET);
 
   /* use ODBC2 types if called with ODBC3 types on an ODBC2 handle */
   if (stmt->dbc->env->odbc_ver == SQL_OV_ODBC2)

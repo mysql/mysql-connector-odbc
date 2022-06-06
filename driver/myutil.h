@@ -130,8 +130,8 @@ SQLRETURN         my_SQLPrepare (SQLHSTMT hstmt, SQLCHAR *szSqlStr,
                                  bool force_prepare);
 SQLRETURN         my_SQLExecute         (STMT * stmt);
 SQLRETURN SQL_API my_SQLFreeStmt        (SQLHSTMT hstmt,SQLUSMALLINT fOption);
-SQLRETURN SQL_API my_SQLFreeStmtExtended(SQLHSTMT hstmt,
-                                        SQLUSMALLINT fOption, uint clearAllResults);
+SQLRETURN SQL_API my_SQLFreeStmtExtended(SQLHSTMT hstmt, SQLUSMALLINT fOption,
+                                         SQLUSMALLINT fExtra);
 SQLRETURN SQL_API my_SQLAllocStmt       (SQLHDBC hdbc,SQLHSTMT *phstmt);
 SQLRETURN         do_query              (STMT *stmt,char *query, SQLULEN query_length);
 SQLRETURN         insert_params         (STMT *stmt, SQLULEN row, char **finalquery,

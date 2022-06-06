@@ -1073,12 +1073,26 @@ struct CHARSET_COLLATION_INFO charset_collation_info[] = {
   {307, "utf8mb4", "utf8mb4_ru_0900_as_cs", 4},
   {308, "utf8mb4", "utf8mb4_zh_0900_as_cs", 4},
   {309, "utf8mb4", "utf8mb4_0900_bin", 4},
+  {310, "utf8mb4", "utf8mb4_nb_0900_ai_ci", 4},
+  {311, "utf8mb4", "utf8mb4_nb_0900_as_cs", 4},
+  {312, "utf8mb4", "utf8mb4_nn_0900_ai_ci", 4},
+  {313, "utf8mb4", "utf8mb4_nn_0900_as_cs", 4},
+  {314, "utf8mb4", "utf8mb4_sr_latn_0900_ai_ci", 4},
+  {315, "utf8mb4", "utf8mb4_sr_latn_0900_as_cs", 4},
+  {316, "utf8mb4", "utf8mb4_bs_0900_ai_ci", 4},
+  {317, "utf8mb4", "utf8mb4_bs_0900_as_cs", 4},
+  {318, "utf8mb4", "utf8mb4_bg_0900_ai_ci", 4},
+  {319, "utf8mb4", "utf8mb4_bg_0900_as_cs", 4},
+  {320, "utf8mb4", "utf8mb4_gl_0900_ai_ci", 4},
+  {321, "utf8mb4", "utf8mb4_gl_0900_as_cs", 4},
+  {322, "utf8mb4", "utf8mb4_mn_cyrl_0900_ai_ci", 4},
+  {323, "utf8mb4", "utf8mb4_mn_cyrl_0900_as_cs", 4}
 };
 
 
 unsigned int get_charset_maxlen(unsigned int num)
 {
-  if (num < 310)
+  if (num < 324)
     return charset_collation_info[num].maxlen;
 
   return 0;
@@ -1634,7 +1648,32 @@ bool myodbc_append_os_quoted_std(std::string &str, const char *append, ...) {
   return false;
 }
 
+/*
+ * Escape curly brackets.
+ */
+SQLWSTRING escape_brackets(const SQLWCHAR* val, bool add_start_end)
+{
+  SQLWSTRING src = val;
+  if (!add_start_end &&
+      (src.empty() || src.find((SQLWCHAR)'}') == SQLWSTRING::npos)
+    )
+    return src;
 
+  SQLWSTRING temp;
+  if (add_start_end)
+    temp = { (SQLWCHAR)'{' };
+  // Reserver extra in case we have to escape every bracket
+  temp.reserve(src.length() * 2);
 
-
+  for (SQLWCHAR c : src)
+  {
+    if (c == (SQLWCHAR)'}')
+      temp.append({(SQLWCHAR)'}', (SQLWCHAR)'}'});
+    else
+      temp.append(&c, 1);
+  }
+  if (add_start_end)
+    temp.append({(SQLWCHAR)'}'});
+  return temp;
+}
 #endif

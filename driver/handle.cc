@@ -488,11 +488,10 @@ SQLRETURN SQL_API SQLAllocStmt(SQLHDBC hdbc,SQLHSTMT *phstmt)
        resources associated with the statement handle
 */
 
-SQLRETURN SQL_API SQLFreeStmt(SQLHSTMT hstmt,SQLUSMALLINT fOption)
+SQLRETURN SQL_API SQLFreeStmt(SQLHSTMT hstmt, SQLUSMALLINT fOption)
 {
-    CHECK_HANDLE(hstmt);
-
-    return my_SQLFreeStmt(hstmt,fOption);
+  CHECK_HANDLE(hstmt);
+  return my_SQLFreeStmt(hstmt, fOption);
 }
 
 
@@ -504,9 +503,10 @@ SQLRETURN SQL_API SQLFreeStmt(SQLHSTMT hstmt,SQLUSMALLINT fOption)
        resources associated with the statement handle
 */
 
-SQLRETURN SQL_API my_SQLFreeStmt(SQLHSTMT hstmt,SQLUSMALLINT fOption)
+SQLRETURN SQL_API my_SQLFreeStmt(SQLHSTMT hstmt, SQLUSMALLINT f_option)
 {
-  return my_SQLFreeStmtExtended(hstmt,fOption,1);
+  return my_SQLFreeStmtExtended(hstmt, f_option,
+    FREE_STMT_CLEAR_RESULT | FREE_STMT_DO_LOCK);
 }
 
 /*
@@ -517,15 +517,20 @@ SQLRETURN SQL_API my_SQLFreeStmt(SQLHSTMT hstmt,SQLUSMALLINT fOption)
        resources associated with the statement handle
 */
 
-SQLRETURN SQL_API my_SQLFreeStmtExtended(SQLHSTMT hstmt,SQLUSMALLINT fOption,
-                                         uint clearAllResults)
+SQLRETURN SQL_API my_SQLFreeStmtExtended(SQLHSTMT hstmt, SQLUSMALLINT f_option,
+  SQLUSMALLINT f_extra)
 {
     STMT *stmt= (STMT *) hstmt;
     uint i;
+    LOCK_STMT_DEFER(stmt);
+    if (f_extra & FREE_STMT_DO_LOCK)
+    {
+      DO_LOCK_STMT();
+    }
 
     stmt->reset();
 
-    if (fOption == SQL_UNBIND)
+    if (f_option == SQL_UNBIND)
     {
       stmt->free_unbind();
       return SQL_SUCCESS;
@@ -533,13 +538,13 @@ SQLRETURN SQL_API my_SQLFreeStmtExtended(SQLHSTMT hstmt,SQLUSMALLINT fOption,
 
     stmt->free_reset_out_params();
 
-    if (fOption == SQL_RESET_PARAMS)
+    if (f_option == SQL_RESET_PARAMS)
     {
       stmt->free_reset_params();
       return SQL_SUCCESS;
     }
 
-    stmt->free_fake_result(clearAllResults);
+    stmt->free_fake_result((bool)(f_extra & FREE_STMT_CLEAR_RESULT));
 
     x_free(stmt->fields);   // TODO: Looks like STMT::fields is not used anywhere
     x_free(stmt->result_array);
@@ -556,7 +561,7 @@ SQLRETURN SQL_API my_SQLFreeStmtExtended(SQLHSTMT hstmt,SQLUSMALLINT fOption,
     stmt->dae_type= 0;
     stmt->ird->reset();
 
-    if (fOption == MYSQL_RESET_BUFFERS)
+    if (f_option == FREE_STMT_RESET_BUFFERS)
     {
       free_result_bind(stmt);
       x_free(stmt->array);
@@ -578,10 +583,10 @@ SQLRETURN SQL_API my_SQLFreeStmtExtended(SQLHSTMT hstmt,SQLUSMALLINT fOption,
     }
     stmt->cursor.pk_count= 0;
 
-    if (fOption == SQL_CLOSE)
+    if (f_option == SQL_CLOSE)
         return SQL_SUCCESS;
 
-    if (clearAllResults)
+    if (f_extra & FREE_STMT_CLEAR_RESULT)
     {
       x_free(stmt->array);
       stmt->array= 0;
@@ -592,7 +597,7 @@ SQLRETURN SQL_API my_SQLFreeStmtExtended(SQLHSTMT hstmt,SQLUSMALLINT fOption,
       }
     }
 
-    /* At this point, only MYSQL_RESET and SQL_DROP left out */
+    /* At this point, only FREE_STMT_RESET and SQL_DROP left out */
     reset_parsed_query(&stmt->orig_query, NULL, NULL, NULL);
     reset_parsed_query(&stmt->query, NULL, NULL, NULL);
 
@@ -611,7 +616,7 @@ SQLRETURN SQL_API my_SQLFreeStmtExtended(SQLHSTMT hstmt,SQLUSMALLINT fOption,
     reset_ptr(stmt->ard->array_status_ptr);
     reset_ptr(stmt->stmt_options.rowStatusPtr_ex);
 
-    if (fOption == MYSQL_RESET)
+    if (f_option == FREE_STMT_RESET)
     {
       return SQL_SUCCESS;
     }
@@ -619,6 +624,13 @@ SQLRETURN SQL_API my_SQLFreeStmtExtended(SQLHSTMT hstmt,SQLUSMALLINT fOption,
     /* explicitly allocated descriptors are affected up until this point */
     stmt->apd->stmt_list_remove(stmt);
     stmt->ard->stmt_list_remove(stmt);
+
+    // Unlock before destroying STMT to prevent unowned mutex.
+    // See inside ~STMT()
+    if (slock)
+    {
+      slock.unlock();
+    }
 
     delete stmt;
     return SQL_SUCCESS;
