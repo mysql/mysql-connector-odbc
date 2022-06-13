@@ -77,6 +77,7 @@ BuildRequires:  gtk3-devel
 %package setup
 Summary:	An ODBC @CONNECTOR_BASE_VERSION@ driver for MySQL - setup library
 Group:		Application/Databases
+AutoReq:	no
 Requires:	%{name} = %{version}-%{release}
 %endif
 

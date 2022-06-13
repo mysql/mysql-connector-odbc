@@ -47,7 +47,7 @@ Section: libs
 Architecture: any
 Multi-Arch: same
 Depends: dpkg-dev,
-         libgtk2.0-0 (>= 2.20.1),
+         libgtk2.0-0 (>= 2.20.1) | libgtk-3-0 (>= 3.0.0),
          mysql-connector-odbc@PRODUCT_SUFFIX@ (= ${binary:Version}),
          ${misc:Depends},
          ${shlibs:Depends}
