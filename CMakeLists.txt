@@ -456,28 +456,37 @@ IF(WIN32)
                 ENDFOREACH(CFG)
         ENDFOREACH(TYPE)
 
-  if(NOT MAINTAINER_MODE)
+  if (FIX_WARNINGS)
 
-    # TODO: instead fix code to not generate compile warnings
-    add_compile_options(/W1 /wd4133 /wd4047 /wd4313 /wd4197)
-
-  else()
-
-    # TODO: When code is fixed so that there are no warnings on this level,
-    # increase to /W2 and so on, until /Wall is reached. When /Wall is green on
-    # Windows, proceed to fixing remaining warnings on Unix builds.
+    # TODO: Increase warning level and once all warnings are cleared, enable 
+    # higher warning level in MAINTAINER_MODE. We start with no warnings on
+    # level /W1
 
     add_compile_options(/W1)
 
+  else()
+
+    add_compile_options(/W1 /wd4133 /wd4047 /wd4313 /wd4197)
+
   endif()
+
 
 ELSE(WIN32)
 
   ADD_DEFINITIONS(-D_UNIX_)
 
-  if(NOT MAINTAINER_MODE)
-    # TODO: instead fix code to not generate compile warnings
+  if(FIX_WARNINGS)
+
+    # TODO: Fix the compile warnings generated without `-w`. Once done,
+    # remove this option in MAINTAINER_MODE so that we see when new 
+    # warnings appear. Then proceed to `-w extra`.
+
+    add_compile_options(-Werror)
+
+    else()
+
     add_compile_options( -w )
+  
   endif()
 
 ENDIF(WIN32)
