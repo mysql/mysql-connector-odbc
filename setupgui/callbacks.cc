@@ -367,7 +367,6 @@ void syncTabsData(HWND hwnd, DataSource *params)
   GET_BOOL_TAB(METADATA_TAB, no_catalog);
   GET_BOOL_TAB(METADATA_TAB, no_schema);
   GET_BOOL_TAB(METADATA_TAB, limit_column_size);
-  GET_BOOL_TAB(METADATA_TAB, no_information_schema);
 
   /* 4 - Cursors/Results */
   GET_BOOL_TAB(CURSORS_TAB, return_matching_rows);
@@ -460,7 +459,6 @@ void syncTabs(HWND hwnd, DataSource *params)
   SET_BOOL_TAB(METADATA_TAB, no_catalog);
   SET_BOOL_TAB(METADATA_TAB, no_schema);
   SET_BOOL_TAB(METADATA_TAB, limit_column_size);
-  SET_BOOL_TAB(METADATA_TAB, no_information_schema);
 
   /* 4 - Cursors/Results */
   SET_BOOL_TAB(CURSORS_TAB, return_matching_rows);

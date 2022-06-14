@@ -171,7 +171,6 @@ typedef struct {
   BOOL default_bigint_bind_str;
   /* debug */
   BOOL save_queries;
-  BOOL no_information_schema;
   /* SSL */
   unsigned int sslverify;
   unsigned int cursor_prefetch_number;
@@ -257,8 +256,6 @@ extern const SQLWCHAR W_INVALID_ATTR_STR[];
 /*
   Use SHOW TABLE STATUS instead Information_Schema DB for table metadata
 */
-#define FLAG_NO_INFORMATION_SCHEMA (1 << 30)
-
 #define ODBC_SSL_MODE_DISABLED           "DISABLED"
 #define ODBC_SSL_MODE_PREFERRED          "PREFERRED"
 #define ODBC_SSL_MODE_REQUIRED           "REQUIRED"

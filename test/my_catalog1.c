@@ -1045,10 +1045,6 @@ DECLARE_TEST(t_bug23031)
 {
   SQLCHAR buff[255];
 
-  // Impossible to get view and commend with NO_I_S
-  if (myoption & (1 << 30))
-    return OK;
-
   ok_sql(hstmt, "DROP VIEW IF EXISTS t_bug23031_v");
   ok_sql(hstmt, "DROP TABLE IF EXISTS t_bug23031_t");
   ok_sql(hstmt, "CREATE TABLE t_bug23031_t (a INT) COMMENT 'Whee!'");
@@ -1598,8 +1594,4 @@ BEGIN_TESTS
   ADD_TEST(t_bug39957)
 END_TESTS
 
-myoption &= ~(1 << 30);
-RUN_TESTS_ONCE
-myoption |= (1 << 30);
-testname_suffix= "_no_i_s";
 RUN_TESTS

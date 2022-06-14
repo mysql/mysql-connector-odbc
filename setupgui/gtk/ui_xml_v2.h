@@ -1044,25 +1044,6 @@ static char *ui_xml ="<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" \
                         "<property name=\"position\">6</property>\n" \
                       "</packing>\n" \
                     "</child>\n" \
-                    "<child>\n" \
-                      "<object class=\"GtkCheckButton\" id=\"no_information_schema\">\n" \
-                        "<property name=\"label\" translatable=\"yes\">Don't Use INFORMATION_SCHEMA for Metadata</property>\n" \
-                        "<property name=\"use_action_appearance\">False</property>\n" \
-                        "<property name=\"visible\">True</property>\n" \
-                        "<property name=\"can_focus\">True</property>\n" \
-                        "<property name=\"receives_default\">False</property>\n" \
-                        "<property name=\"has_tooltip\">True</property>\n" \
-                        "<property name=\"tooltip_text\" translatable=\"yes\">Driver won't use INFORMATION_SCHEMA that can make some functions work faster in certain cases. Also quality of results may be lower as some data is only available in I_S.</property>\n" \
-                        "<property name=\"use_underline\">True</property>\n" \
-                        "<property name=\"xalign\">0.5</property>\n" \
-                        "<property name=\"draw_indicator\">True</property>\n" \
-                      "</object>\n" \
-                      "<packing>\n" \
-                        "<property name=\"expand\">True</property>\n" \
-                        "<property name=\"fill\">True</property>\n" \
-                        "<property name=\"position\">7</property>\n" \
-                      "</packing>\n" \
-                    "</child>\n" \
                   "</object>\n" \
                   "<packing>\n" \
                     "<property name=\"position\">2</property>\n" \
@@ -3012,25 +2993,6 @@ static char *ui_xml ="<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" \
                         "<property name=\"expand\">True</property>\n" \
                         "<property name=\"fill\">True</property>\n" \
                         "<property name=\"position\">6</property>\n" \
-                      "</packing>\n" \
-                    "</child>\n" \
-                    "<child>\n" \
-                      "<object class=\"GtkCheckButton\" id=\"no_information_schema\">\n" \
-                        "<property name=\"label\" translatable=\"yes\">Don't Use INFORMATION_SCHEMA for Metadata</property>\n" \
-                        "<property name=\"use_action_appearance\">False</property>\n" \
-                        "<property name=\"visible\">True</property>\n" \
-                        "<property name=\"can_focus\">True</property>\n" \
-                        "<property name=\"receives_default\">False</property>\n" \
-                        "<property name=\"has_tooltip\">True</property>\n" \
-                        "<property name=\"tooltip_text\" translatable=\"yes\">Driver won't use INFORMATION_SCHEMA that can make some functions work faster in certain cases. Also quality of results may be lower as some data is only available in I_S.</property>\n" \
-                        "<property name=\"use_underline\">True</property>\n" \
-                        "<property name=\"xalign\">0.5</property>\n" \
-                        "<property name=\"draw_indicator\">True</property>\n" \
-                      "</object>\n" \
-                      "<packing>\n" \
-                        "<property name=\"expand\">True</property>\n" \
-                        "<property name=\"fill\">True</property>\n" \
-                        "<property name=\"position\">7</property>\n" \
                       "</packing>\n" \
                     "</child>\n" \
                   "</object>\n" \

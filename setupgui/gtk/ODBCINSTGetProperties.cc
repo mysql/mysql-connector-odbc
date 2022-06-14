@@ -84,7 +84,6 @@ static const char *MYODBC_OPTIONS[][3] = {
   {"COLUMN_SIZE_S32",   "C", "Limit column size to signed 32-bit range"},
   {"NO_BINARY_RESULT",  "C", "Always handle binary function results as character data"},
   {"DFLT_BIGINT_BIND_STR",    "C", "Causes BIGINT parameters to be bound as strings"},
-  {"NO_INFORMATION_SCHEMA",   "C", "Don't use INFORMATION_SCHEMA for metadata"},
   {"INTERACTIVE",             "C", "Interactive Client"},
   {"CAN_HANDLE_EXP_PWD",      "C", "Can Handle Expired Password"},
   {"ENABLE_CLEARTEXT_PLUGIN", "C", "Enable Cleartext Authentication"},

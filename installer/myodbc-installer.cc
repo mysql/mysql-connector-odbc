@@ -551,7 +551,6 @@ int list_datasource_details(DataSource *ds)
   if (ds->no_tls_1_2) printf("\tNO_TLS_1_2\n");
   if (ds->no_tls_1_3) printf("\tNO_TLS_1_3\n");
   if (ds->no_ssps) printf("\tNO_SSPS\n");
-  if (ds->no_information_schema) printf("\tNO_I_S\n");
   if (ds->cursor_prefetch_number) printf("\tPREFETCH=%d\n", ds->cursor_prefetch_number);
   if (ds->readtimeout) printf("\tREADTIMEOUT=%d\n", ds->readtimeout);
   if (ds->writetimeout) printf("\tWRITETIMEOUT=%d\n", ds->writetimeout);

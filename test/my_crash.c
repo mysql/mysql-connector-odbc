@@ -647,7 +647,7 @@ DECLARE_TEST(t_bug18286366)
   int i, len= 0;
 
   is(OK == alloc_basic_handles_with_opt(&henv1, &hdbc1, &hstmt1, NULL, NULL,
-                                        NULL, NULL, "NO_I_S=1"));
+                                        NULL, NULL, ""));
 
   ok_sql(hstmt, "DROP TABLE IF EXISTS t_bug18286366b, t_bug18286366a");
   len= sprintf(buff, "CREATE TABLE t_bug18286366a ( ");
@@ -704,7 +704,7 @@ DECLARE_TEST(t_bug18286366_2)
   int i, len= 0;
 
   is(OK == alloc_basic_handles_with_opt(&henv1, &hdbc1, &hstmt1, NULL, NULL,
-                                        NULL, NULL, "NO_I_S=1"));
+                                        NULL, NULL, ""));
 
   ok_sql(hstmt, "DROP TABLE IF EXISTS t_bug182863662c,  t_bug182863662b, t_bug182863662a");
   len= sprintf(buff, "CREATE TABLE t_bug182863662a ( ");
@@ -781,7 +781,7 @@ DECLARE_TEST(t_bug18286366_3)
     return OK;
 
   is(OK == alloc_basic_handles_with_opt(&henv1, &hdbc1, &hstmt1, NULL, NULL,
-                                        NULL, NULL, "NO_I_S=1"));
+                                        NULL, NULL, ""));
 
   ok_sql(hstmt, "DROP TABLE IF EXISTS bug182863662 ,t_bug182863662c,  t_bug182863662b, t_bug182863662a");
 
@@ -866,7 +866,7 @@ DECLARE_TEST(t_bug18286118)
   int i= 0;
   is_num(OK, alloc_basic_handles_with_opt(&henv1, &hdbc1, &hstmt1, NULL,
                                       NULL, NULL, NULL,
-                                      (SQLCHAR*)"NO_I_S=1"));
+                                      (SQLCHAR*)""));
 
   sprintf(tmpBuff, "DROP TABLE IF EXISTS %s,%s CASCADE", tabname2,tabname1);
   ok_stmt(hstmt1, SQLExecDirect(hstmt1, (SQLCHAR*)tmpBuff, SQL_NTS));

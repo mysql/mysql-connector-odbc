@@ -191,7 +191,6 @@ static SQLWCHAR W_DFLT_BIGINT_BIND_STR[]=
   {'D','F','L','T','_','B','I','G','I','N','T','_','B','I','N','D','_','S','T','R',0};
 static SQLWCHAR W_CLIENT_INTERACTIVE[]=
   {'I','N','T','E','R','A','C','T','I','V','E',0};
-static SQLWCHAR W_NO_I_S[]= {'N','O','_','I','_','S',0};
 static SQLWCHAR W_PREFETCH[]= {'P','R','E','F','E','T','C','H',0};
 static SQLWCHAR W_NO_SSPS[]= {'N','O','_','S','S','P','S',0};
 static SQLWCHAR W_CAN_HANDLE_EXP_PWD[]=
@@ -256,7 +255,7 @@ SQLWCHAR *dsnparams[]= {W_DSN, W_DRIVER, W_DESCRIPTION, W_SERVER,
                         W_ZERO_DATE_TO_MIN, W_MIN_DATE_TO_ZERO,
                         W_MULTI_STATEMENTS, W_COLUMN_SIZE_S32,
                         W_NO_BINARY_RESULT, W_DFLT_BIGINT_BIND_STR,
-                        W_CLIENT_INTERACTIVE, W_NO_I_S, W_PREFETCH, W_NO_SSPS,
+                        W_CLIENT_INTERACTIVE, W_PREFETCH, W_NO_SSPS,
                         W_CAN_HANDLE_EXP_PWD, W_ENABLE_CLEARTEXT_PLUGIN,
                         W_GET_SERVER_PUBLIC_KEY, W_ENABLE_DNS_SRV, W_MULTI_HOST,
                         W_SAVEFILE, W_RSAKEY, W_PLUGIN_DIR, W_DEFAULT_AUTH,
@@ -969,8 +968,6 @@ void ds_map_param(DataSource *ds, const SQLWCHAR *param,
     *booldest= &ds->handle_binary_as_char;
   else if (!sqlwcharcasecmp(W_DFLT_BIGINT_BIND_STR, param))
     *booldest= &ds->default_bigint_bind_str;
-  else if (!sqlwcharcasecmp(W_NO_I_S, param))
-    *booldest= &ds->no_information_schema;
   else if (!sqlwcharcasecmp(W_NO_SSPS, param))
     *booldest= &ds->no_ssps;
   else if (!sqlwcharcasecmp(W_CAN_HANDLE_EXP_PWD, param))
@@ -1523,7 +1520,6 @@ int ds_add(DataSource *ds)
   if (ds_add_intprop(ds->name, W_COLUMN_SIZE_S32, ds->limit_column_size)) goto error;
   if (ds_add_intprop(ds->name, W_NO_BINARY_RESULT, ds->handle_binary_as_char)) goto error;
   if (ds_add_intprop(ds->name, W_DFLT_BIGINT_BIND_STR, ds->default_bigint_bind_str)) goto error;
-  if (ds_add_intprop(ds->name, W_NO_I_S, ds->no_information_schema)) goto error;
   if (ds_add_intprop(ds->name, W_NO_SSPS, ds->no_ssps)) goto error;
   if (ds_add_intprop(ds->name, W_CAN_HANDLE_EXP_PWD, ds->can_handle_exp_pwd)) goto error;
   if (ds_add_intprop(ds->name, W_ENABLE_CLEARTEXT_PLUGIN, ds->enable_cleartext_plugin)) goto error;
@@ -1629,7 +1625,6 @@ void ds_set_options(DataSource *ds, ulong options)
   ds->allow_multiple_statements=            (options & FLAG_MULTI_STATEMENTS) > 0;
   ds->limit_column_size=                    (options & FLAG_COLUMN_SIZE_S32) > 0;
   ds->handle_binary_as_char=                (options & FLAG_NO_BINARY_RESULT) > 0;
-  ds->no_information_schema=                (options & FLAG_NO_INFORMATION_SCHEMA) > 0;
   ds->default_bigint_bind_str=              (options & FLAG_DFLT_BIGINT_BIND_STR) > 0;
 }
 
@@ -1677,8 +1672,6 @@ ulong ds_get_options(DataSource *ds)
     options|= FLAG_LOG_QUERY;
   if (ds->dont_cache_result)
     options|= FLAG_NO_CACHE;
-  if (ds->no_information_schema)
-    options|= FLAG_NO_INFORMATION_SCHEMA;
   if (ds->force_use_of_forward_only_cursors)
     options|= FLAG_FORWARD_CURSOR;
   if (ds->auto_reconnect)

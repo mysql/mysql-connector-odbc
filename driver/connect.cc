@@ -919,14 +919,6 @@ SQLRETURN DBC::connect(DataSource *dsrc)
 
   mysql_get_option(mysql, MYSQL_OPT_NET_BUFFER_LENGTH, &net_buffer_len);
 
-  if (ds->no_information_schema)
-  {
-    set_error("01000", "The connection option NO_I_S is now "
-                       "deprecated and will be removed in future "
-                       "releases of MySQL Connector/ODBC", 0);
-    rc= SQL_SUCCESS_WITH_INFO;
-  }
-
   guard.set_success(rc == SQL_SUCCESS || rc == SQL_SUCCESS_WITH_INFO);
   return rc;
 
