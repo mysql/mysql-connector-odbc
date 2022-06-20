@@ -669,12 +669,13 @@ endif()
 # the lists should be updated.
 
 set(AUTH_PLUGINS
-  fido
-  kerberos
   ldap_sasl
   oci
 )
 
+if(NOT CMAKE_SYSTEM_NAME MATCHES "SunOS")
+  list(APPEND AUTH_PLUGINS fido kerberos)
+endif()
 
 # Plugin dependencies.
 #
@@ -691,7 +692,12 @@ if(NOT WIN32)
   set(AUTH_DEPS_kerberos gssapi_krb5 k5crypto krb5support krb5 com_err)
 endif()
 
-set(AUTH_DEPS_ldap_sasl libsasl ${AUTH_DEPS_kerberos})
+# Note: On Solaris all dependencies of ldap_sasl plugin are assumed to be part 
+# of the OS.
+
+if(NOT CMAKE_SYSTEM_NAME MATCHES "SunOS")
+  set(AUTH_DEPS_ldap_sasl libsasl ${AUTH_DEPS_kerberos})
+endif()
 if(WIN32)
   list(APPEND AUTH_DEPS_ldap_sasl saslSCRAM)
 endif()
@@ -712,6 +718,7 @@ set(IGNORED_LIBS
   libmysql lber libprotobuf
   ldap  # note: this is needed only by server-side plugin
   libcurl libmecab zlib
+  jemalloc
 )
 
 
