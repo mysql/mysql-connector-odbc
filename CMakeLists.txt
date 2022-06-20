@@ -655,18 +655,17 @@ ENDIF(WIN32)
 # Bundle 3rd party dependencies if needed
 # =======================================
 
-if(MYSQLCLIENT_STATIC_LINKING AND NOT RPM_BUILD)
-  set(BUNDLE_DEPENDENCIES 1)
-endif()
-
-# List client-side plugins, their dependencies and dependencies of the client 
-# library that are bundled with the server and should be bundled with 
-# connector. Also list plugins and libraries that can be found with the server 
-# but which should be ignored.
+# If build is configured with BUNDEL_DEPENDENCIES enabled then client-side 
+# plugins, their dependencies and other dependencies of the client library that 
+# are found at the client library installation location are copied to the 
+# location where ODBC driver is installed.
 #
-# When building in MAINTAINER_MODE cmake will report error if it finds 
-# a plugin or 3rd party librariy which is not listed here. When that happens 
-# the lists should be updated.
+# The lists of known plugins and 3rd party libraries are specified below. Only 
+# the specified plugins and libraries will be bundled. Also plugins and 
+# libraries that can be found with the server but which should be ignored are 
+# specified below. When building in MAINTAINER_MODE cmake will report error if 
+# it finds a plugin or 3rd party librariy which is not listed here. When that 
+# happens the lists should be updated.
 
 set(AUTH_PLUGINS
   ldap_sasl
@@ -711,6 +710,9 @@ set(PLUGINS)
 set(BUNDLED_LIBS
   libssl libcrypto ssleay libeay
 )
+
+# List plugins and other libraries that can be found bundled with the server 
+# but which are not relevant on client-side and can be safely ignored.
 
 set(IGNORED_PLUGINS qa_auth_client)
 
@@ -948,7 +950,17 @@ if(BUNDLE_DEPENDENCIES)
     endforeach()
 
     foreach(plugin ${IGNORED_PLUGINS})
+
+      # Note: Old cmake (seen with 3.13.4) generates this error on 
+      # list(FILTER...) if the list is empty:
+      # "list sub-command FILTER requires list to be present"
+
+      if(NOT ignored)
+        break()
+      endif()
+
       list(FILTER ignored EXCLUDE REGEX "^${plugin}")
+
     endforeach()
 
     if(ignored)
