@@ -50,6 +50,8 @@ BOOL Driver_Prompt(HWND hWnd, SQLWCHAR *instr, SQLUSMALLINT completion,
 {
   DataSource *ds= ds_new();
   BOOL rc= FALSE;
+  SQLWSTRING out;
+  size_t copy_len = 0;
 
   /*
      parse the attr string, dsn lookup will have already been
@@ -64,25 +66,33 @@ BOOL Driver_Prompt(HWND hWnd, SQLWCHAR *instr, SQLUSMALLINT completion,
   /* Show the dialog and handle result */
   if (ShowOdbcParamsDialog(ds, hWnd, TRUE) == 1)
   {
-    int len;
     /* serialize to outstr */
-    if ((len= ds_to_kvpair(ds, outstr, outmax, (SQLWCHAR)';')) == -1)
+    ds_to_kvpair(ds, out, (SQLWCHAR)';');
+    size_t len = out.length();
+    if (outlen)
+      *outlen = len;
+
+    if (outstr == nullptr || outmax == 0)
+    {
+      copy_len = 0;
+    }
+    else if (len > outmax)
     {
       /* truncated, up to caller to see outmax < *outlen */
-      if (outlen)
-      {
-        *outlen= ds_to_kvpair_len(ds);
-      }
-
-      /* Prevent access violation if outstr is NULL */
-      if (outstr)
-      {
-        outstr[outmax]= 0;
-      }
+      copy_len = outmax;
     }
-    else if (outlen)
-      *outlen= len;
-    rc= TRUE;
+    else
+    {
+      copy_len = len;
+    }
+
+    if (copy_len)
+    {
+      memcpy(outstr, out.c_str(), copy_len * sizeof(SQLWCHAR));
+      outstr[copy_len] = 0;
+    }
+
+    rc = TRUE;
   }
 
 exit:

@@ -385,6 +385,7 @@ BOOL is_null(STMT *stmt, ulong column_number, char *value)
 SQLRETURN prepare(STMT *stmt, char * query, SQLINTEGER query_length,
           bool reset_sql_limit, bool force_prepare)
 {
+  assert(stmt);
   /* TODO: I guess we always have to have query length here */
   if (query_length <= 0)
   {
@@ -416,7 +417,7 @@ SQLRETURN prepare(STMT *stmt, char * query, SQLINTEGER query_length,
        it at the moment */
     if (!get_cursor_name(&stmt->query))
     {
-     LOCK_STMT(stmt);
+     LOCK_DBC(stmt->dbc);
 
      if (reset_sql_limit)
         set_sql_select_limit(stmt->dbc, 0, false);
@@ -622,6 +623,7 @@ unsigned long long scroller_move(STMT * stmt)
 
 SQLRETURN scroller_prefetch(STMT * stmt)
 {
+  assert(stmt);
   if (stmt->scroller.total_rows > 0
       && stmt->scroller.next_offset >= (stmt->scroller.total_rows + stmt->scroller.start_offset))
   {
@@ -645,7 +647,7 @@ SQLRETURN scroller_prefetch(STMT * stmt)
 
   MYLOG_QUERY(stmt, stmt->scroller.query);
 
-  LOCK_STMT(stmt);
+  LOCK_DBC(stmt->dbc);
 
   if (exec_stmt_query(stmt, stmt->scroller.query,
                         (unsigned long)stmt->scroller.query_len, FALSE))

@@ -1036,18 +1036,20 @@ SQLRETURN SQL_API MySQLDriverConnect(SQLHDBC hdbc, SQLHWND hwnd,
   DataSource *ds= ds_new();
   /* We may have to read driver info to find the setup library. */
   Driver *pDriver= driver_new();
-  SQLWCHAR *prompt_instr= NULL;
   /* We never know how many new parameters might come out of the prompt */
   SQLWCHAR prompt_outstr[4096];
-  size_t prompt_inlen;
   BOOL bPrompt= FALSE;
   HMODULE hModule= NULL;
+  SQLWSTRING conn_str_in, conn_str_out;
+  SQLWSTRING prompt_instr;
 
   if (cbConnStrIn != SQL_NTS)
-    szConnStrIn= sqlwchardup(szConnStrIn, cbConnStrIn);
+    conn_str_in = SQLWSTRING(szConnStrIn, cbConnStrIn);
+  else
+    conn_str_in = szConnStrIn;
 
   /* Parse the incoming string */
-  if (ds_from_kvpair(ds, szConnStrIn, (SQLWCHAR)';'))
+  if (ds_from_kvpair(ds, conn_str_in.c_str(), (SQLWCHAR)';'))
   {
     rc= dbc->set_error( "HY000",
                       "Failed to parse the incoming connect string.", 0);
@@ -1071,7 +1073,7 @@ SQLRETURN SQL_API MySQLDriverConnect(SQLHDBC hdbc, SQLHWND hwnd,
       1 - we want the connection string options to override DSN options
       2 - no need to check for parsing erros as it was done before
     */
-    ds_from_kvpair(ds, szConnStrIn, (SQLWCHAR)';');
+    ds_from_kvpair(ds, conn_str_in.c_str(), (SQLWCHAR)';');
   }
 #endif
 
@@ -1224,25 +1226,21 @@ SQLRETURN SQL_API MySQLDriverConnect(SQLHDBC hdbc, SQLHWND hwnd,
     }
 
     /* create a string for prompting, and add driver manually */
-    prompt_inlen= ds_to_kvpair_len(ds) + sqlwcharlen(W_DRIVER_PARAM) +
-                  sqlwcharlen(ds->driver) + 1;
-    prompt_instr= (SQLWCHAR *) myodbc_malloc(prompt_inlen * sizeof(SQLWCHAR),
-                                         MYF(0));
-    if (ds_to_kvpair(ds, prompt_instr, prompt_inlen, ';') == -1)
+    if (ds_to_kvpair(ds, prompt_instr, ';') == -1)
     {
       rc= dbc->set_error( "HY000",
                         "Failed to prepare prompt input.", 0);
       goto error;
     }
-    prompt_inlen-= sqlwcharlen(prompt_instr);
-    sqlwcharncat2(prompt_instr, W_DRIVER_PARAM, &prompt_inlen);
-    sqlwcharncat2(prompt_instr, ds->driver, &prompt_inlen);
+
+    prompt_instr.append(W_DRIVER_PARAM);
+    prompt_instr.append(ds->driver);
 
     /*
       In case the client app did not provide the out string we use our
       inner buffer prompt_outstr
     */
-    if (!pFunc(hwnd, prompt_instr, fDriverCompletion,
+    if (!pFunc(hwnd, (SQLWCHAR*)prompt_instr.c_str(), fDriverCompletion,
                prompt_outstr, sizeof(prompt_outstr), pcbConnStrOut))
     {
       dbc->set_error("HY000", "User cancelled.", 0);
@@ -1291,9 +1289,8 @@ connected:
   /* copy input to output if connected without prompting */
   if (!bPrompt && szConnStrOut && cbConnStrOutMax)
   {
-    size_t inlen, copylen;
-    SQLWCHAR *internal_out_str= szConnStrIn;
-
+    size_t copylen;
+    conn_str_out = conn_str_in;
     if (ds->savefile)
     {
       SQLWCHAR *pwd_temp= ds->pwd;
@@ -1303,17 +1300,16 @@ connected:
       ds->pwd= NULL;
       ds->pwd8= NULL;
 
-      ds_to_kvpair(ds, prompt_outstr, sizeof(prompt_outstr)/sizeof(SQLWCHAR), ';');
-      internal_out_str= (SQLWCHAR*)prompt_outstr;
+      ds_to_kvpair(ds, conn_str_out, ';');
 
       /* restore old values */
       ds->pwd= pwd_temp;
       ds->pwd8= pwd8_temp;
     }
 
-    inlen= (sqlwcharlen(internal_out_str) + 1) * sizeof(SQLWCHAR);
-    copylen= myodbc_min((size_t)cbConnStrOutMax, inlen);
-    memcpy(szConnStrOut, internal_out_str, copylen);
+    size_t inlen = (conn_str_out.length() + 1) * sizeof(SQLWCHAR);
+    copylen = myodbc_min((size_t)cbConnStrOutMax, inlen);
+    memcpy(szConnStrOut, conn_str_out.c_str(), copylen);
     /* term needed if possibly truncated */
     szConnStrOut[(copylen / sizeof(SQLWCHAR)) - 1] = 0;
     if (pcbConnStrOut)
@@ -1331,14 +1327,11 @@ connected:
 error:
   if (hModule)
     FreeLibrary(hModule);
-  if (cbConnStrIn != SQL_NTS)
-    x_free(szConnStrIn);
 
   driver_delete(pDriver);
   /* delete data source unless connected */
   if (!dbc->ds)
     ds_delete(ds);
-  x_free(prompt_instr);
 
   return rc;
 }

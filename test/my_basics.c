@@ -522,7 +522,7 @@ DECLARE_TEST(t_driverconnect_outstring)
 
   ok_env(henv, SQLAllocHandle(SQL_HANDLE_DBC, henv, &hdbc1));
 
-  ok_con(hdbc1, SQLDriverConnect(hdbc1, NULL, conn, sizeof(conn), conn_out,
+  ok_con(hdbc1, SQLDriverConnect(hdbc1, NULL, conn, SQL_NTS, conn_out,
                                  sizeof(conn_out), &conn_out_len,
                                  SQL_DRIVER_NOPROMPT));
 
@@ -1502,7 +1502,65 @@ DECLARE_TEST(t_tls_versions)
   return OK;
 }
 
+DECLARE_TEST(t_bug107307)
+{
+  SQLCHAR buff[128];
+  SQLRETURN rc;
+  double value = 0;
+  SQLLEN ind = 0;
+
+  DECLARE_BASIC_HANDLES(henv1, hdbc1, hstmt1);
+  alloc_basic_handles_with_opt(&henv1, &hdbc1, &hstmt1, NULL, NULL,
+    NULL, NULL, "NO_CACHE=1");
+
+  ok_sql(hstmt1, "DROP TABLE IF EXISTS t_bug107307");
+  ok_sql(hstmt1, "CREATE TABLE t_bug107307 (num0 DOUBLE)");
+
+  double expected[] = {12.3, -12.3, 15.7, -15.7, 3.5, -3.5, 0, 0, 10};
+  ok_sql(hstmt1, "INSERT INTO t_bug107307 VALUES (12.3), (-12.3), (15.7),"
+    "(-15.7), (3.5), (-3.5), (0), (NULL), (10)");
+
+  ok_stmt(hstmt1, SQLPrepare(hstmt1, "SELECT * FROM t_bug107307", SQL_NTS));
+  ok_stmt(hstmt, SQLExecute(hstmt1));
+
+  ok_stmt(hstmt1, SQLBindCol(hstmt1, 1, SQL_C_DOUBLE, (SQLPOINTER)&value, 0, &ind));
+
+  for (int i = 0; ; i++)
+  {
+    rc = SQLFetch(hstmt1);
+    if (rc == SQL_SUCCESS || rc == SQL_SUCCESS_WITH_INFO)
+    {
+      if (ind <= 0)
+      {
+        printf("Record %d: %s\n", i + 1, "NULL");
+      }
+      else
+      {
+        printf("Record %d: %f\n", i + 1, value);
+      }
+      is(value == expected[i]);
+    }
+    else
+    {
+      if (rc != SQL_NO_DATA)
+      {
+        printf("Error\n");
+      }
+      else
+      {
+        break;
+      }
+    }
+  }
+
+  ok_stmt(hstmt1, SQLFreeStmt(hstmt1, SQL_CLOSE));
+  ok_sql(hstmt1, "DROP TABLE IF EXISTS t_bug107307");
+  free_basic_handles(&henv1, &hdbc1, &hstmt1);
+  return OK;
+}
+
 BEGIN_TESTS
+  ADD_TEST(t_bug107307)
   ADD_TEST(t_tls_versions)
   ADD_TEST(t_tls_opts)
   ADD_TEST(t_ssl_mode)

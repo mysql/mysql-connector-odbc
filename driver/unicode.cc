@@ -74,7 +74,7 @@ SQLColAttributeW(SQLHSTMT hstmt, SQLUSMALLINT column,
 #endif
                )
 {
-  CHECK_HANDLE(hstmt);
+  LOCK_STMT(hstmt);
 
   return SQLColAttributeWImpl(hstmt, column, field, char_attr, char_attr_max,
                               char_attr_len, num_attr);
@@ -132,7 +132,7 @@ SQLColAttributesW(SQLHSTMT hstmt, SQLUSMALLINT column, SQLUSMALLINT field,
                   SQLPOINTER char_attr, SQLSMALLINT char_attr_max,
                   SQLSMALLINT *char_attr_len, SQLLEN *num_attr)
 {
-  CHECK_HANDLE(hstmt);
+  LOCK_STMT(hstmt);
 
   return SQLColAttributeWImpl(hstmt, column, field, char_attr, char_attr_max,
                               char_attr_len, num_attr);
@@ -152,7 +152,7 @@ SQLColumnPrivilegesW(SQLHSTMT hstmt,
   uint errors= 0;
   DBC *dbc;
 
-  CHECK_HANDLE(hstmt);
+  LOCK_STMT(hstmt);
 
   dbc= ((STMT *)hstmt)->dbc;
 
@@ -197,7 +197,7 @@ SQLColumnsW(SQLHSTMT hstmt,
   uint errors= 0;
   DBC *dbc;
 
-  CHECK_HANDLE(hstmt);
+  LOCK_STMT(hstmt);
 
   dbc= ((STMT *)hstmt)->dbc;
 
@@ -278,7 +278,7 @@ SQLDescribeColW(SQLHSTMT hstmt, SQLUSMALLINT column,
 
   SQLRETURN rc;
 
-  CHECK_HANDLE(hstmt);
+  LOCK_STMT(hstmt);
 
   rc= MySQLDescribeCol(hstmt, column, &value, &free_value, type,
                                  size, scale, nullable);
@@ -360,7 +360,7 @@ SQLExecDirectW(SQLHSTMT hstmt, SQLWCHAR *str, SQLINTEGER str_len)
 {
   int error;
 
-  CHECK_HANDLE(hstmt);
+  LOCK_STMT(hstmt);
 
   if ((error= SQLPrepareWImpl(hstmt, str, str_len, false)))
     return error;
@@ -386,7 +386,7 @@ SQLForeignKeysW(SQLHSTMT hstmt,
   uint errors= 0;
   DBC *dbc;
 
-  CHECK_HANDLE(hstmt);
+  LOCK_STMT(hstmt);
 
   dbc= ((STMT *)hstmt)->dbc;
 
@@ -533,7 +533,7 @@ SQLGetCursorNameW(SQLHSTMT hstmt, SQLWCHAR *cursor, SQLSMALLINT cursor_max,
   SQLINTEGER len= SQL_NTS;
   uint errors;
 
-  CHECK_HANDLE(hstmt);
+  LOCK_STMT(hstmt);
 
   CLEAR_STMT_ERROR(stmt);
 
@@ -796,7 +796,7 @@ SQLRETURN SQL_API
 SQLGetStmtAttrW(SQLHSTMT hstmt, SQLINTEGER attribute, SQLPOINTER value,
                 SQLINTEGER value_max, SQLINTEGER *value_len)
 {
-  CHECK_HANDLE(hstmt);
+  LOCK_STMT(hstmt);
 
   return MySQLGetStmtAttr(hstmt, attribute, value, value_max, value_len);
 }
@@ -806,7 +806,7 @@ SQLGetStmtAttrW(SQLHSTMT hstmt, SQLINTEGER attribute, SQLPOINTER value,
 SQLRETURN SQL_API
 SQLGetTypeInfoW(SQLHSTMT hstmt, SQLSMALLINT type)
 {
-  CHECK_HANDLE(hstmt);
+  LOCK_STMT(hstmt);
 
   return MySQLGetTypeInfo(hstmt, type);
 }
@@ -818,7 +818,7 @@ SQLNativeSqlW(SQLHDBC hdbc, SQLWCHAR *in, SQLINTEGER in_len,
 {
   SQLRETURN rc= SQL_SUCCESS;
 
-  CHECK_HANDLE(hdbc);
+  LOCK_DBC(hdbc);
 
   if (in_len == SQL_NTS)
     in_len= (SQLINTEGER)sqlwcharlen(in);
@@ -847,7 +847,7 @@ SQLNativeSqlW(SQLHDBC hdbc, SQLWCHAR *in, SQLINTEGER in_len,
 SQLRETURN SQL_API
 SQLPrepareW(SQLHSTMT hstmt, SQLWCHAR *str, SQLINTEGER str_len)
 {
-  CHECK_HANDLE(hstmt);
+  LOCK_STMT(hstmt);
 
   return SQLPrepareWImpl(hstmt, str, str_len, true);
 }
@@ -884,7 +884,7 @@ SQLPrimaryKeysW(SQLHSTMT hstmt,
   uint errors= 0;
   DBC *dbc;
 
-  CHECK_HANDLE(hstmt);
+  LOCK_STMT(hstmt);
 
   dbc= ((STMT *)hstmt)->dbc;
   len= catalog_len;
@@ -923,7 +923,7 @@ SQLProcedureColumnsW(SQLHSTMT hstmt,
   uint errors= 0;
   DBC *dbc;
 
-  CHECK_HANDLE(hstmt);
+  LOCK_STMT(hstmt);
 
   dbc= ((STMT *)hstmt)->dbc;
   len= catalog_len;
@@ -966,7 +966,7 @@ SQLProceduresW(SQLHSTMT hstmt,
   uint errors= 0;
   DBC *dbc;
 
-  CHECK_HANDLE(hstmt);
+  LOCK_STMT(hstmt);
 
   dbc= ((STMT *)hstmt)->dbc;
   len= catalog_len;
@@ -1055,7 +1055,7 @@ SQLSetCursorNameW(SQLHSTMT hstmt, SQLWCHAR *name, SQLSMALLINT name_len)
   SQLCHAR *name_char;
   DBC *dbc;
 
-  CHECK_HANDLE(hstmt);
+  LOCK_STMT(hstmt);
 
   dbc= ((STMT *)hstmt)->dbc;
   name_char= sqlwchar_as_sqlchar(dbc->cxn_charset_info,
@@ -1092,7 +1092,7 @@ SQLRETURN SQL_API
 SQLSetStmtAttrW(SQLHSTMT hstmt, SQLINTEGER attribute,
                 SQLPOINTER value, SQLINTEGER value_len)
 {
-  CHECK_HANDLE(hstmt);
+  LOCK_STMT(hstmt);
 
   /* Nothing special to do, since we don't have any string stmt attribs */
   return MySQLSetStmtAttr(hstmt, attribute, value, value_len);
@@ -1112,7 +1112,7 @@ SQLSpecialColumnsW(SQLHSTMT hstmt, SQLUSMALLINT type,
   uint errors= 0;
   DBC *dbc;
 
-  CHECK_HANDLE(hstmt);
+  LOCK_STMT(hstmt);
 
   dbc= ((STMT *)hstmt)->dbc;
   len= catalog_len;
@@ -1152,7 +1152,7 @@ SQLStatisticsW(SQLHSTMT hstmt,
   uint errors= 0;
   DBC *dbc;
 
-  CHECK_HANDLE(hstmt);
+  LOCK_STMT(hstmt);
 
   dbc= ((STMT *)hstmt)->dbc;
   len= catalog_len;
@@ -1190,7 +1190,7 @@ SQLTablePrivilegesW(SQLHSTMT hstmt,
   uint errors= 0;
   DBC *dbc;
 
-  CHECK_HANDLE(hstmt);
+  LOCK_STMT(hstmt);
 
   dbc= ((STMT *)hstmt)->dbc;
   len= catalog_len;
@@ -1229,7 +1229,7 @@ SQLTablesW(SQLHSTMT hstmt,
   uint errors= 0;
   DBC *dbc;
 
-  CHECK_HANDLE(hstmt);
+  LOCK_STMT(hstmt);
 
   dbc= ((STMT *)hstmt)->dbc;
 

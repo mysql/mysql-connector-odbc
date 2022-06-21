@@ -137,9 +137,13 @@ void myodbc_dynstr_free(DYNAMIC_STRING *str);
 bool myodbc_dynstr_realloc(DYNAMIC_STRING *str, size_t additional_size);
 
 unsigned int get_charset_maxlen(unsigned int num);
+
 #ifdef __cplusplus
 }
 #endif
+
+typedef std::basic_string<SQLWCHAR, std::char_traits<SQLWCHAR>, std::allocator<SQLWCHAR>> SQLWSTRING;
+SQLWSTRING escape_brackets(const SQLWCHAR* val, bool add_start_end);
 
 #endif /* _STRINGUTIL_H */
 

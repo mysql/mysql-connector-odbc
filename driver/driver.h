@@ -70,12 +70,14 @@
 #include <list>
 #include <mutex>
 
-#define LOCK_STMT(S) std::unique_lock<std::recursive_mutex> slock(S->dbc->lock)
-#define LOCK_STMT_DEFER(S) std::unique_lock<std::recursive_mutex> slock(S->dbc->lock, std::defer_lock)
+#define LOCK_STMT(S) CHECK_HANDLE(S); \
+  std::unique_lock<std::recursive_mutex> slock(((STMT*)S)->lock)
+#define LOCK_STMT_DEFER(S) CHECK_HANDLE(S); \
+  std::unique_lock<std::recursive_mutex> slock(((STMT*)S)->lock, std::defer_lock)
 #define DO_LOCK_STMT() slock.lock();
 
-#define LOCK_DBC(D) std::unique_lock<std::recursive_mutex> dlock(D->lock)
-#define LOCK_DBC_DEFER(D) std::unique_lock<std::recursive_mutex> dlock(D->lock, std::defer_lock)
+#define LOCK_DBC(D) std::unique_lock<std::recursive_mutex> dlock(((DBC*)D)->lock)
+#define LOCK_DBC_DEFER(D) std::unique_lock<std::recursive_mutex> dlock(((DBC*)D)->lock, std::defer_lock)
 #define DO_LOCK_DBC() dlock.lock();
 
 #define LOCK_ENV(E) std::unique_lock<std::mutex> elock(E->lock)
@@ -124,8 +126,13 @@
 /*
    Internal driver definitions
 */
-#define MYSQL_RESET_BUFFERS 1000  /* param to SQLFreeStmt */
-#define MYSQL_RESET 1001	  /* param to SQLFreeStmt */
+
+/* Options for SQLFreeStmt */
+#define FREE_STMT_RESET_BUFFERS 1000
+#define FREE_STMT_RESET 1001
+#define FREE_STMT_CLEAR_RESULT 1
+#define FREE_STMT_DO_LOCK 2
+
 #define MYSQL_3_21_PROTOCOL 10	  /* OLD protocol */
 #define CHECK_IF_ALIVE	    1800  /* Seconds between queries for ping */
 
@@ -455,9 +462,9 @@ struct DBC;
 
 struct DESC {
   /* header fields */
-  SQLSMALLINT   alloc_type;
-  SQLULEN       array_size;
-  SQLUSMALLINT *array_status_ptr;
+  SQLSMALLINT   alloc_type = 0;
+  SQLULEN       array_size = 0;
+  SQLUSMALLINT *array_status_ptr = nullptr;
   /* NOTE: This field is defined as SQLINTEGER* in the descriptor
    * documentation, but corresponds to SQL_ATTR_ROW_BIND_OFFSET_PTR or
    * SQL_ATTR_PARAM_BIND_OFFSET_PTR when set via SQLSetStmtAttr(). The
@@ -465,23 +472,23 @@ struct DESC {
    * is now a 64-bit value. These two are conflicting, so we opt for
    * the 64-bit value.
    */
-  SQLULEN      *bind_offset_ptr;
-  SQLINTEGER    bind_type;
-  SQLLEN        count;  // Only used for SQLGetDescField()
-  SQLLEN        bookmark_count;
+  SQLULEN      *bind_offset_ptr = nullptr;
+  SQLINTEGER    bind_type = 0;
+  SQLLEN        count = 0;  // Only used for SQLGetDescField()
+  SQLLEN        bookmark_count = 0;
   /* Everywhere(http://msdn.microsoft.com/en-us/library/ms713560(VS.85).aspx
      http://msdn.microsoft.com/en-us/library/ms712631(VS.85).aspx) I found
      it's referred as SQLULEN* */
-  SQLULEN      *rows_processed_ptr;
+  SQLULEN      *rows_processed_ptr = nullptr;
 
   /* internal fields */
-  desc_desc_type  desc_type;
-  desc_ref_type   ref_type;
+  desc_desc_type  desc_type = DESC_PARAM;
+  desc_ref_type   ref_type = DESC_IMP;
 
   std::vector<DESCREC> bookmark2;
   std::vector<DESCREC> records2;
 
-  MYERROR         error;
+  MYERROR error;
   STMT *stmt;
   DBC *dbc;
 
@@ -904,7 +911,11 @@ struct ROW_STORAGE
       *(bind[i].is_null) = data.is_null();
       *(bind[i].length) = data.is_null() ? -1 : data.length();
       if (!data.is_null())
-        memcpy(bind[i].buffer, data.data(), *(bind[i].length));                                                                                                                                                              }
+      {
+        size_t copy_zero = bind[i].buffer_length > *(bind[i].length) ? 1 : 0;
+        memcpy(bind[i].buffer, data.data(), *(bind[i].length) + copy_zero);
+      }
+    }
     // Set EOF if the last row was filled
     m_eof = (m_rnum <= (m_cur_row + 1));
     // Increment row counter only if not EOF
@@ -1007,6 +1018,8 @@ struct STMT
   /* implicit descriptors */
   DESC *imp_ard;
   DESC *imp_apd;
+
+  std::recursive_mutex lock;
 
   int ssps_bind_result();
 

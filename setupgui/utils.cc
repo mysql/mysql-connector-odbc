@@ -57,20 +57,14 @@ void Disconnect(SQLHDBC hDbc, SQLHENV hEnv)
 SQLRETURN Connect(SQLHDBC *hDbc, SQLHENV *hEnv, DataSource *params)
 {
   SQLRETURN   nReturn;
-  SQLWCHAR      stringConnectIn[1024];
-  size_t inlen= 1024;
+  SQLWSTRING  string_connect_in;
 
   assert(params->driver && *params->driver);
 
   /* Blank out DSN name, otherwise it will pull the info from the registry */
   ds_set_strattr(&params->name, NULL);
 
-  if (ds_to_kvpair(params, stringConnectIn, 1024, ';') == -1)
-  {
-      /* TODO error message..... */
-      return SQL_ERROR;
-  }
-  inlen-= sqlwcharlen(stringConnectIn);
+  ds_to_kvpair(params, string_connect_in, ';');
 
   if (hDBC == SQL_NULL_HDBC)
   {
@@ -102,7 +96,7 @@ SQLRETURN Connect(SQLHDBC *hDbc, SQLHENV *hEnv, DataSource *params)
     }
   }
 
-  nReturn= SQLDriverConnectW(*hDbc, NULL, (SQLWCHAR*)(stringConnectIn),
+  nReturn= SQLDriverConnectW(*hDbc, NULL, (SQLWCHAR*)string_connect_in.c_str(),
                              SQL_NTS, NULL, 0, NULL, SQL_DRIVER_NOPROMPT);
 
   if (nReturn != SQL_SUCCESS)

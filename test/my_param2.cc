@@ -273,7 +273,60 @@ DECLARE_TEST(t_bug30578291_just_rows)
 }
 
 
+DECLARE_TEST(t_stmt_thread)
+{
+  {
+    odbc::HSTMT hstmt2(hdbc);
+
+    auto cancel_func = [](SQLHSTMT hstmt)
+    {
+	    SQLRETURN sqlReturn = 0; SQLCancel(hstmt);
+	    std::cout << "SQLCancel() result " << sqlReturn << std::endl;
+	    return 0;
+    };
+
+    auto select_func = [](SQLHSTMT hstmt)
+    {
+      SQLUINTEGER buffer[1000];
+      SQLBindCol(hstmt, 1, SQL_C_ULONG, &buffer[0], 1, NULL);
+      SQLRETURN rc2 = SQLFetchScroll(hstmt, SQL_FETCH_NEXT, 0);
+      std::cout << "SQLFetchScroll() result " << rc2 << std::endl;
+      return 0;
+    };
+
+    odbc::table tab(hstmt2, "stmt_crash",
+      "id int primary key auto_increment, data int");
+    for (int i = 0; i < 300; ++i)
+    {
+      tab.insert("(NULL,111),(NULL,222),(NULL,333)");
+    }
+    ok_stmt(hstmt, SQLSetStmtAttr(hstmt2, SQL_ATTR_ROW_ARRAY_SIZE,
+      (SQLPOINTER)500, 0));
+
+    for (int i = 0; i < 30; ++i)
+    {
+      std::cout << "Iteration " << i << std::endl;
+      odbc::sql(hstmt2, "SELECT data FROM stmt_crash");
+      std::cout << "SELECT is executed..." << std::endl;
+
+      std::this_thread::sleep_for(std::chrono::milliseconds(10));
+      std::thread select_thd(select_func, (SQLHSTMT)hstmt2);
+      std::thread cancel_thd(cancel_func, (SQLHSTMT)hstmt2);
+      std::thread select_thd2(select_func, (SQLHSTMT)hstmt2);
+
+      select_thd.join();
+      cancel_thd.join();
+      select_thd2.join();
+      std::cout << "Threads finished..." << std::endl;
+      ok_stmt(hstmt2, SQLFreeStmt(hstmt2, SQL_CLOSE));
+      std::cout << "Statement closed..." << std::endl;
+    }
+  }
+  return OK;
+}
+
 BEGIN_TESTS
+  ADD_TEST(t_stmt_thread)
   ADD_TEST(t_bug30578291_inout_param)
   ADD_TEST(t_bug30578291_in_param)
   ADD_TEST(t_bug30578291_just_rows)

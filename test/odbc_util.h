@@ -32,6 +32,8 @@
 #include <string>
 #include <memory>
 #include <cstdio>
+#include <fstream>
+#include <iostream>
 
 #define X(s) odbc::xstring(s)
 
@@ -817,10 +819,10 @@ struct temp_user
   SQLHSTMT hstmt = nullptr;
   odbc::xstring username;  // full username@host
   odbc::xstring name;      // username without host
-  odbc::xstring pass = "temp_pass";
+  odbc::xstring pass;
   odbc::xbuf buf;
 
-  temp_user(SQLHSTMT stmt) : hstmt(stmt), buf(1024)
+  temp_user(SQLHSTMT stmt, odbc::xstring pwd) : hstmt(stmt), buf(1024), pass(pwd)
   {
     odbc::select_one_str(hstmt, "SELECT USER()", buf, 1);
     username = "temp_user_" + odbc::xstring(buf);
@@ -829,6 +831,9 @@ struct temp_user
                       " IDENTIFIED BY '" + pass + "'");
     name = username.substr(0, username.find('@', 0));
   }
+
+  temp_user(SQLHSTMT stmt) : temp_user(stmt, "temp_pass")
+  { }
 
   ~temp_user()
   {

@@ -195,7 +195,12 @@ int APIENTRY LibMain(HANDLE inst, DWORD ul_reason_being_called,
     break;
   case DLL_PROCESS_DETACH:  /* case of wep call in win 3.x */
     if (!--inited)
+    {
+      // Process is about to detach. All has to be deinited to avoid
+      // memory leaks even if initialized multiple times (myodbc_inited > 1).
+      myodbc_inited = 1;
       myodbc_end();
+    }
     break;
 
   /*
