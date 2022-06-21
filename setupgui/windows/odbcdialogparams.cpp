@@ -653,12 +653,16 @@ void FormMain_OnCommand(HWND hwnd, int id, HWND hwndCtl, UINT codeNotify)
       choosePath(hwnd, IDC_EDIT_sslcapath); break;
     case IDC_RSAKEYCHOOSER:
       chooseFile(hwnd, IDC_EDIT_rsakey); break;
+    case IDC_SSLCRLCHOOSER:
+      chooseFile(hwnd, IDC_EDIT_ssl_crl); break;
+    case IDC_SSLCRLPATHCHOOSER:
+      choosePath(hwnd, IDC_EDIT_ssl_crlpath); break;
     case IDC_CHOOSER_plugin_dir:
       choosePath(hwnd, IDC_EDIT_plugin_dir); break;
     case IDC_CHOOSER_load_data_local_dir:
       choosePath(hwnd, IDC_EDIT_load_data_local_dir); break;
-  case IDC_CHOOSER_oci_config_file:
-    chooseFile(hwnd, IDC_EDIT_oci_config_file); break;
+    case IDC_CHOOSER_oci_config_file:
+      chooseFile(hwnd, IDC_EDIT_oci_config_file); break;
     case IDC_RADIO_tcp:
     case IDC_RADIO_pipe:
       SwitchTcpOrPipe(hwnd, !!Button_GetCheck(GetDlgItem(hwnd, IDC_RADIO_pipe)));

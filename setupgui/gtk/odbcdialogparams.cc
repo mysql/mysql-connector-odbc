@@ -752,6 +752,15 @@ int ShowOdbcParamsDialog(DataSource* params, HWND ParentWnd, BOOL isPrompt)
   g_signal_connect ((gpointer) dummy, "clicked",
                     G_CALLBACK (on_file_button_clicked), entry);
 
+  dummy= GTK_WIDGET (gtk_builder_get_object (builder, "ssl_crl_button"));
+  entry= GTK_ENTRY (gtk_builder_get_object (builder, "ssl_crl"));
+  g_signal_connect ((gpointer) dummy, "clicked",
+                    G_CALLBACK (on_file_button_clicked), entry);
+
+  dummy= GTK_WIDGET (gtk_builder_get_object (builder, "ssl_crlpath_button"));
+  entry= GTK_ENTRY (gtk_builder_get_object (builder, "ssl_crlpath"));
+  g_signal_connect ((gpointer) dummy, "clicked",
+                    G_CALLBACK (on_folder_button_clicked), entry);
 
   dummy= GTK_WIDGET (gtk_builder_get_object (builder, "cursor_prefetch_active"));
   g_signal_connect ((gpointer) dummy, "toggled",

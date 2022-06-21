@@ -490,6 +490,24 @@ SQLRETURN DBC::connect(DataSource *dsrc)
   }
 #endif
 
+  if (dsrc->ssl_crl)
+  {
+    if (mysql_options(mysql, MYSQL_OPT_SSL_CRL,
+      ds_get_utf8attr(dsrc->ssl_crl, &dsrc->ssl_crl8)))
+    {
+      return set_error("HY000", "Failed to set the certificate revocation list file", 0);
+    }
+  }
+
+  if (dsrc->ssl_crlpath)
+  {
+    if (mysql_options(mysql, MYSQL_OPT_SSL_CRLPATH,
+      ds_get_utf8attr(dsrc->ssl_crlpath, &dsrc->ssl_crlpath8)))
+    {
+      return set_error("HY000", "Failed to set the certificate revocation list path", 0);
+    }
+  }
+
 #if MYSQL_VERSION_ID >= 80004
   if (dsrc->get_server_public_key)
   {

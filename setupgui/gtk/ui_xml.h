@@ -1693,6 +1693,90 @@ static char *ui_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" \
                         "<property name=\"bottom_attach\">8</property>\n" \
                       "</packing>\n" \
                     "</child>\n" \
+
+                    "<child>\n" \
+                      "<object class=\"GtkLabel\" id=\"label_ssl_crl\">\n" \
+                        "<property name=\"visible\">True</property>\n" \
+                        "<property name=\"can_focus\">False</property>\n" \
+                        "<property name=\"label\" translatable=\"yes\">SSL CRL</property>\n" \
+                        "<property name=\"xalign\">1</property>\n" \
+                      "</object>\n" \
+                      "<packing>\n" \
+                        "<property name=\"top_attach\">8</property>\n" \
+                        "<property name=\"bottom_attach\">9</property>\n" \
+                      "</packing>\n" \
+                    "</child>\n" \
+                    "<child>\n" \
+                      "<object class=\"GtkEntry\" id=\"ssl_crl\">\n" \
+                        "<property name=\"visible\">True</property>\n" \
+                        "<property name=\"can_focus\">True</property>\n" \
+                      "</object>\n" \
+                      "<packing>\n" \
+                        "<property name=\"left_attach\">1</property>\n" \
+                        "<property name=\"right_attach\">2</property>\n" \
+                        "<property name=\"top_attach\">8</property>\n" \
+                        "<property name=\"bottom_attach\">9</property>\n" \
+                      "</packing>\n" \
+                    "</child>\n" \
+                    "<child>\n" \
+                      "<object class=\"GtkButton\" id=\"ssl_crl_button\">\n" \
+                        "<property name=\"label\" translatable=\"yes\">...</property>\n" \
+                        "<property name=\"use_action_appearance\">False</property>\n" \
+                        "<property name=\"visible\">True</property>\n" \
+                        "<property name=\"can_focus\">True</property>\n" \
+                        "<property name=\"receives_default\">True</property>\n" \
+                      "</object>\n" \
+                      "<packing>\n" \
+                        "<property name=\"left_attach\">2</property>\n" \
+                        "<property name=\"right_attach\">3</property>\n" \
+                        "<property name=\"top_attach\">8</property>\n" \
+                        "<property name=\"bottom_attach\">9</property>\n" \
+                        "<property name=\"x_options\"/>\n" \
+                        "<property name=\"y_options\"/>\n" \
+                      "</packing>\n" \
+                    "</child>\n" \
+                    "<child>\n" \
+                      "<object class=\"GtkLabel\" id=\"label_ssl_crlpath\">\n" \
+                        "<property name=\"visible\">True</property>\n" \
+                        "<property name=\"can_focus\">False</property>\n" \
+                        "<property name=\"label\" translatable=\"yes\">SSL CRL Path</property>\n" \
+                        "<property name=\"xalign\">1</property>\n" \
+                      "</object>\n" \
+                      "<packing>\n" \
+                        "<property name=\"top_attach\">9</property>\n" \
+                        "<property name=\"bottom_attach\">10</property>\n" \
+                      "</packing>\n" \
+                    "</child>\n" \
+                    "<child>\n" \
+                      "<object class=\"GtkEntry\" id=\"ssl_crlpath\">\n" \
+                        "<property name=\"visible\">True</property>\n" \
+                        "<property name=\"can_focus\">True</property>\n" \
+                      "</object>\n" \
+                      "<packing>\n" \
+                        "<property name=\"left_attach\">1</property>\n" \
+                        "<property name=\"right_attach\">2</property>\n" \
+                        "<property name=\"top_attach\">9</property>\n" \
+                        "<property name=\"bottom_attach\">10</property>\n" \
+                      "</packing>\n" \
+                    "</child>\n" \
+                    "<child>\n" \
+                      "<object class=\"GtkButton\" id=\"ssl_crlpath_button\">\n" \
+                        "<property name=\"label\" translatable=\"yes\">...</property>\n" \
+                        "<property name=\"use_action_appearance\">False</property>\n" \
+                        "<property name=\"visible\">True</property>\n" \
+                        "<property name=\"can_focus\">True</property>\n" \
+                        "<property name=\"receives_default\">True</property>\n" \
+                      "</object>\n" \
+                      "<packing>\n" \
+                        "<property name=\"left_attach\">2</property>\n" \
+                        "<property name=\"right_attach\">3</property>\n" \
+                        "<property name=\"top_attach\">9</property>\n" \
+                        "<property name=\"bottom_attach\">10</property>\n" \
+                        "<property name=\"x_options\"/>\n" \
+                        "<property name=\"y_options\"/>\n" \
+                      "</packing>\n" \
+                    "</child>\n" \
+
                     "<child>\n" \
                       "<object class=\"GtkCheckButton\" id=\"no_tls_1_2\">\n" \
                         "<property name=\"label\" translatable=\"yes\">Disable TLS Version 1.2</property>\n" \
@@ -1703,10 +1787,10 @@ static char *ui_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" \
                         "<property name=\"draw_indicator\">True</property>\n" \
                       "</object>\n" \
                       "<packing>\n" \
-                        "<property name=\"left_attach\">1</property>\n" \
-                        "<property name=\"right_attach\">2</property>\n" \
-                        "<property name=\"top_attach\">8</property>\n" \
-                        "<property name=\"bottom_attach\">9</property>\n" \
+                        "<property name=\"left_attach\">4</property>\n" \
+                        "<property name=\"right_attach\">5</property>\n" \
+                        "<property name=\"top_attach\">0</property>\n" \
+                        "<property name=\"bottom_attach\">1</property>\n" \
                       "</packing>\n" \
                     "</child>\n" \
                     "<child>\n" \
@@ -1719,12 +1803,13 @@ static char *ui_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" \
                         "<property name=\"draw_indicator\">True</property>\n" \
                       "</object>\n" \
                       "<packing>\n" \
-                        "<property name=\"left_attach\">1</property>\n" \
-                        "<property name=\"right_attach\">2</property>\n" \
-                        "<property name=\"top_attach\">9</property>\n" \
-                        "<property name=\"bottom_attach\">10</property>\n" \
+                        "<property name=\"left_attach\">4</property>\n" \
+                        "<property name=\"right_attach\">5</property>\n" \
+                        "<property name=\"top_attach\">1</property>\n" \
+                        "<property name=\"bottom_attach\">2</property>\n" \
                       "</packing>\n" \
                     "</child>\n" \
+
                   "</object>\n" \
                   "<packing>\n" \
                     "<property name=\"position\">5</property>\n" \
@@ -3660,6 +3745,90 @@ static char *ui_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" \
                         "<property name=\"bottom_attach\">8</property>\n" \
                       "</packing>\n" \
                     "</child>\n" \
+
+                    "<child>\n" \
+                      "<object class=\"GtkLabel\" id=\"label_ssl_crl\">\n" \
+                        "<property name=\"visible\">True</property>\n" \
+                        "<property name=\"can_focus\">False</property>\n" \
+                        "<property name=\"label\" translatable=\"yes\">SSL CRL</property>\n" \
+                        "<property name=\"xalign\">1</property>\n" \
+                      "</object>\n" \
+                      "<packing>\n" \
+                        "<property name=\"top_attach\">8</property>\n" \
+                        "<property name=\"bottom_attach\">9</property>\n" \
+                      "</packing>\n" \
+                    "</child>\n" \
+                    "<child>\n" \
+                      "<object class=\"GtkEntry\" id=\"ssl_crl\">\n" \
+                        "<property name=\"visible\">True</property>\n" \
+                        "<property name=\"can_focus\">True</property>\n" \
+                      "</object>\n" \
+                      "<packing>\n" \
+                        "<property name=\"left_attach\">1</property>\n" \
+                        "<property name=\"right_attach\">2</property>\n" \
+                        "<property name=\"top_attach\">8</property>\n" \
+                        "<property name=\"bottom_attach\">9</property>\n" \
+                      "</packing>\n" \
+                    "</child>\n" \
+                    "<child>\n" \
+                      "<object class=\"GtkButton\" id=\"ssl_crl_button\">\n" \
+                        "<property name=\"label\" translatable=\"yes\">...</property>\n" \
+                        "<property name=\"use_action_appearance\">False</property>\n" \
+                        "<property name=\"visible\">True</property>\n" \
+                        "<property name=\"can_focus\">True</property>\n" \
+                        "<property name=\"receives_default\">True</property>\n" \
+                      "</object>\n" \
+                      "<packing>\n" \
+                        "<property name=\"left_attach\">2</property>\n" \
+                        "<property name=\"right_attach\">3</property>\n" \
+                        "<property name=\"top_attach\">8</property>\n" \
+                        "<property name=\"bottom_attach\">9</property>\n" \
+                        "<property name=\"x_options\"/>\n" \
+                        "<property name=\"y_options\"/>\n" \
+                      "</packing>\n" \
+                    "</child>\n" \
+                    "<child>\n" \
+                      "<object class=\"GtkLabel\" id=\"label_ssl_crlpath\">\n" \
+                        "<property name=\"visible\">True</property>\n" \
+                        "<property name=\"can_focus\">False</property>\n" \
+                        "<property name=\"label\" translatable=\"yes\">SSL CRL Path</property>\n" \
+                        "<property name=\"xalign\">1</property>\n" \
+                      "</object>\n" \
+                      "<packing>\n" \
+                        "<property name=\"top_attach\">9</property>\n" \
+                        "<property name=\"bottom_attach\">10</property>\n" \
+                      "</packing>\n" \
+                    "</child>\n" \
+                    "<child>\n" \
+                      "<object class=\"GtkEntry\" id=\"ssl_crlpath\">\n" \
+                        "<property name=\"visible\">True</property>\n" \
+                        "<property name=\"can_focus\">True</property>\n" \
+                      "</object>\n" \
+                      "<packing>\n" \
+                        "<property name=\"left_attach\">1</property>\n" \
+                        "<property name=\"right_attach\">2</property>\n" \
+                        "<property name=\"top_attach\">9</property>\n" \
+                        "<property name=\"bottom_attach\">10</property>\n" \
+                      "</packing>\n" \
+                    "</child>\n" \
+                    "<child>\n" \
+                      "<object class=\"GtkButton\" id=\"ssl_crlpath_button\">\n" \
+                        "<property name=\"label\" translatable=\"yes\">...</property>\n" \
+                        "<property name=\"use_action_appearance\">False</property>\n" \
+                        "<property name=\"visible\">True</property>\n" \
+                        "<property name=\"can_focus\">True</property>\n" \
+                        "<property name=\"receives_default\">True</property>\n" \
+                      "</object>\n" \
+                      "<packing>\n" \
+                        "<property name=\"left_attach\">2</property>\n" \
+                        "<property name=\"right_attach\">3</property>\n" \
+                        "<property name=\"top_attach\">9</property>\n" \
+                        "<property name=\"bottom_attach\">10</property>\n" \
+                        "<property name=\"x_options\"/>\n" \
+                        "<property name=\"y_options\"/>\n" \
+                      "</packing>\n" \
+                    "</child>\n" \
+
                     "<child>\n" \
                       "<object class=\"GtkCheckButton\" id=\"no_tls_1_2\">\n" \
                         "<property name=\"label\" translatable=\"yes\">Disable TLS Version 1.2</property>\n" \
@@ -3670,10 +3839,10 @@ static char *ui_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" \
                         "<property name=\"draw_indicator\">True</property>\n" \
                       "</object>\n" \
                       "<packing>\n" \
-                        "<property name=\"left_attach\">1</property>\n" \
-                        "<property name=\"right_attach\">2</property>\n" \
-                        "<property name=\"top_attach\">8</property>\n" \
-                        "<property name=\"bottom_attach\">9</property>\n" \
+                        "<property name=\"left_attach\">4</property>\n" \
+                        "<property name=\"right_attach\">5</property>\n" \
+                        "<property name=\"top_attach\">0</property>\n" \
+                        "<property name=\"bottom_attach\">1</property>\n" \
                       "</packing>\n" \
                     "</child>\n" \
                     "<child>\n" \
@@ -3686,12 +3855,13 @@ static char *ui_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" \
                         "<property name=\"draw_indicator\">True</property>\n" \
                       "</object>\n" \
                       "<packing>\n" \
-                        "<property name=\"left_attach\">1</property>\n" \
-                        "<property name=\"right_attach\">2</property>\n" \
-                        "<property name=\"top_attach\">9</property>\n" \
-                        "<property name=\"bottom_attach\">10</property>\n" \
+                        "<property name=\"left_attach\">4</property>\n" \
+                        "<property name=\"right_attach\">5</property>\n" \
+                        "<property name=\"top_attach\">1</property>\n" \
+                        "<property name=\"bottom_attach\">2</property>\n" \
                       "</packing>\n" \
                     "</child>\n" \
+                    
                     "<child>\n" \
                       "<placeholder/>\n" \
                     "</child>\n" \
