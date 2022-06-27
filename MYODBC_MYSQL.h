@@ -100,8 +100,6 @@ extern "C"
       if ((a) > (b)) (a) = (b); \
     } while (0)
 
-  static inline void reset_dynamic(DYNAMIC_ARRAY* array) { array->elements = 0; }
-
 #endif
 
 
@@ -114,58 +112,13 @@ extern "C"
 #define myodbc_realloc(A,B,C) my_realloc(PSI_NOT_INSTRUMENTED,A,B,C)
 #define myodbc_memdup(A,B,C) my_memdup(PSI_NOT_INSTRUMENTED,A,B,C)
 #define myodbc_strdup(A,B) my_strdup(PSI_NOT_INSTRUMENTED,A,B)
-#define myodbc_init_dynamic_array(A,B,C,D) my_init_dynamic_array(A,PSI_NOT_INSTRUMENTED,B,NULL,C,D)
 #define myodbc_mutex_lock native_mutex_lock
 #define myodbc_mutex_unlock native_mutex_unlock
 #define myodbc_mutex_trylock native_mutex_trylock
 #define myodbc_mutex_init native_mutex_init
 #define myodbc_mutex_destroy native_mutex_destroy
-#define sort_dynamic(A,cmp) myodbc_qsort((A)->buffer, (A)->elements, (A)->size_of_element, (cmp))
-#define push_dynamic(A,B) insert_dynamic((A),(B))
 
 #define myodbc_snprintf snprintf
-
-  static my_bool inline myodbc_allocate_dynamic(DYNAMIC_ARRAY *array, uint max_elements)
-  {
-    if (max_elements >= array->max_element)
-    {
-      uint size;
-      uchar *new_ptr;
-      size = (max_elements + array->alloc_increment) / array->alloc_increment;
-      size *= array->alloc_increment;
-      if (array->buffer == (uchar *)(array + 1))
-      {
-        /*
-        In this senerio, the buffer is statically preallocated,
-        so we have to create an all-new malloc since we overflowed
-        */
-        if (!(new_ptr = (uchar *)myodbc_malloc(size *
-          array->size_of_element,
-          MYF(MY_WME))))
-          return 0;
-        memcpy(new_ptr, array->buffer,
-          array->elements * array->size_of_element);
-      }
-      else
-
-
-      if (!(new_ptr = (uchar*)myodbc_realloc(array->buffer, size*
-        array->size_of_element,
-        MYF(MY_WME | MY_ALLOW_ZERO_PTR))))
-        return 1;
-      array->buffer = new_ptr;
-      array->max_element = size;
-    }
-    return 0;
-  }
-
-  static void inline delete_dynamic_element(DYNAMIC_ARRAY *array, uint idx)
-  {
-    char *ptr = (char*)array->buffer + array->size_of_element*idx;
-    array->elements--;
-    memmove(ptr, ptr + array->size_of_element,
-      (array->elements - idx)*array->size_of_element);
-  }
 
   static inline void *alloc_root(MEM_ROOT *root, size_t length) {
     return root->Alloc(length);

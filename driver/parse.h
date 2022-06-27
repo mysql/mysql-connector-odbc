@@ -34,6 +34,8 @@
 #ifndef __MYODBC_PARSE_H__
 # define __MYODBC_PARSE_H__
 
+#include <vector>
+
 typedef struct my_string
 {
   char *str;
@@ -123,8 +125,8 @@ typedef struct parsed_query
   char          *query_end; /* query end                               */
   char          *last_char; /* mainly for remove_braces                */
   /*unsigned int  begin;    /* offset 1st meaningful character - 1st token */
-  DYNAMIC_ARRAY token;      /* absolute positions of tokens            */
-  DYNAMIC_ARRAY param_pos;  /* absolute positions of parameter markers */
+  std::vector<uint> token2;     /* positions of tokens            */
+  std::vector<uint> param_pos;  /* positions of parameter markers */
 
   QUERY_TYPE_ENUM query_type;
   const char *  is_batch;   /* Pointer to the begin of a 2nd query in a batch */
@@ -157,8 +159,8 @@ int               copy_parsed_query(MY_PARSED_QUERY *src,
 #define GET_QUERY(pq) (pq)->query
 #define GET_QUERY_END(pq) (pq)->query_end
 #define GET_QUERY_LENGTH(pq) (GET_QUERY_END(pq) - GET_QUERY(pq))
-#define TOKEN_COUNT(pq) (pq)->token.elements
-#define PARAM_COUNT(pq) (pq)->param_pos.elements
+#define TOKEN_COUNT(pq) (pq)->token2.size()
+#define PARAM_COUNT(pq) (pq).param_pos.size()
 #define IS_BATCH(pq) ((pq)->is_batch != NULL)
 
 char * get_token(MY_PARSED_QUERY *pq, uint index);
@@ -181,7 +183,7 @@ MY_PARSER * init_parser(MY_PARSER *parser, MY_PARSED_QUERY *pq);
 /* But returns bytes in current character */
 int               get_ctype(MY_PARSER *parser);
 BOOL              skip_spaces(MY_PARSER *parser);
-my_bool           add_token(MY_PARSER *parser);
+void              add_token(MY_PARSER *parser);
 BOOL              is_escape(MY_PARSER *parser);
 const MY_STRING * is_quote(MY_PARSER *parser);
 BOOL              open_quote(MY_PARSER *parser, const MY_STRING * quote);
@@ -189,7 +191,7 @@ BOOL              is_query_separator(MY_PARSER *parser);
 /* Installs position on the character next after closing quote */
 char *            find_closing_quote(MY_PARSER *parser);
 BOOL              is_param_marker(MY_PARSER *parser);
-my_bool           add_parameter(MY_PARSER *parser);
+void              add_parameter(MY_PARSER *parser);
 void              step_char(MY_PARSER *parser);
 BOOL              tokenize(MY_PARSER *parser);
 QUERY_TYPE_ENUM   detect_query_type(MY_PARSER *parser,

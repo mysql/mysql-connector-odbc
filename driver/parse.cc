@@ -141,10 +141,8 @@ MY_PARSED_QUERY * init_parsed_query(MY_PARSED_QUERY *pq)
 
     pq->query_type= myqtOther;
 
-    /* TODO: Store offsets rather than ptrs. In this case we will be fine
-       if work with copy of the originally parsed string */
-    myodbc_init_dynamic_array(&pq->token,     sizeof(uint), 20, 10);
-    myodbc_init_dynamic_array(&pq->param_pos, sizeof(uint), 10, 10);
+    pq->token2.reserve(20);
+    pq->param_pos.reserve(20);
   }
 
   return pq;
@@ -158,8 +156,8 @@ MY_PARSED_QUERY * reset_parsed_query(MY_PARSED_QUERY *pq, char * query,
   {
     x_free(pq->query);
 
-    reset_dynamic(&pq->token);
-    reset_dynamic(&pq->param_pos);
+    pq->token2.clear();
+    pq->param_pos.clear();
 
     pq->last_char= NULL;
     pq->is_batch=  NULL;
@@ -189,9 +187,6 @@ void delete_parsed_query(MY_PARSED_QUERY *pq)
   if (pq)
   {
     x_free(pq->query);
-
-    delete_dynamic(&pq->token);
-    delete_dynamic(&pq->param_pos);
   }
 }
 
@@ -220,22 +215,8 @@ int copy_parsed_query(MY_PARSED_QUERY* src, MY_PARSED_QUERY *target)
 
   target->query_type= src->query_type;
 
-  if (myodbc_allocate_dynamic(&target->token, src->token.elements))
-  {
-    return 1;
-  }
-  /* it would be still better to use public dyn array interface... */
-  memcpy(target->token.buffer, src->token.buffer,
-        src->token.elements*src->token.size_of_element);
-  target->token.elements= src->token.elements;
-
-  if (myodbc_allocate_dynamic(&target->param_pos, src->param_pos.elements))
-  {
-    return 1;
-  }
-  memcpy(target->param_pos.buffer, src->param_pos.buffer,
-        src->param_pos.elements*src->token.size_of_element);
-  target->param_pos.elements= src->param_pos.elements;
+  target->token2 = src->token2;
+  target->param_pos = src->param_pos;
 
   return 0;
 }
@@ -258,20 +239,20 @@ MY_PARSER * init_parser(MY_PARSER * parser, MY_PARSED_QUERY *pq)
 
 char * get_token(MY_PARSED_QUERY *pq, uint index)
 {
-  if (index < pq->token.elements)
+  if (index < pq->token2.size())
   {
-    return GET_QUERY(pq) + ((uint *) pq->token.buffer)[index];
+    return GET_QUERY(pq) + pq->token2[index];
   }
 
   return NULL;
 }
 
 
-char * get_param_pos(MY_PARSED_QUERY *pq, uint index)
+char* get_param_pos(MY_PARSED_QUERY* pq, uint index)
 {
-  if (index < pq->param_pos.elements)
+  if (index < pq->param_pos.size())
   {
-    return GET_QUERY(pq) + ((uint *) pq->param_pos.buffer)[index];
+    return GET_QUERY(pq) + pq->param_pos[index];
   }
 
   return NULL;
@@ -571,16 +552,20 @@ BOOL skip_comment(MY_PARSER *parser)
 }
 
 
-my_bool add_token(MY_PARSER *parser)
+void add_token(MY_PARSER *parser)
 {
   if (END_NOT_REACHED(parser))
   {
-    uint offset= (uint)(parser->pos - GET_QUERY(parser->query));
 
-    return push_dynamic(&parser->query->token, (uchar *)&offset);
+    uint offset = (uint)(parser->pos - GET_QUERY(parser->query));
+    auto& tok = parser->query->token2;
+
+    // Reserve more elements if needed
+    if (tok.capacity() == tok.size())
+      tok.reserve(tok.capacity() + 10);
+
+    tok.push_back(offset);
   }
-
-  return '\0';
 }
 
 
@@ -690,10 +675,16 @@ BOOL is_param_marker(MY_PARSER *parser)
 }
 
 
-my_bool add_parameter(MY_PARSER *parser)
+void add_parameter(MY_PARSER *parser)
 {
   uint offset= (uint)(parser->pos - GET_QUERY(parser->query));
-  return push_dynamic(&parser->query->param_pos, (uchar *)&offset);
+  auto &ppos = parser->query->param_pos;
+
+  // Reserve more elements if needed
+  if (ppos.capacity() == ppos.size())
+    ppos.reserve(ppos.capacity() + 10);
+
+  ppos.push_back(offset);
 }
 
 
@@ -748,10 +739,7 @@ BOOL tokenize(MY_PARSER *parser)
   skip_spaces(parser);
   /* 1st token - otherwise we lose it if it is on 0 position without spaces
      ahead of it */
-  if (add_token(parser))
-  {
-    return TRUE;
-  }
+  add_token(parser);
 
   while(END_NOT_REACHED(parser))
   {
@@ -777,21 +765,14 @@ BOOL tokenize(MY_PARSER *parser)
         }
 
         /* adding token after spaces */
-        if (add_token(parser))
-        {
-          return TRUE;
-        }
+        add_token(parser);
       }
 
       /* is_query_separator moves position to the 1st char of the next query */
       if (is_query_separator(parser))
       {
         skip_spaces(parser);
-
-        if (add_token(parser))
-        {
-          return TRUE;
-        }
+        add_token(parser);
 
         continue;
       }
@@ -801,10 +782,7 @@ BOOL tokenize(MY_PARSER *parser)
       if (open_quote(parser, is_quote(parser)))
       {
         /* Separate token for a quote (mind select"a")*/
-        if (add_token(parser))
-        {
-          return TRUE;
-        }
+        add_token(parser);
       }
       else if (is_comment(parser))
       {
@@ -813,10 +791,7 @@ BOOL tokenize(MY_PARSER *parser)
       }
       else if (is_param_marker(parser))
       {
-        if (add_parameter(parser))
-        {
-          return TRUE;
-        }
+        add_parameter(parser);
       }
     }
 
@@ -932,7 +907,7 @@ BOOL remove_braces(MY_PARSER *parser)
   /* parse(parser);*/
 
   /* TODO: multibyte case */
-  if (parser->query->token.elements > 0)
+  if (parser->query->token2.size() > 0)
   {
     char *token= get_token(parser->query, 0);
 
@@ -954,18 +929,17 @@ BOOL remove_braces(MY_PARSER *parser)
          1st token and need to delete it */
       if (IS_SPACE(parser))
       {
-        delete_dynamic_element(&parser->query->token, 0);
+        parser->query->token2.erase(parser->query->token2.begin());
       }
 
       /* If we had "{}" - we would have erase the only token */
       if (TOKEN_COUNT(parser->query) > 0)
       {
-        token= get_token(parser->query, TOKEN_COUNT(parser->query) - 1);
+        token = get_token(parser->query, TOKEN_COUNT(parser->query) - 1);
 
         if (parser->query->last_char == token)
         {
-          delete_dynamic_element(&parser->query->token,
-                                  TOKEN_COUNT(parser->query) - 1);
+          parser->query->token2.pop_back();
         }
       }
 

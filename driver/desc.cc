@@ -713,9 +713,8 @@ MySQLGetDescField(SQLHDESC hdesc, SQLSMALLINT recnum, SQLSMALLINT fldid,
 
 SQLRETURN DESC::set_error(char *state, const char *message, uint errcode)
 {
-  myodbc_stpmov(error.sqlstate, state);
-  strxmov(error.message, stmt->dbc->st_error_prefix,
-          message, NullS);
+  error.sqlstate = state ? state : "";
+  error.message = std::string(stmt->dbc->st_error_prefix) + message;
   error.native_error = errcode;
 
   return SQL_ERROR;
@@ -970,7 +969,7 @@ stmt_SQLGetDescField(STMT *stmt, DESC *desc, SQLSMALLINT recnum,
   SQLRETURN rc;
   if ((rc= MySQLGetDescField((SQLHANDLE)desc, recnum, fldid,
                              valptr, buflen, outlen)) != SQL_SUCCESS)
-    memcpy(&stmt->error, &desc->error, sizeof(MYERROR));
+    stmt->error = desc->error;
   return rc;
 }
 
@@ -987,7 +986,7 @@ stmt_SQLSetDescField(STMT *stmt, DESC *desc, SQLSMALLINT recnum,
   CHECK_HANDLE(desc);
 
   if ((rc= desc->set_field(recnum, fldid, val, buflen)) != SQL_SUCCESS)
-    memcpy(&stmt->error, &desc->error, sizeof(MYERROR));
+    stmt->error = desc->error;
   return rc;
 }
 
@@ -1000,7 +999,7 @@ SQLRETURN stmt_SQLCopyDesc(STMT *stmt, DESC *src, DESC *dest)
 {
   SQLRETURN rc;
   if ((rc= MySQLCopyDesc((SQLHANDLE)src, (SQLHANDLE)dest)) != SQL_SUCCESS)
-    memcpy(&stmt->error, &dest->error, sizeof(MYERROR));
+    stmt->error = dest->error;
   return rc;
 }
 

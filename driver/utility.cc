@@ -3824,28 +3824,6 @@ char *proc_param_next_token(char *str, char *str_end)
 
 
 /**
-  deletes the list element and moves the pointer forward
-
-  @param[in]  elem   item to delete
-
-  Returns pointer to the next list element
-*/
-LIST *list_delete_forward(LIST *elem)
-{
-  if(elem->prev)
-    elem->prev->next= elem->next;
-
-  if(elem->next)
-  {
-    elem->next->prev= elem->prev;
-    elem= elem->next;
-  }
-
-  return elem;
-}
-
-
-/**
    Sets row_count in STMT's MYSQL_RES and affected rows property MYSQL object. Primary use is to set
    number of affected rows for constructed resulsets. Setting mysql.affected_rows
    is required for SQLRowCount to return correct data for such resultsets.

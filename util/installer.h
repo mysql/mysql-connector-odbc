@@ -99,6 +99,8 @@ typedef struct {
   SQLWCHAR *load_data_local_dir;
   SQLWCHAR *oci_config_file;
   SQLWCHAR *tls_versions;
+  SQLWCHAR *ssl_crl;
+  SQLWCHAR *ssl_crlpath;
 
   bool has_port;
   unsigned int port;
@@ -134,6 +136,8 @@ typedef struct {
   SQLCHAR *load_data_local_dir8;
   SQLCHAR *oci_config_file8;
   SQLCHAR *tls_versions8;
+  SQLCHAR* ssl_crl8;
+  SQLCHAR* ssl_crlpath8;
 
   /*  */
   BOOL return_matching_rows;
@@ -171,7 +175,6 @@ typedef struct {
   BOOL default_bigint_bind_str;
   /* debug */
   BOOL save_queries;
-  BOOL no_information_schema;
   /* SSL */
   unsigned int sslverify;
   unsigned int cursor_prefetch_number;
@@ -257,8 +260,6 @@ extern const SQLWCHAR W_INVALID_ATTR_STR[];
 /*
   Use SHOW TABLE STATUS instead Information_Schema DB for table metadata
 */
-#define FLAG_NO_INFORMATION_SCHEMA (1 << 30)
-
 #define ODBC_SSL_MODE_DISABLED           "DISABLED"
 #define ODBC_SSL_MODE_PREFERRED          "PREFERRED"
 #define ODBC_SSL_MODE_REQUIRED           "REQUIRED"

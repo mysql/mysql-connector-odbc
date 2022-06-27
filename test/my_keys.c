@@ -502,9 +502,5 @@ BEGIN_TESTS
   ADD_TEST(t_bug16920750)
 END_TESTS
 
-myoption &= ~(1 << 30);
-RUN_TESTS_ONCE
-myoption |= (1 << 30);
-testname_suffix= "_no_i_s";
 RUN_TESTS
 

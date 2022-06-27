@@ -490,6 +490,26 @@ SQLRETURN DBC::connect(DataSource *dsrc)
   }
 #endif
 
+  if (dsrc->ssl_crl)
+  {
+    if (mysql_options(mysql, MYSQL_OPT_SSL_CRL,
+      ds_get_utf8attr(dsrc->ssl_crl, &dsrc->ssl_crl8)))
+    {
+      return set_error("HY000", "Failed to set the path name of the file "
+        "containing certificate revocation lists", 0);
+    }
+  }
+
+  if (dsrc->ssl_crlpath)
+  {
+    if (mysql_options(mysql, MYSQL_OPT_SSL_CRLPATH,
+      ds_get_utf8attr(dsrc->ssl_crlpath, &dsrc->ssl_crlpath8)))
+    {
+      return set_error("HY000", "The path name of the directory that "
+        "contains files containing certificate revocation lists. ", 0);
+    }
+  }
+
 #if MYSQL_VERSION_ID >= 80004
   if (dsrc->get_server_public_key)
   {
@@ -729,7 +749,7 @@ SQLRETURN DBC::connect(DataSource *dsrc)
 #endif
       set_error("HY000", mysql_error(mysql), native_error);
 
-      translate_error(error.sqlstate, MYERR_S1000, native_error);
+      translate_error((char*)error.sqlstate.c_str(), MYERR_S1000, native_error);
 
       return SQL_ERROR;
     }
@@ -918,14 +938,6 @@ SQLRETURN DBC::connect(DataSource *dsrc)
   }
 
   mysql_get_option(mysql, MYSQL_OPT_NET_BUFFER_LENGTH, &net_buffer_len);
-
-  if (ds->no_information_schema)
-  {
-    set_error("01000", "The connection option NO_I_S is now "
-                       "deprecated and will be removed in future "
-                       "releases of MySQL Connector/ODBC", 0);
-    rc= SQL_SUCCESS_WITH_INFO;
-  }
 
   guard.set_success(rc == SQL_SUCCESS || rc == SQL_SUCCESS_WITH_INFO);
   return rc;

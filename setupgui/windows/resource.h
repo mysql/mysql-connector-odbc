@@ -71,6 +71,8 @@
 #define IDC_CHECK_sslverify             1028
 #define IDC_CHECK_min_date_to_zero      1029
 #define IDC_RSAKEYCHOOSER               1030
+#define IDC_SSLCRLCHOOSER               1031
+#define IDC_SSLCRLPATHCHOOSER           1032
 #define IDC_EDIT_drvname                10000
 #define IDC_EDIT_name                   10000
 #define IDC_EDIT_drvdesc                10001
@@ -119,7 +121,6 @@
 #define IDC_EDIT_charset                10038
 #define IDC_EDIT_initstmt               10039
 #define IDC_CHECK_clientinteractive     10040
-#define IDC_CHECK_no_information_schema 10041
 #define IDC_EDIT_socket                 10042
 #define IDC_RADIO_tcp                   10043
 #define IDC_RADIO_pipe                  10044
@@ -148,6 +149,8 @@
 #define IDC_EDIT_oci_config_file        10071
 #define IDC_CHOOSER_oci_config_file     10072
 #define IDC_EDIT_tls_versions           10073
+#define IDC_EDIT_ssl_crl                10074
+#define IDC_EDIT_ssl_crlpath            10075
 #define IDC_BUTTON_TEST                 11014
 #define IDC_BUTTON_HELP                 11015
 #define IDC_STATIC                      -1

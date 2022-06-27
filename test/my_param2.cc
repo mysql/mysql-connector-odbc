@@ -272,36 +272,48 @@ DECLARE_TEST(t_bug30578291_just_rows)
   ENDCATCH;
 }
 
+int cancel_func(SQLHSTMT hstmt)
+{
+  std::cout << "[Entered cancel_func()]\n" << std::flush;
+  SQLRETURN sqlReturn = SQLCancel(hstmt);
+  std::string outstr = "SQLCancel() result " + std::to_string(sqlReturn) + "]\n";
+  std::cout << outstr << std::flush;
+  return 0;
+}
+
+int select_func(SQLHSTMT hstmt)
+ {
+  std::cout << "[Entered select_func()]\n" << std::flush;
+  SQLUINTEGER buffer[10000] = { 0 };
+  std::cout << "[Before SQLBindCol()]\n" << std::flush;
+  SQLBindCol(hstmt, 1, SQL_C_ULONG, &buffer[0], 1, NULL);
+  std::cout << "[After SQLBindCol()]\n" << std::flush;
+  std::cout << "[Before SQLFetchScroll()]\n" << std::flush;
+  SQLRETURN rc2 = SQLFetchScroll(hstmt, SQL_FETCH_NEXT, 0);
+  std::string outstr = "[SQLFetchScroll() result " + std::to_string(rc2) + "]\n";
+  std::cout << outstr << std::flush;
+  return 0;
+}
+
 
 DECLARE_TEST(t_stmt_thread)
 {
   {
     odbc::HSTMT hstmt2(hdbc);
-
-    auto cancel_func = [](SQLHSTMT hstmt)
-    {
-	    SQLRETURN sqlReturn = 0; SQLCancel(hstmt);
-	    std::cout << "SQLCancel() result " << sqlReturn << std::endl;
-	    return 0;
-    };
-
-    auto select_func = [](SQLHSTMT hstmt)
-    {
-      SQLUINTEGER buffer[1000];
-      SQLBindCol(hstmt, 1, SQL_C_ULONG, &buffer[0], 1, NULL);
-      SQLRETURN rc2 = SQLFetchScroll(hstmt, SQL_FETCH_NEXT, 0);
-      std::cout << "SQLFetchScroll() result " << rc2 << std::endl;
-      return 0;
-    };
-
     odbc::table tab(hstmt2, "stmt_crash",
       "id int primary key auto_increment, data int");
-    for (int i = 0; i < 300; ++i)
+
+    std::string data;
+    data.reserve(100000);
+    data.append("(NULL,444)");
+    for (int i = 0; i < 3000; ++i)
     {
-      tab.insert("(NULL,111),(NULL,222),(NULL,333)");
+      data.append(",(NULL,111),(NULL,222),(NULL,333)");
     }
+    tab.insert(data);
+
     ok_stmt(hstmt, SQLSetStmtAttr(hstmt2, SQL_ATTR_ROW_ARRAY_SIZE,
-      (SQLPOINTER)500, 0));
+      (SQLPOINTER)9000, 0));
 
     for (int i = 0; i < 30; ++i)
     {
@@ -325,6 +337,26 @@ DECLARE_TEST(t_stmt_thread)
   return OK;
 }
 
+#ifndef _WIN32
+#include <stdio.h>
+#include <execinfo.h>
+#include <signal.h>
+#include <stdlib.h>
+#include <unistd.h>
+
+void sig_handler(int sig) {
+  void* array[10];
+  size_t size;
+
+  // get void*'s for all entries on the stack
+  size = backtrace(array, 10);
+  // print out all the frames to stderr
+  fprintf(stderr, "Error: signal %d:\n", sig);
+  backtrace_symbols_fd(array, size, STDERR_FILENO);
+  exit(1);
+}
+#endif
+
 BEGIN_TESTS
   ADD_TEST(t_stmt_thread)
   ADD_TEST(t_bug30578291_inout_param)
@@ -335,5 +367,9 @@ BEGIN_TESTS
   ADD_TEST(t_bug32552965)
 
   END_TESTS
+
+#ifndef _WIN32
+  signal(SIGSEGV, sig_handler);
+#endif
 
 RUN_TESTS

@@ -684,10 +684,6 @@ void STMT::free_reset_out_params()
 
 void STMT::free_reset_params()
 {
-  if (param_bind != NULL)
-  {
-    reset_dynamic(param_bind);
-  }
   if (ssps)
   {
     mysql_stmt_reset(ssps);
@@ -745,7 +741,6 @@ STMT::~STMT()
   reset_setpos_apd();
   delete_parsed_query(&query);
   delete_parsed_query(&orig_query);
-  delete_param_bind(param_bind);
 
   LOCK_DBC(dbc);
   dbc->stmt_list.remove(this);
@@ -1406,7 +1401,7 @@ SQLRETURN ssps_send_long_data(STMT *stmt, unsigned int param_number, const char 
 
 MYSQL_BIND * get_param_bind(STMT *stmt, unsigned int param_number, int reset)
 {
-  MYSQL_BIND *bind= (MYSQL_BIND *)stmt->param_bind->buffer + param_number;
+  MYSQL_BIND *bind = &stmt->param_bind[param_number];
 
   if (reset)
   {

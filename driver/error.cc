@@ -153,6 +153,27 @@ void myodbc_sqlstate3_init(void)
     myodbc_stpmov(myodbc3_errors[MYERR_42S22].sqlstate,"42S22");
 }
 
+MYERROR::MYERROR(myodbc_errid errid, const char* errtext, SQLINTEGER errcode,
+  const char* prefix)
+{
+  std::string errmsg;
+
+  errmsg = (errtext ? errtext : myodbc3_errors[errid].message);
+  native_error = errcode ? (myodbc_errid)errcode : errid + MYODBC_ERROR_CODE_START;
+
+  retcode = myodbc3_errors[errid].retcode;
+  sqlstate = myodbc3_errors[errid].sqlstate;
+  message = prefix + errmsg;
+}
+
+MYERROR::MYERROR(const char* state, const char* msg, SQLINTEGER errcode,
+  const char* prefix)
+{
+  sqlstate = state ? state : "";
+  message = std::string(prefix) + (msg ? msg : "");
+  native_error = errcode;
+  retcode = SQL_ERROR;
+}
 
 
 /*
@@ -165,11 +186,7 @@ SQLRETURN set_desc_error(DESC *        desc,
                          const char *  message,
                          uint          errcode)
 {
-  myodbc_stpmov(desc->error.sqlstate, state);
-  strxmov(desc->error.message, desc->stmt->dbc->st_error_prefix,
-          message, NullS);
-  desc->error.native_error = errcode;
-
+  desc->error = MYERROR(state, message, errcode, MYODBC_ERROR_PREFIX);
   return SQL_ERROR;
 }
 
@@ -243,39 +260,14 @@ void translate_error(char *save_state, myodbc_errid errid, uint mysql_err)
 
 /*
   @type    : myodbc3 internal
-  @purpose : copy error to error structure
-*/
-
-static SQLRETURN copy_error(MYERROR *error, myodbc_errid errid,
-                            const char *errtext, SQLINTEGER errcode,
-                            char *prefix)
-{
-    SQLRETURN   sqlreturn;
-    SQLCHAR     *errmsg;
-    SQLINTEGER  code;
-
-    errmsg= (errtext ? (SQLCHAR *)errtext :
-             (SQLCHAR *)myodbc3_errors[errid].message);
-    code=   errcode ? (myodbc_errid) errcode : errid + MYODBC_ERROR_CODE_START;
-
-    sqlreturn= error->retcode= myodbc3_errors[errid].retcode;  /* RETCODE */
-    error->native_error= code;                     /* NATIVE */
-    myodbc_stpmov(error->sqlstate, myodbc3_errors[errid].sqlstate);   /* SQLSTATE */
-    strxmov(error->message,prefix,errmsg,NullS);           /* MESSAGE */
-
-    return sqlreturn;
-}
-
-
-/*
-  @type    : myodbc3 internal
   @purpose : sets the error information to environment handle.
 */
 
 SQLRETURN set_env_error(ENV *env, myodbc_errid errid, const char *errtext,
                         SQLINTEGER errcode)
 {
-    return copy_error(&env->error,errid,errtext,errcode,MYODBC_ERROR_PREFIX);
+  env->error = MYERROR(errid, errtext, errcode, MYODBC_ERROR_PREFIX);
+  return env->error.retcode;
 }
 
 
@@ -287,32 +279,8 @@ SQLRETURN set_env_error(ENV *env, myodbc_errid errid, const char *errtext,
 SQLRETURN set_conn_error(DBC *dbc, myodbc_errid errid, const char *errtext,
                          SQLINTEGER errcode)
 {
-    return copy_error(&dbc->error,errid,errtext,errcode,MYODBC_ERROR_PREFIX);
-}
-
-
-MYERROR::MYERROR(myodbc_errid errid, const char *errtext, SQLINTEGER errcode,
-                 const char *prefix)
-{
-  SQLCHAR     *errmsg;
-
-  errmsg = (errtext ? (SQLCHAR *)errtext :
-    (SQLCHAR *)myodbc3_errors[errid].message);
-  native_error = errcode ? (myodbc_errid)errcode : errid + MYODBC_ERROR_CODE_START;
-
-  retcode = myodbc3_errors[errid].retcode;  /* RETCODE */
-  myodbc_stpmov(sqlstate, myodbc3_errors[errid].sqlstate);   /* SQLSTATE */
-  strxmov(message, prefix, errmsg, NullS);           /* MESSAGE */
-}
-
-
-MYERROR::MYERROR(const char *state, const char *msg, SQLINTEGER errcode,
-                 const char *prefix)
-{
-  myodbc_stpmov(sqlstate, state);
-  strxmov(message, prefix, msg, NullS);
-  native_error = errcode;
-  retcode = SQL_ERROR;
+  dbc->error = MYERROR(errid, errtext, errcode, MYODBC_ERROR_PREFIX);
+  return dbc->error.retcode;
 }
 
 
@@ -383,23 +351,27 @@ SQLRETURN set_handle_error(SQLSMALLINT HandleType, SQLHANDLE handle,
                            myodbc_errid errid, const char *errtext,
                            SQLINTEGER errcode)
 {
-    switch ( HandleType )
+  switch ( HandleType )
+  {
+    case SQL_HANDLE_ENV:
+      return set_env_error((ENV*)handle, errid, errtext, errcode);
+    case SQL_HANDLE_DBC:
+      return set_conn_error((DBC*)handle, errid, errtext, errcode);
+    case SQL_HANDLE_STMT:
     {
-        case SQL_HANDLE_ENV:
-            return copy_error(&((ENV *)handle)->error,errid,errtext,
-                              errcode,MYODBC_ERROR_PREFIX);
-        case SQL_HANDLE_DBC:
-            return copy_error(&((DBC *)handle)->error,errid,errtext,
-                              errcode,MYODBC_ERROR_PREFIX);
-        case SQL_HANDLE_STMT:
-            return copy_error(&((STMT *)handle)->error,errid,errtext,
-                              errcode,((STMT *)handle)->dbc->st_error_prefix);
-        case SQL_HANDLE_DESC:
-            return copy_error(&((DESC *)handle)->error,errid,errtext,errcode,
-                              ((DESC *)handle)->stmt->dbc->st_error_prefix);
-        default:
-            return SQL_INVALID_HANDLE;
+      STMT *stmt = (STMT*)handle;
+      stmt->error = MYERROR(errid, errtext, errcode, stmt->dbc->st_error_prefix);
+      return stmt->error.retcode;
     }
+    case SQL_HANDLE_DESC:
+    {
+      DESC* desc = (DESC*)handle;
+      desc->error = MYERROR(errid, errtext, errcode, desc->stmt->dbc->st_error_prefix);
+      return desc->error.retcode;
+    }
+    default:
+      return SQL_INVALID_HANDLE;
+  }
 }
 
 
@@ -436,7 +408,7 @@ MySQLGetDiagRec(SQLSMALLINT handle_type, SQLHANDLE handle, SQLSMALLINT record,
   else
     return SQL_INVALID_HANDLE;
 
-  if (!error->message || !error->message[0])
+  if (error->message.empty())
   {
     *message= (SQLCHAR *)"";
     *sqlstate= (SQLCHAR *)"00000";
@@ -444,15 +416,15 @@ MySQLGetDiagRec(SQLSMALLINT handle_type, SQLHANDLE handle, SQLSMALLINT record,
     return SQL_NO_DATA_FOUND;
   }
 
-  *message= (SQLCHAR *)error->message;
-  *sqlstate= (SQLCHAR *)error->sqlstate;
+  *message= (SQLCHAR *)error->message.c_str();
+  *sqlstate= (SQLCHAR *)error->sqlstate.c_str();
   *native= error->native_error;
 
   return SQL_SUCCESS;
 }
 
 
-my_bool is_odbc3_subclass(char *sqlstate)
+bool is_odbc3_subclass(std::string sqlstate)
 {
   char *states[]= { "01S00", "01S01", "01S02", "01S06", "01S07", "07S01",
     "08S01", "21S01", "21S02", "25S01", "25S02", "25S03", "42S01", "42S02",
@@ -462,14 +434,14 @@ my_bool is_odbc3_subclass(char *sqlstate)
     "IM008", "IM010", "IM011", "IM012"};
   size_t i;
 
-  if (!sqlstate)
-    return FALSE;
+  if (sqlstate.empty())
+    return false;
 
   for (i= 0; i < sizeof(states) / sizeof(states[0]); ++i)
-    if (memcmp(states[i], sqlstate, 5) == 0)
-      return TRUE;
+    if (sqlstate.compare(states[i]) == 0)
+      return true;
 
-  return FALSE;
+  return false;
 }
 
 
@@ -553,12 +525,11 @@ MySQLGetDiagField(SQLSMALLINT handle_type, SQLHANDLE handle, SQLSMALLINT record,
   /* Record fields */
   case SQL_DIAG_CLASS_ORIGIN:
     {
-      char *sqlstate;
       if (record <= 0)
         return SQL_ERROR;
-      sqlstate= error->sqlstate;
+      auto &sqlstate = error->sqlstate;
 
-      if (sqlstate && sqlstate[0] == 'I' && sqlstate[1] == 'M')
+      if (!sqlstate.empty() && sqlstate[0] == 'I' && sqlstate[1] == 'M')
         *char_value= (SQLCHAR *)"ODBC 3.0";
       else
         *char_value= (SQLCHAR *)"ISO 9075";
@@ -594,9 +565,7 @@ MySQLGetDiagField(SQLSMALLINT handle_type, SQLHANDLE handle, SQLSMALLINT record,
   case SQL_DIAG_MESSAGE_TEXT:
     if (record <= 0)
       return SQL_ERROR;
-    *char_value= (SQLCHAR *)error->message;
-    if (!*char_value)
-      *char_value= (SQLCHAR *)"";
+    *char_value = (SQLCHAR *)error->message.c_str();
     return SQL_SUCCESS;
 
   case SQL_DIAG_NATIVE:
@@ -632,21 +601,17 @@ MySQLGetDiagField(SQLSMALLINT handle_type, SQLHANDLE handle, SQLSMALLINT record,
   case SQL_DIAG_SQLSTATE:
     if (record <= 0)
       return SQL_ERROR;
-    *char_value= (SQLCHAR *)error->sqlstate;
-    if (!*char_value)
-      *char_value= (SQLCHAR *)"";
+    *char_value= (SQLCHAR *)error->sqlstate.c_str();
     return SQL_SUCCESS;
 
   case SQL_DIAG_SUBCLASS_ORIGIN:
     if (record <= 0)
       return SQL_ERROR;
     {
-      char *sqlstate;
       if (record <= 0)
         return SQL_ERROR;
-      sqlstate= error->sqlstate;
 
-      if (is_odbc3_subclass(sqlstate))
+      if (is_odbc3_subclass((char*)error->sqlstate.c_str()))
         *char_value= (SQLCHAR *)"ODBC 3.0";
       else
         *char_value= (SQLCHAR *)"ISO 9075";

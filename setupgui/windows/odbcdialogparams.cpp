@@ -47,7 +47,7 @@
 #include <winsock2.h>
 
 #include "../setupgui.h"
-
+#include <error.h>
 #include "odbcdialogparams.h"
 
 #include "stringutil.h"
@@ -450,9 +450,8 @@ void btnCancel_Click (HWND hwnd)
 void btnTest_Click (HWND hwnd)
 {
   FillParameters(hwnd, pParams);
-  wchar_t *testResultMsg= mytest(hwnd, pParams);
-  MessageBoxW(hwnd, testResultMsg, L"Test Result", MB_OK);
-  x_free(testResultMsg);
+  SQLWSTRING msg = mytest(hwnd, pParams);
+  MessageBoxW(hwnd, msg.c_str(), L"Test Result", MB_OK);
 }
 
 
@@ -574,17 +573,21 @@ void processDbCombobox(HWND hwnd, HWND hwndCtl, UINT codeNotify)
     case(CBN_DROPDOWN):
     {
       FillParameters(hwnd, pParams);
-      LIST *dbs= mygetdatabases(hwnd, pParams);
-      LIST *dbtmp= dbs;
+      std::vector<SQLWSTRING> dbs;
+
+      try
+      {
+        dbs = mygetdatabases(hwnd, pParams);
+      }
+      catch (MYERROR &e) {
+      }
 
       ComboBox_ResetContent(hwndCtl);
 
-      adjustDropdownHeight(hwndCtl,list_length(dbs));
+      adjustDropdownHeight(hwndCtl, dbs.size());
 
-      for (; dbtmp; dbtmp= list_rest(dbtmp))
-        ComboBox_AddString(hwndCtl, (SQLWCHAR *)dbtmp->data);
-
-      list_free(dbs, 1);
+      for (SQLWSTRING dbname : dbs)
+        ComboBox_AddString(hwndCtl, (SQLWCHAR *)dbname.c_str());
 
       ComboBox_SetText(hwndCtl,pParams->database);
 
@@ -605,17 +608,14 @@ void processCharsetCombobox(HWND hwnd, HWND hwndCtl, UINT codeNotify)
     case(CBN_DROPDOWN):
     {
       //FillParameters(hwnd, *pParams);
-      LIST *csl= mygetcharsets(hwnd, pParams);
-      LIST *cstmp= csl;
+      auto csl = mygetcharsets(hwnd, pParams);
 
       ComboBox_ResetContent(hwndCtl);
 
-      adjustDropdownHeight(hwndCtl,list_length(csl));
+      adjustDropdownHeight(hwndCtl, csl.size());
 
-      for (; cstmp; cstmp= list_rest(cstmp))
-      ComboBox_AddString(hwndCtl, (SQLWCHAR *)cstmp->data);
-
-      list_free(csl, 1);
+      for (SQLWSTRING csname : csl)
+        ComboBox_AddString(hwndCtl, (SQLWCHAR *)csname.c_str());
 
       ComboBox_SetText(hwndCtl,pParams->charset);
 
@@ -653,12 +653,16 @@ void FormMain_OnCommand(HWND hwnd, int id, HWND hwndCtl, UINT codeNotify)
       choosePath(hwnd, IDC_EDIT_sslcapath); break;
     case IDC_RSAKEYCHOOSER:
       chooseFile(hwnd, IDC_EDIT_rsakey); break;
+    case IDC_SSLCRLCHOOSER:
+      chooseFile(hwnd, IDC_EDIT_ssl_crl); break;
+    case IDC_SSLCRLPATHCHOOSER:
+      choosePath(hwnd, IDC_EDIT_ssl_crlpath); break;
     case IDC_CHOOSER_plugin_dir:
       choosePath(hwnd, IDC_EDIT_plugin_dir); break;
     case IDC_CHOOSER_load_data_local_dir:
       choosePath(hwnd, IDC_EDIT_load_data_local_dir); break;
-  case IDC_CHOOSER_oci_config_file:
-    chooseFile(hwnd, IDC_EDIT_oci_config_file); break;
+    case IDC_CHOOSER_oci_config_file:
+      chooseFile(hwnd, IDC_EDIT_oci_config_file); break;
     case IDC_RADIO_tcp:
     case IDC_RADIO_pipe:
       SwitchTcpOrPipe(hwnd, !!Button_GetCheck(GetDlgItem(hwnd, IDC_RADIO_pipe)));

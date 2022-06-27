@@ -106,31 +106,8 @@ create_fake_resultset(STMT *stmt, MYSQL_ROW rowval, size_t rowsize,
                       my_ulonglong rowcnt, MYSQL_FIELD *fields, uint fldcnt,
                       bool copy_rowval);
 
-my_bool server_has_i_s(DBC *dbc);
-
 
 /* no_i_s functions */
-SQLRETURN
-columns_no_i_s(STMT *hstmt, SQLCHAR *szCatalog, SQLSMALLINT cbCatalog,
-               SQLCHAR *szSchema,
-               SQLSMALLINT cbSchema,
-               SQLCHAR *szTable, SQLSMALLINT cbTable,
-               SQLCHAR *szColumn, SQLSMALLINT cbColumn);
-
-SQLRETURN
-list_column_priv_no_i_s(SQLHSTMT hstmt,
-                      SQLCHAR *catalog, SQLSMALLINT catalog_len,
-                      SQLCHAR *schema,
-                      SQLSMALLINT schema_len,
-                      SQLCHAR *table, SQLSMALLINT table_len,
-                      SQLCHAR *column, SQLSMALLINT column_len);
-
-SQLRETURN
-list_table_priv_no_i_s(SQLHSTMT hstmt,
-                       SQLCHAR *catalog, SQLSMALLINT catalog_len,
-                       SQLCHAR *schema,
-                       SQLSMALLINT schema_len,
-                       SQLCHAR *table, SQLSMALLINT table_len);
 
 MYSQL_RES *db_status(STMT *stmt, std::string &db);
 
@@ -148,28 +125,6 @@ MYSQL_RES *table_status(STMT        *stmt,
                         my_bool      wildcard,
                         my_bool      show_tables,
                         my_bool      show_views);
-
-MYSQL_RES *table_status_no_i_s(STMT        *stmt,
-                               SQLCHAR     *db,
-                               SQLSMALLINT  db_length,
-                               SQLCHAR     *table,
-                               SQLSMALLINT  table_length,
-                               my_bool      wildcard);
-
-SQLRETURN foreign_keys_no_i_s(SQLHSTMT hstmt,
-                              SQLCHAR    *pk_catalog,
-                              SQLSMALLINT pk_catalog_len,
-                              SQLCHAR    *pk_schema,
-                              SQLSMALLINT pk_schema_len,
-                              SQLCHAR    *pk_table,
-                              SQLSMALLINT pk_table_len,
-                              SQLCHAR    *fk_catalog,
-                              SQLSMALLINT fk_catalog_len,
-                              SQLCHAR    *fk_schema,
-                              SQLSMALLINT fk_schema_len,
-                              SQLCHAR    *fk_table,
-                              SQLSMALLINT fk_table_len);
-
 
 SQLRETURN
 primary_keys_no_i_s(SQLHSTMT hstmt,

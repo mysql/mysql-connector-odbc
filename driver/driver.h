@@ -574,11 +574,10 @@ struct	ENV
 {
   SQLINTEGER   odbc_ver;
   std::list<DBC*> conn_list;
-  LIST	       *connections;
   MYERROR      error;
   std::mutex lock;
 
-  ENV(SQLINTEGER ver) : odbc_ver(ver), connections(nullptr)
+  ENV(SQLINTEGER ver) : odbc_ver(ver)
   {}
 
   void add_dbc(DBC* dbc);
@@ -939,8 +938,13 @@ enum class EXCEPTION_TYPE {EMPTY_SET, CONN_ERR, GENERAL};
 struct ODBCEXCEPTION
 {
   EXCEPTION_TYPE m_type = EXCEPTION_TYPE::GENERAL;
+  std::string m_msg;
 
   ODBCEXCEPTION(EXCEPTION_TYPE t = EXCEPTION_TYPE::GENERAL) : m_type(t)
+  {}
+
+  ODBCEXCEPTION(std::string msg, EXCEPTION_TYPE t = EXCEPTION_TYPE::GENERAL) :
+    m_type(t), m_msg(msg)
   {}
 
 };
@@ -975,7 +979,7 @@ struct STMT
   std::string       table_name;
 
   MY_PARSED_QUERY	query, orig_query;
-  DYNAMIC_ARRAY     *param_bind;
+  std::vector<MYSQL_BIND> param_bind;
   std::vector<MYSQL_BIND> query_attr_bind;
   std::vector<char*>      query_attr_names;
 
@@ -1069,8 +1073,7 @@ struct STMT
   STMT(DBC *d) : dbc(d), result(NULL), array(NULL), result_array(NULL),
     current_values(NULL), fields(NULL), end_of_set(NULL),
     tempbuf(),
-    stmt_options(dbc->stmt_options),
-    param_bind(NULL), lengths(nullptr), affected_rows(0),
+    stmt_options(dbc->stmt_options), lengths(nullptr), affected_rows(0),
     current_row(0), cursor_row(0), dae_type(0),
     order(NULL), order_count(0), param_count(0), current_param(0),
     rows_found_in_set(0),
@@ -1101,6 +1104,99 @@ struct STMT
   ~STMT();
 };
 
+namespace myodbc {
+  struct HENV
+  {
+    SQLHENV henv = nullptr;
+
+    HENV(unsigned long v)
+    {
+      size_t ver = v;
+      SQLAllocHandle(SQL_HANDLE_ENV, nullptr, &henv);
+
+      if (SQLSetEnvAttr(henv, SQL_ATTR_ODBC_VERSION, (SQLPOINTER)ver, 0) != SQL_SUCCESS)
+      {
+        throw MYERROR(SQL_HANDLE_ENV, henv, SQL_ERROR);
+      }
+    }
+
+    HENV() : HENV(SQL_OV_ODBC3)
+    {}
+
+    operator SQLHENV() const
+    {
+      return henv;
+    }
+
+    ~HENV()
+    {
+      SQLFreeHandle(SQL_HANDLE_ENV, henv);
+    }
+  };
+
+  struct HDBC
+  {
+    SQLHDBC hdbc = nullptr;
+    SQLHENV henv;
+    xstring connout = nullptr;
+    SQLCHAR ch_out[512] = { 0 };
+
+    HDBC(SQLHENV env, DataSource *params) : henv(env)
+    {
+      SQLWSTRING  string_connect_in;
+
+      assert(params->driver && *params->driver);
+      ds_set_strattr(&params->name, NULL);
+      ds_to_kvpair(params, string_connect_in, ';');
+      if (SQLAllocHandle(SQL_HANDLE_DBC, henv, &hdbc) != SQL_SUCCESS)
+      {
+        throw MYERROR(SQL_HANDLE_ENV, henv, SQL_ERROR);
+      }
+
+      if (SQLDriverConnectW(hdbc, NULL, (SQLWCHAR*)string_connect_in.c_str(),
+        SQL_NTS, NULL, 0, NULL, SQL_DRIVER_NOPROMPT) != SQL_SUCCESS)
+      {
+        throw MYERROR(SQL_HANDLE_DBC, hdbc, SQL_ERROR);
+      }
+
+    }
+
+    operator SQLHDBC() const
+    {
+      return hdbc;
+    }
+
+    ~HDBC()
+    {
+      SQLDisconnect(hdbc);
+      SQLFreeHandle(SQL_HANDLE_DBC, hdbc);
+    }
+  };
+
+
+  struct HSTMT
+  {
+    SQLHDBC hdbc;
+    SQLHSTMT hstmt = nullptr;
+    HSTMT(SQLHDBC dbc) : hdbc(dbc)
+    {
+      if (SQLAllocHandle(SQL_HANDLE_STMT, hdbc, &hstmt) != SQL_SUCCESS)
+      {
+        throw MYERROR(SQL_HANDLE_STMT, hstmt, SQL_ERROR);
+      }
+    }
+
+    operator SQLHSTMT() const
+    {
+      return hstmt;
+    }
+
+    ~HSTMT()
+    {
+      SQLFreeHandle(SQL_HANDLE_STMT, hstmt);
+    }
+  };
+};
 
 extern char *default_locale, *decimal_point, *thousands_sep;
 extern uint decimal_point_length,thousands_sep_length;

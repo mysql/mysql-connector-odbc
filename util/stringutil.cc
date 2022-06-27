@@ -1307,12 +1307,13 @@ def:
 SQLWCHAR *wchar_t_as_sqlwchar(wchar_t *from, SQLWCHAR *to, size_t len)
 {
   /* The function deals mostly with short strings */
-  if (len > 1024)
-  len= 1024;
+  if (len > 1023)
+    len= 1023;
 
   if (sizeof(wchar_t) == sizeof(SQLWCHAR))
   {
     memcpy(to, from, len * sizeof(wchar_t));
+    to[len] = 0;
     return to;
   }
   else

@@ -31,6 +31,11 @@
 #include "setupgui.h"
 #include "stringutil.h"
 #include "windows/resource.h"
+#include <driver.h>
+#include <error.h>
+
+#include <codecvt>
+#include <locale>
 
 SQLWCHAR **errorMsgs= NULL;
 
@@ -41,54 +46,38 @@ SQLHDBC hDBC= SQL_NULL_HDBC;
   Tests if it is possible to establish connection using given DS
   returns message text. user is responsible to free that text after use.
 */
-SQLWCHAR *mytest(HWND hwnd, DataSource *params)
+SQLWSTRING mytest(HWND hwnd, DataSource *params)
 {
-  SQLHDBC hDbc= hDBC;
-  SQLHENV hEnv= SQL_NULL_HENV;
-  SQLWCHAR *msg;
+  SQLWSTRING msg;
   SQLWCHAR tmpbuf[1024];
 
+  SQLHENV hEnv = nullptr;
+  SQLHDBC hDbc = nullptr;
   /*
     In case of file data source we do not want it to be created
     when clicking the Test button
   */
+  myodbc::HENV henv;
   SQLWCHAR *preservedSavefile= params->savefile;
   params->savefile= 0;
 
-  if (SQL_SUCCEEDED(Connect(&hDbc, &hEnv, params)))
+  try
   {
-    msg= sqlwchardup(_W(L"Connection Successful"), SQL_NTS);
+    myodbc::HDBC hdbc(henv, params);
+    msg = _W(L"Connection successful");
   }
-  else
+  catch(MYERROR &e)
   {
-    SQLWCHAR state[10];
-    SQLINTEGER native;
-    SQLSMALLINT len;
-    SQLWCHAR *ptr;
-
-    msg= (SQLWCHAR *) myodbc_malloc(512 * sizeof(SQLWCHAR), MYF(0));
-    *msg= 0;
-
-    sqlwcharncpy(msg, _W(L"Connection Failed\n"), SQL_NTS);
-    len= (SQLSMALLINT)sqlwcharlen(msg);
-
-    ptr= msg + len;
-
-    if (SQL_SUCCEEDED(SQLGetDiagRecW(SQL_HANDLE_DBC, hDbc, 1, state,
-                                     &native, ptr,
-                                     512 - len, &len)))
-    {
-      ptr= sqlwcharncpy(ptr + len, _W(L": ["), 3);
-      ptr= sqlwcharncpy(ptr, state, 6);
-      sqlwcharncpy(ptr, _W(L" ]"), 2);
-    }
+    auto s = L"Connection failed with the following error:\n" +
+      std::wstring_convert<std::codecvt_utf8<wchar_t>>().from_bytes(e.message) +
+      L"[" + std::wstring_convert<std::codecvt_utf8<wchar_t>>().from_bytes(e.sqlstate) +
+      L"]";
+    auto *w = s.c_str();
+    msg = _W(w);
   }
 
   /* Restore savefile parameter */
   params->savefile= preservedSavefile;
-
-  Disconnect(hDbc, hEnv);
-  /* assuming that SQLWCHAR and wchar_t have the same size */
   return msg;
 }
 
@@ -100,132 +89,90 @@ BOOL mytestaccept(HWND hwnd, DataSource* params)
 }
 
 
-LIST *mygetdatabases(HWND hwnd, DataSource* params)
+std::vector<SQLWSTRING> mygetdatabases(HWND hwnd, DataSource* params)
 {
-  SQLHENV     hEnv= SQL_NULL_HENV;
-  SQLHDBC     hDbc= hDBC;
-  SQLHSTMT    hStmt;
-  SQLRETURN   nReturn;
-  SQLWCHAR    szCatalog[MYODBC_DB_NAME_MAX];
-  SQLLEN      nCatalog;
-  LIST        *dbs= NULL;
-  SQLWCHAR    *preservedDatabase= params->database;
-  BOOL        preservedNoCatalog= params->no_catalog;
+  SQLRETURN   ret;
+  SQLWCHAR    catalog[MYODBC_DB_NAME_MAX];
+  SQLLEN      n_catalog;
+  SQLWCHAR    *preserved_database = params->database;
+  BOOL        preserved_no_catalog = params->no_catalog;
+  std::vector<SQLWSTRING> result;
+  result.reserve(20);
 
   /*
     In case of file data source we do not want it to be created
     when clicking the Test button
   */
-  SQLWCHAR *preservedSavefile= params->savefile;
-  params->savefile= NULL;
+  SQLWCHAR *preserved_savefile= params->savefile;
+  params->savefile = NULL;
 
-  params->database= NULL;
-  params->no_catalog= FALSE;
+  params->database = NULL;
+  params->no_catalog = FALSE;
 
-  nReturn= Connect(&hDbc, &hEnv, params);
+  myodbc::HENV henv;
+  myodbc::HDBC hdbc(henv, params);
 
-  params->savefile= preservedSavefile;
-  params->database= preservedDatabase;
-  params->no_catalog= preservedNoCatalog;
+  params->savefile = preserved_savefile;
+  params->database = preserved_database;
+  params->no_catalog = preserved_no_catalog;
 
-  if (nReturn != SQL_SUCCESS)
-    ShowDiagnostics(nReturn, SQL_HANDLE_DBC, hDbc);
-  if (!SQL_SUCCEEDED(nReturn))
-  {
-    Disconnect(hDbc,hEnv);
-    return NULL;
-  }
+  myodbc::HSTMT hstmt(hdbc);
 
-  nReturn= SQLAllocHandle(SQL_HANDLE_STMT, hDbc, &hStmt);
-  if (nReturn != SQL_SUCCESS)
-    ShowDiagnostics(nReturn, SQL_HANDLE_DBC, hDbc);
-  if (!SQL_SUCCEEDED(nReturn))
-  {
-    Disconnect(hDbc,hEnv);
-    return NULL;
-  }
-
-  nReturn= SQLTablesW(hStmt, (SQLWCHAR*)SQL_ALL_CATALOGS, SQL_NTS,
+  ret = SQLTablesW(hstmt, (SQLWCHAR*)SQL_ALL_CATALOGS, SQL_NTS,
                       (SQLWCHAR*)L"", SQL_NTS, (SQLWCHAR*)L"", 0,
                       (SQLWCHAR*)L"", 0);
+  if (!SQL_SUCCEEDED(ret))
+    return result;
 
-  if (nReturn != SQL_SUCCESS)
-    ShowDiagnostics(nReturn, SQL_HANDLE_STMT, hStmt);
-  if (!SQL_SUCCEEDED(nReturn))
+  ret = SQLBindCol(hstmt, 1, SQL_C_WCHAR, catalog, MYODBC_DB_NAME_MAX,
+                      &n_catalog);
+  if (!SQL_SUCCEEDED(ret))
+    return result;
+
+  while (true)
   {
-    SQLFreeHandle(SQL_HANDLE_STMT, hStmt);
-    Disconnect(hDbc, hEnv);
-    return NULL;
-  }
+    if (result.size() % 20)
+      result.reserve(result.size() + 20);
 
-  nReturn= SQLBindCol(hStmt, 1, SQL_C_WCHAR, szCatalog, MYODBC_DB_NAME_MAX,
-                      &nCatalog);
-  while (TRUE)
-  {
-    nReturn= SQLFetch(hStmt);
-
-    if (nReturn == SQL_NO_DATA)
-      break;
-    else if (nReturn != SQL_SUCCESS)
-      ShowDiagnostics(nReturn, SQL_HANDLE_STMT, hStmt);
-    if (SQL_SUCCEEDED(nReturn))
-      dbs= list_cons(sqlwchardup(szCatalog, SQL_NTS), dbs);
+    if (SQL_SUCCEEDED(SQLFetch(hstmt)))
+      result.emplace_back(catalog);
     else
       break;
   }
 
-  SQLFreeHandle(SQL_HANDLE_STMT, hStmt);
-  Disconnect(hDbc, hEnv);
-
-  return list_reverse(dbs);
+  return result;
 }
 
 
-LIST *mygetcharsets(HWND hwnd, DataSource* params)
+std::vector<SQLWSTRING> mygetcharsets(HWND hwnd, DataSource* params)
 {
-  SQLHENV     hEnv= SQL_NULL_HENV;
-  SQLHDBC     hDbc= hDBC;
-  SQLHSTMT    hStmt;
-  SQLRETURN   nReturn;
-  SQLWCHAR    szCharset[MYODBC_DB_NAME_MAX];
-  SQLLEN      nCharset;
-  LIST        *csl= NULL;
-  SQLWCHAR    *preservedDatabase= params->database;
-  BOOL        preservedNoCatalog= params->no_catalog;
+  SQLRETURN   ret;
+  SQLWCHAR    charset[MYODBC_DB_NAME_MAX];
+  SQLLEN      n_charset;
+  SQLWCHAR    *preserved_database= params->database;
+  BOOL        preserved_no_catalog= params->no_catalog;
   SQLWCHAR tmpbuf[1024];
+  std::vector<SQLWSTRING> csl;
+  csl.reserve(20);
 
   /*
     In case of file data source we do not want it to be created
     when clicking the Test button
   */
-  SQLWCHAR *preservedSavefile= params->savefile;
+  SQLWCHAR *preserved_savefile= params->savefile;
   params->savefile= NULL;
 
   params->database= NULL;
   params->no_catalog= FALSE;
 
-  nReturn= Connect(&hDbc, &hEnv, params);
+  myodbc::HENV henv;
+  myodbc::HDBC hdbc(henv, params);
 
-  params->savefile= preservedSavefile;
-  params->database= preservedDatabase;
-  params->no_catalog= preservedNoCatalog;
+  params->savefile = preserved_savefile;
+  params->database = preserved_database;
+  params->no_catalog = preserved_no_catalog;
 
-  if (nReturn != SQL_SUCCESS)
-    ShowDiagnostics(nReturn, SQL_HANDLE_DBC, hDbc);
-  if (!SQL_SUCCEEDED(nReturn))
-  {
-    Disconnect(hDbc,hEnv);
-    return NULL;
-  }
-
-  nReturn= SQLAllocHandle(SQL_HANDLE_STMT, hDbc, &hStmt);
-  if (nReturn != SQL_SUCCESS)
-    ShowDiagnostics(nReturn, SQL_HANDLE_DBC, hDbc);
-  if (!SQL_SUCCEEDED(nReturn))
-  {
-    Disconnect(hDbc,hEnv);
-    return NULL;
-  }
+  myodbc::HSTMT hstmt(hdbc);
 
 
 #ifdef DRIVER_ANSI
@@ -235,38 +182,29 @@ LIST *mygetcharsets(HWND hwnd, DataSource* params)
                                        "charset <> 'utf32' AND " \
                                        "charset <> 'ucs2'" ), SQL_NTS);
 #else
-  nReturn = SQLExecDirectW( hStmt, _W(L"SHOW CHARACTER SET"), SQL_NTS);
+  ret = SQLExecDirectW(hstmt, _W(L"SHOW CHARACTER SET"), SQL_NTS);
 #endif
 
-  if (nReturn != SQL_SUCCESS)
-    ShowDiagnostics(nReturn, SQL_HANDLE_STMT, hStmt);
-  if (!SQL_SUCCEEDED(nReturn))
-  {
-    SQLFreeHandle(SQL_HANDLE_STMT, hStmt);
-    Disconnect(hDbc, hEnv);
-    return NULL;
-  }
+  if (!SQL_SUCCEEDED(ret))
+    return csl;
 
-  nReturn= SQLBindCol(hStmt, 1, SQL_C_WCHAR, szCharset, MYODBC_DB_NAME_MAX,
-                      &nCharset);
-  while (TRUE)
-  {
-    nReturn= SQLFetch(hStmt);
+  ret = SQLBindCol(hstmt, 1, SQL_C_WCHAR, charset, MYODBC_DB_NAME_MAX,
+                      &n_charset);
+  if (!SQL_SUCCEEDED(ret))
+    return csl;
 
-    if (nReturn == SQL_NO_DATA)
-      break;
-    else if (nReturn != SQL_SUCCESS)
-      ShowDiagnostics(nReturn, SQL_HANDLE_STMT, hStmt);
-    if (SQL_SUCCEEDED(nReturn))
-      csl= list_cons(sqlwchardup(szCharset, SQL_NTS), csl);
+  while (true)
+  {
+    if (csl.size() % 20)
+      csl.reserve(csl.size() + 20);
+
+    if (SQL_SUCCEEDED(SQLFetch(hstmt)))
+      csl.emplace_back(charset);
     else
       break;
-  }
+}
 
-  SQLFreeHandle(SQL_HANDLE_STMT, hStmt);
-  Disconnect(hDbc, hEnv);
-
-  return list_reverse(csl);
+  return csl;
 }
 
 
@@ -367,7 +305,6 @@ void syncTabsData(HWND hwnd, DataSource *params)
   GET_BOOL_TAB(METADATA_TAB, no_catalog);
   GET_BOOL_TAB(METADATA_TAB, no_schema);
   GET_BOOL_TAB(METADATA_TAB, limit_column_size);
-  GET_BOOL_TAB(METADATA_TAB, no_information_schema);
 
   /* 4 - Cursors/Results */
   GET_BOOL_TAB(CURSORS_TAB, return_matching_rows);
@@ -402,6 +339,8 @@ void syncTabsData(HWND hwnd, DataSource *params)
   GET_BOOL_TAB(SSL_TAB, no_tls_1_2);
   GET_BOOL_TAB(SSL_TAB, no_tls_1_3);
   GET_STRING_TAB(SSL_TAB, tls_versions);
+  GET_STRING_TAB(SSL_TAB, ssl_crl);
+  GET_STRING_TAB(SSL_TAB, ssl_crlpath);
 
   /* 7 - Misc*/
   GET_BOOL_TAB(MISC_TAB, safe);
@@ -460,7 +399,6 @@ void syncTabs(HWND hwnd, DataSource *params)
   SET_BOOL_TAB(METADATA_TAB, no_catalog);
   SET_BOOL_TAB(METADATA_TAB, no_schema);
   SET_BOOL_TAB(METADATA_TAB, limit_column_size);
-  SET_BOOL_TAB(METADATA_TAB, no_information_schema);
 
   /* 4 - Cursors/Results */
   SET_BOOL_TAB(CURSORS_TAB, return_matching_rows);
@@ -509,6 +447,12 @@ void syncTabs(HWND hwnd, DataSource *params)
 
     if(params->rsakey)
       SET_STRING_TAB(SSL_TAB, rsakey);
+
+    if (params->ssl_crl)
+      SET_STRING_TAB(SSL_TAB, ssl_crl);
+
+    if (params->ssl_crlpath)
+      SET_STRING_TAB(SSL_TAB, ssl_crlpath);
 
     SET_BOOL_TAB(SSL_TAB, no_tls_1_2);
     SET_BOOL_TAB(SSL_TAB, no_tls_1_3);

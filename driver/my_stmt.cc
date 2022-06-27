@@ -403,10 +403,10 @@ SQLRETURN prepare(STMT *stmt, char * query, SQLINTEGER query_length,
   }
 
   ssps_close(stmt);
-  stmt->param_count= PARAM_COUNT(&stmt->query);
+  stmt->param_count= PARAM_COUNT(stmt->query);
   /* Trusting our parsing we are not using prepared statments unsless there are
      actually parameter markers in it */
-  if (!stmt->dbc->ds->no_ssps && (PARAM_COUNT(&stmt->query) || force_prepare)
+  if (!stmt->dbc->ds->no_ssps && (PARAM_COUNT(stmt->query) || force_prepare)
     && !IS_BATCH(&stmt->query)
     && preparable_on_server(&stmt->query, stmt->dbc->mysql->server_version))
   {
@@ -429,7 +429,7 @@ SQLRETURN prepare(STMT *stmt, char * query, SQLINTEGER query_length,
         MYLOG_QUERY(stmt, mysql_error(stmt->dbc->mysql));
 
         stmt->set_error("HY000");
-        translate_error(stmt->error.sqlstate,MYERR_S1000,
+        translate_error((char*)stmt->error.sqlstate.c_str(), MYERR_S1000,
                         mysql_errno(stmt->dbc->mysql));
 
         return SQL_ERROR;
@@ -453,7 +453,6 @@ SQLRETURN prepare(STMT *stmt, char * query, SQLINTEGER query_length,
         fix_result_types(stmt);
        /*Should we reset stmt->result?*/
       }
-    /*assert(stmt->param_count==PARAM_COUNT(&stmt->query));*/
     }
   }
 

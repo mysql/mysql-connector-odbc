@@ -133,10 +133,10 @@ typedef enum myodbc_errid
 struct MYERROR
 {
   SQLRETURN   retcode = 0;
-  char	      sqlstate[6] = {'\0', '\0', '\0', '\0', '\0', '\0'};
   char        current = 0;
-  char	      message[SQL_MAX_MESSAGE_LENGTH + 1] = { '\0' };
+  std::string message;
   SQLINTEGER  native_error = 0;
+  std::string sqlstate;
 
   MYERROR()
   {}
@@ -149,8 +149,33 @@ struct MYERROR
   MYERROR(myodbc_errid errid, const char *errtext, SQLINTEGER errcode,
     const char *prefix);
 
-  MYERROR(const char *sqlstate, const char *errtext, SQLINTEGER errcode,
+  MYERROR(const char *state, const char *msg, SQLINTEGER errcode,
     const char *prefix);
+
+  MYERROR(SQLSMALLINT htype, SQLHANDLE handle, SQLRETURN rc)
+  {
+    SQLCHAR     state[6], msg[SQL_MAX_MESSAGE_LENGTH];
+    SQLSMALLINT length;
+    SQLRETURN   drc;
+
+    /** @todo Handle multiple diagnostic records. */
+    drc = SQLGetDiagRecA(htype, handle, 1, state, &native_error,
+      msg, SQL_MAX_MESSAGE_LENGTH - 1, &length);
+
+    if (drc == SQL_SUCCESS || drc == SQL_SUCCESS_WITH_INFO)
+    {
+      sqlstate = (const char*)state;
+      message = (const char*)msg;
+    }
+    else
+    {
+      sqlstate = (const char*)"00000";
+      message = (const char*)"Did not get expected diagnostics";
+    }
+
+    retcode = rc;
+  }
+
 
   operator bool() const
   {
@@ -160,10 +185,10 @@ struct MYERROR
   void clear()
   {
     retcode = 0;
-    message[0] = '\0';
+    message.clear();
     current = 0;
     native_error = 0;
-    sqlstate[0] = '\0';
+    sqlstate.clear();
   }
 };
 

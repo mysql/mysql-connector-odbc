@@ -164,14 +164,13 @@ void on_check_cursor_prefetch_toggled(GtkButton *button, gpointer user_data)
 
 void on_test_clicked(GtkButton *button, gpointer user_data)
 {
-  SQLWCHAR *testResultMsg;
   SQLINTEGER len= SQL_NTS;
   GtkWidget *dialog;
   gchar *displayMsg;
 
   FillParameters((HWND)NULL, pParams);
-  testResultMsg= mytest(NULL, pParams);
-  displayMsg= (gchar*)sqlwchar_as_utf8(testResultMsg, &len);
+  SQLWSTRING msg = mytest(NULL, pParams);
+  displayMsg= (gchar*)sqlwchar_as_utf8(msg.c_str(), &len);
 
   dialog= gtk_message_dialog_new ((GtkWindow*)dsnEditDialog,
                                  GTK_DIALOG_DESTROY_WITH_PARENT,
@@ -180,7 +179,6 @@ void on_test_clicked(GtkButton *button, gpointer user_data)
                                  "%s", displayMsg);
   gtk_dialog_run (GTK_DIALOG (dialog));
   gtk_widget_destroy (dialog);
-  x_free(testResultMsg);
   x_free(displayMsg);
 }
 
@@ -191,7 +189,7 @@ on_database_popup (GtkComboBox *widget,
                    gpointer   user_data)
 {
   GtkTreeIter iter;
-  LIST *dbs, *dbtmp;
+  std::vector<SQLWSTRING> dbs;
 
   /* Active item is to be set only once! */
   if(db_popped_up)
@@ -207,20 +205,24 @@ on_database_popup (GtkComboBox *widget,
 
   gtk_combo_box_text_remove_all(GTK_COMBO_BOX_TEXT (widget));
   FillParameters((HWND)NULL, pParams);
-  dbs= mygetdatabases((HWND)NULL, pParams);
-  dbtmp= dbs;
-  for(; dbtmp; dbtmp= list_rest(dbtmp))
+  try
+  {
+    dbs = mygetdatabases((HWND)NULL, pParams);
+  }
+  catch(...)
+  { }
+
+  for (SQLWSTRING dbwname : dbs)
   {
     gchar *dbname;
     SQLINTEGER len= SQL_NTS;
 
-    dbname= (gchar*)sqlwchar_as_utf8((SQLWCHAR*)dbtmp->data, &len);
+    dbname= (gchar*)sqlwchar_as_utf8((SQLWCHAR*)dbwname.c_str(), &len);
     gtk_combo_box_text_append_text (GTK_COMBO_BOX_TEXT (widget), dbname);
 
     x_free(dbname);
   }
 
-  list_free(dbs, 1);
   return FALSE;
 }
 #else
@@ -228,7 +230,7 @@ void on_database_popup (GtkComboBox *widget, gpointer user_data)
 {
   GtkListStore *store;
   GtkTreeIter iter;
-  LIST *dbs, *dbtmp;
+  std::vector<SQLWSTRING> dbs;
 
   /* Active item is to be set only once! */
   if(db_popped_up)
@@ -243,16 +245,21 @@ void on_database_popup (GtkComboBox *widget, gpointer user_data)
     gtk_combo_box_set_active (GTK_COMBO_BOX (widget), 0);
 
   FillParameters((HWND)NULL, pParams);
-  dbs= mygetdatabases((HWND)NULL, pParams);
-  dbtmp= dbs;
+  
+  try
+  {
+    dbs = mygetdatabases((HWND)NULL, pParams);
+  }
+  catch(...)
+  { }
 
   store = gtk_list_store_new(1, G_TYPE_STRING);
-  for(; dbtmp; dbtmp= list_rest(dbtmp))
+  for (SQLWSTRING dbwname : dbs)
   {
     gchar *dbname;
     SQLINTEGER len= SQL_NTS;
 
-    dbname= (gchar*)sqlwchar_as_utf8((SQLWCHAR*)dbtmp->data, &len);
+    dbname = (gchar*)sqlwchar_as_utf8((SQLWCHAR*)dbwname.c_str(), &len);
     gtk_list_store_append(store, &iter);
     gtk_list_store_set(store, &iter, 0, dbname, -1);
 
@@ -262,7 +269,6 @@ void on_database_popup (GtkComboBox *widget, gpointer user_data)
   gtk_combo_box_set_model(widget, NULL);
   gtk_combo_box_set_model(widget, GTK_TREE_MODEL(store));
   g_object_unref(store);
-  list_free(dbs, 1);
 }
 
 #endif
@@ -311,7 +317,7 @@ on_charset_popup (GtkComboBox *widget,
                    gpointer   user_data)
 {
   GtkTreeIter iter;
-  LIST *css, *cstmp;
+  std::vector<SQLWSTRING> css;
 
   /* Active item is to be set only once! */
   if(cs_popped_up)
@@ -328,22 +334,25 @@ on_charset_popup (GtkComboBox *widget,
   gtk_combo_box_text_remove_all(GTK_COMBO_BOX_TEXT (widget));
 
   FillParameters((HWND)NULL, pParams);
-  css= mygetcharsets((HWND)NULL, pParams);
-  cstmp= css;
+  try
+  {
+    css= mygetcharsets((HWND)NULL, pParams);
+  }
+  catch(...)
+  { }
 
-  for(; cstmp; cstmp= list_rest(cstmp))
+  for(SQLWSTRING cswname : css)
   {
     gchar *csname;
-    SQLINTEGER len= SQL_NTS;
+    SQLINTEGER len = SQL_NTS;
 
-    csname= (gchar*)sqlwchar_as_utf8((SQLWCHAR*)cstmp->data, &len);
+    csname= (gchar*)sqlwchar_as_utf8((SQLWCHAR*)cswname.c_str(), &len);
     gtk_combo_box_text_append_text (GTK_COMBO_BOX_TEXT (widget), csname);
 
     x_free(csname);
 
   }
 
-  list_free(css, 1);
   return FALSE;
 }
 #else
@@ -351,7 +360,7 @@ void on_charset_popup (GtkComboBox *widget, gpointer user_data)
 {
   GtkListStore *store;
   GtkTreeIter iter;
-  LIST *css, *cstmp;
+  std::vector<SQLWSTRING> css;
 
   /* Active item is to be set only once! */
   if(cs_popped_up)
@@ -366,16 +375,21 @@ void on_charset_popup (GtkComboBox *widget, gpointer user_data)
     gtk_combo_box_set_active (GTK_COMBO_BOX (widget), 0);
 
   FillParameters((HWND)NULL, pParams);
-  css= mygetcharsets((HWND)NULL, pParams);
-  cstmp= css;
 
+  try
+  {
+    css= mygetcharsets((HWND)NULL, pParams);
+  }
+  catch(...)
+  { }
+  
   store = gtk_list_store_new(1, G_TYPE_STRING);
-  for(; cstmp; cstmp= list_rest(cstmp))
+  for(SQLWSTRING cswname : css)
   {
     gchar *csname;
     SQLINTEGER len= SQL_NTS;
 
-    csname= (gchar*)sqlwchar_as_utf8((SQLWCHAR*)cstmp->data, &len);
+    csname= (gchar*)sqlwchar_as_utf8((SQLWCHAR*)cswname.c_str(), &len);
     gtk_list_store_append(store, &iter);
     gtk_list_store_set(store, &iter, 0, csname, -1);
 
@@ -384,8 +398,6 @@ void on_charset_popup (GtkComboBox *widget, gpointer user_data)
 
   gtk_combo_box_set_model(widget, GTK_TREE_MODEL(store));
   g_object_unref(store);
-  list_free(css, 1);
-
 }
 #endif
 
@@ -752,6 +764,15 @@ int ShowOdbcParamsDialog(DataSource* params, HWND ParentWnd, BOOL isPrompt)
   g_signal_connect ((gpointer) dummy, "clicked",
                     G_CALLBACK (on_file_button_clicked), entry);
 
+  dummy= GTK_WIDGET (gtk_builder_get_object (builder, "ssl_crl_button"));
+  entry= GTK_ENTRY (gtk_builder_get_object (builder, "ssl_crl"));
+  g_signal_connect ((gpointer) dummy, "clicked",
+                    G_CALLBACK (on_file_button_clicked), entry);
+
+  dummy= GTK_WIDGET (gtk_builder_get_object (builder, "ssl_crlpath_button"));
+  entry= GTK_ENTRY (gtk_builder_get_object (builder, "ssl_crlpath"));
+  g_signal_connect ((gpointer) dummy, "clicked",
+                    G_CALLBACK (on_folder_button_clicked), entry);
 
   dummy= GTK_WIDGET (gtk_builder_get_object (builder, "cursor_prefetch_active"));
   g_signal_connect ((gpointer) dummy, "toggled",

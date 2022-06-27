@@ -749,12 +749,8 @@ DECLARE_TEST(t_bug55870)
   ok_sql(hstmt, "create table bug55870(a int not null primary key, "
     "b varchar(20) not null, c varchar(100) not null, INDEX(b)) ENGINE=InnoDB");
 
-  /* There should be no problems with I_S version of SQLTablePrivileges. Thus need connection
-     not using I_S. SQlStatistics doesn't have I_S version, but it ma change at certain point.
-     Thus let's test it on NO_I_S connection too */
-
   is(OK == alloc_basic_handles_with_opt(&henv1, &hdbc1, &hstmt1, NULL, NULL,
-                                        NULL, "", "NO_I_S=1"));
+                                        NULL, "", ""));
 
 
   sprintf(query, "grant Insert, Select on bug55870 to '%s'@'localhost'", myuid);
@@ -1365,10 +1361,6 @@ DECLARE_TEST(t_bug33599093)
   {
     SQLCHAR type_name[32] = { 0 };
 
-    // _no_i_s cannot filter out unsigned types, so skip it
-    if (idx > 5 && (myoption & (1 << 30)))
-      continue;
-
     is_str(my_fetch_str(hstmt, type_name, 6), type_list[idx], SQL_NTS);
     is_num(strlen(type_name), strlen(type_list[idx]));
     ++idx;
@@ -1438,8 +1430,4 @@ BEGIN_TESTS
   ADD_TEST(t_bug33599093)
 END_TESTS
 
-myoption &= ~(1 << 30);
-RUN_TESTS_ONCE
-myoption |= (1 << 30);
-testname_suffix= "_no_i_s";
 RUN_TESTS
