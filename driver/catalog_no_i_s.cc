@@ -529,77 +529,12 @@ char *SQLFORE_KEYS_values[]= {
  * @return The requested record or NULL if it doesn't exist
  *         (and isn't created).
  */
-MY_FOREIGN_KEY_FIELD *fk_get_rec(DYNAMIC_ARRAY *records, unsigned int recnum)
+MY_FOREIGN_KEY_FIELD *fk_get_rec(std::vector<MY_FOREIGN_KEY_FIELD> &records, unsigned int recnum)
 {
-  MY_FOREIGN_KEY_FIELD *rec= NULL;
-  if (recnum < records->elements)
-  {
-    rec= ((MY_FOREIGN_KEY_FIELD *)records->buffer) + recnum;
-  }
-  else
-  {
-    rec= (MY_FOREIGN_KEY_FIELD *) alloc_dynamic(records);
-    if (!rec)
-      return NULL;
-    memset(rec, 0, sizeof(MY_FOREIGN_KEY_FIELD));
-  }
-  return rec;
-}
+  while(records.size() <= recnum)
+    records.push_back(MY_FOREIGN_KEY_FIELD());
 
-
-/*
-  If the foreign keys associated with a primary key are requested, the
-  result set is ordered by FKTABLE_CAT, FKTABLE_NAME, KEY_SEQ, PKTABLE_NAME
-*/
-static int sql_fk_sort(const void *var1, const void *var2)
-{
-  int ret;
-  if ((ret= strcmp(((MY_FOREIGN_KEY_FIELD *) var1)->FKTABLE_CAT,
-               ((MY_FOREIGN_KEY_FIELD *) var2)->FKTABLE_CAT)) == 0)
-  {
-    if ((ret= strcmp(((MY_FOREIGN_KEY_FIELD *) var1)->FKTABLE_NAME,
-                  ((MY_FOREIGN_KEY_FIELD *) var2)->FKTABLE_NAME)) == 0)
-    {
-      if ((ret= ((MY_FOREIGN_KEY_FIELD *) var1)->KEY_SEQ -
-                  ((MY_FOREIGN_KEY_FIELD *) var2)->KEY_SEQ) == 0)
-      {
-        if ((ret= strcmp(((MY_FOREIGN_KEY_FIELD *) var1)->PKTABLE_NAME,
-                  ((MY_FOREIGN_KEY_FIELD *) var2)->PKTABLE_NAME)) == 0)
-        {
-          return 0;
-        }
-      }
-    }
-  }
-  return ret;
-}
-
-
-/*
-  If the primary keys associated with a foreign key are requested, the
-  result set is ordered by PKTABLE_CAT, PKTABLE_NAME, KEY_SEQ, FKTABLE_NAME
-*/
-static int sql_pk_sort(const void *var1, const void *var2)
-{
-  int ret;
-  if ((ret= strcmp(((MY_FOREIGN_KEY_FIELD *) var1)->PKTABLE_CAT,
-               ((MY_FOREIGN_KEY_FIELD *) var2)->PKTABLE_CAT)) == 0)
-  {
-    if ((ret= strcmp(((MY_FOREIGN_KEY_FIELD *) var1)->PKTABLE_NAME,
-                  ((MY_FOREIGN_KEY_FIELD *) var2)->PKTABLE_NAME)) == 0)
-    {
-      if ((ret= ((MY_FOREIGN_KEY_FIELD *) var1)->KEY_SEQ -
-                  ((MY_FOREIGN_KEY_FIELD *) var2)->KEY_SEQ) == 0)
-      {
-        if ((ret= strcmp(((MY_FOREIGN_KEY_FIELD *) var1)->FKTABLE_NAME,
-                  ((MY_FOREIGN_KEY_FIELD *) var2)->FKTABLE_NAME)) == 0)
-        {
-          return 0;
-        }
-      }
-    }
-  }
-  return ret;
+  return &records[recnum];
 }
 
 

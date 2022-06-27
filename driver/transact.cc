@@ -103,7 +103,6 @@ end_transaction(SQLSMALLINT HandleType,
   SQLRETURN result= SQL_SUCCESS;
   ENV *henv;
   DBC *hdbc;
-  LIST *current;
 
   switch (HandleType) {
   case SQL_HANDLE_ENV:

@@ -327,8 +327,6 @@ void query_print          (FILE *log_file,char *query);
 FILE *init_query_log      (void);
 void end_query_log        (FILE *query_log);
 
-LIST *list_delete_forward (LIST *elem);
-
 enum enum_field_types map_sql2mysql_type(SQLSMALLINT sql_type);
 
 /* proc_* functions - used to parse prcedures headers in SQLProcedureColumns */

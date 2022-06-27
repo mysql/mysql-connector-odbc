@@ -78,10 +78,23 @@
 #include "installer.h"
 #include "unicode_transcode.h"
 #include <sql.h>
+#include <vector>
+#include <string>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+  /**
+    This is the function implemented by the platform-specific code.
+
+    @return TRUE if user pressed OK, FALSE if cancelled or closed
+  */
+  int ShowOdbcParamsDialog(DataSource* params, HWND ParentWnd, BOOL isPrompt);
+
+#ifdef __cplusplus
+}
+#endif
+
 
 /* Utility functions. */
 void ShowDiagnostics(SQLRETURN nReturn, SQLSMALLINT nHandleType, SQLHANDLE h);
@@ -93,10 +106,10 @@ void Disconnect(SQLHDBC hDbc, SQLHENV hEnv);
 #define MYODBC_DB_NAME_MAX 255
 
 /* Callbacks */
-SQLWCHAR *mytest(HWND hwnd, DataSource *params);
+SQLWSTRING mytest(HWND hwnd, DataSource *params);
 BOOL mytestaccept(HWND hwnd, DataSource *params);
-LIST *mygetdatabases(HWND hwnd, DataSource *params);
-LIST *mygetcharsets(HWND hwnd, DataSource *params);
+std::vector<SQLWSTRING> mygetdatabases(HWND hwnd, DataSource *params);
+std::vector<SQLWSTRING> mygetcharsets(HWND hwnd, DataSource *params);
 
 /* Sync data functions */
 void syncData(HWND hwnd, DataSource *params);
@@ -106,15 +119,9 @@ void syncTabs(HWND hwnd, DataSource *params);
 void FillParameters(HWND hwnd, DataSource *params);
 
 #define _W(string) wchar_t_as_sqlwchar((wchar_t*)string, (SQLWCHAR*)tmpbuf, \
-                                          sizeof(string) / sizeof(wchar_t))
+                                        wcslen(string))
 
 
-/**
-  This is the function implemented by the platform-specific code.
-
-  @return TRUE if user pressed OK, FALSE if cancelled or closed
-*/
-int ShowOdbcParamsDialog(DataSource *params, HWND ParentWnd, BOOL isPrompt);
 
 #ifdef _WIN32
 
@@ -273,9 +280,5 @@ void setUnsignedFieldData(gchar *widget_name, unsigned int param);
 
 #define SET_BOOL_TAB(framenum, name) \
   SET_CHECKED_TAB(framenum, name, params->name)
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif

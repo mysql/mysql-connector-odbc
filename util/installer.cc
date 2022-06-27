@@ -222,6 +222,10 @@ static SQLWCHAR W_OCI_CONFIG_FILE[] =
 { 'O', 'C', 'I', '_', 'C', 'O', 'N', 'F', 'I', 'G', '_', 'F', 'I', 'L', 'E', 0 };
 static SQLWCHAR W_TLS_VERSIONS[] =
 { 'T', 'L', 'S', '-', 'V', 'E', 'R', 'S', 'I', 'O', 'N', 'S', 0 };
+static SQLWCHAR W_SSL_CRL[] =
+{ 'S', 'S', 'L', '-', 'C', 'R', 'L', 0 };
+static SQLWCHAR W_SSL_CRLPATH[] =
+{ 'S', 'S', 'L', '-', 'C', 'R', 'L', 'P', 'A', 'T', 'H', 0};
 
 /* DS_PARAM */
 /* externally used strings */
@@ -261,7 +265,8 @@ SQLWCHAR *dsnparams[]= {W_DSN, W_DRIVER, W_DESCRIPTION, W_SERVER,
                         W_SAVEFILE, W_RSAKEY, W_PLUGIN_DIR, W_DEFAULT_AUTH,
                         W_NO_TLS_1_2, W_NO_TLS_1_3,
                         W_SSLMODE, W_NO_DATE_OVERFLOW, W_LOAD_DATA_LOCAL_DIR,
-                        W_OCI_CONFIG_FILE, W_TLS_VERSIONS};
+                        W_OCI_CONFIG_FILE, W_TLS_VERSIONS,
+                        W_SSL_CRL, W_SSL_CRLPATH};
 static const
 int dsnparamcnt= sizeof(dsnparams) / sizeof(SQLWCHAR *);
 /* DS_PARAM */
@@ -723,6 +728,8 @@ void ds_delete(DataSource *ds)
   x_free(ds->default_auth);
   x_free(ds->oci_config_file);
   x_free(ds->tls_versions);
+  x_free(ds->ssl_crl);
+  x_free(ds->ssl_crlpath);
   x_free(ds->load_data_local_dir);
 
   x_free(ds->name8);
@@ -752,6 +759,8 @@ void ds_delete(DataSource *ds)
   x_free(ds->default_auth8);
   x_free(ds->oci_config_file8);
   x_free(ds->tls_versions8);
+  x_free(ds->ssl_crl8);
+  x_free(ds->ssl_crlpath8);
   x_free(ds->load_data_local_dir8);
 
   x_free(ds);
@@ -998,6 +1007,10 @@ void ds_map_param(DataSource *ds, const SQLWCHAR *param,
     *strdest= &ds->oci_config_file;
   else if (!sqlwcharcasecmp(W_TLS_VERSIONS, param))
     *strdest= &ds->tls_versions;
+  else if (!sqlwcharcasecmp(W_SSL_CRL, param))
+  *strdest = &ds->ssl_crl;
+  else if (!sqlwcharcasecmp(W_SSL_CRLPATH, param))
+  *strdest = &ds->ssl_crlpath;
 
   /* DS_PARAM */
 }
@@ -1535,7 +1548,9 @@ int ds_add(DataSource *ds)
   if (ds_add_strprop(ds->name, W_LOAD_DATA_LOCAL_DIR, ds->load_data_local_dir)) goto error;
   if (ds_add_strprop(ds->name, W_OCI_CONFIG_FILE, ds->oci_config_file)) goto error;
   if (ds_add_strprop(ds->name, W_TLS_VERSIONS, ds->tls_versions)) goto error;
- /* DS_PARAM */
+  if (ds_add_strprop(ds->name, W_SSL_CRL, ds->ssl_crl)) goto error;
+  if (ds_add_strprop(ds->name, W_SSL_CRLPATH, ds->ssl_crlpath)) goto error;
+  /* DS_PARAM */
 
   rc= 0;
 

@@ -56,8 +56,8 @@ SQLRETURN do_query(STMT *stmt,char *query, SQLULEN query_length)
                       stmt->stmt_options.max_rows, TRUE)))
     {
       /* The error is set for DBC, copy it into STMT */
-      stmt->set_error(stmt->dbc->error.sqlstate,
-                     stmt->dbc->error.message,
+      stmt->set_error(stmt->dbc->error.sqlstate.c_str(),
+                     stmt->dbc->error.message.c_str(),
                      stmt->dbc->error.native_error);
 
       /* if setting sql_select_limit fails, the query will probably fail anyway too */
@@ -77,7 +77,7 @@ SQLRETURN do_query(STMT *stmt,char *query, SQLULEN query_length)
                       mysql_error(stmt->dbc->mysql),
                       mysql_errno(stmt->dbc->mysql));
 
-      translate_error(stmt->error.sqlstate, MYERR_08S01 /* S1000 */,
+      translate_error((char*)stmt->error.sqlstate.c_str(), MYERR_08S01 /* S1000 */,
                       mysql_errno(stmt->dbc->mysql));
       goto exit;
     }
@@ -115,8 +115,10 @@ SQLRETURN do_query(STMT *stmt,char *query, SQLULEN query_length)
        this is a batch of queries */
     else if (ssps_used(stmt))
     {
-      native_error= mysql_stmt_bind_param(stmt->ssps,
-                                        (MYSQL_BIND*)stmt->param_bind->buffer);
+      native_error = 0;
+      if (stmt->param_bind.size() && stmt->param_count)
+        native_error = mysql_stmt_bind_param(stmt->ssps, &stmt->param_bind[0]);
+
       if (native_error == 0)
       {
         native_error= mysql_stmt_execute(stmt->ssps);
@@ -128,7 +130,7 @@ SQLRETURN do_query(STMT *stmt,char *query, SQLULEN query_length)
                        mysql_stmt_errno(stmt->ssps));
 
         /* For some errors - translating to more appropriate status */
-        translate_error(stmt->error.sqlstate, MYERR_S1000,
+        translate_error((char*)stmt->error.sqlstate.c_str(), MYERR_S1000,
                         mysql_stmt_errno(stmt->ssps));
         goto exit;
       }
@@ -159,7 +161,7 @@ SQLRETURN do_query(STMT *stmt,char *query, SQLULEN query_length)
       stmt->set_error("HY000");
 
       /* For some errors - translating to more appropriate status */
-      translate_error(stmt->error.sqlstate, MYERR_S1000,
+      translate_error((char*)stmt->error.sqlstate.c_str(), MYERR_S1000,
                       mysql_errno(stmt->dbc->mysql));
       goto exit;
     }
@@ -258,10 +260,7 @@ SQLRETURN insert_params(STMT *stmt, SQLULEN row, char **finalquery,
     __LOCALE_SET("C"); /* force use of '.' as decimal point */
   }
 
-  if (adjust_param_bind_array(stmt) )
-  {
-    goto memerror;
-  }
+  adjust_param_bind_array(stmt);
 
   for ( i= 0; i < stmt->param_count; ++i )
   {

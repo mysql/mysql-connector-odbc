@@ -99,6 +99,8 @@ typedef struct {
   SQLWCHAR *load_data_local_dir;
   SQLWCHAR *oci_config_file;
   SQLWCHAR *tls_versions;
+  SQLWCHAR *ssl_crl;
+  SQLWCHAR *ssl_crlpath;
 
   bool has_port;
   unsigned int port;
@@ -134,6 +136,8 @@ typedef struct {
   SQLCHAR *load_data_local_dir8;
   SQLCHAR *oci_config_file8;
   SQLCHAR *tls_versions8;
+  SQLCHAR* ssl_crl8;
+  SQLCHAR* ssl_crlpath8;
 
   /*  */
   BOOL return_matching_rows;

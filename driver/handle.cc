@@ -122,8 +122,8 @@ DBC::~DBC()
 
 SQLRETURN DBC::set_error(char * state, const char * message, uint errcode)
 {
-  myodbc_stpmov(error.sqlstate, state);
-  strxmov(error.message, MYODBC_ERROR_PREFIX, message, NullS);
+  error.sqlstate = state ? state : "";
+  error.message = std::string(MYODBC_ERROR_PREFIX) + message;
   error.native_error= errcode;
   return SQL_ERROR;
 }
@@ -373,66 +373,30 @@ SQLRETURN SQL_API SQLFreeConnect(SQLHDBC hdbc)
 }
 
 
-/* allocates dynamic array for param bind.
-   Throws on allocation errors */
+/* Allocates memory for parameter binds in vector.
+ */
 void STMT::allocate_param_bind(uint elements)
 {
   if (dbc->ds->no_ssps)
     return;
 
-  if (param_bind == NULL)
+  if (param_bind.capacity() < elements)
   {
-    param_bind= (DYNAMIC_ARRAY*)myodbc_malloc(sizeof(DYNAMIC_ARRAY), MYF(0));
-
-    if (param_bind == NULL)
-    {
-      throw;
-    }
+    param_bind.reserve(elements);
+    while(elements > param_bind.size())
+      param_bind.push_back(MYSQL_BIND{});
   }
-
-  myodbc_init_dynamic_array(param_bind, sizeof(MYSQL_BIND), elements, 10);
-  memset(param_bind->buffer, 0, sizeof(MYSQL_BIND) *
-         param_bind->max_element);
 }
 
 
 int adjust_param_bind_array(STMT *stmt)
 {
-  if (ssps_used(stmt) && stmt->param_count > stmt->param_bind->max_element)
-  {
-    uint prev_max_elements= stmt->param_bind->max_element;
-
-    if (myodbc_allocate_dynamic(stmt->param_bind, stmt->param_count))
-    {
-      return 1;
-    }
-
-    /* Need to init newly allocated area with 0s */
-    memset(stmt->param_bind->buffer + sizeof(MYSQL_BIND)*prev_max_elements, 0,
-      sizeof(MYSQL_BIND) * (stmt->param_bind->max_element - prev_max_elements));
-  }
+  stmt->allocate_param_bind(stmt->param_count);
+  /* Need to init newly allocated area with 0s */
+  //  memset(stmt->param_bind->buffer + sizeof(MYSQL_BIND)*prev_max_elements, 0,
+  //    sizeof(MYSQL_BIND) * (stmt->param_bind->max_element - prev_max_elements));
 
   return 0;
-}
-
-
-void delete_param_bind(DYNAMIC_ARRAY *param_bind)
-{
-  if (param_bind != NULL)
-  {
-    uint i;
-    for (i=0; i < param_bind->max_element; ++i)
-    {
-      MYSQL_BIND *bind= (MYSQL_BIND *)param_bind->buffer + i;
-
-      if (bind != NULL)
-      {
-        x_free(bind->buffer);
-      }
-    }
-    delete_dynamic(param_bind);
-    x_free(param_bind);
-  }
 }
 
 
@@ -600,11 +564,6 @@ SQLRETURN SQL_API my_SQLFreeStmtExtended(SQLHSTMT hstmt, SQLUSMALLINT f_option,
     /* At this point, only FREE_STMT_RESET and SQL_DROP left out */
     reset_parsed_query(&stmt->orig_query, NULL, NULL, NULL);
     reset_parsed_query(&stmt->query, NULL, NULL, NULL);
-
-    if (stmt->param_bind != NULL)
-    {
-      reset_dynamic(stmt->param_bind);
-    }
 
     stmt->param_count= 0;
 
