@@ -47,7 +47,6 @@
 #include <mysql/service_mysql_alloc.h>
 #include <m_ctype.h>
 #include <my_io.h>
-#include <thr_mutex.h>
 
 #else
 
@@ -59,16 +58,7 @@
 #include "include/mysql-8.0/mysql/service_mysql_alloc.h"
 #include "include/mysql-8.0/m_ctype.h"
 #include "include/mysql-8.0/my_io.h"
-#include "include/mysql-8.0/thr_mutex.h"
 
-#endif
-
-#ifdef _WIN32
-typedef DWORD thread_local_key_t;
-typedef CRITICAL_SECTION native_mutex_t;
-typedef int native_mutexattr_t;
-#else
-typedef pthread_key_t thread_local_key_t;
 #endif
 
 #ifdef __cplusplus
@@ -107,16 +97,9 @@ extern "C"
 #define x_free(A) { void *tmp= (A); if (tmp) my_free((char *) tmp); }
 #define myodbc_malloc(A,B) my_malloc(PSI_NOT_INSTRUMENTED,A,B)
 
-#define myodbc_mutex_t native_mutex_t
-#define myodbc_key_t thread_local_key_t
 #define myodbc_realloc(A,B,C) my_realloc(PSI_NOT_INSTRUMENTED,A,B,C)
 #define myodbc_memdup(A,B,C) my_memdup(PSI_NOT_INSTRUMENTED,A,B,C)
 #define myodbc_strdup(A,B) my_strdup(PSI_NOT_INSTRUMENTED,A,B)
-#define myodbc_mutex_lock native_mutex_lock
-#define myodbc_mutex_unlock native_mutex_unlock
-#define myodbc_mutex_trylock native_mutex_trylock
-#define myodbc_mutex_init native_mutex_init
-#define myodbc_mutex_destroy native_mutex_destroy
 
 #define myodbc_snprintf snprintf
 
