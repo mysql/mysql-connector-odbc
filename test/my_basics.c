@@ -1559,7 +1559,61 @@ DECLARE_TEST(t_bug107307)
   return OK;
 }
 
+/*
+  WL #14880 - New ODBC connection options to specify CRL and
+  CRL Path for SSL
+*/
+DECLARE_TEST(t_ssl_crl)
+{
+  DECLARE_BASIC_HANDLES(henv1, hdbc1, hstmt1);
+  char *conn_strs[][3] = {
+    // Connection string, return value (1 - error, 0 - success), Encryption
+    {"ssl-mode=REQUIRED;ssl-crl=non-existing.pem", "\1", "\0"},
+    {"ssl-mode=REQUIRED;ssl-crlpath=invalid-path", "\0", "\1"},
+    {"ssl-mode=DISABLED;ssl-crl=non-existing.pem", "\0", "\0"},
+    {"ssl-mode=DISABLED;ssl-crlpath=invalid-path", "\0", "\0"}
+  };
+
+  for (int i = 0; i < 4; ++i)
+  {
+    SQLCHAR buf[1024] = { 0 };
+    int connect_res = alloc_basic_handles_with_opt(&henv1, &hdbc1, &hstmt1, NULL,
+      NULL, NULL, NULL, conn_strs[i][0]);
+
+    is_num(connect_res, conn_strs[i][1][0]);
+
+    if (connect_res == SQL_SUCCESS)
+    {
+      // If connected check if encryption is used.
+      ok_sql(hstmt1, "SHOW STATUS LIKE 'Ssl_version'");
+      ok_stmt(hstmt1, SQLFetch(hstmt1));
+      ok_stmt(hstmt1, SQLGetData(hstmt1, 2, SQL_C_CHAR, buf, sizeof(buf), NULL));
+      if(conn_strs[i][2][0])
+      {
+        // Encryption is used
+        is(strlen(buf) > 0);
+      }
+      else
+      {
+        // Encryption is not used
+        is(strlen(buf) == 0);
+      }
+    }
+    else
+    {
+      // If not connected check the error message
+      is(OK == check_errmsg_ex(hdbc1, SQL_HANDLE_DBC,
+        "SSL connection error: SSL_CTX_set_default_verify_paths failed"));
+    }
+
+    free_basic_handles(&henv1, &hdbc1, &hstmt1);
+  }
+
+  return OK;
+}
+
 BEGIN_TESTS
+  ADD_TEST(t_ssl_crl)
   ADD_TEST(t_bug107307)
   ADD_TEST(t_tls_versions)
   ADD_TEST(t_tls_opts)

@@ -495,8 +495,7 @@ SQLRETURN DBC::connect(DataSource *dsrc)
     if (mysql_options(mysql, MYSQL_OPT_SSL_CRL,
       ds_get_utf8attr(dsrc->ssl_crl, &dsrc->ssl_crl8)))
     {
-      return set_error("HY000", "Failed to set the path name of the file "
-        "containing certificate revocation lists", 0);
+      return set_error("HY000", "Failed to set the certificate revocation list file", 0);
     }
   }
 
@@ -505,8 +504,7 @@ SQLRETURN DBC::connect(DataSource *dsrc)
     if (mysql_options(mysql, MYSQL_OPT_SSL_CRLPATH,
       ds_get_utf8attr(dsrc->ssl_crlpath, &dsrc->ssl_crlpath8)))
     {
-      return set_error("HY000", "The path name of the directory that "
-        "contains files containing certificate revocation lists. ", 0);
+      return set_error("HY000", "Failed to set the certificate revocation list path", 0);
     }
   }
 

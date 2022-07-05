@@ -512,6 +512,8 @@ int list_datasource_details(DataSource *ds)
   if (ds->sslverify) printf("Verify SSL cert:      yes\n");
   if (ds->rsakey)    printf("RSA public key:       %s\n", ds_get_utf8attr(ds->rsakey, &ds->rsakey8));
   if (ds->tls_versions) printf("TLS Versions:        %s\n", ds_get_utf8attr(ds->tls_versions, &ds->tls_versions8));
+  if (ds->ssl_crl   ) printf("SSL CRL:             %s\n", ds_get_utf8attr(ds->ssl_crl, &ds->ssl_crl8));
+  if (ds->ssl_crlpath) printf("SSL CRL path:        %s\n", ds_get_utf8attr(ds->ssl_crlpath, &ds->ssl_crlpath8));
   if (ds->port && ds->has_port) printf("Port:                %d\n", ds->port);
   if (ds->plugin_dir  ) printf("Plugin directory:    %s\n", ds_get_utf8attr(ds->plugin_dir, &ds->plugin_dir8));
   if (ds->default_auth) printf("Default Authentication Library: %s\n", ds_get_utf8attr(ds->default_auth, &ds->default_auth8));
