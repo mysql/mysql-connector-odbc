@@ -630,19 +630,30 @@ IF(WIN32)
 
   INSTALL(DIRECTORY
     ${PROJECT_BINARY_DIR}/bin/RelWithDebInfo/
-    ${PROJECT_BINARY_DIR}/bin/Debug/
     DESTINATION bin
-    CONFIGURATIONS Debug RelWithDebInfo
-    FILES_MATCHING
-    PATTERN *.pdb
+    CONFIGURATIONS RelWithDebInfo
+    FILES_MATCHING PATTERN *.pdb
   )
+
+  INSTALL(DIRECTORY
+    ${PROJECT_BINARY_DIR}/bin/Debug/
+    DESTINATION bin/Debug
+    CONFIGURATIONS Debug
+    FILES_MATCHING PATTERN *.pdb
+  )
+
   INSTALL(DIRECTORY
     ${PROJECT_BINARY_DIR}/lib/RelWithDebInfo/
-    ${PROJECT_BINARY_DIR}/lib/Debug/
     DESTINATION lib
-    CONFIGURATIONS Debug RelWithDebInfo
-    FILES_MATCHING
-    PATTERN *.pdb
+    CONFIGURATIONS RelWithDebInfo
+    FILES_MATCHING PATTERN *.pdb
+  )
+
+  INSTALL(DIRECTORY
+    ${PROJECT_BINARY_DIR}/lib/Debug/
+    DESTINATION lib/Debug
+    CONFIGURATIONS Debug
+    FILES_MATCHING PATTERN *.pdb
   )
 
 ELSE(WIN32)
@@ -737,7 +748,13 @@ function(bundle_lib lib)
 
   message("Bundling library: ${lib}")
 
-  if(WIN32 OR APPLE)
+  if(WIN32)
+    install(FILES ${lib}
+      CONFIGURATIONS Release RelWithDebInfo
+      DESTINATION "${LIB_SUBDIR}"
+      COMPONENT OdbcDll
+    )
+  elseif(APPLE)
     install(FILES ${lib}
       DESTINATION "${LIB_SUBDIR}"
       COMPONENT OdbcDll
@@ -872,8 +889,9 @@ macro(bundle_plugins ignored)
     message("Bundling client plugin: ${lib}")
 
     install(FILES "${lib}"
+      CONFIGURATIONS Release RelWithDebInfo
       DESTINATION "${LIB_SUBDIR}/plugin"
-      COMPONENT JDBCDll  # FIXME: use ODBC name
+      COMPONENT ODBCDll
     )
 
     # See if libsasl is bundled to also bundle sasl plugins
@@ -916,6 +934,7 @@ macro(bundle_plugins ignored)
     message("Bundling SASL modules")
     set(bundled_sasl_modules true)
     install(DIRECTORY "${MYSQL_LIB_DIR}/private/sasl2"
+      CONFIGURATIONS Release RelWithDebInfo
       DESTINATION "${LIB_SUBDIR}/private"
       COMPONENT OdbcDll #FIXME
     )
