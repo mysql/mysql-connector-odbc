@@ -48,7 +48,6 @@ and in addition if a 64-bit package
 There are two CMake options you can use to control the build
 
   -DMSI_64=1   build a 64-bit package
-  -DPDB=1      include .pdb files
 
 In the simple 32-bit case you just run
 

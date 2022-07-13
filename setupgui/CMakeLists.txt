@@ -195,11 +195,10 @@ endif(use_gtk)
 
 
 # Install specs
-
-install(TARGETS myodbc8S DESTINATION ${LIB_SUBDIR})
 set_property(TARGET myodbc8S APPEND PROPERTY INSTALL_RPATH "$ORIGIN")
 
 if(use_gtk)
+  install(TARGETS myodbc8S DESTINATION ${LIB_SUBDIR})
 
   if(TARGET ${GTK3_target})
     install(TARGETS  ${GTK3_target} DESTINATION ${LIB_SUBDIR})
@@ -208,5 +207,12 @@ if(use_gtk)
   if(TARGET ${GTK2_target})
     install(TARGETS  ${GTK2_target} DESTINATION ${LIB_SUBDIR})
   endif()
+else()
+  install(TARGETS myodbc8S
+    CONFIGURATIONS Release RelWithDebInfo
+    DESTINATION ${LIB_SUBDIR})
 
+  install(TARGETS myodbc8S
+    CONFIGURATIONS Debug
+    DESTINATION "${LIB_SUBDIR}/Debug")
 endif()

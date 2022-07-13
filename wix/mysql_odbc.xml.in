@@ -230,7 +230,6 @@
     <Feature Id="ODBC" Title="MySQL Connector/ODBC $(var.odbc_ver_long) 32-bit drivers" Level="1" Description="Installs the MySQL ODBC $(var.odbc_ver_long) 32-bit Unicode and ANSI drivers."  ConfigurableDirectory="INSTALLDIR">
     <?endif ?>
       <ComponentRef Id="RegKeys" />
-      <ComponentRef Id="lib" />
       <ComponentRef Id="driver" />
       <ComponentRef Id="setup" />
       <ComponentRef Id="installer" />
