@@ -137,6 +137,7 @@ void myodbc_dynstr_free(DYNAMIC_STRING *str);
 bool myodbc_dynstr_realloc(DYNAMIC_STRING *str, size_t additional_size);
 
 unsigned int get_charset_maxlen(unsigned int num);
+void delocalize_radix(char* buffer);
 
 #ifdef __cplusplus
 }

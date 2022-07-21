@@ -35,11 +35,63 @@
 
 #include "stringutil.h"
 
-
 CHARSET_INFO *utf8_charset_info = NULL;
 CHARSET_INFO *utf16_charset_info = NULL;
 
 const char *transport_charset = "utf8mb4";
+
+// Scientific floating point notation:
+// the value is represented always with only one digit before the decimal point,
+// followed by the decimal point and as many decimal digits as the precision.
+// Finally, this notation always includes an exponential part consisting on
+// the letter e followed by an optional sign and three exponential digits.
+//
+// https://cplusplus.com/reference/ios/scientific/
+static inline bool is_valid_float_char(char c)
+{
+  return ('0' <= c && c <= '9') ||
+    c == 'e' || c == 'E' ||
+    c == '+' || c == '-';
+}
+
+
+/**
+  Replace a locale dependent decimal point by C decimal dot
+
+  NOTE: Recommended for use only for scientific exponential
+        representation of floating point numbers
+        such as (-1.2345678E+9).
+
+  @param[in, out] buffer containing the string value of float/double
+*/
+void delocalize_radix(char* buffer)
+{
+  // Fast check:  if the buffer has a normal decimal point, assume no
+  // translation is needed.
+  if (strchr(buffer, '.') != nullptr) return;
+
+  // Find the first unknown character.
+  while (is_valid_float_char(*buffer)) ++buffer;
+
+  if (*buffer == '\0') {
+    // No radix character found.
+    return;
+  }
+
+  // We are now pointing at the locale-specific radix character.  Replace it
+  // with '.'.
+  *buffer = '.';
+  ++buffer;
+
+  if (!is_valid_float_char(*buffer) && *buffer != '\0') {
+    // It appears the radix was a multi-byte character.  We need to remove the
+    // extra bytes.
+    char* target = buffer;
+    do { ++buffer; } while (!is_valid_float_char(*buffer) && *buffer != '\0');
+    memmove(target, buffer, strlen(buffer) + 1);
+  }
+}
+
 
 /**
   Duplicate a SQLCHAR in the specified character set as a SQLWCHAR.

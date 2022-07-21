@@ -253,13 +253,6 @@ SQLRETURN insert_params(STMT *stmt, SQLULEN row, char **finalquery,
 
   LOCK_DBC(stmt->dbc);
 
-  //to = stmt->buf() + (finalquery_length != NULL ? *finalquery_length : 0);
-
-  if (!stmt->dbc->ds->dont_use_set_locale)
-  {
-    __LOCALE_SET("C"); /* force use of '.' as decimal point */
-  }
-
   adjust_param_bind_array(stmt);
 
   for ( i= 0; i < stmt->param_count; ++i )
@@ -349,21 +342,12 @@ SQLRETURN insert_params(STMT *stmt, SQLULEN row, char **finalquery,
     }
   }
 
-  if (!stmt->dbc->ds->dont_use_set_locale)
-  {
-    __LOCALE_RESTORE();
-  }
-
-
-
   return rc;
 
 memerror:      /* Too much data */
   rc= stmt->set_error(MYERR_S1001,NULL,4001);
 
 error:
-  if (!stmt->dbc->ds->dont_use_set_locale)
-    __LOCALE_RESTORE();
   return rc;
 }
 
@@ -594,6 +578,7 @@ SQLRETURN convert_c_type2str(STMT *stmt, SQLSMALLINT ctype, DESCREC *iprec,
         /* We should perpare this data for string comparison */
         sprintf(buff, "%.15e", *((float*) *res));
       }
+      delocalize_radix(buff);
       *length= strlen(*res= buff);
       break;
     case SQL_C_DOUBLE:
@@ -606,6 +591,7 @@ SQLRETURN convert_c_type2str(STMT *stmt, SQLSMALLINT ctype, DESCREC *iprec,
         /* We should perpare this data for string comparison */
         sprintf(buff,"%.15e",*((double*) *res));
       }
+      delocalize_radix(buff);
       *length= strlen(*res= buff);
       break;
     case SQL_C_DATE:
