@@ -47,10 +47,10 @@ ENDIF(NOT WIN32)
 FOREACH(FN my_basics.c my_blob.c my_bulk.c my_catalog1.c my_catalog2.c
     my_crash.c my_curext.c my_cursor.c my_datetime.c my_desc.c
     my_dyn_cursor.c my_error.c my_info.c my_keys.c my_param.c
-		my_prepare.c my_relative.c my_result1.c my_result2.c my_scroll.c
+    my_prepare.c my_relative.c my_result1.c my_result2.c my_scroll.c
     my_setup.c my_tran.c my_types.c my_unicode.c my_unixodbc.c
     my_use_result.c my_bug13766.c my_pooling.c my_auth.cc my_data.cc
-    my_options.cc my_param2.cc)
+    my_catalog3.cc my_options.cc my_param2.cc)
     
   GET_FILENAME_COMPONENT(T ${FN} NAME_WE)
     

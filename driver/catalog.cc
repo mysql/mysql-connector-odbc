@@ -775,8 +775,10 @@ columns_i_s(SQLHSTMT hstmt, SQLCHAR *catalog, unsigned long catalog_len,
     "CHARACTER_OCTET_LENGTH as CHAR_OCTET_LENGTH,"
     "ORDINAL_POSITION,"
     "IF(EXTRA LIKE \"%auto_increment%\", \"YES\", IS_NULLABLE) AS IS_NULLABLE,"
-    "CAST(CHARACTER_OCTET_LENGTH/CHARACTER_MAXIMUM_LENGTH AS SIGNED) AS CHAR_SIZE "
-    "FROM information_schema.COLUMNS c WHERE 1=1";
+    "MAXLEN as CHAR_SIZE "
+    "FROM information_schema.COLUMNS c "
+    "LEFT JOIN information_schema.CHARACTER_SETS cs ON c.CHARACTER_SET_NAME = cs.CHARACTER_SET_NAME "
+    "WHERE 1=1";
 
   auto do_bind = [](vec_bind &par, SQLCHAR *data, enum_field_types buf_type,
     unsigned long &len, bool *isnull = nullptr)

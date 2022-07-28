@@ -348,6 +348,7 @@ struct table
   xstring database = nullptr;
   xstring table_name;
   xstring qualifier;
+  xstring table_extra = nullptr;
 
   void drop()
   {
@@ -356,7 +357,7 @@ struct table
 
   void create(xstring def)
   {
-    sql(hstmt, "CREATE TABLE `" + qualifier + "`(" + def + ")");
+    sql(hstmt, "CREATE TABLE `" + qualifier + "`(" + def + ")" + table_extra);
   }
 
   void insert(xstring vals)
@@ -364,8 +365,9 @@ struct table
     sql(hstmt, "INSERT INTO `" + qualifier + "` VALUES " + vals);
   }
 
-  table(SQLHSTMT stmt, xstring db, xstring tab, xstring def) : hstmt(stmt),
-      database(db), table_name(tab)
+  table(SQLHSTMT stmt, xstring db, xstring tab, xstring def,
+        xstring extra = nullptr) : hstmt(stmt),
+      database(db), table_name(tab), table_extra(extra)
   {
     qualifier = (!database.empty() ? database + "`.`" : "" ) + table_name;
     drop();

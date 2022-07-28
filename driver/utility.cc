@@ -1153,15 +1153,15 @@ SQLSMALLINT compute_sql_data_type(STMT *stmt, SQLSMALLINT sql_type,
         sql_type = SQL_TYPE_TIME;
       break;
     case SQL_CHAR:
-      if (octet_length > '1')
+      if (octet_length > '1' && stmt->dbc->unicode)
         sql_type = SQL_WCHAR;
       break;
     case SQL_VARCHAR:
-      if (octet_length > '1')
+      if (octet_length > '1' && stmt->dbc->unicode)
         sql_type = SQL_WVARCHAR;
       break;
     case SQL_LONGVARCHAR:
-      if (octet_length > '1')
+      if (octet_length > '1' && stmt->dbc->unicode)
         sql_type = SQL_WLONGVARCHAR;
       break;
     case SQL_BIT:
