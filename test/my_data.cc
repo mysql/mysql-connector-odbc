@@ -294,7 +294,7 @@ DECLARE_TEST(t_bug34109678_collations)
     {
       databuf.emplace_back(odbc::xbuf(16));
       lenbuf.emplace_back(16);
-      ok_stmt(hstmt, SQLBindCol(hstmt1, i + 1, SQL_C_CHAR, (char*)databuf[i], 16, &lenbuf[0]));
+      ok_stmt(hstmt1, SQLBindCol(hstmt1, i + 1, SQL_C_CHAR, (char*)databuf[i], 16, &lenbuf[0]));
     }
 
     is(SQLFetch(hstmt1) == SQL_SUCCESS);
@@ -308,8 +308,54 @@ DECLARE_TEST(t_bug34109678_collations)
   ENDCATCH;
 }
 
+DECLARE_TEST(t_bug34397870_ubigint)
+{
+  try
+  {
+    odbc::table tab(hstmt, "t_bug34397870", "col1 BIGINT UNSIGNED");
+    SQLUBIGINT vals[] = { 0xEFFFFFFFFFFFFFFFU, 0xFFFFFFFFFFFFFFFFU };
+    SQLUBIGINT val = 0, res = 0;
+    SQLLEN len = 0;
+    odbc::stmt_prepare(hstmt, "INSERT INTO t_bug34397870 VALUES (?)");
+    ok_stmt(hstmt, SQLBindParameter(hstmt, 1, SQL_PARAM_INPUT, SQL_C_UBIGINT,
+      SQL_BIGINT, 20, 0, &val, 20, NULL));
+    for (auto v : vals)
+    {
+      val = v;
+      odbc::stmt_execute(hstmt);
+    }
+    odbc::stmt_close(hstmt);
+    odbc::stmt_reset(hstmt);
+
+    odbc::stmt_prepare(hstmt, "SELECT * FROM t_bug34397870");
+    odbc::stmt_execute(hstmt);
+    ok_stmt(hstmt, SQLBindCol(hstmt, 1, SQL_C_UBIGINT, &res, sizeof(res), &len));
+    int rownum = 0;
+    while (SQL_SUCCESS == SQLFetch(hstmt))
+    {
+      is_num(vals[rownum], res);
+      ++rownum;
+    }
+    is_num(2, rownum);
+    odbc::stmt_close(hstmt);
+
+    odbc::sql(hstmt, "SELECT * FROM t_bug34397870");
+    rownum = 0;
+    while (SQL_SUCCESS == SQLFetch(hstmt))
+    {
+      ok_stmt(hstmt, SQLGetData(hstmt, 1, SQL_C_UBIGINT, &res, sizeof(res), &len));
+      is_num(vals[rownum], res);
+      ++rownum;
+    }
+    is_num(2, rownum);
+
+    odbc::stmt_close(hstmt);
+  }
+  ENDCATCH;
+}
 
 BEGIN_TESTS
+  ADD_TEST(t_bug34397870_ubigint)
   ADD_TEST(t_bug34109678_collations)
   ADD_TEST(t_bug106683)
   ADD_TEST(my_json)

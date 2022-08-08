@@ -317,11 +317,24 @@ int get_int(STMT *stmt, ulong column_number, char *value, ulong length)
 {
   if (ssps_used(stmt))
   {
-     return (int)ssps_get_int64(stmt, column_number, value, length);
+     return (int)ssps_get_int64<long long>(stmt, column_number, value, length);
   }
   else
   {
-    return atoi(value);
+    return (int)strtol(value, NULL, 10);
+  }
+}
+
+
+unsigned int get_uint(STMT* stmt, ulong column_number, char* value, ulong length)
+{
+  if (ssps_used(stmt))
+  {
+    return (int)ssps_get_int64<unsigned long long>(stmt, column_number, value, length);
+  }
+  else
+  {
+    return (unsigned int)strtoul(value, NULL, 10);
   }
 }
 
@@ -330,11 +343,24 @@ long long get_int64(STMT *stmt, ulong column_number, char *value, ulong length)
 {
   if (ssps_used(stmt))
   {
-     return ssps_get_int64(stmt, column_number, value, length);
+     return ssps_get_int64<long long>(stmt, column_number, value, length);
   }
   else
   {
     return strtoll(value, NULL, 10);
+  }
+}
+
+
+unsigned long long get_uint64(STMT* stmt, ulong column_number, char* value, ulong length)
+{
+  if (ssps_used(stmt))
+  {
+    return ssps_get_int64<unsigned long long>(stmt, column_number, value, length);
+  }
+  else
+  {
+    return strtoull(value, NULL, 10);
   }
 }
 

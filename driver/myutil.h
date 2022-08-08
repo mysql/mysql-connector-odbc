@@ -376,9 +376,10 @@ int           reset_connection        (DBC *dbc);
 int           wakeup_connection       (DBC *dbc);
 #define WAKEUP_CONN_IF_NEEDED(dbc) if (dbc->need_to_wakeup && wakeup_connection(dbc)) return SQL_ERROR
 
-/*results.c*/
-long long     binary2numeric        (long long *dst, char *src, uint srcLen);
-void          fill_ird_data_lengths (DESC *ird, ulong *lengths, uint fields);
+long long binary2ll(char* src, uint64 srcLen);
+unsigned long long binary2ull(char* src, uint64 srcLen);
+
+void fill_ird_data_lengths (DESC *ird, ulong *lengths, uint fields);
 
 /* Functions to work with prepared and regular statements  */
 #define IS_PS_OUT_PARAMS(_stmt) ((_stmt)->dbc->mysql->server_status & SERVER_PS_OUT_PARAMS)
@@ -404,7 +405,11 @@ SQLRETURN         send_long_data      (STMT *stmt, unsigned int param_num, DESCR
 
 int           get_int     (STMT *stmt, ulong column_number, char *value,
                           ulong length);
+unsigned int  get_uint    (STMT *stmt, ulong column_number, char *value,
+                          ulong length);
 long long     get_int64   (STMT *stmt, ulong column_number, char *value,
+                          ulong length);
+unsigned long long get_uint64(STMT * stmt, ulong column_number, char* value,
                           ulong length);
 char *        get_string  (STMT *stmt, ulong column_number, char *value,
                           ulong *length, char * buffer);
@@ -453,8 +458,9 @@ SQLRETURN   ssps_fetch_chunk      (STMT *stmt, char *dest, unsigned long dest_by
                                   unsigned long *avail_bytes);
 void        free_result_bind      (STMT *stmt);
 BOOL        ssps_buffers_need_extending(STMT *stmt);
-long long   ssps_get_int64        (STMT *stmt, ulong column_number, char *value,
-                                  ulong length);
+
+template <typename T>
+T ssps_get_int64 (STMT *stmt, ulong column_number, char *value, ulong length);
 long double ssps_get_double       (STMT *stmt, ulong column_number, char *value,
                                   ulong length);
 char *      ssps_get_string       (STMT *stmt, ulong column_number, char *value,

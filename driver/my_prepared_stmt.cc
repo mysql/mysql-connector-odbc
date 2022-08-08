@@ -1135,12 +1135,12 @@ char * ssps_get_string(STMT *stmt, ulong column_number, char *value, ulong *leng
       if (col_rbind->is_unsigned)
       {
         my_ul_to_a(buffer, 29,
-          (unsigned long long)ssps_get_int64(stmt, column_number, value, *length));
+          ssps_get_int64<unsigned long long>(stmt, column_number, value, *length));
       }
       else
       {
         my_l_to_a(buffer, 29,
-                  ssps_get_int64(stmt, column_number, value, *length));
+          ssps_get_int64<long long>(stmt, column_number, value, *length));
       }
 
       *length= strlen(buffer);
@@ -1202,12 +1202,12 @@ long double ssps_get_double(STMT *stmt, ulong column_number, char *value, ulong 
 
       if (is_it_unsigned)
       {
-        unsigned long long ival = (unsigned long long)ssps_get_int64(stmt, column_number, value, length);
+        unsigned long long ival = ssps_get_int64<unsigned long long>(stmt, column_number, value, length);
         ret = (long double)(ival);
       }
       else
       {
-        long long ival = ssps_get_int64(stmt, column_number, value, length);
+        long long ival = ssps_get_int64<long long>(stmt, column_number, value, length);
         ret = (long double)(ival);
       }
 
@@ -1251,8 +1251,36 @@ long double ssps_get_double(STMT *stmt, ulong column_number, char *value, ulong 
 }
 
 
-/* {{{ ssps_get_int64() -I- */
-long long ssps_get_int64(STMT *stmt, ulong column_number, char *value, ulong length)
+template <typename T>
+T binary2numeric(char* src, uint64 srcLen)
+{
+  T dst = 0;
+
+  while (srcLen)
+  {
+    /* if source binary data is longer than 8 bytes(size of long long)
+       we consider only minor 8 bytes */
+    if (srcLen > sizeof(T))
+      continue;
+    dst += ((T)(0xff & *src)) << (--srcLen) * 8;
+    ++src;
+  }
+
+  return dst;
+}
+
+long long binary2ll(char* src, uint64 srcLen)
+{
+  return binary2numeric<long long>(src, srcLen);
+}
+
+unsigned long long binary2ull(char* src, uint64 srcLen)
+{
+  return binary2numeric<unsigned long long>(src, srcLen);
+}
+
+template <typename T>
+T ssps_get_int64(STMT *stmt, ulong column_number, char *value, ulong length)
 {
   MYSQL_BIND *col_rbind= &stmt->result_bind[column_number];
 
@@ -1261,7 +1289,7 @@ long long ssps_get_int64(STMT *stmt, ulong column_number, char *value, ulong len
     case MYSQL_TYPE_FLOAT:
     case MYSQL_TYPE_DOUBLE:
 
-      return (long long)ssps_get_double(stmt, column_number, value, length);
+      return (T)ssps_get_double(stmt, column_number, value, length);
 
     case MYSQL_TYPE_DECIMAL:
     case MYSQL_TYPE_NEWDECIMAL:
@@ -1280,9 +1308,8 @@ long long ssps_get_int64(STMT *stmt, ulong column_number, char *value, ulong len
     }
     case MYSQL_TYPE_BIT:
     {
-      long long uval = 0;
       /* This length is in bytes, on the contrary to what can be seen in mysql_resultset.cpp where the Meta is used */
-      return binary2numeric(&uval, (char*)col_rbind->buffer, *col_rbind->length);
+      return binary2numeric<T>((char*)col_rbind->buffer, (uint64)(*col_rbind->length));
     }
 
     case MYSQL_TYPE_YEAR:  // fetched as a SMALLINT
@@ -1293,7 +1320,7 @@ long long ssps_get_int64(STMT *stmt, ulong column_number, char *value, ulong len
     case MYSQL_TYPE_LONGLONG:
     {
       // MYSQL_TYPE_YEAR is fetched as a SMALLINT, thus should not be in the switch
-      long long ret;
+      T ret;
       BOOL is_it_null = *col_rbind->is_null != 0;
       BOOL is_it_unsigned = col_rbind->is_unsigned != 0;
 
@@ -1367,7 +1394,6 @@ long long ssps_get_int64(STMT *stmt, ulong column_number, char *value, ulong len
 
   return 0; // fool compilers
 }
-/* }}} */
 
 
 /* {{{ ssps_send_long_data () -I- */

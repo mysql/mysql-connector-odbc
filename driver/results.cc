@@ -48,26 +48,6 @@ my_bool is_binary_ctype( SQLSMALLINT cType)
        || cType == SQL_C_WCHAR);
 }
 
-
-/* Converts binary(currently used for bit field only) to long long number.*/
-long long binary2numeric(long long *dst, char *src, uint srcLen)
-{
-  *dst= 0;
-
-  while (srcLen)
-  {
-    /* if source binary data is longer than 8 bytes(size of long long)
-       we consider only minor 8 bytes */
-    if (srcLen > sizeof(long long))
-          continue;
-    *dst+= (0xff & *src) << (--srcLen)*8;
-    ++src;
-  }
-
-  return *dst;
-}
-
-
 /* Function that verifies if conversion from given sql type to c type supported.
    Based on http://msdn.microsoft.com/en-us/library/ms709280%28VS.85%29.aspx
    and underlying pages.
@@ -270,8 +250,8 @@ sql_get_bookmark_data(STMT *stmt, SQLSMALLINT fCType, uint column_number,
 
   case SQL_C_UTINYINT:
     if (rgbValue && stmt->stmt_options.retrieve_data)
-      *((SQLCHAR *)rgbValue)= (SQLCHAR)(unsigned int)
-                              get_int(stmt, column_number, value, length);
+      *((SQLCHAR *)rgbValue)= (SQLCHAR)get_uint(stmt, column_number,
+                                                value, length);
     *pcbValue= 1;
     break;
 
@@ -285,8 +265,8 @@ sql_get_bookmark_data(STMT *stmt, SQLSMALLINT fCType, uint column_number,
 
   case SQL_C_USHORT:
     if (rgbValue && stmt->stmt_options.retrieve_data)
-      *((SQLUSMALLINT *)rgbValue)= (SQLUSMALLINT)(uint)
-                              get_int64(stmt, column_number, value, length);
+      *((SQLUSMALLINT *)rgbValue)= (SQLUSMALLINT)get_uint(stmt, column_number,
+                                                          value, length);
     *pcbValue= sizeof(SQLUSMALLINT);
     break;
 
@@ -310,8 +290,8 @@ sql_get_bookmark_data(STMT *stmt, SQLSMALLINT fCType, uint column_number,
 
   case SQL_C_ULONG:
     if (rgbValue && stmt->stmt_options.retrieve_data)
-      *((SQLUINTEGER *)rgbValue)= (SQLUINTEGER) get_int64(stmt, column_number,
-                                                          value, length);
+      *((SQLUINTEGER *)rgbValue) = (SQLUINTEGER) get_uint64(stmt, column_number,
+                                                            value, length);
     *pcbValue= sizeof(SQLUINTEGER);
     break;
 
@@ -332,15 +312,15 @@ sql_get_bookmark_data(STMT *stmt, SQLSMALLINT fCType, uint column_number,
   case SQL_C_SBIGINT:
     /** @todo This is not right. SQLBIGINT is not always longlong. */
     if (rgbValue && stmt->stmt_options.retrieve_data)
-      *((longlong *)rgbValue)= (longlong) get_int64(stmt, column_number,
-                                                    value, length);
+      *((longlong *)rgbValue)= get_int64(stmt, column_number,
+                                         value, length);
     *pcbValue= sizeof(longlong);
     break;
 
   case SQL_C_UBIGINT:
     /** @todo This is not right. SQLUBIGINT is not always ulonglong.  */
     if (rgbValue && stmt->stmt_options.retrieve_data)
-        *((ulonglong *)rgbValue)= (ulonglong) get_int64(stmt, column_number,
+        *((ulonglong *)rgbValue) = get_uint64(stmt, column_number,
                                                         value, length);
     *pcbValue= sizeof(ulonglong);
     break;
@@ -402,7 +382,8 @@ sql_get_data(STMT *stmt, SQLSMALLINT fCType, uint column_number,
 {
   MYSQL_FIELD *field= mysql_fetch_field_direct(stmt->result, column_number);
   SQLLEN    tmp;
-  long long numericValue;
+  long long numeric_value = 0;
+  unsigned long long u_numeric_value = 0;
   my_bool   convert= 1;
   SQLRETURN result= SQL_SUCCESS;
   char      as_string[50]; /* Buffer that might be required to convert other
@@ -487,8 +468,11 @@ sql_get_data(STMT *stmt, SQLSMALLINT fCType, uint column_number,
       case SQL_C_WCHAR:
         return wcopy_bit_result(stmt, (SQLWCHAR *)rgbValue, cbValueMax,
                                 pcbValue, field, value, length);
+      case SQL_C_UBIGINT:
+        u_numeric_value = binary2ull(value, length);
+        break;
       default:
-        binary2numeric(&numericValue, value, length);
+        numeric_value = binary2ll(value, length);
         convert= 0;
       }
     }
@@ -598,7 +582,7 @@ sql_get_data(STMT *stmt, SQLSMALLINT fCType, uint column_number,
            to a number value or atoi for other types. */
         if (!convert)
         {
-          *((char *)rgbValue)= numericValue > 0 ? '\1' : '\0';
+          *((char *)rgbValue)= numeric_value > 0 ? '\1' : '\0';
         }
         else
         {
@@ -615,15 +599,15 @@ sql_get_data(STMT *stmt, SQLSMALLINT fCType, uint column_number,
       if (rgbValue)
         *((SQLSCHAR *)rgbValue)= (SQLSCHAR)(convert
                                  ? get_int(stmt, column_number, value, length)
-                                 : (numericValue & (SQLSCHAR)(-1)));
+                                 : (numeric_value & (SQLSCHAR)(-1)));
       *pcbValue= 1;
       break;
 
     case SQL_C_UTINYINT:
       if (rgbValue)
-        *((SQLCHAR *)rgbValue)= (SQLCHAR)(unsigned int)(convert
-                                ? get_int(stmt, column_number, value, length)
-                                : (numericValue & (SQLCHAR)(-1)));
+        *((SQLCHAR *)rgbValue)= (SQLCHAR)(convert
+                                ? get_uint(stmt, column_number, value, length)
+                                : (numeric_value & (SQLCHAR)(-1)));
       *pcbValue= 1;
       break;
 
@@ -632,15 +616,15 @@ sql_get_data(STMT *stmt, SQLSMALLINT fCType, uint column_number,
       if (rgbValue)
         *((SQLSMALLINT *)rgbValue)= (SQLSMALLINT)(convert
                                 ? get_int(stmt, column_number, value, length)
-                                : (numericValue & (SQLUSMALLINT)(-1)));
+                                : (numeric_value & (SQLUSMALLINT)(-1)));
       *pcbValue= sizeof(SQLSMALLINT);
       break;
 
     case SQL_C_USHORT:
       if (rgbValue)
-        *((SQLUSMALLINT *)rgbValue)= (SQLUSMALLINT)(uint)(convert
-                                ? get_int64(stmt, column_number, value, length)
-                                : (numericValue & (SQLUSMALLINT)(-1)));
+        *((SQLUSMALLINT *)rgbValue)= (SQLUSMALLINT)(convert
+                                ? get_uint(stmt, column_number, value, length)
+                                : (numeric_value & (SQLUSMALLINT)(-1)));
       *pcbValue= sizeof(SQLUSMALLINT);
       break;
 
@@ -663,7 +647,7 @@ sql_get_data(STMT *stmt, SQLSMALLINT fCType, uint column_number,
                                                   column_number, value, length);
         }
         else
-          *((SQLINTEGER *)rgbValue)= (SQLINTEGER)(numericValue
+          *((SQLINTEGER *)rgbValue)= (SQLINTEGER)(numeric_value
                                                   & (SQLUINTEGER)(-1));
       }
       *pcbValue= sizeof(SQLINTEGER);
@@ -672,22 +656,22 @@ sql_get_data(STMT *stmt, SQLSMALLINT fCType, uint column_number,
     case SQL_C_ULONG:
       if (rgbValue)
         *((SQLUINTEGER *)rgbValue)= (SQLUINTEGER)(convert ?
-                                get_int64(stmt, column_number, value, length) :
-                                numericValue & (SQLUINTEGER)(-1));
+                                get_uint64(stmt, column_number, value, length) :
+                                numeric_value & (SQLUINTEGER)(-1));
       *pcbValue= sizeof(SQLUINTEGER);
       break;
 
     case SQL_C_FLOAT:
       if (rgbValue)
         *((float *)rgbValue)= (float)(convert ? get_double(stmt, column_number,
-                                    value, length) : numericValue & (int)(-1));
+                                    value, length) : numeric_value & (int)(-1));
       *pcbValue= sizeof(float);
       break;
 
     case SQL_C_DOUBLE:
       if (rgbValue)
         *((double *)rgbValue)= (double)(convert ? get_double(stmt, column_number,
-                                    value, length) : numericValue);
+                                    value, length) : numeric_value);
       *pcbValue= sizeof(double);
       break;
 
@@ -911,7 +895,7 @@ sql_get_data(STMT *stmt, SQLSMALLINT fCType, uint column_number,
       /** @todo This is not right. SQLBIGINT is not always longlong. */
       if (rgbValue)
         *((longlong *)rgbValue)= (longlong)(convert ? get_int64(stmt,
-                        column_number, value, length) : numericValue);
+                        column_number, value, length) : numeric_value);
 
       *pcbValue= sizeof(longlong);
       break;
@@ -919,8 +903,8 @@ sql_get_data(STMT *stmt, SQLSMALLINT fCType, uint column_number,
     case SQL_C_UBIGINT:
       /** @todo This is not right. SQLUBIGINT is not always ulonglong.  */
       if (rgbValue)
-          *((ulonglong *)rgbValue)= (ulonglong)(convert ? get_int64(stmt,
-                        column_number, value, length) : numericValue);
+          *((ulonglong *)rgbValue)= (ulonglong)(convert ? get_uint64(stmt,
+                        column_number, value, length) : u_numeric_value);
 
       *pcbValue= sizeof(ulonglong);
       break;
@@ -943,7 +927,11 @@ sql_get_data(STMT *stmt, SQLSMALLINT fCType, uint column_number,
                If it couldn't happen we have to scale/unscale number - we would
                just reverse binary data */
             char _value[21]; /* max string length of 64bit number */
-            sprintf(_value, "%llu", numericValue);
+            if (numeric_value)
+              sprintf(_value, "%ll", numeric_value);
+            else
+              sprintf(_value, "%llu", u_numeric_value);
+
 
             sqlnum_from_str(_value, sqlnum, &overflow);
             *pcbValue = sizeof(ulonglong);
