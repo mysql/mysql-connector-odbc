@@ -169,9 +169,10 @@ SQLRETURN
 copy_binary_result(STMT *stmt,
                    SQLCHAR *result, SQLLEN result_bytes, SQLLEN *used_bytes,
                    MYSQL_FIELD *field, char *src, unsigned long src_bytes);
+template <typename T>
 SQLRETURN copy_binhex_result(STMT *stmt,
-           SQLCHAR *rgbValue, SQLINTEGER cbValueMax,
-           SQLLEN *pcbValue, MYSQL_FIELD *field, char *src,
+           T *rgbValue, SQLINTEGER cbValueMax,
+           SQLLEN *pcbValue, char *src,
            ulong src_length);
 SQLRETURN copy_bit_result(STMT *stmt,
                           SQLCHAR *result, SQLLEN result_bytes, SQLLEN *used_bytes,

@@ -497,9 +497,8 @@ sql_get_data(STMT *stmt, SQLSMALLINT fCType, uint column_number,
         IS_LONGDATA(field->type) &&
         !field->decimals)
       {
-        return copy_binhex_result(stmt,
-                                  (SQLCHAR *)rgbValue, cbValueMax, pcbValue,
-                                  field, value, length);
+        return copy_binhex_result(stmt, (SQLCHAR *)rgbValue,
+          cbValueMax, pcbValue, value, length);
       }
       /* fall through */
 
@@ -547,27 +546,9 @@ sql_get_data(STMT *stmt, SQLSMALLINT fCType, uint column_number,
           IS_LONGDATA(field->type) &&
           !field->decimals)
         {
-          /*
-            1. convert binary data to hex into a temporary buffer
-            2. convert hex in the temporary buffer to WCHAR
-          */
-
-          SQLCHAR *c_buf = (SQLCHAR*)myodbc_malloc(length*2 + 1, MYF(0));
-          SQLRETURN rc2 = SQL_SUCCESS, rc3 = SQL_SUCCESS;
-
-          rc2 = copy_binhex_result(stmt, c_buf, cbValueMax, pcbValue,
-                                   field, tmp, length);
-
-          rc3 = copy_wchar_result(stmt, (SQLWCHAR *)rgbValue,
-                  (SQLINTEGER)(cbValueMax / sizeof(SQLWCHAR)), pcbValue,
-                  field, (char*)c_buf, length*2);
-
-          x_free(c_buf);
-
-          if (rc3 == SQL_SUCCESS)
-            return rc2;
-
-          return rc3;
+          return copy_binhex_result(stmt, (SQLWCHAR*)rgbValue,
+                  (SQLINTEGER)(cbValueMax / sizeof(SQLWCHAR)),
+                  pcbValue, tmp, length);
         }
 
         return copy_wchar_result(stmt, (SQLWCHAR *)rgbValue,

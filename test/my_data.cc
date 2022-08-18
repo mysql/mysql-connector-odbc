@@ -292,9 +292,9 @@ DECLARE_TEST(t_bug34109678_collations)
     lenbuf.reserve(elem_num);
     for (int i = 0; i < collations.size() + 1; ++i)
     {
-      databuf.emplace_back(odbc::xbuf(16));
-      lenbuf.emplace_back(16);
-      ok_stmt(hstmt1, SQLBindCol(hstmt1, i + 1, SQL_C_CHAR, (char*)databuf[i], 16, &lenbuf[0]));
+      databuf.emplace_back(odbc::xbuf(32));
+      lenbuf.emplace_back(32);
+      ok_stmt(hstmt1, SQLBindCol(hstmt1, i + 1, SQL_C_CHAR, (char*)databuf[i], 32, &lenbuf[0]));
     }
 
     is(SQLFetch(hstmt1) == SQL_SUCCESS);
@@ -354,7 +354,157 @@ DECLARE_TEST(t_bug34397870_ubigint)
   ENDCATCH;
 }
 
+/*
+  Template function to test how SQLGetData() works with
+  partial fetches on ANSI and WIDE string data.
+
+  The following scenarios are assumed:
+
+  - Insert the same long character string into 2 columns of
+    `t_sqlgetdata` table: blob column `mb_data` and text
+    column `tx_data`.
+
+  - Get 3 values from table `t_sqlgetdata`:
+   using
+
+   1 value of `mb_data`
+   2 value of `tx_data`
+   3 value of `mb_data` converted to hex string using SQL
+   `HEX()` function
+
+  - Fetch the values using SQLGetData() and requesting
+    conversion to SQL_C_(W)CHAR.
+
+  - In the first call to SQLGetData() use buffer which
+    is too small to hold values. Verify that:
+
+    -- reported total data length is as expected
+    -- the truncated data in the output buffer is null-terminated
+
+  - Call SQLGetData() again to fetch remaining data - use:
+    buffer big enough to hold all of it. Verify that:
+
+    -- second call to SQLGetData() reports all data fetched
+    -- the data for 2nd value (`tx_data`) equals the original string
+    -- data for values 1 and 3 are identical.
+*/
+template <typename T>
+int check_sqlgetdata_buf(SQLHSTMT hstmt, std::string &src_str)
+{
+  odbc::table tab(hstmt, "t_sqlgetdata",
+    "id int, mb_data mediumblob, tx_data mediumtext");
+
+  tab.insert("(1, '" + src_str + "', '" + src_str + "')");
+
+  SQLSMALLINT result_type = SQL_C_CHAR;
+  size_t char_size = sizeof(T);
+
+  if (unicode_driver == 1)
+  {
+    result_type = SQL_C_WCHAR;
+  }
+
+  const size_t buf_size = 128 + 1;
+
+  // Get a buffer, which is too small for all data
+  T buf[3][buf_size];
+  SQLLEN   cb_buf[3] = { SQL_NTS, SQL_NTS, SQL_NTS };
+  std::unique_ptr<T> row_data[3];
+
+  odbc::sql(hstmt, "SELECT mb_data, tx_data, "
+    "CAST(HEX(mb_data) AS CHAR) hex_data FROM t_sqlgetdata");
+
+  ok_stmt(hstmt, SQLFetch(hstmt));
+
+  for (int i = 0; i < 3; ++i)
+  {
+    SQLRETURN retcode = SQLGetData(hstmt, i + 1, result_type, buf[i],
+      buf_size * char_size, &cb_buf[i]);
+    is_num(SQL_SUCCESS_WITH_INFO, retcode);
+
+    if (i == 1)
+      // This column has the data as text
+      is_num(src_str.length() * char_size, cb_buf[i]);
+    else
+      // Everything else has data as hex codes
+      is_num(src_str.length() * char_size * 2, cb_buf[i]);
+
+    size_t row_data_len = (cb_buf[i] / char_size) + 1;
+    row_data[i].reset(new T[row_data_len]);
+    T* data_ptr = row_data[i].get();
+
+    is(cb_buf[i] >= buf_size * char_size);
+    size_t row_data_offset = buf_size;
+
+    memcpy(data_ptr, buf[i], buf_size * char_size);
+    // Even the partial data read must have the null-termination
+    is_num(0, data_ptr[buf_size - 1]);
+
+    T* target = data_ptr + row_data_offset - 1;
+    SQLULEN buflen = (row_data_len - row_data_offset + 1) * char_size;
+    retcode = SQLGetData(hstmt, i + 1, result_type, target, buflen, nullptr);
+    is_num(SQL_SUCCESS, retcode);
+  }
+
+  T* mb_data = row_data[0].get();
+  T* tx_data = row_data[1].get();
+  T* hex_data = row_data[2].get();
+
+  is_num(0, memcmp(mb_data, hex_data, cb_buf[0]));
+
+  if (unicode_driver == 1)
+  {
+    std::wstring wsrc_str(src_str.begin(), src_str.end());
+    SQLWCHAR *w = WL((wchar_t*)wsrc_str.c_str(), wsrc_str.length() + 1);
+    is_num(0, memcmp(w, tx_data, cb_buf[1]));
+  }
+  else
+  {
+    std::string str_tx_data((char*)tx_data);
+    is(str_tx_data == src_str);
+  }
+  return OK;
+}
+
+/*
+  Testing partial data fetch in SQLGetData().
+  The data can be fetched in chunks if the user app buffer
+  is too small to hold all data. In this case each new call
+  to SQLGetData() returns a new chunk.
+
+  Two scenarios have to be tested: ANSI with SQLCHAR and
+  UNICODE with SQLWCHAR. That is when the Driver Manager does
+  not need to convert data.
+
+  In case when conversion is required such as ANSI driver and
+  SQLWCHAR data the Driver Manager does not allow fetching all
+  data in chunks (looks like it is implementation specific).
+  Such scenarios are not tested because the ODBC driver has no
+  control over the conversion flow.
+*/
+DECLARE_TEST(t_sqlgetdata_buf)
+{
+  std::string src_str;
+
+  const int max_repeat = 50;
+  src_str.reserve(26 * max_repeat);
+  for (int i = 0; i < max_repeat; ++i)
+    src_str.append("abcdefghijklmnopqrstuvwxyz");
+
+  if (unicode_driver == 1)
+  {
+    is_num(SQL_SUCCESS, check_sqlgetdata_buf<SQLWCHAR>(hstmt, src_str));
+  }
+  else
+  {
+    is_num(SQL_SUCCESS, check_sqlgetdata_buf<SQLCHAR>(hstmt, src_str));
+  }
+
+  return OK;
+}
+
 BEGIN_TESTS
+  ADD_TEST(t_sqlgetdata_buf)
   ADD_TEST(t_bug34397870_ubigint)
   ADD_TEST(t_bug34109678_collations)
   ADD_TEST(t_bug106683)

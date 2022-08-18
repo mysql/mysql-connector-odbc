@@ -1230,7 +1230,8 @@ SQLRETURN insert_param(STMT *stmt, MYSQL_BIND *bind, DESC* apd,
           goto memerror;
         }
 
-        copy_binhex_result(stmt, (SQLCHAR*)stmt->endbuf(), length * 2 + 1, &transformed_len, 0, data, length);
+        copy_binhex_result(stmt, (SQLCHAR*)stmt->endbuf(),
+          length * 2 + 1, &transformed_len, data, length);
         stmt->buf_add_pos(transformed_len);
       }
       else

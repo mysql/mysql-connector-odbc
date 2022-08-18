@@ -969,59 +969,84 @@ convert_to_out:
 
 /*
   @type    : myodbc internal
-  @purpose : is used when converting a binary string to a SQL_C_CHAR
+  @purpose : is used when converting binary data to hexadecimal
 */
-
+template <typename T>
 SQLRETURN copy_binhex_result(STMT *stmt,
-                             SQLCHAR *rgbValue, SQLINTEGER cbValueMax,
+                             T *rgbValue, SQLINTEGER cbValueMax,
                              SQLLEN *pcbValue,
-                             MYSQL_FIELD *field __attribute__((unused)),
                              char *src, ulong src_length)
 {
   /** @todo padding of BINARY */
-    char *dst= (char*) rgbValue;
-    ulong length;
-    ulong max_length= stmt->stmt_options.max_length;
-    ulong *offset= &stmt->getdata.src_offset;
-#if MYSQL_VERSION_ID >= 40100
-    char NEAR _dig_vec[] =
-    "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-#endif
+  T *dst = (T*) rgbValue;
+  ulong length;
+  ulong max_length = stmt->stmt_options.max_length;
+  ulong *offset = &stmt->getdata.src_offset;
+  T NEAR _dig_vec[] = {
+    '0', '1', '2', '3', '4', '5', '6', '7',
+    '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'
+  };
 
-    if ( !cbValueMax )
-        dst= 0;  /* Don't copy anything! */
-    if ( max_length ) /* If limit on char lengths */
-    {
-        set_if_smaller(cbValueMax,(long) max_length+1);
-        set_if_smaller(src_length,(max_length+1)/2);
-    }
-    if ( *offset == (ulong) ~0L )
-        *offset= 0;   /* First call */
-    else if ( *offset >= src_length )
-        return SQL_NO_DATA_FOUND;
-    src+= *offset;
-    src_length-= *offset;
-    length= cbValueMax ? (ulong)(cbValueMax-1)/2 : 0;
-    length= myodbc_min(src_length,length);
-    (*offset)+= length;     /* Fix for next call */
-    if (pcbValue && stmt->stmt_options.retrieve_data)
-        *pcbValue= src_length*2;
-    if ( dst && stmt->stmt_options.retrieve_data )  /* Bind allows null pointers */
-    {
-        ulong i;
-        for ( i= 0 ; i < length ; ++i )
-        {
-            *dst++= _dig_vec[(uchar) *src >> 4];
-            *dst++= _dig_vec[(uchar) *src++ & 15];
-        }
-        *dst= 0;
-    }
-    if ( (ulong) cbValueMax > length*2 )
-        return SQL_SUCCESS;
+  if (!cbValueMax)
+  {
+    /* Don't copy anything! */
+    dst = 0;
+  }
 
-    stmt->set_error("01004", NULL, 0);
-    return SQL_SUCCESS_WITH_INFO;
+  if (max_length) /* If limit on char lengths */
+  {
+    set_if_smaller(cbValueMax, (long) max_length + 1);
+    set_if_smaller(src_length, (max_length + 1) / 2);
+  }
+
+  if (*offset == (ulong) ~0L)
+  {
+    *offset = 0;   /* First call */
+  }
+  else if (*offset >= src_length)
+  {
+    return SQL_NO_DATA_FOUND;
+  }
+
+  src += *offset;
+  src_length -= *offset;
+  length = cbValueMax ? (ulong)(cbValueMax - 1) / 2 : 0;
+  length = myodbc_min(src_length, length);
+  (*offset) += length;     /* Fix for next call */
+  if (pcbValue && stmt->stmt_options.retrieve_data)
+    *pcbValue = src_length * 2 * sizeof(T);
+
+  /* Bind allows null pointers */
+  if (dst && stmt->stmt_options.retrieve_data)
+  {
+    ulong i;
+    for (i= 0; i < length; ++i)
+    {
+      *dst ++= _dig_vec[(uchar) *src >> 4];
+      *dst ++= _dig_vec[(uchar) *src++ & 15];
+    }
+    *dst = 0;
+  }
+
+  // All data is received when offset is not before
+  // the end of the source
+  if ( *offset * sizeof(T) >= src_length )
+      return SQL_SUCCESS;
+
+  stmt->set_error(MYERR_01004, NULL, 0);
+  return SQL_SUCCESS_WITH_INFO;
 }
+
+// Need to declare template specializations to avoid linker errors
+template
+SQLRETURN copy_binhex_result<SQLCHAR>(STMT* stmt,
+  SQLCHAR* rgbValue, SQLINTEGER cbValueMax,
+  SQLLEN* pcbValue, char* src, ulong src_length);
+
+template
+SQLRETURN copy_binhex_result<SQLWCHAR>(STMT* stmt,
+  SQLWCHAR* rgbValue, SQLINTEGER cbValueMax,
+  SQLLEN* pcbValue, char* src, ulong src_length);
 
 /*
   @type    : myodbc internal
