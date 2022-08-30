@@ -170,11 +170,11 @@ MYERROR::MYERROR(const char* state, const char* msg, SQLINTEGER errcode,
   const char* prefix)
 {
   sqlstate = state ? state : "";
-  message = std::string(prefix) + (msg ? msg : "");
+  message = std::string(prefix ? prefix : MYODBC_ERROR_PREFIX) +
+    (msg ? msg : "");
   native_error = errcode;
   retcode = SQL_ERROR;
 }
-
 
 /*
   @type    : myodbc3 internal

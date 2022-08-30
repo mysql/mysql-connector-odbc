@@ -1016,8 +1016,96 @@ DECLARE_TEST(t_password_hang)
   ENDCATCH;
 }
 
+/*
+  Testing the ability of the driver to set the connection collation
+  (and character set) independent to the result character set, which
+  must always be utf8mb4.
+*/
+DECLARE_TEST(t_collation_set)
+{
+  /*
+    The binary is casted to different strings upper and lower case.
+    The comparison must be '1' for case insensitive collations and '0'
+    for case sensitive collations.
+  */
+  odbc::xstring select = "select cast(0xF2E5EAF1F2 as CHAR) = cast(0xD2C5CAD1D2 as CHAR)";
+  try
+  {
+    {
+      /*
+        Setting a connection collation belonging to a single byte charset.
+        The driver should still be able to get SQLWCHAR emoji string as normal.
+      */
+      odbc::connection con(nullptr, nullptr, nullptr, nullptr,
+        "INITSTMT=SET collation_connection=cp1251_ukrainian_ci;CHARSET=utf8mb4");
+      odbc::HSTMT hstmt(con);
+
+      odbc::table tab(hstmt, "test_data", "col1 char(8) character set utf8mb4");
+      tab.insert("(0xf09f988a)");
+
+      ok_stmt(hstmt, SQLPrepareW(hstmt, W(L"SELECT * FROM test_data"), SQL_NTS));
+      odbc::stmt_execute(hstmt);
+      ok_stmt(hstmt, SQLFetch(hstmt));
+
+      SQLLEN len = 0;
+      if (unicode_driver == 1)
+      {
+        SQLWCHAR wbuff[4] = { 0 };
+        ok_stmt(hstmt, SQLGetData(hstmt, 1, SQL_WCHAR, wbuff, sizeof(wbuff), &len));
+        SQLWCHAR smile[2] = { 0xD83D, 0xDE0A };
+        is_num(smile[0], wbuff[0]);
+        is_num(smile[1], wbuff[1]);
+      }
+      else
+      {
+        // ANSI driver cannot return SQLWCHAR data correctly
+        // because the ODBC Driver Manager wraps calls using
+        // SQL_CHAR type. So, each ANSI char will be converted
+        // to SQLWCHAR, which is incorrect.
+        // Therefore, verify that the initial data is returned
+        // (0xf09f988a)
+        SQLCHAR buff[8] = { 0 };
+        ok_stmt(hstmt, SQLGetData(hstmt, 1, SQL_CHAR, buff, sizeof(buff), &len));
+        is_num(0xf0, buff[0]);
+        is_num(0x9f, buff[1]);
+        is_num(0x98, buff[2]);
+        is_num(0x8a, buff[3]);
+      }
+
+      expect_stmt(hstmt, SQLFetch(hstmt), SQL_NO_DATA_FOUND);
+      ok_stmt(hstmt, SQLFreeStmt(hstmt, SQL_CLOSE));
+
+      /*
+        Run the query with the comparison.
+        The result should be 1 - the strings are equal.
+      */
+      odbc::sql(hstmt, select);
+      ok_stmt(hstmt, SQLFetch(hstmt));
+      is_num(1, my_fetch_int(hstmt, 1));
+      expect_stmt(hstmt, SQLFetch(hstmt), SQL_NO_DATA_FOUND);
+    }
+
+    {
+      /*
+        Setting the binary collation, so the same data comparison
+        inside the same query will return a negative result.
+      */
+      odbc::connection con(nullptr, nullptr, nullptr, nullptr,
+        "INITSTMT=SET collation_connection=cp1251_bin");
+      odbc::HSTMT hstmt(con);
+
+      odbc::sql(hstmt, select);
+      ok_stmt(hstmt, SQLFetch(hstmt));
+      is_num(0, my_fetch_int(hstmt, 1));
+      expect_stmt(hstmt, SQLFetch(hstmt), SQL_NO_DATA_FOUND);
+    }
+  }
+  ENDCATCH;
+}
+
 BEGIN_TESTS
- ADD_TEST(t_password_hang)
+  ADD_TEST(t_collation_set)
+  ADD_TEST(t_password_hang)
   ADD_TEST(t_wl15114)
   ADD_TEST(t_wl13883)
   ADD_TEST(t_wl14490)

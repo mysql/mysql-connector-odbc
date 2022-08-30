@@ -648,6 +648,8 @@ struct DBC
   void close();
   ~DBC();
 
+  void set_charset(std::string charset);
+  SQLRETURN set_charset_options(const char* charset);
 };
 
 

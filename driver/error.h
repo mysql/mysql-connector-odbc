@@ -190,6 +190,15 @@ struct MYERROR
     native_error = 0;
     sqlstate.clear();
   }
+
+  MYERROR(const char* state, MYSQL* mysql) :
+    MYERROR(state, mysql_error(mysql),
+      mysql_errno(mysql), MYODBC_ERROR_PREFIX)
+  {}
+
+  MYERROR(const char* state, std::string errmsg) :
+    MYERROR(state, errmsg.c_str(), 0, MYODBC_ERROR_PREFIX)
+  {}
 };
 
 /*

@@ -90,29 +90,40 @@ unsigned long get_client_flags(DataSource *ds)
 }
 
 
+void DBC::set_charset(std::string charset)
+{
+  // Use SET NAMES instead of mysql_set_character_set()
+  // because running odbc_stmt() is thread safe.
+  std::string query = "SET NAMES " + charset;
+  if (odbc_stmt(this, query.c_str(), query.length(), TRUE))
+  {
+    throw MYERROR("HY000", mysql);
+  }
+}
+
 /**
- If it was specified, set the character set for the connection.
+ If it was specified, set the character set for the connection and
+ other internal charset properties.
 
  @param[in]  dbc      Database connection
  @param[in]  charset  Character set name
 */
-SQLRETURN myodbc_set_initial_character_set(DBC *dbc, const char *charset)
+SQLRETURN DBC::set_charset_options(const char *charset)
+try
 {
-  if (dbc->unicode)
+  if (unicode)
   {
     if (charset && charset[0])
     {
-      dbc->ansi_charset_info= get_charset_by_csname(charset,
-                                                    MYF(MY_CS_PRIMARY),
-                                                    MYF(0));
-      if (!dbc->ansi_charset_info)
+      ansi_charset_info= get_charset_by_csname(charset,
+                                               MYF(MY_CS_PRIMARY),
+                                               MYF(0));
+      if (!ansi_charset_info)
       {
-        char errmsg[NAME_LEN + 32*SYSTEM_CHARSET_MBMAXLEN];
+        std::string errmsg = "Wrong character set name ";
+        errmsg.append(charset);
         /* This message should help the user to identify the error */
-        sprintf(errmsg, "Wrong character set name %.*s", NAME_LEN, charset);
-        dbc->set_error("HY000", errmsg, 0);
-
-        return SQL_ERROR;
+        throw MYERROR("HY000", errmsg);
       }
     }
 
@@ -120,44 +131,60 @@ SQLRETURN myodbc_set_initial_character_set(DBC *dbc, const char *charset)
   }
 
   if (charset && charset[0])
-  {
-    if (mysql_set_character_set(dbc->mysql, charset))
-    {
-      dbc->set_error("HY000", mysql_error(dbc->mysql),
-                     mysql_errno(dbc->mysql));
-      return SQL_ERROR;
-    }
-  }
+    set_charset(charset);
   else
-  {
-    if (mysql_set_character_set(dbc->mysql, dbc->ansi_charset_info->csname))
-    {
-      dbc->set_error("HY000", mysql_error(dbc->mysql),
-                     mysql_errno(dbc->mysql));
-      return SQL_ERROR;
-    }
-  }
+    set_charset(ansi_charset_info->csname);
 
   {
     MY_CHARSET_INFO my_charset;
-    mysql_get_character_set_info(dbc->mysql, &my_charset);
-    dbc->cxn_charset_info= get_charset(my_charset.number, MYF(0));
+    mysql_get_character_set_info(mysql, &my_charset);
+    cxn_charset_info = get_charset(my_charset.number, MYF(0));
   }
 
-  if (!dbc->unicode)
-    dbc->ansi_charset_info= dbc->cxn_charset_info;
+  if (!unicode)
+    ansi_charset_info = cxn_charset_info;
 
   /*
     We always set character_set_results to NULL so we can do our own
     conversion to the ANSI character set or Unicode.
   */
-  if (is_minimum_version(dbc->mysql->server_version, "4.1.1")
-      && odbc_stmt(dbc, "SET character_set_results = NULL", SQL_NTS, TRUE) != SQL_SUCCESS)
+  if (odbc_stmt(this, "SET character_set_results = NULL", SQL_NTS, TRUE) != SQL_SUCCESS)
   {
-    return SQL_ERROR;
+    throw error;
   }
 
   return SQL_SUCCESS;
+}
+catch(const MYERROR &e)
+{
+  error = e;
+  return e.retcode;
+}
+
+
+SQLRETURN run_initstmt(DBC* dbc, DataSource* dsrc)
+try
+{
+  if (dsrc->initstmt && dsrc->initstmt[0])
+  {
+    /* Check for SET NAMES */
+    if (is_set_names_statement(ds_get_utf8attr(dsrc->initstmt,
+      &dsrc->initstmt8)))
+    {
+      throw MYERROR("HY000", "SET NAMES not allowed by driver");
+    }
+
+    if (odbc_stmt(dbc, (char*)dsrc->initstmt8, SQL_NTS, TRUE) != SQL_SUCCESS)
+    {
+      return SQL_ERROR;
+    }
+  }
+  return SQL_SUCCESS;
+}
+catch (const MYERROR& e)
+{
+  dbc->error = e;
+  return e.retcode;
 }
 
 /*
@@ -274,13 +301,14 @@ class dbc_guard
 */
 SQLRETURN DBC::connect(DataSource *dsrc)
 {
-  SQLRETURN rc= SQL_SUCCESS;
+  SQLRETURN rc = SQL_SUCCESS;
   unsigned long flags;
   /* Use 'int' and fill all bits to avoid alignment Bug#25920 */
   unsigned int opt_ssl_verify_server_cert = ~0;
-  const my_bool on= 1;
+  const my_bool on = 1;
   unsigned int on_int = 1;
   unsigned long max_long = ~0L;
+  bool initstmt_executed = false;
 
   dbc_guard guard(this);
 
@@ -290,21 +318,21 @@ SQLRETURN DBC::connect(DataSource *dsrc)
    FLAG_COLUMN_SIZE_S32 option if we are.
   */
   if (GetModuleHandle("msado15.dll") != NULL)
-    dsrc->limit_column_size= 1;
+    dsrc->limit_column_size = 1;
 
   /* Detect another problem specific to MS Access */
   if (GetModuleHandle("msaccess.exe") != NULL)
-    dsrc->default_bigint_bind_str= 1;
+    dsrc->default_bigint_bind_str = 1;
 
   /* MS SQL Likes when the CHAR columns are padded */
   if (GetModuleHandle("sqlservr.exe") != NULL)
-    dsrc->pad_char_to_full_length= 1;
+    dsrc->pad_char_to_full_length = 1;
 
 #endif
 
   mysql = mysql_init(nullptr);
 
-  flags= get_client_flags(dsrc);
+  flags = get_client_flags(dsrc);
 
   /* Set other connection options */
 
@@ -313,7 +341,7 @@ SQLRETURN DBC::connect(DataSource *dsrc)
     mysql_options(mysql, MYSQL_OPT_MAX_ALLOWED_PACKET, &max_long);
 #else
     /* max_allowed_packet is a magical mysql macro. */
-    max_allowed_packet= ~0L;
+    max_allowed_packet = ~0L;
 #endif
 
   if (dsrc->force_use_of_named_pipes)
@@ -321,17 +349,6 @@ SQLRETURN DBC::connect(DataSource *dsrc)
 
   if (dsrc->read_options_from_mycnf)
     mysql_options(mysql, MYSQL_READ_DEFAULT_GROUP, "odbc");
-
-  if (dsrc->initstmt && dsrc->initstmt[0])
-  {
-    /* Check for SET NAMES */
-    if (is_set_names_statement(ds_get_utf8attr(dsrc->initstmt,
-                                              &dsrc->initstmt8)))
-    {
-      return set_error("HY000", "SET NAMES not allowed by driver", 0);
-    }
-    mysql_options(mysql, MYSQL_INIT_COMMAND, dsrc->initstmt8);
-  }
 
   if (login_timeout)
     mysql_options(mysql, MYSQL_OPT_CONNECT_TIMEOUT, (char *)&login_timeout);
@@ -697,9 +714,9 @@ SQLRETURN DBC::connect(DataSource *dsrc)
     //Setting server and port to the dsrc->server8 and dsrc->port
     //TODO: IS THERE A FUNCTION TO DO THIS USING myodbc_malloc?
     //COPY OF sqlwchardup
-    size_t chars= strlen(host);
+    size_t chars = strlen(host);
     x_free(dsrc->server8);
-    dsrc->server8= (SQLCHAR *)myodbc_malloc(( chars + 1) , MYF(0));
+    dsrc->server8 = (SQLCHAR *)myodbc_malloc(( chars + 1) , MYF(0));
     memcpy(dsrc->server8, host, chars);
     dsrc->port = port;
 
@@ -803,16 +820,15 @@ SQLRETURN DBC::connect(DataSource *dsrc)
 
     if(!connected)
     {
-      std::stringstream err;
       if(dsrc->enable_dns_srv)
       {
-        err << "Unable to connect to any of the hosts of "
-            << dsrc->server8 << " SRV";
-        set_error("HY000", err.str().c_str(), 0);
+        std::string err =
+          std::string("Unable to connect to any of the hosts of ") +
+          (const char*)dsrc->server8 + " SRV";
+        set_error("HY000", err.c_str(), 0);
       }
       else if (dsrc->multi_host && hosts.size() > 1) {
-        err << "Unable to connect to any of the hosts";
-        set_error("HY000", err.str().c_str(), 0);
+        set_error("HY000", "Unable to connect to any of the hosts", 0);
       }
       //The others will retrieve the error from connect
       return SQL_ERROR;
@@ -827,11 +843,26 @@ SQLRETURN DBC::connect(DataSource *dsrc)
     return set_error("08001", "Driver does not support server versions under 4.1.1", 0);
   }
 
-  rc= myodbc_set_initial_character_set(this, ds_get_utf8attr(dsrc->charset,
-                                                            &dsrc->charset8));
+  rc = set_charset_options(ds_get_utf8attr(dsrc->charset, &dsrc->charset8));
+
+  // It could be an error with expired password in which case we
+  // still try to execute init statements and retry below.
+  if (rc == SQL_ERROR && error.native_error != ER_MUST_CHANGE_PASSWORD)
+    goto error;
+
+  // Try running INITSTMT.
+  if (!SQL_SUCCEEDED(run_initstmt(this, dsrc)))
+    return error.retcode;
+
+  // If we had expired password error at the beginning
+  // try setting charset options again.
+  // NOTE: charset name is converted to a single-byte
+  //       charset by previous call to ds_get_utf8attr().
+  if (rc == SQL_ERROR)
+    rc = set_charset_options((const char*)dsrc->charset8);
+
   if (!SQL_SUCCEEDED(rc))
   {
-    /** @todo set failure reason */
     goto error;
   }
 
@@ -844,11 +875,10 @@ SQLRETURN DBC::connect(DataSource *dsrc)
   if (!dsrc->auto_increment_null_search &&
       odbc_stmt(this, "SET SQL_AUTO_IS_NULL = 0", SQL_NTS, TRUE) != SQL_SUCCESS)
   {
-    /** @todo set error reason */
     goto error;
   }
 
-  ds= dsrc;
+  ds = dsrc;
   /* init all needed UTF-8 strings */
   ds_get_utf8attr(ds->name, &ds->name8);
   ds_get_utf8attr(ds->server, &ds->server8);
@@ -857,12 +887,11 @@ SQLRETURN DBC::connect(DataSource *dsrc)
   ds_get_utf8attr(ds->socket, &ds->socket8);
   if (ds->database)
   {
-
     database= ds_get_utf8attr(ds->database, &ds->database8);
   }
 
   if (ds->save_queries && !query_log)
-    query_log= init_query_log();
+    query_log = init_query_log();
 
   /* Set the statement error prefix based on the server version. */
   strxmov(st_error_prefix, MYODBC_ERROR_PREFIX, "[mysqld-",
@@ -879,11 +908,11 @@ SQLRETURN DBC::connect(DataSource *dsrc)
   {
     if (!transactions_supported() || ds->disable_transactions)
     {
-      rc= SQL_SUCCESS_WITH_INFO;
-      commit_flag= CHECK_AUTOCOMMIT_ON;
-      set_conn_error((DBC*)this, MYERR_01S02,
-                     "Transactions are not enabled, option value "
-                     "SQL_AUTOCOMMIT_OFF changed to SQL_AUTOCOMMIT_ON", 0);
+      commit_flag = CHECK_AUTOCOMMIT_ON;
+      rc = set_conn_error((DBC*)this, MYERR_01S02,
+             "Transactions are not enabled, option value "
+             "SQL_AUTOCOMMIT_OFF changed to SQL_AUTOCOMMIT_ON",
+             SQL_SUCCESS_WITH_INFO);
     }
     else if (autocommit_is_on() && mysql_autocommit(mysql, FALSE))
     {
@@ -921,17 +950,15 @@ SQLRETURN DBC::connect(DataSource *dsrc)
       sprintf(buff, "SET SESSION TRANSACTION ISOLATION LEVEL %s", level);
       if (odbc_stmt(this, buff, SQL_NTS, TRUE) != SQL_SUCCESS)
       {
-        /** @todo set error reason */
         goto error;
       }
     }
     else
     {
-      txn_isolation= SQL_TXN_READ_UNCOMMITTED;
-      rc= SQL_SUCCESS_WITH_INFO;
-      set_conn_error((DBC*)this, MYERR_01S02,
-                     "Transactions are not enabled, so transaction isolation "
-                     "was ignored.", 0);
+      txn_isolation = SQL_TXN_READ_UNCOMMITTED;
+      rc = set_conn_error((DBC*)this, MYERR_01S02,
+             "Transactions are not enabled, so transaction isolation "
+             "was ignored.", SQL_SUCCESS_WITH_INFO);
     }
   }
 
