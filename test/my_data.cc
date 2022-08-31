@@ -503,7 +503,53 @@ DECLARE_TEST(t_sqlgetdata_buf)
   return OK;
 }
 
+/*
+  Bug #33401384 - ODBC parameter not properly replaced when
+  put into JOIN/VALUES statement.
+*/
+DECLARE_TEST(t_bug33401384_JSON_param)
+{
+  if (!mysql_min_version(hdbc, "8.0.31", 6))
+    skip("Server does not have the fix for the problem");
+
+  try
+  {
+    odbc::table tab(hstmt, "tab_bug33401384",
+      "id INT NOT NULL, value VARCHAR(100) NULL");
+    tab.insert("(1, 'A')");
+
+    const char* upd_str = "UPDATE tab_bug33401384 ut " \
+      "INNER JOIN ( VALUES ROW( ? , ? ) ) vt (id,value) " \
+      "ON (ut.id = vt.id) " \
+      "SET ut.value = vt.value";
+
+    const char* par[] = { "1", "B" };
+    SQLLEN out_bytes[] = { 1, 1 };
+
+    odbc::stmt_prepare(hstmt, upd_str);
+
+    ok_stmt(hstmt, SQLBindParameter(hstmt, 1, SQL_PARAM_INPUT, SQL_C_CHAR,
+      SQL_VARCHAR, 0, 0, (SQLPOINTER)par[0], 1, &out_bytes[0]));
+
+    ok_stmt(hstmt, SQLBindParameter(hstmt, 2, SQL_PARAM_INPUT, SQL_C_CHAR,
+      SQL_VARCHAR, 0, 0, (SQLPOINTER)par[1], 1, &out_bytes[1]));
+
+    odbc::stmt_execute(hstmt);
+    odbc::stmt_close(hstmt);
+
+    odbc::sql(hstmt, "SELECT value FROM tab_bug33401384");
+    ok_stmt(hstmt, SQLFetch(hstmt));
+    SQLCHAR buf[10];
+    my_fetch_str(hstmt, buf, 1);
+    is_str(buf, "B", 2);
+    is_no_data(SQLFetch(hstmt));
+    odbc::stmt_close(hstmt);
+  }
+  ENDCATCH;
+}
+
 BEGIN_TESTS
+  ADD_TEST(t_bug33401384_JSON_param)
   ADD_TEST(t_sqlgetdata_buf)
   ADD_TEST(t_bug34397870_ubigint)
   ADD_TEST(t_bug34109678_collations)
