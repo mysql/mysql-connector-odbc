@@ -375,9 +375,7 @@ void btnDetails_Click (HWND hwnd)
   {
     static PWSTR tabnames[] = {
       L"Connection",
-#if MFA_ENABLED
-      L"MFA",
-#endif
+      L"Authentication",
       L"Metadata",
       L"Cursors/Results",
       L"Debug",
@@ -391,10 +389,8 @@ void btnDetails_Click (HWND hwnd)
                     MAKEINTRESOURCE(IDD_TAB4),
                     MAKEINTRESOURCE(IDD_TAB5),
                     MAKEINTRESOURCE(IDD_TAB6),
-#if MFA_ENABLED
                     MAKEINTRESOURCE(IDD_TAB7),
-#endif
-0};
+                    0};
 
     New_TabControl( &TabCtrl_1,                 // address of TabControl struct
                     GetDlgItem(hwnd, IDC_TAB1), // handle to tab control

@@ -98,6 +98,7 @@ typedef struct {
   SQLWCHAR *default_auth;
   SQLWCHAR *load_data_local_dir;
   SQLWCHAR *oci_config_file;
+  SQLWCHAR *authentication_kerberos_mode;
   SQLWCHAR *tls_versions;
   SQLWCHAR *ssl_crl;
   SQLWCHAR *ssl_crlpath;
@@ -135,6 +136,7 @@ typedef struct {
   SQLCHAR *default_auth8;
   SQLCHAR *load_data_local_dir8;
   SQLCHAR *oci_config_file8;
+  SQLCHAR *authentication_kerberos_mode8;
   SQLCHAR *tls_versions8;
   SQLCHAR* ssl_crl8;
   SQLCHAR* ssl_crlpath8;

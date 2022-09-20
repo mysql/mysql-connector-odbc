@@ -151,6 +151,7 @@
 #define IDC_EDIT_tls_versions           10073
 #define IDC_EDIT_ssl_crl                10074
 #define IDC_EDIT_ssl_crlpath            10075
+#define IDC_EDIT_authentication_kerberos_mode 10076
 #define IDC_BUTTON_TEST                 11014
 #define IDC_BUTTON_HELP                 11015
 #define IDC_STATIC                      -1

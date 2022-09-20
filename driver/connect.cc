@@ -447,6 +447,40 @@ SQLRETURN DBC::connect(DataSource *dsrc)
     }
   }
 
+  if (dsrc->authentication_kerberos_mode &&
+      dsrc->authentication_kerberos_mode[0])
+  {
+#ifdef WIN32
+    /* load client authentication plugin if required */
+    struct st_mysql_client_plugin* plugin =
+      mysql_client_find_plugin(mysql,
+        "authentication_kerberos_client",
+        MYSQL_CLIENT_AUTHENTICATION_PLUGIN);
+
+    if (!plugin)
+    {
+      return set_error("HY000", mysql_error(mysql), 0);
+    }
+
+    if (mysql_plugin_options(plugin, "plugin_authentication_kerberos_client_mode",
+      ds_get_utf8attr(dsrc->authentication_kerberos_mode,
+        &dsrc->authentication_kerberos_mode8)))
+    {
+      return set_error("HY000",
+        "Failed to set mode for authentication_kerberos_client plugin", 0);
+    }
+#else
+    if (myodbc_strcasecmp("GSSAPI",
+      ds_get_utf8attr(dsrc->authentication_kerberos_mode,
+        &dsrc->authentication_kerberos_mode8)))
+    {
+      return set_error("HY000",
+        "Invalid value for authentication-kerberos-mode. "
+        "Only GSSAPI is supported.", 0);
+    }
+#endif
+  }
+
 #endif
 
   /* set SSL parameters */

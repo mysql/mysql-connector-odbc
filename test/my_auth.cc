@@ -29,7 +29,7 @@
 #include <thread>
 #include <vector>
 
-#include "odbctap.h"
+#include "odbc_util.h"
 #include "mysql_version.h"
 
 /*
@@ -886,7 +886,43 @@ DECLARE_TEST(t_fido_callback_test)
   return OK;
 }
 
+#ifndef WIN32
+/*
+  WL #15347 - Support MIT Kerberos on Win.
+  At this stage the kerberos testing requires complex
+  setup and manual testing. However, the failure testing
+  can be done in non-Windows platforms because they do not
+  support different kerberos authentication modes.
+*/
+DECLARE_TEST(t_kerberos_mode)
+{
+  try
+  {
+    // This should fail because only GSSAPI is supported in non-Windows platforms
+    odbc::connection conn(nullptr, nullptr, nullptr, nullptr,
+      "authentication-kerberos-mode=SSPI;");
+    return FAIL;
+  }
+  catch (odbc::Exception& ex)
+  {
+    is(ex.msg.find("Invalid value for authentication-kerberos-mode. "
+      "Only GSSAPI is supported.") !=
+      std::string::npos);
+  }
+
+  // This should succeed, but Kerberos is not enforced.
+  // Connector just checks the correctness of the option value.
+  odbc::connection conn(nullptr, nullptr, nullptr, nullptr,
+    "authentication-kerberos-mode=GSSAPI;");
+
+  return OK;
+}
+#endif
+
 BEGIN_TESTS
+#ifndef WIN32
+  ADD_TEST(t_kerberos_mode)
+#endif
   ADD_TEST(t_fido_callback_test)
   ADD_TEST(t_fido_test)
   // ADD_TEST(t_plugin_auth) TODO: Fix

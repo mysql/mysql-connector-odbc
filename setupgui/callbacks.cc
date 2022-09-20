@@ -278,7 +278,6 @@ void syncTabsData(HWND hwnd, DataSource *params)
   GET_BOOL_TAB(CONNECTION_TAB, allow_multiple_statements);
   GET_BOOL_TAB(CONNECTION_TAB, clientinteractive);
   GET_BOOL_TAB(CONNECTION_TAB, can_handle_exp_pwd);
-  GET_BOOL_TAB(CONNECTION_TAB, enable_cleartext_plugin);
   GET_BOOL_TAB(CONNECTION_TAB, get_server_public_key);
   GET_BOOL_TAB(CONNECTION_TAB, enable_dns_srv);
 
@@ -289,13 +288,17 @@ void syncTabsData(HWND hwnd, DataSource *params)
   GET_COMBO_TAB(CONNECTION_TAB, charset);
   GET_STRING_TAB(CONNECTION_TAB, initstmt);
   GET_STRING_TAB(CONNECTION_TAB, plugin_dir);
-  GET_STRING_TAB(CONNECTION_TAB, default_auth);
   GET_STRING_TAB(CONNECTION_TAB, oci_config_file);
 
+  /* 2 - Authentication */
+  GET_BOOL_TAB(AUTH_TAB, enable_cleartext_plugin);
+#ifdef _WIN32
+  GET_STRING_TAB(AUTH_TAB, authentication_kerberos_mode);
+#endif
+  GET_STRING_TAB(AUTH_TAB, default_auth);
 #if MFA_ENABLED
-  /* 2 - MFA*/
-  GET_STRING_TAB(MFA_TAB, pwd2);
-  GET_STRING_TAB(MFA_TAB, pwd3);
+  GET_STRING_TAB(AUTH_TAB, pwd2);
+  GET_STRING_TAB(AUTH_TAB, pwd3);
 #endif
 
   /* 3 - Metadata*/
@@ -370,7 +373,6 @@ void syncTabs(HWND hwnd, DataSource *params)
   SET_BOOL_TAB(CONNECTION_TAB, allow_multiple_statements);
   SET_BOOL_TAB(CONNECTION_TAB, clientinteractive);
   SET_BOOL_TAB(CONNECTION_TAB, can_handle_exp_pwd);
-  SET_BOOL_TAB(CONNECTION_TAB, enable_cleartext_plugin);
   SET_BOOL_TAB(CONNECTION_TAB, get_server_public_key);
   SET_BOOL_TAB(CONNECTION_TAB, enable_dns_srv);
   SET_BOOL_TAB(CONNECTION_TAB, multi_host);
@@ -382,14 +384,18 @@ void syncTabs(HWND hwnd, DataSource *params)
     SET_COMBO_TAB(CONNECTION_TAB, charset);
     SET_STRING_TAB(CONNECTION_TAB,initstmt);
     SET_STRING_TAB(CONNECTION_TAB,plugin_dir);
-    SET_STRING_TAB(CONNECTION_TAB,default_auth);
     SET_STRING_TAB(CONNECTION_TAB,oci_config_file);
   }
 
+  /* 2 - Authentication */
+  SET_BOOL_TAB(AUTH_TAB, enable_cleartext_plugin);
+#ifdef _WIN32
+  SET_STRING_TAB(AUTH_TAB, authentication_kerberos_mode);
+#endif
+  SET_STRING_TAB(AUTH_TAB, default_auth);
 #if MFA_ENABLED
-  /* 2 - MFA*/
-  SET_STRING_TAB(MFA_TAB, pwd2);
-  SET_STRING_TAB(MFA_TAB, pwd3);
+  SET_STRING_TAB(AUTH_TAB, pwd2);
+  SET_STRING_TAB(AUTH_TAB, pwd3);
 #endif
 
   /* 3 - Metadata*/
