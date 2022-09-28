@@ -49,7 +49,7 @@ DECLARE_TEST(t_bug66548)
   */
 
   sprintf((char*)attrs, "DSN=bug66548dsn;SERVER=%s;USER=%s;PASSWORD=%s;"
-                          "DATABASE=%s;", myserver, myuid, mypwd, mydb);
+    "PORT=%d;DATABASE=%s;\0", myserver, myuid, mypwd, myport, mydb);
 
   len= strlen(attrs);
 
@@ -135,8 +135,8 @@ DECLARE_TEST(t_bug24581)
 #endif
 
   sprintf(conn_in, "DRIVER=%s;SERVER=%s;UID=user24851;DATABASE=%s;"\
-                   "SAVEFILE=%s;PASSWORD=pass24851;%s",
-                   mydriver, myserver, mydb, fdsn_path, socket_path);
+          "PORT=%d;SAVEFILE=%s;PASSWORD=pass24851;%s",
+          mydriver, myserver, mydb, myport, fdsn_path, socket_path);
 
   /* Create a .dsn file in the TEMP directory, we will remove it later */
   ok_con(hdbc1, SQLDriverConnect(hdbc1, NULL, (SQLCHAR*)conn_in, SQL_NTS,
@@ -204,8 +204,8 @@ DECLARE_TEST(t_bug17508006)
 
 
 BEGIN_TESTS
-  // ADD_TEST(t_bug66548) TODO: Fix
-  // ADD_TEST(t_bug24581) TODO: Fix
+  ADD_TEST(t_bug66548)
+  // ADD_TEST(t_bug24581) TODO: fix
   ADD_TEST(t_bug17508006)
 END_TESTS
 
