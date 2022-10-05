@@ -47,19 +47,43 @@ REM # SETLOCAL prevents the variables set in this script to
 REM # be exported to the environment and pollute it
 SETLOCAL
 
-SET    driver_name=none
+SET    driver_name=%*
 SET    driver_lib=myodbc8
 SET    driver_lib_setup=myodbc8S
 SET    installer=myodbc-installer
+SET    do_pause=no
 
+Net session >nul 2>&1
+
+IF %ERRORLEVEL% EQU 0 (
+  ECHO Running as Admin
+  IF "%CD%" == "%WINDIR%\system32" (
+    REM When running as admin the script is in a wrong directory
+    ECHO Changing the directory...
+    %~d0
+    CD %~p0
+    SET do_pause=yes
+  )
+  GOTO :doProcessing
+) ELSE (
+  ECHO Requesting Admin
+  IF "%driver_name%" == "" (
+    PowerShell start-process -FilePath '%~0' -verb runas
+  ) else (
+    PowerShell start-process -FilePath '%~0' -ArgumentList {"%driver_name%"} -verb runas
+  )
+)
+
+EXIT /b 1
+
+:doProcessing
 IF "%~1" == "" GOTO :doFindDriver
-SET  driver_name=%~1
+SET  driver_name=%*
 
 IF NOT @DRIVERS_COUNT@ == 1 ECHO NOTE: " ANSI" or " Unicode" will be added to the driver name
 
 :doFindDriver
 REM # Find driver location
-
 SET libdir=none
 FOR %%G IN (. lib lib\release lib\relwithdebinfo lib\debug) DO CALL :subCheckLibDir %%G
 
@@ -91,7 +115,6 @@ GOTO :errorNoInstaller
 REM ECHO myodbc_installer: %myodbc_installer%
 
 REM # Abort if driver is already registered
-
 FOR %%d IN (@CONNECTOR_DRIVER_TYPE@) DO CALL :registerIfNotFound %%d
 
 REM # All is well if we got here
@@ -101,8 +124,8 @@ goto :doSuccess
 
 ECHO Registering %1 driver
 
-IF %driver_name% == none SET name="MySQL ODBC @CONNECTOR_MAJOR@.@CONNECTOR_MINOR@ %1 Driver"
-IF NOT %driver_name% == none IF NOT @DRIVERS_COUNT@ == 1 SET name="%driver_name% %1"
+IF "%driver_name%" == "" SET name="MySQL ODBC @CONNECTOR_MAJOR@.@CONNECTOR_MINOR@ %1 Driver"
+IF NOT "%driver_name%" == "" IF NOT @DRIVERS_COUNT@ == 1 SET name="%driver_name% %1"
 
 IF %1 == Unicode SET lib=%driver_lib%w.dll
 IF %1 == ANSI    SET lib=%driver_lib%a.dll
@@ -114,9 +137,7 @@ ECHO Checking if %name% is not already registered
 IF NOT ERRORLEVEL 1 GOTO :errorDriverInstalled
 
 ECHO Registering %name%
-
 %myodbc_installer% -d -a -n %name% -t "DRIVER=%libdir%\%lib%;SETUP=%libdir%\%driver_lib_setup%.dll"
-
 REM # If we have error on registering 1 driver - 99.9% we will have it with other as well
 IF ERRORLEVEL 1 GOTO :errorRegisterDriver
 
@@ -130,6 +151,11 @@ REM ######
 REM # Skip check if a good libdir was already found
 IF NOT "%libdir%" == "none" GOTO :eof
 SET libdir=%CD%\%1
+IF "%1" == "." (
+  SET libdir=%CD%
+) ELSE (
+   SET libdir=%CD%\%1
+)
 IF NOT EXIST "%libdir%\%driver_lib%a.dll"      GOTO :wrongLibDir
 IF NOT EXIST "%libdir%\%driver_lib%w.dll"      GOTO :wrongLibDir
 IF NOT EXIST "%libdir%\%driver_lib_setup%.dll" GOTO :wrongLibDir
@@ -172,6 +198,7 @@ ECHO ^| Alternatively you can use the MyODBC Installer      ^|
 ECHO ^| utility to define data sources.                     ^|
 ECHO ^|                                                     ^|
 ECHO ^+-----------------------------------------------------^+
+IF %do_pause% == yes PAUSE
 EXIT /B 0
 
 :errorNoDrivers
@@ -183,6 +210,7 @@ ECHO ^| Could not find Connector/ODBC drivers. Have you run ^|
 ECHO ^| this script from the installation directory?        ^|
 ECHO ^|                                                     ^|
 ECHO ^+-----------------------------------------------------^+
+IF %do_pause% == yes PAUSE
 EXIT /B 1
 
 :errorNoInstaller
@@ -194,6 +222,7 @@ ECHO ^| Could not find the MyODBC Installer utility. Run    ^|
 ECHO ^| this script from the installation directory.        ^|
 ECHO ^|                                                     ^|
 ECHO ^+-----------------------------------------------------^+
+IF %do_pause% == yes PAUSE
 EXIT /B 1
 
 :errorDriverInstalled
@@ -204,6 +233,7 @@ ECHO ^|                                                     ^|
 ECHO ^| There is already driver registered with such name   ^|
 ECHO ^|                                                     ^|
 ECHO ^+-----------------------------------------------------^+
+IF %do_pause% == yes PAUSE
 EXIT 1
 
 :errorRegisterDriver
@@ -214,5 +244,5 @@ ECHO ^|                                                     ^|
 ECHO ^| Could not register the driver.                      ^|
 ECHO ^|                                                     ^|
 ECHO ^+-----------------------------------------------------^+
-
+IF %do_pause% == yes PAUSE
 EXIT 1

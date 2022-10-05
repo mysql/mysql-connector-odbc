@@ -54,11 +54,37 @@ SETLOCAL
 
 SET    installer=myodbc-installer
 SET    driver_found=no
-SET    driver_name=none
+SET    driver_name=%*
+SET    do_pause=no
 
+Net session >nul 2>&1
+
+if %ERRORLEVEL% EQU 0 (
+  echo Running as Admin
+  if "%CD%" == "%WINDIR%\system32" (
+    REM When running as admin the script is in a wrong directory
+    echo Changing the directory...
+    %~d0
+    cd %~p0
+    SET do_pause=yes
+  )
+  goto :doProcessing
+) else (
+  echo Requesting Admin
+  if "%driver_name%" == "" (
+    PowerShell start-process -FilePath '%~0' -verb runas
+  ) else (
+    PowerShell start-process -FilePath '%~0' -ArgumentList {"%driver_name%"} -verb runas
+  )
+)
+
+exit /b 1
+
+:doProcessing
 IF "%~1" == "" GOTO :doFindInstaller
-SET  driver_name=%~1
 
+SET  driver_name=%*
+SET  script_name=%~0
 :doFindInstaller
 REM # Find the installer utility
 
@@ -95,8 +121,8 @@ SET bindir=none
 GOTO :eof
 
 :lookup_deregister
-IF "%driver_name%" == "none" FOR %%d IN (@CONNECTOR_DRIVER_TYPE@) DO CALL :driverLookup "MySQL ODBC @CONNECTOR_MAJOR@.@CONNECTOR_MINOR@ %%d% Driver"
-IF NOT "%driver_name%" == "none" CALL :driverLookup "%driver_name%"
+IF "%driver_name%" == "" FOR %%d IN (@CONNECTOR_DRIVER_TYPE@) DO CALL :driverLookup "MySQL ODBC @CONNECTOR_MAJOR@.@CONNECTOR_MINOR@ %%d% Driver"
+IF NOT "%driver_name%" == "" CALL :driverLookup "%driver_name%"
 
 IF %driver_found% == yes GOTO doSuccess
 
@@ -104,18 +130,16 @@ ECHO ^+-----------------------------------------------------^+
 ECHO ^| ERROR                                               ^|
 ECHO ^+-----------------------------------------------------^+
 ECHO ^|                                                     ^|
-ECHO ^| No driver was found and deregistered                 ^|
+ECHO ^| No driver was found and deregistered                ^|
 ECHO ^|                                                     ^|
 ECHO ^+-----------------------------------------------------^+
-
+IF %do_pause% == yes PAUSE
 EXIT /B 1
 
 :driverLookup
-ECHO installer = %myodbc_installer%
 ECHO driver = %1
-
+IF %1 == "" GOTO :eof
 REM # Check if driver is registered
-
 "%myodbc_installer%" -d -l -n %1  2>nul
 IF ERRORLEVEL 0 IF NOT ERRORLEVEL 1 CALL :doDeregister %1
 IF ERRORLEVEL 1 CALL :errorNotRegistered
@@ -123,11 +147,9 @@ IF ERRORLEVEL 1 CALL :errorNotRegistered
 GOTO :eof
 
 :doDeregister
-
-ECHO Deregistering %1
 "%myodbc_installer%" -d -r -n %1
+ECHO Deregistering %1
 SET driver_found=yes
-
 GOTO :eof
 
 :doSuccess
@@ -139,6 +161,7 @@ ECHO ^| Hopefully things went well; the Connector/ODBC      ^|
 ECHO ^| driver has been deregistered.                       ^|
 ECHO ^|                                                     ^|
 ECHO ^+-----------------------------------------------------^+
+IF %do_pause% == yes PAUSE
 EXIT /B 0
 
 :errorNoInstaller
@@ -150,6 +173,7 @@ ECHO ^| Could not find the MyODBC Installer utility. Run    ^|
 ECHO ^| this script from the installation directory.        ^|
 ECHO ^|                                                     ^|
 ECHO ^+-----------------------------------------------------^+
+IF %do_pause% == yes PAUSE
 EXIT /B 1
 
 :errorNotRegistered
