@@ -678,19 +678,18 @@ ENDIF(WIN32)
 # it finds a plugin or 3rd party librariy which is not listed here. When that 
 # happens the lists should be updated.
 
-  set(AUTH_PLUGINS
-    ldap_sasl
-    oci
-  )
+set(AUTH_PLUGINS
+  ldap_sasl
+  oci
+)
 
-
-  if(NOT CMAKE_SYSTEM_NAME MATCHES "SunOS")
-    list(APPEND AUTH_PLUGINS fido)
-    # TODO: Missing kerberos authentication plugin on macOS could be a bug
-    if(NOT APPLE)
-      list(APPEND AUTH_PLUGINS kerberos)
-    endif()
+if(NOT CMAKE_SYSTEM_NAME MATCHES "SunOS")
+  list(APPEND AUTH_PLUGINS fido)
+  # Note: Kerberos authentication plugin is not supported on macOS
+  if(NOT APPLE)
+    list(APPEND AUTH_PLUGINS kerberos)
   endif()
+endif()
 
 # Plugin dependencies.
 #
@@ -708,10 +707,10 @@ else()
   set(AUTH_DEPS_kerberos gssapi_krb5 k5crypto krb5support krb5 com_err)
 endif()
 
-# Note: On Solaris all dependencies of ldap_sasl plugin are assumed to be part 
-# of the OS.
+# Note: On Solaris and macOS all dependencies of ldap_sasl plugin are assumed 
+# to be part of the OS.
 
-if(NOT CMAKE_SYSTEM_NAME MATCHES "SunOS")
+if(NOT APPLE AND NOT CMAKE_SYSTEM_NAME MATCHES "SunOS")
   set(AUTH_DEPS_ldap_sasl libsasl ${AUTH_DEPS_kerberos})
 endif()
 if(WIN32)
@@ -738,6 +737,22 @@ set(IGNORED_LIBS
   ldap  # note: this is needed only by server-side plugin
   libcurl libmecab zlib
   jemalloc
+  # New DLLs added in .32
+  connection_pool
+  http_auth_backend http_auth_realm http_server
+  io keepalive metadata_cache
+  rest_api rest_connection_pool rest_metadata_cache rest_router rest_routing
+  harness-library  mysqlharness_stdx mysqlharness_tls
+  router_openssl router_protobuf routing
+  mysqlrouter_mysqlxmessages
+  mysqlrouter_connection_pool
+  mysqlrouter_http
+  mysqlrouter_http_auth_backend
+  mysqlrouter_http_auth_realm
+  mysqlrouter_io_component
+  mysqlrouter_lib
+  mysqlrouter_metadata_cache
+  mysqlrouter_routing
 )
 
 
