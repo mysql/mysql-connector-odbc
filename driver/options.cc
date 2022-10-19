@@ -276,11 +276,11 @@ MySQLSetConnectAttr(SQLHDBC hdbc, SQLINTEGER Attribute,
           return SQL_SUCCESS;
         }
         if (!(trans_supported(dbc)) || dbc->ds->disable_transactions)
-          return set_conn_error((DBC*)dbc,MYERR_S1C00,
-                                "Transactions are not enabled", 4000);
+          return ((DBC*)hdbc)->set_error(MYERR_S1C00,
+            "Transactions are not enabled", 4000);
 
         if (autocommit_on(dbc))
-          return odbc_stmt(dbc,"SET AUTOCOMMIT=0", SQL_NTS, TRUE);
+          return dbc->execute_query("SET AUTOCOMMIT=0", SQL_NTS, TRUE);
       }
       else if (!is_connected(dbc))
       {
@@ -288,7 +288,7 @@ MySQLSetConnectAttr(SQLHDBC hdbc, SQLINTEGER Attribute,
         return SQL_SUCCESS;
       }
       else if (trans_supported(dbc) && !(autocommit_on(dbc)))
-        return odbc_stmt(dbc,"SET AUTOCOMMIT=1", SQL_NTS, TRUE);
+        return dbc->execute_query("SET AUTOCOMMIT=1", SQL_NTS, TRUE);
       break;
 
     case SQL_ATTR_LOGIN_TIMEOUT:
@@ -296,7 +296,7 @@ MySQLSetConnectAttr(SQLHDBC hdbc, SQLINTEGER Attribute,
         /* we can't change timeout values in post connect state */
         if (is_connected(dbc))
         {
-          return set_conn_error(dbc, MYERR_S1011, NULL, 0);
+          return dbc->set_error(MYERR_S1011, NULL, 0);
         }
         else
         {
@@ -331,18 +331,19 @@ MySQLSetConnectAttr(SQLHDBC hdbc, SQLINTEGER Attribute,
         LOCK_DBC(dbc);
         if (cat_len > NAME_LEN)
         {
-          return set_conn_error(dbc, MYERR_01004,
-                                "Invalid string or buffer length", 0);
+          return dbc->set_error(MYERR_01004,
+            "Invalid string or buffer length", 0);
         }
 
         if (!(db= fix_str((char *)ldb, (char *)ValuePtr, StringLengthPtr)))
-          return set_conn_error((DBC*)hdbc,MYERR_S1009,NULL, 0);
+          return dbc->set_error(MYERR_S1009,NULL, 0);
 
         if (is_connected(dbc))
         {
           if (mysql_select_db(dbc->mysql,(char*) db))
           {
-            set_conn_error(dbc,MYERR_S1000,mysql_error(dbc->mysql),mysql_errno(dbc->mysql));
+            dbc->set_error(MYERR_S1000, mysql_error(dbc->mysql),
+              mysql_errno(dbc->mysql));
             return SQL_ERROR;
           }
         }
@@ -354,8 +355,8 @@ MySQLSetConnectAttr(SQLHDBC hdbc, SQLINTEGER Attribute,
     case SQL_ATTR_ODBC_CURSORS:
       if (dbc->ds->force_use_of_forward_only_cursors &&
         ValuePtr != (SQLPOINTER) SQL_CUR_USE_ODBC)
-        return set_conn_error((DBC*)hdbc,MYERR_01S02,
-                              "Forcing the Driver Manager to use ODBC cursor library",0);
+        return ((DBC*)hdbc)->set_error(MYERR_01S02,
+          "Forcing the Driver Manager to use ODBC cursor library",0);
       break;
 
     case SQL_OPT_TRACE:
@@ -366,7 +367,7 @@ MySQLSetConnectAttr(SQLHDBC hdbc, SQLINTEGER Attribute,
       {
         char buff[100];
         sprintf(buff,"Suppose to set this attribute '%d' through driver manager, not by the driver",(int) Attribute);
-        return set_conn_error((DBC*)hdbc,MYERR_01S02,buff,0);
+        return ((DBC*)hdbc)->set_error(MYERR_01S02, buff, 0);
       }
 
     case SQL_ATTR_PACKET_SIZE:
@@ -397,7 +398,7 @@ MySQLSetConnectAttr(SQLHDBC hdbc, SQLINTEGER Attribute,
           SQLRETURN rc;
           sprintf(buff,"SET SESSION TRANSACTION ISOLATION LEVEL %s",
                   level);
-          if (SQL_SUCCEEDED(rc = odbc_stmt(dbc, buff, SQL_NTS, TRUE)))
+          if (SQL_SUCCEEDED(rc = dbc->execute_query(buff, SQL_NTS, TRUE)))
           {
             dbc->txn_isolation= (size_t)ValuePtr;
           }
@@ -406,7 +407,7 @@ MySQLSetConnectAttr(SQLHDBC hdbc, SQLINTEGER Attribute,
         }
         else
         {
-          return dbc->set_error( "HY024", "Invalid attribute value", 0);
+          return dbc->set_error("HY024", "Invalid attribute value", 0);
         }
       }
       break;
@@ -557,9 +558,9 @@ MySQLGetConnectAttr(SQLHDBC hdbc, SQLINTEGER attrib, SQLCHAR **char_attr,
       }
 
       if (is_minimum_version(dbc->mysql->server_version, "8.0"))
-        result = odbc_stmt(dbc, "SELECT @@transaction_isolation", SQL_NTS, TRUE);
+        result = dbc->execute_query("SELECT @@transaction_isolation", SQL_NTS, true);
       else
-        result = odbc_stmt(dbc, "SELECT @@tx_isolation", SQL_NTS, TRUE);
+        result = dbc->execute_query("SELECT @@tx_isolation", SQL_NTS, true);
 
       if (result != SQL_SUCCESS)
       {

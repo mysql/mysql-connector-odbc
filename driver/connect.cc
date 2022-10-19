@@ -95,7 +95,7 @@ void DBC::set_charset(std::string charset)
   // Use SET NAMES instead of mysql_set_character_set()
   // because running odbc_stmt() is thread safe.
   std::string query = "SET NAMES " + charset;
-  if (odbc_stmt(this, query.c_str(), query.length(), TRUE))
+  if (execute_query(query.c_str(), query.length(), true))
   {
     throw MYERROR("HY000", mysql);
   }
@@ -148,7 +148,8 @@ try
     We always set character_set_results to NULL so we can do our own
     conversion to the ANSI character set or Unicode.
   */
-  if (odbc_stmt(this, "SET character_set_results = NULL", SQL_NTS, TRUE) != SQL_SUCCESS)
+  if (execute_query("SET character_set_results = NULL", SQL_NTS, true)
+    != SQL_SUCCESS)
   {
     throw error;
   }
@@ -174,7 +175,7 @@ try
       throw MYERROR("HY000", "SET NAMES not allowed by driver");
     }
 
-    if (odbc_stmt(dbc, (char*)dsrc->initstmt8, SQL_NTS, TRUE) != SQL_SUCCESS)
+    if (dbc->execute_query((char*)dsrc->initstmt8, SQL_NTS, true) != SQL_SUCCESS)
     {
       return SQL_ERROR;
     }
@@ -907,7 +908,7 @@ SQLRETURN DBC::connect(DataSource *dsrc)
     other problems.
   */
   if (!dsrc->auto_increment_null_search &&
-      odbc_stmt(this, "SET SQL_AUTO_IS_NULL = 0", SQL_NTS, TRUE) != SQL_SUCCESS)
+      execute_query("SET SQL_AUTO_IS_NULL = 0", SQL_NTS, true) != SQL_SUCCESS)
   {
     goto error;
   }
@@ -943,7 +944,7 @@ SQLRETURN DBC::connect(DataSource *dsrc)
     if (!transactions_supported() || ds->disable_transactions)
     {
       commit_flag = CHECK_AUTOCOMMIT_ON;
-      rc = set_conn_error((DBC*)this, MYERR_01S02,
+      rc = set_error(MYERR_01S02,
              "Transactions are not enabled, option value "
              "SQL_AUTOCOMMIT_OFF changed to SQL_AUTOCOMMIT_ON",
              SQL_SUCCESS_WITH_INFO);
@@ -982,7 +983,7 @@ SQLRETURN DBC::connect(DataSource *dsrc)
     if (transactions_supported())
     {
       sprintf(buff, "SET SESSION TRANSACTION ISOLATION LEVEL %s", level);
-      if (odbc_stmt(this, buff, SQL_NTS, TRUE) != SQL_SUCCESS)
+      if (execute_query(buff, SQL_NTS, true) != SQL_SUCCESS)
       {
         goto error;
       }
@@ -990,7 +991,7 @@ SQLRETURN DBC::connect(DataSource *dsrc)
     else
     {
       txn_isolation = SQL_TXN_READ_UNCOMMITTED;
-      rc = set_conn_error((DBC*)this, MYERR_01S02,
+      rc = set_error(MYERR_01S02,
              "Transactions are not enabled, so transaction isolation "
              "was ignored.", SQL_SUCCESS_WITH_INFO);
     }
@@ -1038,15 +1039,15 @@ SQLRETURN SQL_API MySQLConnect(SQLHDBC   hdbc,
 
   /* Can't connect if we're already connected. */
   if (is_connected(dbc))
-    return set_conn_error((DBC*)hdbc, MYERR_08002, NULL, 0);
+    return ((DBC*)hdbc)->set_error(MYERR_08002, NULL, 0);
 
   /* Reset error state */
   CLEAR_DBC_ERROR(dbc);
 
   if (szDSN && !szDSN[0])
   {
-    return set_conn_error((DBC*)hdbc, MYERR_S1000,
-                          "Invalid connection parameters", 0);
+    return ((DBC*)hdbc)->set_error(MYERR_S1000,
+      "Invalid connection parameters", 0);
   }
 
   ds= ds_new();
@@ -1478,5 +1479,32 @@ void DBC::execute_prep_stmt(MYSQL_STMT *pstmt, std::string &query,
     set_error("HY000");
     throw error;
   }
+
+}
+
+SQLRETURN DBC::execute_query(const char* query,
+  SQLULEN query_length, my_bool req_lock)
+{
+  SQLRETURN result = SQL_SUCCESS;
+  LOCK_DBC_DEFER(this);
+
+  if (req_lock)
+  {
+    DO_LOCK_DBC();
+  }
+
+  if (query_length == SQL_NTS)
+  {
+    query_length = strlen(query);
+  }
+
+  if (check_if_server_is_alive(this) ||
+    mysql_real_query(mysql, query, query_length))
+  {
+    result = set_error(MYERR_S1000, mysql_error(mysql),
+      mysql_errno(mysql));
+  }
+
+  return result;
 
 }

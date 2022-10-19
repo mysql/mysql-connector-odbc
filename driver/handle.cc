@@ -135,6 +135,14 @@ SQLRETURN DBC::set_error(char * state)
 }
 
 
+SQLRETURN DBC::set_error(myodbc_errid errid, const char* errtext,
+  SQLINTEGER errcode)
+{
+  error = MYERROR(errid, errtext, errcode, MYODBC_ERROR_PREFIX);
+  return error.retcode;
+}
+
+
 /*
   @type    : myodbc3 internal
   @purpose : to allocate the environment handle and to maintain
@@ -691,7 +699,7 @@ SQLRETURN SQL_API SQLAllocHandle(SQLSMALLINT HandleType,
             break;
 
         default:
-            return set_conn_error((DBC*)InputHandle,MYERR_S1C00,NULL,0);
+            return ((DBC*)InputHandle)->set_error(MYERR_S1C00, NULL, 0);
     }
 
     return error;

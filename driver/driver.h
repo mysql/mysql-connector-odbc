@@ -650,6 +650,10 @@ struct DBC
 
   void set_charset(std::string charset);
   SQLRETURN set_charset_options(const char* charset);
+  SQLRETURN set_error(myodbc_errid errid, const char* errtext,
+    SQLINTEGER errcode);
+  SQLRETURN execute_query(const char *query,
+    SQLULEN query_length, my_bool req_lock);
 };
 
 

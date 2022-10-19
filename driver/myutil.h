@@ -136,8 +136,6 @@ SQLRETURN SQL_API my_SQLAllocStmt       (SQLHDBC hdbc,SQLHSTMT *phstmt);
 SQLRETURN         do_query              (STMT *stmt,char *query, SQLULEN query_length);
 SQLRETURN         insert_params         (STMT *stmt, SQLULEN row, char **finalquery,
                                         SQLULEN *length);
-SQLRETURN odbc_stmt(DBC *dbc, const char *query, SQLULEN query_length,
-                    my_bool reqLock);
 void      myodbc_link_fields (STMT *stmt,MYSQL_FIELD *fields,uint field_count);
 void      fix_row_lengths   (STMT *stmt, const long* fix_rules, uint row, uint field_count);
 void      fix_result_types  (STMT *stmt);
@@ -273,8 +271,6 @@ bool   myodbc_append_quoted_name_std(std::string &str, const char *name);
 
 SQLRETURN set_handle_error          (SQLSMALLINT HandleType, SQLHANDLE handle,
                                     myodbc_errid errid, const char *errtext, SQLINTEGER errcode);
-SQLRETURN set_conn_error(DBC *dbc,myodbc_errid errid, const char *errtext,
-                        SQLINTEGER errcode);
 SQLRETURN set_env_error (ENV * env,myodbc_errid errid, const char *errtext,
                         SQLINTEGER errcode);
 SQLRETURN copy_str_data (SQLSMALLINT HandleType, SQLHANDLE Handle,
@@ -542,7 +538,7 @@ void free_connection_stmts(DBC *dbc);
 
 #define CHECK_DBC_OUTPUT(e, d) if(d == NULL) return set_env_error((ENV *)e, MYERR_S1009, NULL, 0)
 
-#define CHECK_STMT_OUTPUT(d, s) if(s == NULL) return set_conn_error((DBC *)d, MYERR_S1009, NULL, 0)
+#define CHECK_STMT_OUTPUT(d, s) if(s == NULL) return ((DBC *)d)->set_error(MYERR_S1009, NULL, 0)
 
 #define CHECK_DESC_OUTPUT(d, s) CHECK_STMT_OUTPUT(d, s)
 

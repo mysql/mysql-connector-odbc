@@ -492,7 +492,7 @@ SQLGetConnectAttrWImpl(SQLHDBC hdbc, SQLINTEGER attribute, SQLPOINTER value,
       see: "if (char_value)"
     */
     if (len > value_max - 1)
-      rc= set_conn_error(dbc, MYERR_01004, NULL, 0);
+      rc = dbc->set_error(MYERR_01004, NULL, 0);
 
     if (value_len)
       *value_len= len * sizeof(SQLWCHAR);
@@ -608,7 +608,7 @@ SQLGetDiagFieldW(SQLSMALLINT handle_type, SQLHANDLE handle,
 
     /* We set the error only when the result is intented to be returned */
     if (info && len > info_max - 1)
-      rc= set_conn_error(dbc, MYERR_01004, NULL, 0);
+      rc= dbc->set_error(MYERR_01004, NULL, 0);
 
     if (info_len)
       *info_len= (SQLSMALLINT)len * sizeof(SQLWCHAR);
@@ -696,7 +696,7 @@ SQLGetDiagRecWImpl(SQLSMALLINT handle_type, SQLHANDLE handle,
       and message_max is greaater than 0
     */
     if (message && message_max && len > message_max - 1)
-      rc= set_conn_error(dbc, MYERR_01004, NULL, 0);
+      rc = dbc->set_error(MYERR_01004, NULL, 0);
 
     if (message_len)
       *message_len= (SQLSMALLINT)len;
@@ -772,7 +772,7 @@ SQLGetInfoW(SQLHDBC hdbc, SQLUSMALLINT type, SQLPOINTER value,
       value is not NULL and value_max is 0
      */
     if (value && value_max && len > value_max - 1)
-      rc= set_conn_error(dbc, MYERR_01004, NULL, 0);
+      rc = dbc->set_error(MYERR_01004, NULL, 0);
 
     if (value_len)
       *value_len= (SQLSMALLINT)len * sizeof(SQLWCHAR);
@@ -827,7 +827,7 @@ SQLNativeSqlW(SQLHDBC hdbc, SQLWCHAR *in, SQLINTEGER in_len,
     *out_len= in_len;
 
   if (out && in_len >= out_max)
-    rc= set_conn_error((DBC *)hdbc, MYERR_01004, NULL, 0);
+    rc = ((DBC*)hdbc)->set_error(MYERR_01004, NULL, 0);
 
   if (out_max > 0)
   {
@@ -1339,8 +1339,8 @@ SQLBrowseConnectW(SQLHDBC hdbc, SQLWCHAR *in, SQLSMALLINT in_len,
 {
   CHECK_HANDLE(hdbc);
 
-  return set_conn_error((DBC*)hdbc,MYERR_S1000,
-                        "Driver does not support this API", 0);
+  return ((DBC*)hdbc)->set_error(MYERR_S1000,
+    "Driver does not support this API", 0);
 }
 
 

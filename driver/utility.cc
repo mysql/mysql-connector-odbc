@@ -63,7 +63,7 @@ SQLRETURN exec_stmt_query(STMT *stmt, const char *query,
     return rc;
   }
   stmt->buf_set_pos(0);
-  return odbc_stmt(stmt->dbc, query, query_length, req_lock);
+  return stmt->dbc->execute_query(query, query_length, req_lock);
 }
 
 
@@ -78,44 +78,7 @@ SQLRETURN exec_stmt_query_std(STMT *stmt, const std::string &query,
     return rc;
   }
   stmt->buf_set_pos(0);
-  return odbc_stmt(stmt->dbc, query.c_str(), query.size(), req_lock);
-}
-
-/**
-
-
-/**
-  Execute a SQL statement.
-
-  @param[in] dbc       The database connection
-  @param[in] query     The query to execute
-  @param[in] req_lock  The flag if dbc->lock thread lock should be used
-                       when executing a query
-  */
-SQLRETURN odbc_stmt(DBC *dbc, const char *query,
-                    SQLULEN query_length, my_bool req_lock)
-{
-  SQLRETURN result= SQL_SUCCESS;
-  LOCK_DBC_DEFER(dbc);
-
-  if (req_lock)
-  {
-    DO_LOCK_DBC();
-  }
-
-  if (query_length == SQL_NTS)
-  {
-    query_length= strlen(query);
-  }
-
-  if ( check_if_server_is_alive(dbc) ||
-       mysql_real_query(dbc->mysql, query, query_length) )
-  {
-    result= set_conn_error(dbc,MYERR_S1000,mysql_error(dbc->mysql),
-                           mysql_errno(dbc->mysql));
-  }
-
-  return result;
+  return stmt->dbc->execute_query(query.c_str(), query.size(), req_lock);
 }
 
 
@@ -1515,7 +1478,8 @@ static SQLLEN cap_length(STMT *stmt, unsigned long real_length)
 */
 SQLULEN get_column_size_from_str(STMT *stmt, const char *size_str)
 {
-  SQLULEN length = (SQLULEN)std::strtoll(size_str, nullptr, 10);
+  SQLULEN length = size_str ?
+    (SQLULEN)std::strtoll(size_str, nullptr, 10) : 0;
   return cap_length(stmt, length);
 }
 
@@ -2534,7 +2498,7 @@ int reget_current_catalog(DBC *dbc)
 {
     dbc->database.clear();
 
-    if ( odbc_stmt(dbc, "select database()", SQL_NTS, TRUE) )
+    if (dbc->execute_query("select database()", SQL_NTS, true))
     {
         return 1;
     }
@@ -3284,7 +3248,7 @@ SQLRETURN set_sql_select_limit(DBC *dbc, SQLULEN lim_value, my_bool req_lock)
     lim_value= 0;
   }
 
-  if (SQL_SUCCEEDED(rc= odbc_stmt(dbc, query, SQL_NTS, req_lock)))
+  if (SQL_SUCCEEDED(rc = dbc->execute_query(query, SQL_NTS, req_lock)))
   {
     dbc->sql_select_limit= lim_value;
   }
@@ -4350,7 +4314,7 @@ int get_session_variable(STMT *stmt, const char *var, char *result)
     to= myodbc_stpmov(to, "'");
     *to= '\0';
 
-    if (!SQL_SUCCEEDED(odbc_stmt(stmt->dbc, buff, SQL_NTS, TRUE)))
+    if (!SQL_SUCCEEDED(stmt->dbc->execute_query(buff, SQL_NTS, TRUE)))
     {
       return 0;
     }
@@ -4405,7 +4369,7 @@ SQLRETURN set_query_timeout(STMT *stmt, SQLULEN new_value)
     new_value= 0;
   }
 
-  if (SQL_SUCCEEDED(rc= odbc_stmt(stmt->dbc, query, SQL_NTS, TRUE)))
+  if (SQL_SUCCEEDED(rc = stmt->dbc->execute_query(query, SQL_NTS, true)))
   {
     stmt->stmt_options.query_timeout= new_value;
   }

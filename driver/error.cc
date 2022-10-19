@@ -273,19 +273,6 @@ SQLRETURN set_env_error(ENV *env, myodbc_errid errid, const char *errtext,
 
 /*
   @type    : myodbc3 internal
-  @purpose : sets the error information to connection handle.
-*/
-
-SQLRETURN set_conn_error(DBC *dbc, myodbc_errid errid, const char *errtext,
-                         SQLINTEGER errcode)
-{
-  dbc->error = MYERROR(errid, errtext, errcode, MYODBC_ERROR_PREFIX);
-  return dbc->error.retcode;
-}
-
-
-/*
-  @type    : myodbc3 internal
   @purpose : sets a myodbc_malloc() failure on a MYSQL* connection
 */
 void set_mem_error(MYSQL *mysql)
@@ -356,7 +343,7 @@ SQLRETURN set_handle_error(SQLSMALLINT HandleType, SQLHANDLE handle,
     case SQL_HANDLE_ENV:
       return set_env_error((ENV*)handle, errid, errtext, errcode);
     case SQL_HANDLE_DBC:
-      return set_conn_error((DBC*)handle, errid, errtext, errcode);
+      return ((DBC*)handle)->set_error(errid, errtext, errcode);
     case SQL_HANDLE_STMT:
     {
       STMT *stmt = (STMT*)handle;
