@@ -673,19 +673,20 @@ typedef std::vector<MYSQL_BIND> vec_bind;
   Mostly used for numeric values when I_S.COLUMNS.CHARACTER_OCTET_LENGTH is
   NULL.
 */
-SQLLEN get_buffer_length(vec_bind &results, SQLSMALLINT sqltype,
-  size_t col_size, bool is_null)
+SQLLEN get_buffer_length(const char *type_name, const char *ch_size,
+  const char *ch_buflen, SQLSMALLINT sqltype, size_t col_size,
+  bool is_null)
 {
   size_t decimal_digits = 0;
   bool is_unsigned = false;
   // Check the type name
-  if (results[5].buffer)
-    is_unsigned = (bool)strstr((char*)results[5].buffer,"unsigned");
+  if (type_name)
+    is_unsigned = (bool)strstr(type_name, "unsigned");
 
   switch (sqltype)
   {
     case SQL_DECIMAL:
-      decimal_digits = std::strtoll((char*)results[6].buffer, nullptr, 10);
+      decimal_digits = std::strtoll(ch_size, nullptr, 10);
       return decimal_digits + (is_unsigned ? 1 : 2);
 
     case SQL_TINYINT:
@@ -722,8 +723,9 @@ SQLLEN get_buffer_length(vec_bind &results, SQLSMALLINT sqltype,
   if (is_null)
     return 0;
 
-  return (SQLULEN)std::strtoll((char*)results[7].buffer, nullptr, 10);
+  return (SQLULEN)std::strtoll(ch_buflen, nullptr, 10);
 }
+
 
 /**
   Get information about the columns in one or more tables.
@@ -745,14 +747,20 @@ columns_i_s(SQLHSTMT hstmt, SQLCHAR *catalog, unsigned long catalog_len,
             SQLCHAR *column, unsigned long column_len)
 {
   STMT *stmt = (STMT*)hstmt;
-  vec_bind params, results;
+  vec_bind params, ssps_res;
   const size_t ccount = 19;
   std::vector<tempBuf> bufs;
   bufs.reserve(ccount);
   params.reserve(4);
-  results.reserve(ccount);
+  ssps_res.reserve(ccount);
   unsigned long lengths[ccount];
   bool is_null[ccount];
+  tempBuf temp(1024);
+  MYSQL_RES *mysql_res = nullptr;
+  MYSQL_ROW mysql_row = nullptr;
+  // Use statically allocated array of pointers for STMT result processing
+  char *mysql_stmt_row[ccount];
+  bool no_ssps = stmt->dbc->ds->no_ssps;
 
   std::string query;
   query.reserve(2048);
@@ -780,28 +788,49 @@ columns_i_s(SQLHSTMT hstmt, SQLCHAR *catalog, unsigned long catalog_len,
     "LEFT JOIN information_schema.CHARACTER_SETS cs ON c.CHARACTER_SET_NAME = cs.CHARACTER_SET_NAME "
     "WHERE 1=1";
 
-  auto do_bind = [](vec_bind &par, SQLCHAR *data, enum_field_types buf_type,
-    unsigned long &len, bool *isnull = nullptr)
+  auto do_bind = [&query, &stmt, &temp, &no_ssps]
+    (vec_bind &par, SQLCHAR *data,
+    enum_field_types buf_type, unsigned long &len,
+    bool *isnull = nullptr)
   {
-    par.emplace_back();
-    MYSQL_BIND &b = par.back();
-    memset(&b, 0, sizeof(b));
-    b.buffer_type = buf_type;
-    b.buffer = data;
-    b.length = &len;
-    b.buffer_length = len;
-    if (isnull)
-      b.is_null = isnull;
+    if (no_ssps)
+    {
+      query.append("'");
+      auto cnt = mysql_real_escape_string(stmt->dbc->mysql,
+        temp.buf, (char*)data, len);
+      query.append(temp.buf, cnt);
+      query.append("'");
+    }
+    else
+    {
+      par.emplace_back();
+      MYSQL_BIND &b = par.back();
+      memset(&b, 0, sizeof(b));
+      b.buffer_type = buf_type;
+      b.buffer = data;
+      b.length = &len;
+      b.buffer_length = len;
+
+      if (isnull != nullptr)
+      {
+        b.is_null = isnull;
+      }
+      else
+      {
+        // Append "?" only for param, but not for result
+        query.append("?");
+      }
+    }
   };
 
   if (catalog && catalog_len)
   {
-    query.append(" AND c.TABLE_SCHEMA  LIKE ?");
+    query.append(" AND c.TABLE_SCHEMA LIKE ");
     do_bind(params, catalog, MYSQL_TYPE_STRING, catalog_len);
   }
   else if (schema && schema_len)
   {
-    query.append(" AND c.TABLE_SCHEMA LIKE ?");
+    query.append(" AND c.TABLE_SCHEMA LIKE ");
     do_bind(params, schema, MYSQL_TYPE_STRING, schema_len);
   }
   else
@@ -809,30 +838,37 @@ columns_i_s(SQLHSTMT hstmt, SQLCHAR *catalog, unsigned long catalog_len,
     query.append(" AND c.TABLE_SCHEMA=DATABASE()");
   }
 
-
   if (table && table_len)
   {
-    query.append(" AND c.TABLE_NAME LIKE ?");
+    query.append(" AND c.TABLE_NAME LIKE ");
     do_bind(params, table, MYSQL_TYPE_STRING, table_len);
   }
 
   if (column && column_len)
   {
-    query.append(" AND c.COLUMN_NAME LIKE ?");
+    query.append(" AND c.COLUMN_NAME LIKE ");
     do_bind(params, column, MYSQL_TYPE_STRING, column_len);
   }
   query.append(" ORDER BY ORDINAL_POSITION");
   ODBC_STMT local_stmt(stmt->dbc->mysql);
 
-  for (size_t i = 0; i < ccount; i++)
+  if (!no_ssps)
   {
-    bufs.emplace_back(tempBuf(1024));
-    auto &buf = bufs.back();
-    buf.buf[0] = 0;
-    lengths[i] = buf.buf_len;
-    do_bind(results, (SQLCHAR*)buf.buf, MYSQL_TYPE_STRING,
-      lengths[i], &is_null[i]);
+    // Bind results only for SSPS.
+    for (size_t i = 0; i < ccount; i++)
+    {
+      bufs.emplace_back(tempBuf(1024));
+      auto &buf = bufs.back();
+      buf.buf[0] = 0;
+      lengths[i] = buf.buf_len;
+      do_bind(ssps_res, (SQLCHAR*)buf.buf, MYSQL_TYPE_STRING,
+        lengths[i], &is_null[i]);
+    }
   }
+
+  // Get DB name before running query or executing stmt.
+  std::string db = get_database_name(stmt, catalog, catalog_len,
+    schema, schema_len, false);
 
   try
   {
@@ -843,7 +879,22 @@ columns_i_s(SQLHSTMT hstmt, SQLCHAR *catalog, unsigned long catalog_len,
     }
 
     MYLOG_QUERY(stmt, query.c_str());
-    stmt->dbc->execute_prep_stmt(local_stmt, query, params.data(), results.data());
+    if (!no_ssps)
+    {
+      // In case of SSPS the call will throw an error.
+      stmt->dbc->execute_prep_stmt(local_stmt, query,
+        params.data(), ssps_res.data());
+    }
+    else
+    {
+      if (SQL_SUCCESS != stmt->dbc->execute_query(query.c_str(),
+        query.length(), true))
+      {
+        // Throwing the error for NO_SSPS case.
+        throw stmt->dbc->error;
+      }
+      mysql_res = mysql_store_result(stmt->dbc->mysql);
+    }
   }
   catch (const MYERROR &e)
   {
@@ -858,7 +909,8 @@ columns_i_s(SQLHSTMT hstmt, SQLCHAR *catalog, unsigned long catalog_len,
     is_access = true;
 #endif
 
-  size_t rows = mysql_stmt_num_rows(local_stmt);
+  size_t rows = no_ssps ? mysql_num_rows(mysql_res) :
+    mysql_stmt_num_rows(local_stmt);
   stmt->m_row_storage.set_size(rows, SQLCOLUMNS_FIELDS);
   if (rows == 0)
   {
@@ -868,54 +920,90 @@ columns_i_s(SQLHSTMT hstmt, SQLCHAR *catalog, unsigned long catalog_len,
 
   auto &data = stmt->m_row_storage;
   data.first_row();
-  std::string db = get_database_name(stmt, catalog, catalog_len,
-    schema, schema_len, false);
   size_t rnum = 1;
-  while(!mysql_stmt_fetch(local_stmt))
+  // Used for NO_SSPS only.
+  unsigned long* result_lengths = nullptr;
+
+  auto _is_null = [&mysql_row, &is_null, &no_ssps, &result_lengths](int colnum)
   {
+    return (bool)(no_ssps ?
+      (result_lengths[colnum] == 0 && mysql_row[colnum] == nullptr) :
+      (is_null[colnum])
+      );
+  };
+
+  auto _fetch_row = [&no_ssps, &mysql_res, &local_stmt, &ccount,
+    &mysql_stmt_row, &ssps_res]()
+  {
+    if (no_ssps == false)
+    {
+      if (mysql_stmt_fetch(local_stmt))
+        return (MYSQL_ROW)nullptr;
+      for (int i = 0; i < ccount; ++i)
+        mysql_stmt_row[i] = (char*)ssps_res[i].buffer;
+      return (MYSQL_ROW)mysql_stmt_row;
+    }
+    return mysql_fetch_row(mysql_res);
+  };
+
+  while(mysql_row = _fetch_row())
+  {
+    if (no_ssps)
+      result_lengths = mysql_fetch_lengths(mysql_res);
+
     CAT_SCHEMA_SET(data[0], data[1], db);
     /* TABLE_NAME */
-    data[2] = (char*)results[2].buffer;
+    data[2] = mysql_row[2];
     /* COLUMN_NAME */
-    data[3] = (char*)results[3].buffer;
+    data[3] = mysql_row[3];
     /* DATA_TYPE */
-    size_t col_size = get_column_size_from_str(stmt, (const char*)results[6].buffer);
-    SQLSMALLINT odbc_sql_type = get_sql_data_type_from_str((const char*)results[4].buffer);
-    SQLSMALLINT sqltype = compute_sql_data_type(stmt, odbc_sql_type,
-      *(char*)results[18].buffer, col_size);
+    size_t col_size = _is_null(6) ? 0 :
+      get_column_size_from_str(stmt, mysql_row[6]);
+
+    SQLSMALLINT odbc_sql_type =
+      get_sql_data_type_from_str(mysql_row[4]);
+
+    const char *char_size = mysql_row[18];
+    SQLSMALLINT sqltype =
+      compute_sql_data_type(stmt, odbc_sql_type,
+      (char_size ? *char_size : '1'), col_size);
+
     data[4] = sqltype;
     /* TYPE_NAME */
-    data[5] = (char*)results[4].buffer;
+    data[5] = mysql_row[4];
     /* COLUMN_SIZE */
 #if _WIN32 && !_WIN64
 #define COL_SIZE_VAL (int)col_size
 #else
-#define COL_SIZE_VAL data[6] = col_size
+#define COL_SIZE_VAL col_size
 #endif
-    if (is_null[6])
+    if (_is_null(6))
       data[6] = nullptr;
     else
       data[6] = COL_SIZE_VAL;
     /* BUFFER_LENGTH */
-    data[7] = get_buffer_length(results, odbc_sql_type, col_size, is_null[7]);
+    data[7] = get_buffer_length(mysql_row[5], mysql_row[6],
+      mysql_row[7], odbc_sql_type, col_size, _is_null(7));
     /* DECIMAL_DIGITS */
-    data[8] = is_null[8] ? nullptr : (char*)results[8].buffer;
+    data[8] = (char*)(_is_null(8) ? nullptr : mysql_row[8]);
     /* NUM_PREC_RADIX */
-    data[9] = is_null[9] ? nullptr : (char*)results[9].buffer;
+    data[9] = (char*)(_is_null(9) ? nullptr : mysql_row[9]);
     /* NULLABLE */
-    SQLSMALLINT nullable = (SQLSMALLINT)((*(char*)results[10].buffer == 'Y') ||
+    SQLSMALLINT nullable = (SQLSMALLINT)((*mysql_row[10] == 'Y') ||
       (sqltype == SQL_TIMESTAMP) || (sqltype == SQL_TYPE_TIMESTAMP) ? SQL_NULLABLE : SQL_NO_NULLS);
 
     if (is_access && nullable == SQL_NO_NULLS)
       nullable = SQL_NULLABLE_UNKNOWN;
     data[10] = nullable;
     /* REMARKS */
-    if (is_null[11])
+    if (_is_null(11))
       data[11] = nullptr;
     else
-      data[11] = lengths[11] ? (char*)results[8].buffer : "";
+      data[11] = (!no_ssps && lengths[11]) ||
+        (result_lengths && result_lengths[11]) ?
+        mysql_row[11] : "";
     /* COLUMN_DEF */
-    data[12] = (char*)results[12].buffer;
+    data[12] = mysql_row[12];
 
     if (sqltype == SQL_TYPE_DATE || sqltype == SQL_TYPE_TIME ||
         sqltype == SQL_TYPE_TIMESTAMP)
@@ -934,7 +1022,7 @@ columns_i_s(SQLHSTMT hstmt, SQLCHAR *catalog, unsigned long catalog_len,
     }
 
     /* CHAR_OCTET_LENGTH */
-    if (is_null[15])
+    if (_is_null(15))
     {
       if (is_char_sql_type(sqltype) || is_wchar_sql_type(sqltype) ||
           is_binary_sql_type(sqltype))
@@ -944,17 +1032,20 @@ columns_i_s(SQLHSTMT hstmt, SQLCHAR *catalog, unsigned long catalog_len,
     }
     else
     {
-      data[15] =  (char*)results[15].buffer;
+      data[15] = mysql_row[15];
     }
 
     /* ORDINAL_POSITION */
     data[16] = (long long)rnum;
     /* IS_NULLABLE */
-    data[17] = nullable ? "YES" : (char*)results[17].buffer;
+    data[17] = nullable ? "YES" : mysql_row[17];
     if(rnum < rows)
       data.next_row();
     ++rnum;
   }
+
+  if (mysql_res)
+    mysql_free_result(mysql_res);
 
   if (rows)
   {

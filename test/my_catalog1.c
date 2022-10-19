@@ -32,6 +32,7 @@
 DECLARE_TEST(my_columns_null)
 {
   SQLLEN rowCount= 0;
+  char* conn_opt[] = { "NO_SSPS=0", "NO_SSPS=1" };
   /* initialize data */
   ok_sql(hstmt, "drop table if exists my_column_null");
 
@@ -39,17 +40,26 @@ DECLARE_TEST(my_columns_null)
 
   ok_stmt(hstmt, SQLFreeStmt(hstmt, SQL_CLOSE));
 
-  ok_stmt(hstmt, SQLColumns(hstmt, NULL, SQL_NTS, NULL, SQL_NTS,
+  for (int i = 0; i < 2; ++i)
+  {
+    int idx = 0;
+    DECLARE_BASIC_HANDLES(henv1, hdbc1, hstmt1);
+    alloc_basic_handles_with_opt(&henv1, &hdbc1, &hstmt1,
+      NULL, NULL, NULL, NULL, conn_opt[i]);
+
+    ok_stmt(hstmt1, SQLColumns(hstmt1, NULL, SQL_NTS, NULL, SQL_NTS,
     (SQLCHAR *)"my_column_null", SQL_NTS,
     NULL, SQL_NTS));
 
-  ok_stmt(hstmt, SQLRowCount(hstmt, &rowCount));
+    ok_stmt(hstmt1, SQLRowCount(hstmt1, &rowCount));
 
-  is_num(rowCount, 2);
+    is_num(rowCount, 2);
 
-  is_num(2, my_print_non_format_result(hstmt));
+    is_num(2, my_print_non_format_result(hstmt1));
 
-  ok_stmt(hstmt, SQLFreeStmt(hstmt, SQL_CLOSE));
+    ok_stmt(hstmt1, SQLFreeStmt(hstmt1, SQL_CLOSE));
+    free_basic_handles(&henv1, &hdbc1, &hstmt1);
+  }
 
   ok_sql(hstmt, "DROP TABLE IF EXISTS my_column_null");
 
@@ -366,59 +376,67 @@ DECLARE_TEST(t_sqlprocedures)
 
 DECLARE_TEST(t_catalog)
 {
-    SQLRETURN rc;
-    SQLCHAR      name[MYSQL_NAME_LEN+1];
-    SQLUSMALLINT i;
-    SQLSMALLINT  ncols, len;
+  SQLRETURN rc;
+  SQLCHAR      name[MYSQL_NAME_LEN+1];
+  SQLUSMALLINT i;
+  SQLSMALLINT  ncols, len;
 
-    SQLCHAR colnames[19][20]= {
-        "TABLE_CAT","TABLE_SCHEM","TABLE_NAME","COLUMN_NAME",
-        "DATA_TYPE","TYPE_NAME","COLUMN_SIZE","BUFFER_LENGTH",
-        "DECIMAL_DIGITS","NUM_PREC_RADIX","NULLABLE","REMARKS",
-        "COLUMN_DEF","SQL_DATA_TYPE","SQL_DATETIME_SUB",
-        "CHAR_OCTET_LENGTH","ORDINAL_POSITION","IS_NULLABLE"
-    };
-    SQLSMALLINT collengths[18]= {
-        9,11,10,11,9,9,11,13,14,14,8,7,10,13,16,17,16,11
-    };
+  SQLCHAR colnames[19][20]= {
+      "TABLE_CAT","TABLE_SCHEM","TABLE_NAME","COLUMN_NAME",
+      "DATA_TYPE","TYPE_NAME","COLUMN_SIZE","BUFFER_LENGTH",
+      "DECIMAL_DIGITS","NUM_PREC_RADIX","NULLABLE","REMARKS",
+      "COLUMN_DEF","SQL_DATA_TYPE","SQL_DATETIME_SUB",
+      "CHAR_OCTET_LENGTH","ORDINAL_POSITION","IS_NULLABLE"
+  };
+  SQLSMALLINT collengths[18]= {
+      9,11,10,11,9,9,11,13,14,14,8,7,10,13,16,17,16,11
+  };
+  char* conn_opt[] = { "NO_SSPS=0", "NO_SSPS=1" };
 
-    ok_sql(hstmt, "drop table if exists t_catalog");
+  ok_sql(hstmt, "drop table if exists t_catalog");
 
-    ok_sql(hstmt,"create table t_catalog(abc tinyint, bcdefghijklmno char(4), uifield int unsigned not null)");
+  ok_sql(hstmt,"create table t_catalog(abc tinyint, bcdefghijklmno char(4), uifield int unsigned not null)");
 
-    ok_stmt(hstmt, SQLColumns(hstmt, NULL, 0, NULL, 0,
+  for (int i = 0; i < 2; ++i)
+  {
+    int idx = 0;
+    DECLARE_BASIC_HANDLES(henv1, hdbc1, hstmt1);
+    alloc_basic_handles_with_opt(&henv1, &hdbc1, &hstmt1,
+      NULL, NULL, NULL, NULL, conn_opt[i]);
+
+    ok_stmt(hstmt1, SQLColumns(hstmt1, NULL, 0, NULL, 0,
                               (SQLCHAR *)"t_catalog", 9, NULL, 0));
 
-    rc = SQLNumResultCols(hstmt, &ncols);
-    mystmt(hstmt,rc);
+    rc = SQLNumResultCols(hstmt1, &ncols);
+    mystmt(hstmt1,rc);
 
     printMessage("total columns: %d", ncols);
     myassert(ncols == 18);
-    myassert(myresult(hstmt) == 3);
+    myassert(myresult(hstmt1) == 3);
 
-    SQLFreeStmt(hstmt, SQL_UNBIND);
-    SQLFreeStmt(hstmt, SQL_CLOSE);
+    SQLFreeStmt(hstmt1, SQL_UNBIND);
+    SQLFreeStmt(hstmt1, SQL_CLOSE);
 
-    rc = SQLColumns(hstmt, NULL, 0, NULL, 0,
+    rc = SQLColumns(hstmt1, NULL, 0, NULL, 0,
                     (SQLCHAR *)"t_catalog", 9, NULL, 0);
-    mystmt(hstmt,rc);
+    mystmt(hstmt1,rc);
 
-    rc = SQLNumResultCols(hstmt,&ncols);
-    mystmt(hstmt,rc);
+    rc = SQLNumResultCols(hstmt1,&ncols);
+    mystmt(hstmt1,rc);
 
     for (i= 1; i <= (SQLUINTEGER) ncols; i++)
     {
-        rc = SQLDescribeCol(hstmt, i, name, MYSQL_NAME_LEN+1, &len, NULL, NULL, NULL, NULL);
-        mystmt(hstmt,rc);
+        rc = SQLDescribeCol(hstmt1, i, name, MYSQL_NAME_LEN+1, &len, NULL, NULL, NULL, NULL);
+        mystmt(hstmt1,rc);
 
         printMessage("column %d: %s (%d)", i, name, len);
         is_num(len, collengths[i - 1]);
         is_str(name, colnames[i - 1], len);
     }
-    SQLFreeStmt(hstmt,SQL_CLOSE);
-
+    SQLFreeStmt(hstmt1,SQL_CLOSE);
+    free_basic_handles(&henv1, &hdbc1, &hstmt1);
+  }
   ok_sql(hstmt, "DROP TABLE IF EXISTS t_catalog");
-
   return OK;
 }
 
@@ -493,6 +511,7 @@ DECLARE_TEST(t_columns)
     { {4,2}, {10,4}, {0,2},  {10,2},  {0,2}},
     { {-6,2}, {3,4}, {0,2},  {10,2},  {1,2}}
   };
+  char* conn_opt[] = { "NO_SSPS=0", "NO_SSPS=1" };
 
   ok_sql(hstmt, "DROP TABLE IF EXISTS t_columns");
 
@@ -504,72 +523,78 @@ DECLARE_TEST(t_columns)
 
   ok_stmt(hstmt, SQLFreeStmt(hstmt, SQL_CLOSE));
 
-  ok_stmt(hstmt, SQLSetStmtAttr(hstmt, SQL_ATTR_METADATA_ID,
-                                (SQLPOINTER)SQL_FALSE, SQL_IS_UINTEGER));
-
-  ok_stmt(hstmt, SQLSetStmtAttr(hstmt, SQL_ATTR_CURSOR_TYPE,
-                                (SQLPOINTER)SQL_CURSOR_STATIC, 0));
-
-  ok_con(hdbc, SQLGetConnectAttr(hdbc, SQL_ATTR_CURRENT_CATALOG,
-                                 DatabaseName, MAX_NAME_LEN,
-                                 &cbDatabaseName)); /* Current Catalog */
-
-  for (i= 0; i < ColumnCount; i++)
+  for (int j = 0; j < 2; ++j)
   {
-    sprintf((char *)ColumnName, "col%d", (int)i);
-    printMessage("checking column `%s`", (char *)ColumnName);
+    DECLARE_BASIC_HANDLES(henv1, hdbc1, hstmt1);
+    alloc_basic_handles_with_opt(&henv1, &hdbc1, &hstmt1,
+      NULL, NULL, NULL, NULL, conn_opt[j]);
 
-    ok_stmt(hstmt, SQLColumns(hstmt,
-                              DatabaseName, (SQLSMALLINT)cbDatabaseName,
-                              (SQLCHAR *)"", SQL_NTS,
-                              (SQLCHAR *)"t_columns", SQL_NTS,
-                              ColumnName, SQL_NTS));
+    ok_stmt(hstmt1, SQLSetStmtAttr(hstmt1, SQL_ATTR_METADATA_ID,
+                                  (SQLPOINTER)SQL_FALSE, SQL_IS_UINTEGER));
 
-    /* 5 -- Data type */
-    ok_stmt(hstmt, SQLBindCol(hstmt, 5, SQL_C_SSHORT, &DataType, 0,
-                              &cbDataType));
+    ok_stmt(hstmt1, SQLSetStmtAttr(hstmt1, SQL_ATTR_CURSOR_TYPE,
+                                  (SQLPOINTER)SQL_CURSOR_STATIC, 0));
 
-    /* 7 -- Column Size */
-    ok_stmt(hstmt, SQLBindCol(hstmt, 7, SQL_C_ULONG, &ColumnSize, 0,
-                              &cbColumnSize));
+    ok_con(hdbc, SQLGetConnectAttr(hdbc, SQL_ATTR_CURRENT_CATALOG,
+                                   DatabaseName, MAX_NAME_LEN,
+                                   &cbDatabaseName)); /* Current Catalog */
 
-    /* 9 -- Decimal Digits */
-    ok_stmt(hstmt, SQLBindCol(hstmt, 9, SQL_C_SSHORT, &DecimalDigits, 0,
-                              &cbDecimalDigits));
+    for (i= 0; i < ColumnCount; i++)
+    {
+      sprintf((char *)ColumnName, "col%d", (int)i);
+      printMessage("checking column `%s`", (char *)ColumnName);
 
-    /* 10 -- Num Prec Radix */
-    ok_stmt(hstmt, SQLBindCol(hstmt, 10, SQL_C_SSHORT, &NumPrecRadix, 0,
-                              &cbNumPrecRadix));
+      ok_stmt(hstmt1, SQLColumns(hstmt1,
+                                DatabaseName, (SQLSMALLINT)cbDatabaseName,
+                                (SQLCHAR *)"", SQL_NTS,
+                                (SQLCHAR *)"t_columns", SQL_NTS,
+                                ColumnName, SQL_NTS));
 
-    /* 11 -- Nullable */
-    ok_stmt(hstmt, SQLBindCol(hstmt, 11, SQL_C_SSHORT, &Nullable, 0,
-                              &cbNullable));
+      /* 5 -- Data type */
+      ok_stmt(hstmt1, SQLBindCol(hstmt1, 5, SQL_C_SSHORT, &DataType, 0,
+                                &cbDataType));
 
-    ok_stmt(hstmt, SQLFetch(hstmt));
+      /* 7 -- Column Size */
+      ok_stmt(hstmt1, SQLBindCol(hstmt1, 7, SQL_C_ULONG, &ColumnSize, 0,
+                                &cbColumnSize));
 
-	/* if you get -8 for col1 here - that's fine. depends on setup. the test probably needs
-	   to be changed accordingly */
-    is_num(DataType,   Values[i][0][0]);
-    is_num(cbDataType, Values[i][0][1]);
+      /* 9 -- Decimal Digits */
+      ok_stmt(hstmt1, SQLBindCol(hstmt1, 9, SQL_C_SSHORT, &DecimalDigits, 0,
+                                &cbDecimalDigits));
 
-    is_num(ColumnSize,   Values[i][1][0]);
-    is_num(cbColumnSize, Values[i][1][1]);
+      /* 10 -- Num Prec Radix */
+      ok_stmt(hstmt1, SQLBindCol(hstmt1, 10, SQL_C_SSHORT, &NumPrecRadix, 0,
+                                &cbNumPrecRadix));
 
-    is_num(DecimalDigits,   Values[i][2][0]);
-    is_num(cbDecimalDigits, Values[i][2][1]);
+      /* 11 -- Nullable */
+      ok_stmt(hstmt1, SQLBindCol(hstmt1, 11, SQL_C_SSHORT, &Nullable, 0,
+                                &cbNullable));
 
-    is_num(NumPrecRadix,   Values[i][3][0]);
-    is_num(cbNumPrecRadix, Values[i][3][1]);
+      ok_stmt(hstmt1, SQLFetch(hstmt1));
 
-    is_num(Nullable,   Values[i][4][0]);
-    is_num(cbNullable, Values[i][4][1]);
+	  /* if you get -8 for col1 here - that's fine. depends on setup. the test probably needs
+	     to be changed accordingly */
+      is_num(DataType,   Values[i][0][0]);
+      is_num(cbDataType, Values[i][0][1]);
 
-    expect_stmt(hstmt, SQLFetch(hstmt), SQL_NO_DATA);
+      is_num(ColumnSize,   Values[i][1][0]);
+      is_num(cbColumnSize, Values[i][1][1]);
 
-    ok_stmt(hstmt, SQLFreeStmt(hstmt, SQL_UNBIND));
-    ok_stmt(hstmt, SQLFreeStmt(hstmt, SQL_CLOSE));
+      is_num(DecimalDigits,   Values[i][2][0]);
+      is_num(cbDecimalDigits, Values[i][2][1]);
+
+      is_num(NumPrecRadix,   Values[i][3][0]);
+      is_num(cbNumPrecRadix, Values[i][3][1]);
+
+      is_num(Nullable,   Values[i][4][0]);
+      is_num(cbNullable, Values[i][4][1]);
+
+      expect_stmt(hstmt1, SQLFetch(hstmt1), SQL_NO_DATA);
+
+      ok_stmt(hstmt1, SQLFreeStmt(hstmt1, SQL_UNBIND));
+      ok_stmt(hstmt1, SQLFreeStmt(hstmt1, SQL_CLOSE));
+    }
   }
-
   ok_sql(hstmt, "DROP TABLE IF EXISTS t_columns");
 
   return OK;
@@ -1108,28 +1133,32 @@ DECLARE_TEST(bug15713)
 {
   DECLARE_BASIC_HANDLES(henv1, hdbc1, hstmt1);
   SQLCHAR   conn[512];
+  char* conn_opt[] = { "NO_SSPS=0", "NO_SSPS=1" };
 
   ok_sql(hstmt, "DROP TABLE IF EXISTS t_bug15713");
   ok_sql(hstmt, "CREATE TABLE t_bug15713 (a INT)");
 
-  /* The connection strings must not include DATABASE. */
-  is(OK == alloc_basic_handles_with_opt(&henv1, &hdbc1, &hstmt1, NULL,
-                                        NULL, NULL, "", NULL));
+  for (int i = 0; i < 2; ++i)
+  {
+    /* The connection strings must not include DATABASE. */
+    is(OK == alloc_basic_handles_with_opt(&henv1, &hdbc1, &hstmt1, NULL,
+      NULL, NULL, "", conn_opt[i]));
 
 
-  ok_stmt(hstmt1, SQLColumns(hstmt1, (SQLCHAR *)"test", SQL_NTS,
-                             NULL, 0, (SQLCHAR *)"t_bug15713", SQL_NTS,
-                             NULL, 0));
+    ok_stmt(hstmt1, SQLColumns(hstmt1, (SQLCHAR*)"test", SQL_NTS,
+      NULL, 0, (SQLCHAR*)"t_bug15713", SQL_NTS,
+      NULL, 0));
 
-  ok_stmt(hstmt1, SQLFetch(hstmt1));
-  is_str(my_fetch_str(hstmt1, conn, 1), "test", 4);
-  is_str(my_fetch_str(hstmt1, conn, 3), "t_bug15713", 10);
-  is_str(my_fetch_str(hstmt1, conn, 4), "a", 1);
+    ok_stmt(hstmt1, SQLFetch(hstmt1));
+    is_str(my_fetch_str(hstmt1, conn, 1), "test", 4);
+    is_str(my_fetch_str(hstmt1, conn, 3), "t_bug15713", 10);
+    is_str(my_fetch_str(hstmt1, conn, 4), "a", 1);
 
-  expect_stmt(hstmt1, SQLFetch(hstmt1), SQL_NO_DATA_FOUND);
+    expect_stmt(hstmt1, SQLFetch(hstmt1), SQL_NO_DATA_FOUND);
 
-  free_basic_handles(&henv1, &hdbc1, &hstmt1);
+    free_basic_handles(&henv1, &hdbc1, &hstmt1);
 
+  }
   ok_sql(hstmt, "DROP TABLE IF EXISTS t_bug15713");
   return OK;
 }
@@ -1152,61 +1181,69 @@ DECLARE_TEST(t_bug28316)
 DECLARE_TEST(bug8860)
 {
   SQLCHAR buff[512];
+  char* conn_opt[] = { "NO_SSPS=0", "NO_SSPS=1" };
 
   ok_sql(hstmt, "DROP TABLE IF EXISTS t_bug8860, `t_bug8860_a'b`");
   ok_sql(hstmt, "CREATE TABLE t_bug8860 (a INT)");
   ok_sql(hstmt, "CREATE TABLE `t_bug8860_a'b` (b INT)");
 
-  /*
-   Specifying nothing gets us columns from all of the tables in the
-   current database.
-  */
-  ok_stmt(hstmt, SQLColumns(hstmt, NULL, 0, NULL, 0, NULL, 0, NULL, 0));
-
-  /* We should have at least two rows. There may be more. */
-  is(myrowcount(hstmt) >= 2);
-
-  ok_stmt(hstmt, SQLFreeStmt(hstmt, SQL_CLOSE));
-
-  if (!using_dm(hdbc))
+  for (int i = 0; i < 2; ++i)
   {
-    /* Specifying "" as the table name gets us nothing. */
-    /* But iODBC, for one, will convert our "" into a NULL. */
-    ok_stmt(hstmt, SQLColumns(hstmt, NULL, 0, NULL, 0, (SQLCHAR *)"", SQL_NTS,
-                              NULL, 0));
+    DECLARE_BASIC_HANDLES(henv1, hdbc1, hstmt1);
+    alloc_basic_handles_with_opt(&henv1, &hdbc1, &hstmt1,
+      NULL, NULL, NULL, NULL, conn_opt[i]);
+    /*
+      Specifying nothing gets us columns from all of the tables in the
+      current database.
+    */
+    ok_stmt(hstmt1, SQLColumns(hstmt1, NULL, 0, NULL, 0, NULL, 0, NULL, 0));
 
-    is_num(myrowcount(hstmt), 0);
+    /* We should have at least two rows. There may be more. */
+    is(myrowcount(hstmt1) >= 2);
+
+    ok_stmt(hstmt1, SQLFreeStmt(hstmt1, SQL_CLOSE));
+
+    if (!using_dm(hdbc))
+    {
+      /* Specifying "" as the table name gets us nothing. */
+      /* But iODBC, for one, will convert our "" into a NULL. */
+      ok_stmt(hstmt1, SQLColumns(hstmt1, NULL, 0, NULL, 0, (SQLCHAR*)"", SQL_NTS,
+        NULL, 0));
+
+      is_num(myrowcount(hstmt1), 0);
+    }
+
+    ok_stmt(hstmt1, SQLFreeStmt(hstmt1, SQL_CLOSE));
+
+    /* Get the info from just one table.  */
+    ok_stmt(hstmt1, SQLColumns(hstmt1, NULL, 0, NULL, 0,
+      (SQLCHAR*)"t_bug8860", SQL_NTS,
+      NULL, 0));
+
+    ok_stmt(hstmt1, SQLFetch(hstmt1));
+
+    is_str(my_fetch_str(hstmt1, buff, 3), "t_bug8860", 9);
+    is_str(my_fetch_str(hstmt1, buff, 4), "a", 1);
+
+    expect_stmt(hstmt1, SQLFetch(hstmt1), SQL_NO_DATA_FOUND);
+
+    ok_stmt(hstmt1, SQLFreeStmt(hstmt1, SQL_CLOSE));
+
+    /* Get the info from just one table with a funny name.  */
+    ok_stmt(hstmt1, SQLColumns(hstmt1, NULL, 0, NULL, 0,
+      (SQLCHAR*)"t_bug8860_a'b", SQL_NTS,
+      NULL, 0));
+
+    ok_stmt(hstmt1, SQLFetch(hstmt1));
+
+    is_str(my_fetch_str(hstmt1, buff, 3), "t_bug8860_a'b", 13);
+    is_str(my_fetch_str(hstmt1, buff, 4), "b", 1);
+
+    expect_stmt(hstmt1, SQLFetch(hstmt1), SQL_NO_DATA_FOUND);
+
+    ok_stmt(hstmt1, SQLFreeStmt(hstmt1, SQL_CLOSE));
+    free_basic_handles(&henv1, &hdbc1, &hstmt1);
   }
-
-  ok_stmt(hstmt, SQLFreeStmt(hstmt, SQL_CLOSE));
-
-  /* Get the info from just one table.  */
-  ok_stmt(hstmt, SQLColumns(hstmt, NULL, 0, NULL, 0,
-                            (SQLCHAR *)"t_bug8860", SQL_NTS,
-                            NULL, 0));
-
-  ok_stmt(hstmt, SQLFetch(hstmt));
-
-  is_str(my_fetch_str(hstmt, buff, 3), "t_bug8860", 9);
-  is_str(my_fetch_str(hstmt, buff, 4), "a", 1);
-
-  expect_stmt(hstmt, SQLFetch(hstmt), SQL_NO_DATA_FOUND);
-
-  ok_stmt(hstmt, SQLFreeStmt(hstmt, SQL_CLOSE));
-
-  /* Get the info from just one table with a funny name.  */
-  ok_stmt(hstmt, SQLColumns(hstmt, NULL, 0, NULL, 0,
-                            (SQLCHAR *)"t_bug8860_a'b", SQL_NTS,
-                            NULL, 0));
-
-  ok_stmt(hstmt, SQLFetch(hstmt));
-
-  is_str(my_fetch_str(hstmt, buff, 3), "t_bug8860_a'b", 13);
-  is_str(my_fetch_str(hstmt, buff, 4), "b", 1);
-
-  expect_stmt(hstmt, SQLFetch(hstmt), SQL_NO_DATA_FOUND);
-
-  ok_stmt(hstmt, SQLFreeStmt(hstmt, SQL_CLOSE));
   ok_sql(hstmt, "DROP TABLE t_bug8860, `t_bug8860_a'b`");
   return OK;
 }
@@ -1238,17 +1275,23 @@ DECLARE_TEST(t_bug26934)
 */
 DECLARE_TEST(t_bug29888)
 {
+  char* conn_opt[] = { "NO_SSPS=0", "NO_SSPS=1" };
   ok_sql(hstmt, "DROP TABLE IF EXISTS t_bug29888");
   ok_sql(hstmt, "CREATE TABLE t_bug29888 (a INT, b INT)");
 
-  ok_stmt(hstmt, SQLColumns(hstmt, mydb, SQL_NTS, NULL, SQL_NTS,
-                            (SQLCHAR *)"t_bug29888", SQL_NTS,
-                            (SQLCHAR *)"%", SQL_NTS));
+  for (int i = 0; i < 2; ++i)
+  {
+    DECLARE_BASIC_HANDLES(henv1, hdbc1, hstmt1);
+    alloc_basic_handles_with_opt(&henv1, &hdbc1, &hstmt1,
+      NULL, NULL, NULL, NULL, conn_opt[i]);
+    ok_stmt(hstmt1, SQLColumns(hstmt1, mydb, SQL_NTS, NULL, SQL_NTS,
+      (SQLCHAR*)"t_bug29888", SQL_NTS,
+      (SQLCHAR*)"%", SQL_NTS));
 
-  is_num(myrowcount(hstmt), 2);
-
-  ok_stmt(hstmt, SQLFreeStmt(hstmt, SQL_CLOSE));
-
+    is_num(myrowcount(hstmt1), 2);
+    ok_stmt(hstmt1, SQLFreeStmt(hstmt1, SQL_CLOSE));
+    free_basic_handles(&henv1, &hdbc1, &hstmt1);
+  }
   ok_sql(hstmt, "DROP TABLE IF EXISTS t_bug29888");
 
   return OK;
@@ -1262,35 +1305,43 @@ DECLARE_TEST(t_bug14407)
 {
   SQLCHAR col[10];
   SQLSMALLINT nullable;
+  char* conn_opt[] = { "NO_SSPS=0", "NO_SSPS=1" };
 
   ok_sql(hstmt, "DROP TABLE IF EXISTS t_bug14407");
   ok_sql(hstmt,
          "CREATE TABLE t_bug14407(a INT NOT NULL AUTO_INCREMENT PRIMARY KEY)");
 
-  ok_stmt(hstmt, SQLColumns(hstmt, NULL, 0, NULL, 0,
-                            (SQLCHAR *)"t_bug14407", SQL_NTS, NULL, 0));
+  for (int i = 0; i < 2; ++i)
+  {
+    DECLARE_BASIC_HANDLES(henv1, hdbc1, hstmt1);
+    alloc_basic_handles_with_opt(&henv1, &hdbc1, &hstmt1,
+      NULL, NULL, NULL, NULL, conn_opt[i]);
 
-  ok_stmt(hstmt, SQLFetch(hstmt));
-  is_str(my_fetch_str(hstmt, col, 4), "a", 1);
-  is_num(my_fetch_int(hstmt, 11), SQL_NULLABLE);
-  is_str(my_fetch_str(hstmt, col, 18), "YES", 3);
+    ok_stmt(hstmt1, SQLColumns(hstmt1, NULL, 0, NULL, 0,
+      (SQLCHAR*)"t_bug14407", SQL_NTS, NULL, 0));
 
-  expect_stmt(hstmt, SQLFetch(hstmt), SQL_NO_DATA);
+    ok_stmt(hstmt1, SQLFetch(hstmt1));
+    is_str(my_fetch_str(hstmt1, col, 4), "a", 1);
+    is_num(my_fetch_int(hstmt1, 11), SQL_NULLABLE);
+    is_str(my_fetch_str(hstmt1, col, 18), "YES", 3);
 
-  ok_stmt(hstmt, SQLFreeStmt(hstmt, SQL_CLOSE));
+    expect_stmt(hstmt1, SQLFetch(hstmt1), SQL_NO_DATA);
 
-  /**
-    Bug #26108  MyODBC ADO field attributes reporting adFldMayBeNull for
-    not null columns
-  */
-  ok_sql(hstmt, "SELECT * FROM t_bug14407");
+    ok_stmt(hstmt1, SQLFreeStmt(hstmt1, SQL_CLOSE));
 
-  ok_stmt(hstmt, SQLDescribeCol(hstmt, 1, col, sizeof(col), NULL, NULL, NULL,
-                                NULL, &nullable));
-  is_num(nullable, SQL_NULLABLE);
+    /**
+      Bug #26108  MyODBC ADO field attributes reporting adFldMayBeNull for
+      not null columns
+    */
+    ok_sql(hstmt1, "SELECT * FROM t_bug14407");
 
-  ok_stmt(hstmt, SQLFreeStmt(hstmt, SQL_CLOSE));
+    ok_stmt(hstmt1, SQLDescribeCol(hstmt1, 1, col, sizeof(col), NULL, NULL, NULL,
+      NULL, &nullable));
+    is_num(nullable, SQL_NULLABLE);
 
+    ok_stmt(hstmt1, SQLFreeStmt(hstmt1, SQL_CLOSE));
+    free_basic_handles(&henv1, &hdbc1, &hstmt1);
+  }
   ok_sql(hstmt, "DROP TABLE IF EXISTS t_bug14407");
   return OK;
 }
@@ -1379,19 +1430,27 @@ DECLARE_TEST(t_bug32989)
 {
   SQLCHAR name[20];
   SQLLEN len;
+  char* conn_opt[] = { "NO_SSPS=0", "NO_SSPS=1" };
 
   ok_sql(hstmt, "drop table if exists t_bug32989");
   ok_sql(hstmt, "create table t_bug32989 (`doesn't work` int)");
 
-  ok_stmt(hstmt, SQLColumns(hstmt, (SQLCHAR *)"test", SQL_NTS, NULL, 0,
-                            (SQLCHAR *)"t_bug32989", SQL_NTS, NULL, 0));
-  ok_stmt(hstmt, SQLFetch(hstmt));
+  for (int i = 0; i < 2; ++i)
+  {
+    DECLARE_BASIC_HANDLES(henv1, hdbc1, hstmt1);
+    alloc_basic_handles_with_opt(&henv1, &hdbc1, &hstmt1,
+      NULL, NULL, NULL, NULL, conn_opt[i]);
 
-  ok_stmt(hstmt, SQLGetData(hstmt, 4, SQL_C_CHAR, name, 20, &len));
-  is_num(len, 12);
-  is_str(name, "doesn't work", 13);
-  ok_stmt(hstmt, SQLFreeStmt(hstmt, SQL_CLOSE));
+    ok_stmt(hstmt1, SQLColumns(hstmt1, (SQLCHAR*)"test", SQL_NTS, NULL, 0,
+      (SQLCHAR*)"t_bug32989", SQL_NTS, NULL, 0));
+    ok_stmt(hstmt1, SQLFetch(hstmt1));
 
+    ok_stmt(hstmt1, SQLGetData(hstmt1, 4, SQL_C_CHAR, name, 20, &len));
+    is_num(len, 12);
+    is_str(name, "doesn't work", 13);
+    ok_stmt(hstmt1, SQLFreeStmt(hstmt1, SQL_CLOSE));
+    free_basic_handles(&henv1, &hdbc1, &hstmt1);
+  }
   ok_sql(hstmt, "drop table if exists t_bug32989");
   return OK;
 }
@@ -1424,54 +1483,68 @@ DECLARE_TEST(t_bug12805)
   SQLCHAR     dummy[10];
   SQLULEN     length;
   SQLUINTEGER len2;
+  char* conn_opt[] = {
+    "COLUMN_SIZE_S32=1;NO_SSPS=0",
+    "COLUMN_SIZE_S32=1;NO_SSPS=1"
+  };
 
-  is(OK == alloc_basic_handles_with_opt(&henv1, &hdbc1, &hstmt1, NULL,
-                                        NULL, NULL, NULL,
-                                        "COLUMN_SIZE_S32=1"));
+  for (int i = 0; i < 2; i++)
+  {
+    is(OK == alloc_basic_handles_with_opt(&henv1, &hdbc1, &hstmt1, NULL,
+      NULL, NULL, NULL, conn_opt[i]));
 
-  ok_sql(hstmt1, "DROP TABLE IF EXISTS bug12805");
-  ok_sql(hstmt1, "CREATE TABLE bug12805("\
-                 "id INT PRIMARY KEY auto_increment,"\
-                 "longdata LONGBLOB NULL)");
+    ok_sql(hstmt1, "DROP TABLE IF EXISTS bug12805");
+    ok_sql(hstmt1, "CREATE TABLE bug12805("\
+      "id INT PRIMARY KEY auto_increment,"\
+      "longdata LONGBLOB NULL)");
 
-  ok_stmt(hstmt1, SQLColumns(hstmt1, NULL, 0, NULL, 0,
-                             (SQLCHAR *)"bug12805", SQL_NTS,
-                             (SQLCHAR *)"longdata", SQL_NTS));
+    ok_stmt(hstmt1, SQLColumns(hstmt1, NULL, 0, NULL, 0,
+      (SQLCHAR*)"bug12805", SQL_NTS,
+      (SQLCHAR*)"longdata", SQL_NTS));
 
-  ok_stmt(hstmt1, SQLFetch(hstmt1));
-  ok_stmt(hstmt1, SQLGetData(hstmt1, 7, SQL_C_ULONG, &len2,
-                             0, NULL));
-  is_num(len2, 2147483647);
-  ok_stmt(hstmt1, SQLFreeStmt(hstmt1, SQL_CLOSE));
+    ok_stmt(hstmt1, SQLFetch(hstmt1));
+    ok_stmt(hstmt1, SQLGetData(hstmt1, 7, SQL_C_ULONG, &len2,
+      0, NULL));
+    is_num(len2, 2147483647);
+    ok_stmt(hstmt1, SQLFreeStmt(hstmt1, SQL_CLOSE));
 
-  length= 0;
-  ok_sql(hstmt1, "SELECT * FROM bug12805");
-  ok_stmt(hstmt1, SQLDescribeCol(hstmt1, 2, dummy, sizeof(dummy) - 1, NULL,
-                                 NULL, &length, NULL, NULL));
-  is_num(length, 2147483647);
+    length = 0;
+    ok_sql(hstmt1, "SELECT * FROM bug12805");
+    ok_stmt(hstmt1, SQLDescribeCol(hstmt1, 2, dummy, sizeof(dummy) - 1, NULL,
+      NULL, &length, NULL, NULL));
+    is_num(length, 2147483647);
 
-  ok_stmt(hstmt1, SQLFreeStmt(hstmt1, SQL_CLOSE));
-  free_basic_handles(&henv1, &hdbc1, &hstmt1);
+    ok_stmt(hstmt1, SQLFreeStmt(hstmt1, SQL_CLOSE));
+    free_basic_handles(&henv1, &hdbc1, &hstmt1);
+  }
 
+  char* conn_opt2[] = { "NO_SSPS=0", "NO_SSPS=1" };
   /* Check without the 32-bit signed flag */
-  ok_stmt(hstmt, SQLColumns(hstmt, NULL, 0, NULL, 0,
-                            (SQLCHAR *)"bug12805", SQL_NTS,
-                            (SQLCHAR *)"longdata", SQL_NTS));
+  for (int i = 0; i < 2; i++)
+  {
+    is(OK == alloc_basic_handles_with_opt(&henv1, &hdbc1, &hstmt1, NULL,
+      NULL, NULL, NULL, conn_opt2[i]));
 
-  ok_stmt(hstmt, SQLFetch(hstmt));
-  ok_stmt(hstmt, SQLGetData(hstmt, 7, SQL_C_ULONG, &len2,
-                            0, NULL));
-  is_num(len2, 4294967295UL);
+    ok_stmt(hstmt1, SQLColumns(hstmt1, NULL, 0, NULL, 0,
+      (SQLCHAR*)"bug12805", SQL_NTS,
+      (SQLCHAR*)"longdata", SQL_NTS));
 
-  ok_stmt(hstmt, SQLFreeStmt(hstmt, SQL_CLOSE));
+    ok_stmt(hstmt1, SQLFetch(hstmt1));
+    ok_stmt(hstmt1, SQLGetData(hstmt1, 7, SQL_C_ULONG, &len2,
+      0, NULL));
+    is_num(len2, 4294967295UL);
 
-  length= 0;
-  ok_sql(hstmt, "SELECT * FROM bug12805");
-  ok_stmt(hstmt, SQLDescribeCol(hstmt, 2, dummy, sizeof(dummy), NULL, NULL,
-                                 &length, NULL, NULL));
-  is_num(length, 4294967295UL);
+    ok_stmt(hstmt1, SQLFreeStmt(hstmt1, SQL_CLOSE));
 
-  ok_stmt(hstmt, SQLFreeStmt(hstmt, SQL_CLOSE));
+    length = 0;
+    ok_sql(hstmt1, "SELECT * FROM bug12805");
+    ok_stmt(hstmt1, SQLDescribeCol(hstmt1, 2, dummy, sizeof(dummy), NULL, NULL,
+      &length, NULL, NULL));
+    is_num(length, 4294967295UL);
+
+    ok_stmt(hstmt1, SQLFreeStmt(hstmt1, SQL_CLOSE));
+    free_basic_handles(&henv1, &hdbc1, &hstmt1);
+  }
   ok_sql(hstmt, "DROP TABLE bug12805");
 
   return OK;
@@ -1485,29 +1558,33 @@ DECLARE_TEST(t_bug30770)
 {
   DECLARE_BASIC_HANDLES(henv1, hdbc1, hstmt1);
   SQLCHAR    buff[512];
+  char* conn_opt[] = { "NO_SSPS=0", "NO_SSPS=1" };
 
   ok_sql(hstmt, "DROP TABLE IF EXISTS bug30770");
   ok_sql(hstmt, "CREATE TABLE bug30770 (a INT)");
 
-  /* Connect with no default daabase */
-  is(OK == alloc_basic_handles_with_opt(&henv1, &hdbc1, &hstmt1, USE_DRIVER,
-                                        NULL, NULL, "", NULL));
+  for (int i = 0; i < 2; i++)
+  {
+    /* Connect with no default daabase */
+    is(OK == alloc_basic_handles_with_opt(&henv1, &hdbc1, &hstmt1, USE_DRIVER,
+      NULL, NULL, "", conn_opt[i]));
 
-  sprintf((char *)buff, "USE %s;", mydb);
-  ok_stmt(hstmt1, SQLExecDirect(hstmt1, buff, SQL_NTS));
+    sprintf((char*)buff, "USE %s;", mydb);
+    ok_stmt(hstmt1, SQLExecDirect(hstmt1, buff, SQL_NTS));
 
-  /* Get the info from just one table.  */
-  ok_stmt(hstmt1, SQLColumns(hstmt1, NULL, SQL_NTS, NULL, SQL_NTS,
-                             (SQLCHAR *)"bug30770", SQL_NTS, NULL, 0));
+    /* Get the info from just one table.  */
+    ok_stmt(hstmt1, SQLColumns(hstmt1, NULL, SQL_NTS, NULL, SQL_NTS,
+      (SQLCHAR*)"bug30770", SQL_NTS, NULL, 0));
 
-  ok_stmt(hstmt1, SQLFetch(hstmt1));
+    ok_stmt(hstmt1, SQLFetch(hstmt1));
 
-  is_str(my_fetch_str(hstmt1, buff, 3), "bug30770", 9);
-  is_str(my_fetch_str(hstmt1, buff, 4), "a", 1);
+    is_str(my_fetch_str(hstmt1, buff, 3), "bug30770", 9);
+    is_str(my_fetch_str(hstmt1, buff, 4), "a", 1);
 
-  expect_stmt(hstmt1, SQLFetch(hstmt1), SQL_NO_DATA_FOUND);
-  free_basic_handles(&henv1, &hdbc1, &hstmt1);
+    expect_stmt(hstmt1, SQLFetch(hstmt1), SQL_NO_DATA_FOUND);
+    free_basic_handles(&henv1, &hdbc1, &hstmt1);
 
+  }
   ok_sql(hstmt, "DROP TABLE bug30770");
   return OK;
 }
@@ -1567,7 +1644,6 @@ BEGIN_TESTS
   ADD_TEST(my_drop_table)
   ADD_TEST(my_table_dbs)
   ADD_TEST(my_colpriv)
-  ADD_TEST(t_catalog)
   ADD_TEST(tmysql_specialcols)
   ADD_TEST(t_tables_bug)
   ADD_TEST(t_current_catalog_unicode)
