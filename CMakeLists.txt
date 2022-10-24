@@ -677,6 +677,9 @@ ENDIF(WIN32)
 # specified below. When building in MAINTAINER_MODE cmake will report error if 
 # it finds a plugin or 3rd party librariy which is not listed here. When that 
 # happens the lists should be updated.
+#
+# TODO: Move these checks to cmake/FindMySQL.cmake ?
+#
 
 set(AUTH_PLUGINS
   ldap_sasl
@@ -753,6 +756,9 @@ set(IGNORED_LIBS
   mysqlrouter_lib
   mysqlrouter_metadata_cache
   mysqlrouter_routing
+  # New DLLs added in .33
+  destination_status
+  mysqlrouter_destination_status
 )
 
 
