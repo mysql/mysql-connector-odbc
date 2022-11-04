@@ -809,24 +809,28 @@ DECLARE_TEST(t_datecolumns)
   ok_stmt(hstmt, SQLFetch(hstmt));
 
   is_str(my_fetch_str(hstmt, col, 4), "a", 1);
+  is_num(my_fetch_int(hstmt, 5), SQL_TYPE_TIMESTAMP);
   is_num(my_fetch_int(hstmt, 14), SQL_DATETIME);
   is_num(my_fetch_int(hstmt, 15), SQL_TYPE_TIMESTAMP);
 
   ok_stmt(hstmt, SQLFetch(hstmt));
 
   is_str(my_fetch_str(hstmt, col, 4), "b", 1);
+  is_num(my_fetch_int(hstmt, 5), SQL_TYPE_TIMESTAMP);
   is_num(my_fetch_int(hstmt, 14), SQL_DATETIME);
   is_num(my_fetch_int(hstmt, 15), SQL_TYPE_TIMESTAMP);
 
   ok_stmt(hstmt, SQLFetch(hstmt));
 
   is_str(my_fetch_str(hstmt, col, 4), "c", 1);
+  is_num(my_fetch_int(hstmt, 5), SQL_TYPE_DATE);
   is_num(my_fetch_int(hstmt, 14), SQL_DATETIME);
   is_num(my_fetch_int(hstmt, 15), SQL_TYPE_DATE);
 
   ok_stmt(hstmt, SQLFetch(hstmt));
 
   is_str(my_fetch_str(hstmt, col, 4), "d", 1);
+  is_num(my_fetch_int(hstmt, 5), SQL_TYPE_TIME);
   is_num(my_fetch_int(hstmt, 14), SQL_DATETIME);
   is_num(my_fetch_int(hstmt, 15), SQL_TYPE_TIME);
 

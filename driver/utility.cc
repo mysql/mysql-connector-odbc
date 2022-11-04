@@ -1097,7 +1097,7 @@ std::map<std::string, int> sql_data_types_map = {
   { "double", SQL_DOUBLE },
   { "year", SQL_SMALLINT },
   { "timestamp", SQL_TIMESTAMP },
-  { "datetime", SQL_DATETIME },
+  { "datetime", SQL_TIMESTAMP },
   { "date", SQL_TYPE_DATE },
   { "time", SQL_TIME },
   { "binary", SQL_BINARY },
