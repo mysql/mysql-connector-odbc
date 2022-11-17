@@ -509,7 +509,7 @@ DECLARE_TEST(t_bug30983)
 DECLARE_TEST(t_driverconnect_outstring)
 {
   HDBC hdbc1;
-  SQLCHAR conn[512], conn_out[512], exp_out[512];
+  SQLCHAR conn[512], conn_out[512];
   SQLSMALLINT conn_out_len, exp_conn_out_len;
 
   sprintf((char *)conn, "DSN=%s;UID=%s;PWD=%s;CHARSET=utf8",
@@ -526,6 +526,12 @@ DECLARE_TEST(t_driverconnect_outstring)
                                  sizeof(conn_out), &conn_out_len,
                                  SQL_DRIVER_NOPROMPT));
 
+  is_num(conn_out_len, strlen((char*)conn_out));
+
+  /*
+  TODO: enable when driver builds the connection string via options
+
+  SQLCHAR exp_out[512];
   sprintf((char *)exp_out, "DSN=%s;UID=%s", mydsn, myuid);
   if (mypwd && *mypwd)
   {
@@ -546,31 +552,42 @@ DECLARE_TEST(t_driverconnect_outstring)
 
   printMessage("Output connection string: %s", conn_out);
   printMessage("Expected output   string: %s", exp_out);
-  /* save proper length for later tests */
-  exp_conn_out_len= conn_out_len;
-  is_num(conn_out_len, strlen((char *)conn_out));
-  /* TODO
+  // save proper length for later tests
   is_str(conn_out, exp_out, strlen((char *)conn_out));
   */
+  exp_conn_out_len = conn_out_len;
   ok_con(hdbc1, SQLDisconnect(hdbc1));
 
   /* test truncation */
   conn_out_len= 999;
   expect_dbc(hdbc1, SQLDriverConnect(hdbc1, NULL, conn, SQL_NTS, conn_out,
-                                     10 * sizeof(SQLWCHAR), &conn_out_len,
+                                     10, &conn_out_len,
                                      SQL_DRIVER_NOPROMPT),
              SQL_SUCCESS_WITH_INFO);
-  is_num(conn_out_len, 9);
+
+#ifndef USE_IODBC
+  // iODBC sets the output length not larger than the buffer size
+  // even when the driver reports otherwise.
+  is(conn_out_len > 10);
+#endif
+
   is_num(check_sqlstate_ex(hdbc1, SQL_HANDLE_DBC, "01004"), OK);
   ok_con(hdbc1, SQLDisconnect(hdbc1));
 
   /* test truncation on boundary */
   conn_out_len= 999;
   expect_dbc(hdbc1, SQLDriverConnect(hdbc1, NULL, conn, SQL_NTS, conn_out,
-                                     exp_conn_out_len * sizeof(SQLWCHAR),
+                                     exp_conn_out_len,
                                      &conn_out_len, SQL_DRIVER_NOPROMPT),
              SQL_SUCCESS_WITH_INFO);
+#ifndef USE_IODBC
+  is_num(conn_out_len, exp_conn_out_len);
+#else
+  // iODBC sets the output length reserving one byte for
+  // the termination character.
   is_num(conn_out_len, exp_conn_out_len - 1);
+#endif
+
   is_num(check_sqlstate_ex(hdbc1, SQL_HANDLE_DBC, "01004"), OK);
   ok_con(hdbc1, SQLDisconnect(hdbc1));
 
@@ -1612,7 +1629,42 @@ DECLARE_TEST(t_ssl_crl)
   return OK;
 }
 
+/*
+  Bug #34786939 - Adding ODBC ANSI 64-bit System DSN connection causes
+  error 01004
+*/
+DECLARE_TEST(t_bug34786939_out_trunc)
+{
+  SQLHDBC hdbc1 = NULL;
+  ok_env(henv, SQLAllocConnect(henv, &hdbc1));
+  SQLCHAR *connstr = make_conn_str(NULL, NULL, NULL, NULL, NULL, 0);
+  SQLSMALLINT out_str_len = -1;
+
+  // Give NULL for out string, but non-NULL for out string length.
+  SQLRETURN rc = SQLDriverConnect(hdbc1, NULL, connstr, SQL_NTS,
+    NULL, 0, &out_str_len, SQL_DRIVER_NOPROMPT);
+  // It must not return anything except SQL_SUCCESS.
+  is_num(rc, SQL_SUCCESS);
+
+  SQLDisconnect(hdbc1);
+
+  SQLCHAR out_str[10] = { 0 };
+
+  // Give a very small buffer out string and non-NULL for out string length.
+  rc = SQLDriverConnect(hdbc1, NULL, connstr, SQL_NTS,
+    out_str, 10, &out_str_len, SQL_DRIVER_NOPROMPT);
+  // It must not return anything except SQL_SUCCESS_WITH_INFO.
+  is_num(rc, SQL_SUCCESS_WITH_INFO);
+
+  SQLDisconnect(hdbc1);
+  SQLFreeConnect(hdbc1);
+
+  return OK;
+}
+
 BEGIN_TESTS
+  ADD_TEST(t_driverconnect_outstring)
+  ADD_TEST(t_bug34786939_out_trunc)
   ADD_TEST(t_ssl_crl)
   ADD_TEST(t_bug107307)
   ADD_TEST(t_tls_versions)
@@ -1632,7 +1684,6 @@ BEGIN_TESTS
   ADD_TEST(t_bug30774)
   ADD_TEST(t_bug30840)
   ADD_TEST(t_bug30983)
-  ADD_TEST(t_driverconnect_outstring)
   ADD_TEST(setnames)
   ADD_TEST(setnames_conn)
   ADD_TEST(sqlcancel)

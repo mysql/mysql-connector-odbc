@@ -291,12 +291,13 @@ SQLDriverConnect(SQLHDBC hdbc, SQLHWND hwnd, SQLCHAR *in, SQLSMALLINT in_len,
   {
     uint errors;
     /* Now we have to convert SQLWCHAR back into a SQLCHAR. */
-    *out_len= (SQLSMALLINT)sqlwchar_as_sqlchar_buf(default_charset_info, out, out_max,
-                                      outw, *out_len, &errors);
-    /* TODO what to do with errors? */
-
+    sqlwchar_as_sqlchar_buf(default_charset_info, out, out_max,
+                            outw, *out_len, &errors);
     if (*out_len > out_max - 1)
-      rc= ((DBC*)hdbc)->set_error("01004", NULL, 0);
+    {
+      ((DBC*)hdbc)->set_error("01004", "String data, right truncated.", 0);
+      rc = SQL_SUCCESS_WITH_INFO;
+    }
   }
 
 error:

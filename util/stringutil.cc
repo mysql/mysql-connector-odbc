@@ -517,7 +517,7 @@ SQLINTEGER sqlwchar_as_sqlchar_buf(CHARSET_INFO *charset_info,
   if (!str || len == 0)
     return 0;
 
-  str_end= str + len;
+  str_end = str + myodbc_min(len, out_bytes);
 
   for (i= 0; str < str_end; )
   {
@@ -543,7 +543,9 @@ SQLINTEGER sqlwchar_as_sqlchar_buf(CHARSET_INFO *charset_info,
                          &used_chars, errors);
   }
 
-  out[i]= '\0';
+  // NULL-terminate only if we have space in out buffer
+  if (i < out_bytes)
+    out[i]= '\0';
 
   return i;
 }

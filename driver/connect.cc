@@ -1359,7 +1359,7 @@ SQLRETURN SQL_API MySQLDriverConnect(SQLHDBC hdbc, SQLHWND hwnd,
 connected:
 
   /* copy input to output if connected without prompting */
-  if (!bPrompt && szConnStrOut && cbConnStrOutMax)
+  if (!bPrompt)
   {
     size_t copylen;
     conn_str_out = conn_str_in;
@@ -1379,18 +1379,31 @@ connected:
       ds->pwd8= pwd8_temp;
     }
 
-    size_t inlen = (conn_str_out.length() + 1) * sizeof(SQLWCHAR);
-    copylen = myodbc_min((size_t)cbConnStrOutMax, inlen);
-    memcpy(szConnStrOut, conn_str_out.c_str(), copylen);
-    /* term needed if possibly truncated */
-    szConnStrOut[(copylen / sizeof(SQLWCHAR)) - 1] = 0;
+    size_t inlen = conn_str_out.length();
+    copylen = myodbc_min((size_t)cbConnStrOutMax, inlen + 1) * sizeof(SQLWCHAR);
+
+    if (szConnStrOut && copylen)
+    {
+      memcpy(szConnStrOut, conn_str_out.c_str(), copylen);
+      /* term needed if possibly truncated */
+      szConnStrOut[(copylen / sizeof(SQLWCHAR)) - 1] = 0;
+    }
+
+    /*
+      Even if the buffer for out connection string is NULL
+      it will still return the total number of characters
+      (excluding the null-termination character for character data)
+      available to return in the buffer pointed to by
+      OutConnectionString.
+      https://learn.microsoft.com/en-us/sql/odbc/reference/syntax/sqldriverconnect-function?view=sql-server-ver16
+    */
     if (pcbConnStrOut)
-      *pcbConnStrOut= (copylen / sizeof(SQLWCHAR)) - 1;
+      *pcbConnStrOut = inlen;
   }
 
   /* return SQL_SUCCESS_WITH_INFO if truncated output string */
-  if (pcbConnStrOut &&
-      cbConnStrOutMax - sizeof(SQLWCHAR) == *pcbConnStrOut * sizeof(SQLWCHAR))
+  if (pcbConnStrOut && cbConnStrOutMax &&
+      cbConnStrOutMax - sizeof(SQLWCHAR) <= *pcbConnStrOut * sizeof(SQLWCHAR))
   {
     dbc->set_error("01004", "String data, right truncated.", 0);
     rc= SQL_SUCCESS_WITH_INFO;
