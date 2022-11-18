@@ -224,6 +224,10 @@ DECLARE_TEST(t_bug34109678_collations)
   if (!mysql_min_version(hdbc, "8.0.30", 6))
     skip("server does not support the additional collations");
 
+#if !MYSQLCLIENT_STATIC_LINKING
+  skip("Enable when bug#34814863 is fixed!");
+#endif
+
   try
   {
     std::vector<std::string> collations = {
