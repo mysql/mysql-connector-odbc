@@ -827,11 +827,21 @@ struct temp_user
   temp_user(SQLHSTMT stmt, odbc::xstring pwd) : hstmt(stmt), buf(1024), pass(pwd)
   {
     odbc::select_one_str(hstmt, "SELECT USER()", buf, 1);
-    username = "temp_user_" + odbc::xstring(buf);
+
+    username = odbc::xstring(buf);
+    size_t pos = username.find_first_of('@');
+
+    name = "temp_user_" + username.substr(0, pos);
+
+    // Note: Host part in quotes because, e.g. in OCI there are host names like 
+    // `foo-172-20-0-2-1c1be116-ff67...` which would lead to SQL syntax error 
+    // if not quotted.
+
+    username = "`" + name + "`@`" + username.substr(pos+1) + "`";
+
     odbc::sql(hstmt, "DROP USER IF EXISTS " + username);
     odbc::sql(hstmt, "CREATE USER " + username +
                       " IDENTIFIED BY '" + pass + "'");
-    name = username.substr(0, username.find('@', 0));
   }
 
   temp_user(SQLHSTMT stmt) : temp_user(stmt, "temp_pass")
