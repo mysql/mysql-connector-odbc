@@ -1,5 +1,5 @@
 @ECHO OFF
-REM Copyright (c) 2006, 2018, Oracle and/or its affiliates. All rights reserved. 
+REM Copyright (c) 2006, 2022, Oracle and/or its affiliates. All rights reserved. 
 REM 
 REM This program is free software; you can redistribute it and/or modify 
 REM it under the terms of the GNU General Public License, version 2.0, as 
