@@ -629,6 +629,20 @@ SQLRETURN DBC::connect(DataSource *dsrc)
                   dsrc->load_data_local_dir8);
   }
 
+  // Set the connector identification attributes.
+  std::string attr_list[][2] = {
+    {"_connector_license", MYODBC_LICENSE},
+    {"_connector_name", "mysql-connector-odbc"},
+    {"_connector_type", MYODBC_STRDRIVERTYPE},
+    {"_connector_version", MYODBC_CONN_ATTR_VER}
+  };
+
+  for (auto &val : attr_list)
+  {
+    mysql_options4(mysql, MYSQL_OPT_CONNECT_ATTR_ADD,
+      val[0].c_str(), val[1].c_str());
+  }
+
 #if MFA_ENABLED
   if(dsrc->pwd1 && dsrc->pwd1[0])
   {
