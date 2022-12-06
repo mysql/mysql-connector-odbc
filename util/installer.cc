@@ -220,6 +220,8 @@ static SQLWCHAR W_LOAD_DATA_LOCAL_DIR[] =
 { 'L', 'O', 'A', 'D', '_', 'D', 'A', 'T', 'A', '_', 'L', 'O', 'C', 'A', 'L', '_', 'D', 'I', 'R', 0 };
 static SQLWCHAR W_OCI_CONFIG_FILE[] =
 { 'O', 'C', 'I', '_', 'C', 'O', 'N', 'F', 'I', 'G', '_', 'F', 'I', 'L', 'E', 0 };
+static SQLWCHAR W_OCI_CONFIG_PROFILE[] =
+{ 'O', 'C', 'I', '_', 'C', 'O', 'N', 'F', 'I', 'G', '_', 'P', 'R', 'O', 'F', 'I', 'L', 'E', 0 };
 static SQLWCHAR W_AUTHENTICATION_KERBEROS_MODE[] =
 { 'A','U','T','H','E','N','T','I','C','A','T','I','O','N','-',
   'K','E','R','B','E','R','O','S','-','M','O','D','E', 0};
@@ -268,7 +270,7 @@ SQLWCHAR *dsnparams[]= {W_DSN, W_DRIVER, W_DESCRIPTION, W_SERVER,
                         W_SAVEFILE, W_RSAKEY, W_PLUGIN_DIR, W_DEFAULT_AUTH,
                         W_NO_TLS_1_2, W_NO_TLS_1_3,
                         W_SSLMODE, W_NO_DATE_OVERFLOW, W_LOAD_DATA_LOCAL_DIR,
-                        W_OCI_CONFIG_FILE, W_AUTHENTICATION_KERBEROS_MODE,
+                        W_OCI_CONFIG_FILE, W_OCI_CONFIG_PROFILE, W_AUTHENTICATION_KERBEROS_MODE,
                         W_TLS_VERSIONS, W_SSL_CRL, W_SSL_CRLPATH};
 static const
 int dsnparamcnt= sizeof(dsnparams) / sizeof(SQLWCHAR *);
@@ -730,6 +732,7 @@ void ds_delete(DataSource *ds)
   x_free(ds->plugin_dir);
   x_free(ds->default_auth);
   x_free(ds->oci_config_file);
+  x_free(ds->oci_config_profile);
   x_free(ds->authentication_kerberos_mode);
   x_free(ds->tls_versions);
   x_free(ds->ssl_crl);
@@ -762,6 +765,7 @@ void ds_delete(DataSource *ds)
   x_free(ds->plugin_dir8);
   x_free(ds->default_auth8);
   x_free(ds->oci_config_file8);
+  x_free(ds->oci_config_profile8);
   x_free(ds->authentication_kerberos_mode8);
   x_free(ds->tls_versions8);
   x_free(ds->ssl_crl8);
@@ -1010,6 +1014,8 @@ void ds_map_param(DataSource *ds, const SQLWCHAR *param,
     *strdest= &ds->load_data_local_dir;
   else if (!sqlwcharcasecmp(W_OCI_CONFIG_FILE, param))
     *strdest= &ds->oci_config_file;
+  else if (!sqlwcharcasecmp(W_OCI_CONFIG_PROFILE, param))
+  *strdest = &ds->oci_config_profile;
   else if (!sqlwcharcasecmp(W_AUTHENTICATION_KERBEROS_MODE, param))
     *strdest= &ds->authentication_kerberos_mode;
   else if (!sqlwcharcasecmp(W_TLS_VERSIONS, param))
@@ -1554,6 +1560,7 @@ int ds_add(DataSource *ds)
   if (ds_add_intprop(ds->name, W_ENABLE_LOCAL_INFILE, ds->enable_local_infile)) goto error;
   if (ds_add_strprop(ds->name, W_LOAD_DATA_LOCAL_DIR, ds->load_data_local_dir)) goto error;
   if (ds_add_strprop(ds->name, W_OCI_CONFIG_FILE, ds->oci_config_file)) goto error;
+  if (ds_add_strprop(ds->name, W_OCI_CONFIG_PROFILE, ds->oci_config_profile)) goto error;
   if (ds_add_strprop(ds->name, W_AUTHENTICATION_KERBEROS_MODE, ds->authentication_kerberos_mode)) goto error;
   if (ds_add_strprop(ds->name, W_TLS_VERSIONS, ds->tls_versions)) goto error;
   if (ds_add_strprop(ds->name, W_SSL_CRL, ds->ssl_crl)) goto error;

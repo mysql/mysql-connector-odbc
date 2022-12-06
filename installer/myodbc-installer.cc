@@ -518,6 +518,7 @@ int list_datasource_details(DataSource *ds)
   if (ds->plugin_dir  ) printf("Plugin directory:    %s\n", ds_get_utf8attr(ds->plugin_dir, &ds->plugin_dir8));
   if (ds->default_auth) printf("Default Authentication Library: %s\n", ds_get_utf8attr(ds->default_auth, &ds->default_auth8));
   if (ds->oci_config_file) printf("OCI Config File: %s\n", ds_get_utf8attr(ds->oci_config_file, &ds->oci_config_file8));
+  if (ds->oci_config_profile) printf("OCI Config Profile: %s\n", ds_get_utf8attr(ds->oci_config_profile, &ds->oci_config_profile8));
   if (ds->authentication_kerberos_mode) printf("Kerberos Authentication Mode: %s\n",
     ds_get_utf8attr(ds->authentication_kerberos_mode,
     &ds->authentication_kerberos_mode8));
