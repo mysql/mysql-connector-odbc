@@ -55,7 +55,8 @@ DECLARE_TEST(my_json)
   ok_stmt(hstmt2, SQLFetch(hstmt2)); // Fetch 1st column and ignore data
   ok_stmt(hstmt2, SQLFetch(hstmt2)); // Fetch 2nd column
 
-  is_num(my_fetch_int(hstmt2, 5), -1);             // DATA_TYPE
+  int exp_type = unicode_driver ? SQL_WLONGVARCHAR : SQL_LONGVARCHAR;
+  is_num(my_fetch_int(hstmt2, 5), exp_type);       // DATA_TYPE
   is_str(my_fetch_str(hstmt2, buf, 6), "json", 4); // TYPE_NAME
 
   expect_stmt(hstmt2, SQLFetch(hstmt2), SQL_NO_DATA);
@@ -552,7 +553,155 @@ DECLARE_TEST(t_bug33401384_JSON_param)
   ENDCATCH;
 }
 
+DECLARE_TEST(t_wl15423_json)
+{
+  try
+  {
+    odbc::table tab(hstmt, "wl15423", "jdoc JSON, txt LONGTEXT");
+    odbc::xstring json = "{\"key1\": \"value1\", \"key2\": \"value2\"}";
+    tab.insert("('" + json + "', 'ABC')");
+
+    long long exp_type = unicode_driver ? SQL_WLONGVARCHAR : SQL_LONGVARCHAR;
+    SQLCHAR type_name[32];
+
+    struct expected_vals_struct {
+      int col_idx;
+      long long val;
+      bool is_unsigned;
+    };
+
+    expected_vals_struct exp_type_info[] = {
+      { 2 /* DATA_TYPE */, exp_type, false },
+      { 3 /* COLUMN_SIZE */, UINT32_MAX/4, false },
+      { 8 /* CASE_SENSITIVE */, SQL_TRUE, false },
+      { 9 /* SEARCHABLE */, SQL_PRED_CHAR, false },
+      { 16 /* SQL_DATA_TYPE */, exp_type, false },
+    };
+
+    ok_stmt(hstmt, SQLGetTypeInfo(hstmt, (SQLSMALLINT)exp_type));
+    while (SQL_SUCCESS == SQLFetch(hstmt))
+    {
+      odbc::xbuf buf(32);
+      my_fetch_str(hstmt, buf, 1);
+      if (buf.get_str().compare("json"))
+        continue;
+
+      for (auto& exp : exp_type_info)
+      {
+        is_num(exp.val, my_fetch_int(hstmt, exp.col_idx));
+      }
+    }
+
+    odbc::stmt_close(hstmt);
+    ok_stmt(hstmt, SQLColumns(hstmt, nullptr, 0, nullptr, 0, tab.table_name,
+      SQL_NTS, nullptr, 0));
+
+    expected_vals_struct exp_vals[] = {
+      { 5 /* DATA_TYPE */, exp_type, false},
+      { 7 /* COLUMN_SIZE */, UINT32_MAX/4, true},
+      { 8 /* BUFFER_LENGTH */, UINT32_MAX, true},
+      { 14 /* SQL_DATA_TYPE */, exp_type, false},
+      { 16 /* CHAR_OCTET_LENGTH */, UINT32_MAX, true}
+    };
+
+    std::string exp_type_names[] = {
+      "json", "longtext"
+    };
+
+    int row_num = 0;
+    while (SQL_SUCCESS == SQLFetch(hstmt))
+    {
+      for (auto& exp : exp_vals)
+      {
+        long long val = exp.is_unsigned ?
+          (long long)my_fetch_uint(hstmt, exp.col_idx) :
+          (long long)my_fetch_int(hstmt, exp.col_idx);
+
+        // TODO: Remove this condition after COLUMN_SIZE for
+        //       LONGTEXT is fixed. Now checking it only for JSON
+        if (row_num == 0)
+          is_num(exp.val, val);
+      }
+      is_str(exp_type_names[row_num].c_str(),
+        my_fetch_str(hstmt, type_name, 6 /* TYPE_NAME */),
+        exp_type_names[row_num].length());
+      ++row_num;
+    }
+
+    odbc::sql(hstmt, "SELECT * FROM " + tab.table_name);
+    for (int i = 0; i < 2; ++i)
+    {
+      SQLCHAR col_name[20];
+      SQLSMALLINT data_type = 0;
+      SQLULEN col_size = 0;
+      ok_stmt(hstmt, SQLDescribeCol(hstmt, i + 1,
+        col_name, 20, nullptr, &data_type, &col_size,
+        nullptr, nullptr));
+
+      // TODO: Remove this condition after COLUMN_SIZE for
+      //       LONGTEXT is fixed. Now checking it only for JSON
+      if (i == 0)
+        is_num(col_size, UINT32_MAX / 4);
+
+      is_num(exp_type, data_type);
+    }
+
+    while (SQL_SUCCESS == SQLFetch(hstmt))
+    {
+      odbc::xbuf buf(128);
+      my_fetch_data(hstmt, buf, 1);
+      is_num(0, json.compare(buf));
+    }
+
+    struct expected_desc_struct {
+      int field_idx;
+      const char* char_attr;
+      SQLLEN num_attr;
+    };
+
+    expected_desc_struct exp_desc[] = {
+      { SQL_DESC_CONCISE_TYPE, nullptr, exp_type },
+      { SQL_DESC_DISPLAY_SIZE, nullptr, 1073741823},
+      { SQL_DESC_LENGTH, nullptr, 1073741823},
+      { SQL_DESC_TYPE, nullptr, exp_type },
+      { SQL_DESC_LOCAL_TYPE_NAME, "", 0},
+      { SQL_DESC_TYPE_NAME, "json", 0},
+      { SQL_DESC_CASE_SENSITIVE, nullptr, SQL_TRUE},
+      { SQL_DESC_SEARCHABLE, nullptr, SQL_PRED_CHAR},
+    };
+
+    for (int i = 0; i < 2; ++i)
+    {
+      for (auto& elem : exp_desc)
+      {
+        SQLCHAR buf[20];
+        SQLLEN num_attr;
+        ok_stmt(hstmt, SQLColAttribute(hstmt, i + 1, elem.field_idx,
+          buf, 20, nullptr, &num_attr));
+        if (elem.char_attr)
+        {
+          const char *cmp = elem.char_attr;
+
+          // Substitute the type name only for SQL_DESC_TYPE_NAME
+          if (i && elem.field_idx == SQL_DESC_TYPE_NAME)
+            cmp = "longtext";
+
+          is_str(cmp, buf, strlen(cmp));
+        }
+        // TODO: Remove this condition after COLUMN_SIZE for
+        //       LONGTEXT is fixed. Now checking it only for JSON
+        else if (i == 0)
+        {
+          is_num(elem.num_attr, num_attr);
+        }
+      }
+    }
+  }
+  ENDCATCH;
+}
+
 BEGIN_TESTS
+  ADD_TEST(t_wl15423_json)
   ADD_TEST(t_bug33401384_JSON_param)
   ADD_TEST(t_sqlgetdata_buf)
   ADD_TEST(t_bug34397870_ubigint)

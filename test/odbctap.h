@@ -1059,7 +1059,7 @@ SQLUINTEGER my_fetch_uint(SQLHSTMT hstmt, SQLUSMALLINT icol)
     SQLLEN len;
 
     SQLGetData(hstmt, icol, SQL_C_ULONG, &nData, 0, &len);
-    printMessage("my_fetch_int: %ld (%ld)", (long int)nData, len);
+    printMessage("my_fetch_uint: %lu (%ld)", (long unsigned int)nData, len);
     return (len != SQL_NULL_DATA) ? nData : 0;
 }
 

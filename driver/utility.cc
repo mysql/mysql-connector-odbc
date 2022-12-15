@@ -1387,8 +1387,8 @@ SQLSMALLINT get_sql_data_type(STMT *stmt, MYSQL_FIELD *field, char *buff)
 
   case MYSQL_TYPE_JSON:
     if (buff)
-      (void)myodbc_stpmov(buff, "JSON");
-    return SQL_LONGVARCHAR;
+      (void)myodbc_stpmov(buff, "json");
+    return stmt->dbc->unicode ? SQL_WLONGVARCHAR : SQL_LONGVARCHAR;
   }
 
   if (buff)
@@ -1577,8 +1577,9 @@ SQLULEN get_column_size(STMT *stmt, MYSQL_FIELD *field)
   case MYSQL_TYPE_LONG_BLOB:
   case MYSQL_TYPE_BLOB:
   case MYSQL_TYPE_GEOMETRY:
-  case MYSQL_TYPE_JSON:
     return length;
+  case MYSQL_TYPE_JSON:
+    return UINT32_MAX / 4; // Because JSON is always UTF8MB4
   }
 
   return SQL_NO_TOTAL;
@@ -1818,7 +1819,6 @@ SQLLEN get_display_size(STMT *stmt __attribute__((unused)),MYSQL_FIELD *field)
   case MYSQL_TYPE_LONG_BLOB:
   case MYSQL_TYPE_BLOB:
   case MYSQL_TYPE_GEOMETRY:
-  case MYSQL_TYPE_JSON:
     {
       unsigned long length;
       if (field->charsetnr == BINARY_CHARSET_NUMBER)
@@ -1829,6 +1829,9 @@ SQLLEN get_display_size(STMT *stmt __attribute__((unused)),MYSQL_FIELD *field)
         length= INT_MAX32;
       return length;
     }
+  case MYSQL_TYPE_JSON:
+    return UINT_MAX32 / 4; // 4 is the character size in UTF8MB4
+
   }
 
   return SQL_NO_TOTAL;

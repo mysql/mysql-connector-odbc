@@ -947,7 +947,7 @@ MYSQL_FIELD SQL_GET_TYPE_INFO_fields[] =
 };
 
 const uint SQL_GET_TYPE_INFO_FIELDS = array_elements(SQL_GET_TYPE_INFO_fields);
-#define MYSQL_DATA_TYPES 59
+#define MYSQL_DATA_TYPES 61
 
 char sql_searchable[6], sql_unsearchable[6], sql_nullable[6], sql_no_nulls[6],
 sql_bit[6], sql_tinyint[6], sql_smallint[6], sql_integer[6], sql_bigint[6],
@@ -994,11 +994,21 @@ char *SQL_GET_TYPE_INFO_values[MYSQL_DATA_TYPES][19] =
   { "longtext",sql_longvarchar,"2147483647","'","'",NULL,sql_nullable,"0",sql_searchable,NULL,"0",NULL,"longtext",NULL,NULL,sql_longvarchar,NULL,NULL,NULL },
   { "tinytext",sql_longvarchar,"255","'","'",NULL,sql_nullable,"0",sql_searchable,NULL,"0",NULL,"tinytext",NULL,NULL,sql_longvarchar,NULL,NULL,NULL },
 
+  // For JSON maximum column length (in characters) is taken to be maximum
+  // octet length of LONGTEXT (4G) divided by 4 bytes/character for
+  // utf8mb4 encoding.
+  { "json",sql_longvarchar,"1073741823","'","'",NULL,sql_nullable,"1","1",NULL,"0",NULL,"json",NULL,NULL,sql_longvarchar,NULL,NULL,NULL },
+
   { "long varchar",sql_wlongvarchar,"16777215","'","'",NULL,sql_nullable,"0",sql_searchable,NULL,"0",NULL,"mediumtext",NULL,NULL,sql_longvarchar,NULL,NULL,NULL },
   { "text",sql_wlongvarchar,"65535","'","'",NULL,sql_nullable,"0",sql_searchable,NULL,"0",NULL,"text",NULL,NULL,sql_longvarchar,NULL,NULL,NULL },
   { "mediumtext",sql_wlongvarchar,"16777215","'","'",NULL,sql_nullable,"0",sql_searchable,NULL,"0",NULL,"mediumtext",NULL,NULL,sql_longvarchar,NULL,NULL,NULL },
   { "longtext",sql_wlongvarchar,"2147483647","'","'",NULL,sql_nullable,"0",sql_searchable,NULL,"0",NULL,"longtext",NULL,NULL,sql_longvarchar,NULL,NULL,NULL },
   { "tinytext",sql_wlongvarchar,"255","'","'",NULL,sql_nullable,"0",sql_searchable,NULL,"0",NULL,"tinytext",NULL,NULL,sql_longvarchar,NULL,NULL,NULL },
+
+  // For JSON maximum column length (in characters) is taken to be maximum
+  // octet length of LONGTEXT (4G) divided by 4 bytes/character for
+  // utf8mb4 encoding.
+  { "json",sql_wlongvarchar,"1073741823","'","'",NULL,sql_nullable,"1","1",NULL,"0",NULL,"json",NULL,NULL,sql_wlongvarchar,NULL,NULL,NULL},
 
   /* SQL_CHAR= 1 */
   { "char",sql_char, "255","'","'","length",sql_nullable,"0",sql_searchable,NULL,"0",NULL,"char",NULL,NULL,sql_char,"0",NULL,NULL },
