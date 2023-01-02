@@ -288,7 +288,6 @@ void syncTabsData(HWND hwnd, DataSource *params)
   GET_COMBO_TAB(CONNECTION_TAB, charset);
   GET_STRING_TAB(CONNECTION_TAB, initstmt);
   GET_STRING_TAB(CONNECTION_TAB, plugin_dir);
-  GET_STRING_TAB(CONNECTION_TAB, oci_config_file);
 
   /* 2 - Authentication */
   GET_BOOL_TAB(AUTH_TAB, enable_cleartext_plugin);
@@ -300,6 +299,8 @@ void syncTabsData(HWND hwnd, DataSource *params)
   GET_STRING_TAB(AUTH_TAB, pwd2);
   GET_STRING_TAB(AUTH_TAB, pwd3);
 #endif
+  GET_STRING_TAB(AUTH_TAB, oci_config_file);
+  GET_STRING_TAB(AUTH_TAB, oci_config_profile);
 
   /* 3 - Metadata*/
   GET_BOOL_TAB(METADATA_TAB, change_bigint_columns_to_int);
@@ -382,9 +383,8 @@ void syncTabs(HWND hwnd, DataSource *params)
 #endif
   {
     SET_COMBO_TAB(CONNECTION_TAB, charset);
-    SET_STRING_TAB(CONNECTION_TAB,initstmt);
-    SET_STRING_TAB(CONNECTION_TAB,plugin_dir);
-    SET_STRING_TAB(CONNECTION_TAB,oci_config_file);
+    SET_STRING_TAB(CONNECTION_TAB, initstmt);
+    SET_STRING_TAB(CONNECTION_TAB, plugin_dir);
   }
 
   /* 2 - Authentication */
@@ -397,6 +397,8 @@ void syncTabs(HWND hwnd, DataSource *params)
   SET_STRING_TAB(AUTH_TAB, pwd2);
   SET_STRING_TAB(AUTH_TAB, pwd3);
 #endif
+  SET_STRING_TAB(AUTH_TAB, oci_config_file);
+  SET_STRING_TAB(AUTH_TAB, oci_config_profile);
 
   /* 3 - Metadata*/
   SET_BOOL_TAB(METADATA_TAB, change_bigint_columns_to_int);

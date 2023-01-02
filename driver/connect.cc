@@ -427,7 +427,10 @@ SQLRETURN DBC::connect(DataSource *dsrc)
     fido_lock.unlock();
   }
 
-  if(dsrc->oci_config_file && dsrc->oci_config_file[0])
+  bool oci_config_file_set = dsrc->oci_config_file && dsrc->oci_config_file[0];
+  bool oci_config_profile_set = dsrc->oci_config_profile && dsrc->oci_config_profile[0];
+
+  if(oci_config_file_set || oci_config_profile_set)
   {
     /* load client authentication plugin if required */
     struct st_mysql_client_plugin *plugin =
@@ -440,11 +443,24 @@ SQLRETURN DBC::connect(DataSource *dsrc)
       return set_error("HY000", "Couldn't load plugin authentication_oci_client", 0);
     }
 
-    if(mysql_plugin_options(plugin, "oci-config-file",
-                            ds_get_utf8attr(dsrc->oci_config_file,
-                                            &dsrc->oci_config_file8)))
+    if (oci_config_file_set)
     {
-      return set_error("HY000", "Failed to set config file for authentication_oci_client plugin", 0);
+      if (mysql_plugin_options(plugin, "oci-config-file",
+        ds_get_utf8attr(dsrc->oci_config_file,
+          &dsrc->oci_config_file8)))
+      {
+        return set_error("HY000", "Failed to set config file for authentication_oci_client plugin", 0);
+      }
+    }
+
+    if (oci_config_profile_set)
+    {
+      if (mysql_plugin_options(plugin, "authentication-oci-client-config-profile",
+        ds_get_utf8attr(dsrc->oci_config_profile,
+          &dsrc->oci_config_profile8)))
+      {
+        return set_error("HY000", "Failed to set config profile for authentication_oci_client plugin", 0);
+      }
     }
   }
 
