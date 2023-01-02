@@ -30,6 +30,7 @@
 #include <vector>
 
 #include "odbc_util.h"
+#include "../VersionInfo.h"
 
 DECLARE_TEST(my_json)
 {
@@ -552,7 +553,47 @@ DECLARE_TEST(t_bug33401384_JSON_param)
   ENDCATCH;
 }
 
+DECLARE_TEST(t_conn_attr_data)
+{
+  try
+  {
+    odbc::xbuf buf(64);
+    odbc::select_one_str(hstmt, "SELECT CONNECTION_ID()", buf, 1);
+    odbc::xstring query = "SELECT ATTR_NAME, ATTR_VALUE FROM "
+      "performance_schema.session_connect_attrs WHERE "
+      "(ATTR_NAME='_connector_license' OR "
+      "ATTR_NAME='_connector_name' OR "
+      "ATTR_NAME='_connector_type' OR "
+      "ATTR_NAME='_connector_version') AND "
+      "PROCESSLIST_ID=" + buf.get_str() +
+      " ORDER BY ATTR_NAME";
+    odbc::sql(hstmt, query);
+
+    std::string attr_list[][2] = {
+      {"_connector_license", MYODBC_LICENSE},
+      {"_connector_name", "mysql-connector-odbc"},
+      {"_connector_type", unicode_driver == 0 ? "ANSI" : "Unicode"},
+      {"_connector_version", MYODBC_CONN_ATTR_VER}
+    };
+
+    int idx = 0;
+    while (SQL_SUCCESS == SQLFetch(hstmt))
+    {
+      // Compare ATTR_NAME
+      my_fetch_str(hstmt, buf, 1);
+      is_num(0, attr_list[idx][0].compare(buf));
+      // Compare ATTR_VALUE
+      my_fetch_str(hstmt, buf, 2);
+      is_num(0, attr_list[idx][1].compare(buf));
+      ++idx;
+    }
+    is_num(4, idx);
+  }
+  ENDCATCH;
+}
+
 BEGIN_TESTS
+  ADD_TEST(t_conn_attr_data)
   ADD_TEST(t_bug33401384_JSON_param)
   ADD_TEST(t_sqlgetdata_buf)
   ADD_TEST(t_bug34397870_ubigint)
