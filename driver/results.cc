@@ -1306,6 +1306,9 @@ MySQLColAttribute(SQLHSTMT hstmt, SQLUSMALLINT column,
     *char_attr= irrec->type_name;
     break;
 
+  case SQL_DESC_LOCAL_TYPE_NAME:
+    *char_attr = (SQLCHAR*)"";
+
   /*
     Hack : Fix for the error from ADO 'rs.resync' "Key value for this row
     was changed or deleted at the data store.  The local row is now deleted.

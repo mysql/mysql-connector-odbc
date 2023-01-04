@@ -56,7 +56,8 @@ DECLARE_TEST(my_json)
   ok_stmt(hstmt2, SQLFetch(hstmt2)); // Fetch 1st column and ignore data
   ok_stmt(hstmt2, SQLFetch(hstmt2)); // Fetch 2nd column
 
-  is_num(my_fetch_int(hstmt2, 5), -1);             // DATA_TYPE
+  int exp_type = unicode_driver ? SQL_WLONGVARCHAR : SQL_LONGVARCHAR;
+  is_num(my_fetch_int(hstmt2, 5), exp_type);       // DATA_TYPE
   is_str(my_fetch_str(hstmt2, buf, 6), "json", 4); // TYPE_NAME
 
   expect_stmt(hstmt2, SQLFetch(hstmt2), SQL_NO_DATA);
@@ -553,6 +554,7 @@ DECLARE_TEST(t_bug33401384_JSON_param)
   ENDCATCH;
 }
 
+
 DECLARE_TEST(t_conn_attr_data)
 {
   try
@@ -592,7 +594,157 @@ DECLARE_TEST(t_conn_attr_data)
   ENDCATCH;
 }
 
+
+DECLARE_TEST(t_wl15423_json)
+{
+  try
+  {
+    odbc::table tab(hstmt, "wl15423", "jdoc JSON, txt LONGTEXT");
+    odbc::xstring json = "{\"key1\": \"value1\", \"key2\": \"value2\"}";
+    tab.insert("('" + json + "', 'ABC')");
+
+    long long exp_type = unicode_driver ? SQL_WLONGVARCHAR : SQL_LONGVARCHAR;
+
+    // Type information.
+
+    {
+      bool found = false;
+
+      ok_stmt(hstmt, SQLGetTypeInfo(hstmt, (SQLSMALLINT)exp_type));
+
+      while (SQL_SUCCESS == SQLFetch(hstmt))
+      {
+        odbc::xbuf buf(32);
+        my_fetch_str(hstmt, buf, 1);
+
+        if (buf.get_str().compare("json"))
+          continue;
+
+        found = true;
+
+        auto data_type = my_fetch_int(hstmt, 2);
+        is_num(data_type, exp_type);
+
+        auto sql_data_type = my_fetch_int(hstmt, 16);
+        is_num(sql_data_type, exp_type);
+
+        auto column_size = my_fetch_int(hstmt, 3);
+        is_num(column_size, UINT32_MAX/4);
+
+        auto case_sensitive = my_fetch_int(hstmt, 8);
+        is_num(case_sensitive, SQL_TRUE);
+
+        auto searchable = my_fetch_int(hstmt, 9);
+        is_num(searchable, SQL_PRED_CHAR);
+
+        break;
+      }
+
+      odbc::stmt_close(hstmt);
+      is_num(found, true);
+    }
+
+    // Table column info.
+
+    {
+      ok_stmt(hstmt, SQLColumns(hstmt, nullptr, 0, nullptr, 0, tab.table_name,
+        SQL_NTS, nullptr, 0));
+
+      // Fetch information oabut first column (JSON).
+
+      ok_stmt(hstmt, SQLFetch(hstmt));
+
+      odbc::xbuf type_name(16);
+      my_fetch_str(hstmt, type_name, 6);
+      is_str(type_name, "json", 4);
+
+      auto data_type = my_fetch_int(hstmt, 5);
+      is_num(data_type, exp_type);
+
+      auto sql_data_type = my_fetch_int(hstmt, 14);
+      is_num(sql_data_type, exp_type);
+
+      auto column_size = my_fetch_uint(hstmt, 7);
+      is_num(column_size, UINT32_MAX/4);
+
+      auto buffer_length = my_fetch_uint(hstmt, 8);
+      is_num(buffer_length, UINT32_MAX);
+
+      auto char_octet_length = my_fetch_uint(hstmt, 16);
+      is_num(char_octet_length, UINT32_MAX);
+
+      odbc::stmt_close(hstmt);
+    }
+
+    // query result meta-data.
+
+    {
+      odbc::sql(hstmt, "SELECT * FROM " + tab.table_name);
+
+      // Get info about 1st column in the result.
+      
+      SQLCHAR col_name[20];
+      SQLSMALLINT data_type = 0;
+      SQLULEN col_size = 0;
+
+      ok_stmt(hstmt, SQLDescribeCol(hstmt, 1,
+        col_name, 20, nullptr, &data_type, &col_size,
+        nullptr, nullptr));
+
+      is_num(data_type, exp_type);
+      is_num(col_size, UINT32_MAX / 4);
+
+      while (SQL_SUCCESS == SQLFetch(hstmt))
+      {
+        odbc::xbuf buf(128);
+        my_fetch_data(hstmt, buf, 1);
+        is_num(0, json.compare(buf));
+      }
+
+      // check descriptors for the first column.
+
+      SQLCHAR str_attr[20];
+      SQLLEN num_attr;
+
+      auto get_attr = [&str_attr, &num_attr, &hstmt](auto idx) {
+        num_attr = 0;
+        str_attr[0] = 0;
+        ok_stmt(hstmt, SQLColAttribute(
+          hstmt, 1, idx, str_attr, 20, nullptr, &num_attr
+        ));
+      };
+
+      get_attr(SQL_DESC_TYPE_NAME);
+      is_str(str_attr,"json",4);
+
+      get_attr(SQL_DESC_LOCAL_TYPE_NAME);
+      is_str(str_attr,"",0);
+
+      get_attr(SQL_DESC_TYPE);
+      is_num(num_attr, exp_type);
+
+      get_attr(SQL_DESC_CONCISE_TYPE);
+      is_num(num_attr, exp_type);
+
+      get_attr(SQL_DESC_LENGTH);
+      is_num(num_attr, UINT32_MAX/4);
+      
+      get_attr(SQL_DESC_DISPLAY_SIZE);
+      is_num(num_attr, UINT32_MAX/4);
+
+      get_attr(SQL_DESC_CASE_SENSITIVE);
+      is_num(num_attr, SQL_TRUE);
+
+      get_attr(SQL_DESC_SEARCHABLE);
+      is_num(num_attr, SQL_PRED_CHAR);
+    }
+  }
+  ENDCATCH;
+}
+
+
 BEGIN_TESTS
+  ADD_TEST(t_wl15423_json)
   ADD_TEST(t_conn_attr_data)
   ADD_TEST(t_bug33401384_JSON_param)
   ADD_TEST(t_sqlgetdata_buf)

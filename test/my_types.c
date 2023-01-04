@@ -1630,7 +1630,8 @@ DECLARE_TEST(t_wide_character_info)
        strncmp(buf, "text", 4) == 0 ||
        strncmp(buf, "mediumtext", 10) == 0 ||
        strncmp(buf, "longtext", 8) == 0 ||
-       strncmp(buf, "tinytext", 8) == 0);
+       strncmp(buf, "tinytext", 8) == 0 ||
+       strncmp(buf, "json", 4) == 0);
     is_wlongvarchar = 1;
   }
 
