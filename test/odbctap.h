@@ -78,6 +78,7 @@
 
 /* Get routines for helping with Unicode conversion. */
 #define ODBCTAP
+#include <wchar.h>
 
 #include "mysql_version.h"
 #include "../util/unicode_transcode.h"
