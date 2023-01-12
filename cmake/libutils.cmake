@@ -333,7 +333,6 @@ function(mangle_osx_rpaths TARGET)
   list(APPEND paths_to_mangle "libssl.1.1.dylib")
   list(APPEND paths_to_mangle "libcrypto.1.1.dylib")
 
-
   set(mangle_commands)
 
   foreach(path ${paths_to_mangle})
@@ -343,6 +342,18 @@ function(mangle_osx_rpaths TARGET)
       COMMAND ${INSTALL_NAME_TOOL} -change "\"${path}\"" "\"@rpath/${lib_name}\"" "\"$<TARGET_FILE:${TARGET}>\""
     )
   endforeach()
+
+  if(ODBC_LIB_DIR)
+    # Try to mangle iODBC and iODBCinst for compatibility with homebrew install
+    foreach(iodbc_lib "libiodbc.dylib" "libiodbcinst.dylib")
+      get_filename_component(IODBC_REALPATH "${ODBC_LIB_DIR}/${iodbc_lib}" REALPATH)
+      if (IODBC_REALPATH)
+        list(APPEND mangle_commands
+          COMMAND ${INSTALL_NAME_TOOL} -change "${IODBC_REALPATH}" "@rpath/${iodbc_lib}" "\"$<TARGET_FILE:${TARGET}>\"")
+      endif()
+    endforeach()
+  endif()
+
 
   # If otool is available, also list final dependencies after the mangling
   if(OTOOL)
