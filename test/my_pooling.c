@@ -1,3 +1,5 @@
+// Modifications Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+//
 // Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
 //
 // This program is free software; you can redistribute it and/or modify
@@ -52,7 +54,7 @@ DECLARE_TEST(t_reset_connection)
   }
 
   ok_env(henv1, SQLAllocHandle(SQL_HANDLE_DBC, henv, &hdbc1));
-  ok_con(hdbc1, SQLConnect(hdbc1, mydsn, strlen(mydsn), myuid, strlen(myuid), mypwd, strlen(mypwd)));
+  ok_con(hdbc1, SQLConnect(hdbc1, mydsn, strlen((char*)mydsn), myuid, strlen((char*)myuid), mypwd, strlen((char*)mypwd)));
 
   ok_con(hdbc1, SQLAllocHandle(SQL_HANDLE_STMT, hdbc1, &hstmt1));
 
@@ -80,7 +82,7 @@ DECLARE_TEST(t_reset_connection)
   ok_env(henv1, SQLAllocHandle(SQL_HANDLE_DBC, henv, &hdbc1));
 
   /* Here the connection is supposed to be taken from the pool */
-  ok_con(hdbc1, SQLConnect(hdbc1, mydsn, strlen(mydsn), myuid, strlen(myuid), mypwd, strlen(mypwd)));
+  ok_con(hdbc1, SQLConnect(hdbc1, mydsn, strlen((char*)mydsn), myuid, strlen((char*)myuid), mypwd, strlen((char*)mypwd)));
 
   ok_con(hdbc1, SQLGetConnectAttr(hdbc1, SQL_ATTR_CURRENT_CATALOG,
                                   dbase, sizeof(dbase), &len));

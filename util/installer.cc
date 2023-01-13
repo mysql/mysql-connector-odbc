@@ -1,3 +1,5 @@
+// Modifications Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+//
 // Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
 //
 // This program is free software; you can redistribute it and/or modify
@@ -227,6 +229,29 @@ static SQLWCHAR W_SSL_CRL[] =
 static SQLWCHAR W_SSL_CRLPATH[] =
 { 'S', 'S', 'L', '-', 'C', 'R', 'L', 'P', 'A', 'T', 'H', 0};
 
+/* Failover */
+static SQLWCHAR W_ENABLE_CLUSTER_FAILOVER[] = { 'E', 'N', 'A', 'B', 'L', 'E', '_', 'C', 'L', 'U', 'S', 'T', 'E', 'R', '_', 'F', 'A', 'I', 'L', 'O', 'V', 'E', 'R', 0 };
+static SQLWCHAR W_ALLOW_READER_CONNECTIONS[] = { 'A', 'L', 'L', 'O', 'W', '_', 'R', 'E', 'A', 'D', 'E', 'R', '_', 'C', 'O', 'N', 'N', 'E', 'C', 'T', 'I', 'O', 'N', 'S', 0 };
+static SQLWCHAR W_GATHER_PERF_METRICS[] = { 'G', 'A', 'T', 'H', 'E', 'R', '_', 'P', 'E', 'R', 'F', '_', 'M', 'E', 'T', 'R', 'I', 'C', 'S', 0 };
+static SQLWCHAR W_GATHER_PERF_METRICS_PER_INSTANCE[] = { 'G', 'A', 'T', 'H', 'E', 'R', '_', 'P', 'E', 'R', 'F', '_', 'M', 'E', 'T', 'R', 'I', 'C', 'S', '_','P','E','R','_','I','N','S','T','A','N', 'C', 'E', 0 };
+static SQLWCHAR W_HOST_PATTERN[] = { 'H', 'O', 'S', 'T', '_', 'P', 'A', 'T', 'T', 'E', 'R', 'N', 0 };
+static SQLWCHAR W_CLUSTER_ID[] = { 'C', 'L', 'U', 'S', 'T', 'E', 'R', '_', 'I', 'D', 0 };
+static SQLWCHAR W_TOPOLOGY_REFRESH_RATE[] = { 'T', 'O', 'P', 'O', 'L', 'O', 'G', 'Y', '_', 'R', 'E', 'F', 'R', 'E', 'S', 'H', '_', 'R', 'A', 'T', 'E', 0 };
+static SQLWCHAR W_FAILOVER_TIMEOUT[] = { 'F', 'A', 'I', 'L', 'O', 'V', 'E', 'R', '_', 'T', 'I', 'M', 'E', 'O', 'U', 'T', 0 };
+static SQLWCHAR W_FAILOVER_TOPOLOGY_REFRESH_RATE[] = { 'F', 'A', 'I', 'L', 'O', 'V', 'E', 'R', '_', 'T', 'O', 'P', 'O', 'L', 'O', 'G', 'Y', '_', 'R', 'E', 'F', 'R', 'E', 'S', 'H', '_', 'R', 'A', 'T', 'E', 0 };
+static SQLWCHAR W_FAILOVER_WRITER_RECONNECT_INTERVAL[] = { 'F', 'A', 'I', 'L', 'O', 'V', 'E', 'R', '_', 'W', 'R', 'I', 'T', 'E', 'R', '_', 'R', 'E', 'C', 'O', 'N', 'N', 'E', 'C', 'T', '_', 'I', 'N', 'T', 'E', 'R', 'V', 'A', 'L', 0 };
+static SQLWCHAR W_FAILOVER_READER_CONNECT_TIMEOUT[] = { 'F', 'A', 'I', 'L', 'O', 'V', 'E', 'R', '_', 'R', 'E', 'A', 'D', 'E', 'R', '_', 'C', 'O', 'N', 'N', 'E', 'C', 'T', '_', 'T', 'I', 'M', 'E', 'O', 'U', 'T', 0 };
+static SQLWCHAR W_CONNECT_TIMEOUT[] = { 'C', 'O', 'N', 'N', 'E', 'C', 'T', '_', 'T', 'I', 'M', 'E', 'O', 'U', 'T', 0 };
+static SQLWCHAR W_NETWORK_TIMEOUT[] = { 'N', 'E', 'T', 'W', 'O', 'R', 'K', '_', 'T', 'I', 'M', 'E', 'O', 'U', 'T', 0 };
+
+/* Monitoring */
+static SQLWCHAR W_ENABLE_FAILURE_DETECTION[] = { 'E', 'N', 'A', 'B', 'L', 'E', '_', 'F', 'A', 'I', 'L', 'U', 'R', 'E', '_', 'D', 'E', 'T', 'E', 'C', 'T', 'I', 'O', 'N', 0 };
+static SQLWCHAR W_FAILURE_DETECTION_TIME[] = { 'F', 'A', 'I', 'L', 'U', 'R', 'E', '_', 'D', 'E', 'T', 'E', 'C', 'T', 'I', 'O', 'N', '_', 'T', 'I', 'M', 'E', 0 };
+static SQLWCHAR W_FAILURE_DETECTION_INTERVAL[] = { 'F', 'A', 'I', 'L', 'U', 'R', 'E', '_', 'D', 'E', 'T', 'E', 'C', 'T', 'I', 'O', 'N', '_', 'I', 'N', 'T', 'E', 'R', 'V', 'A', 'L', 0 };
+static SQLWCHAR W_FAILURE_DETECTION_COUNT[] = { 'F', 'A', 'I', 'L', 'U', 'R', 'E', '_', 'D', 'E', 'T', 'E', 'C', 'T', 'I', 'O', 'N', '_', 'C', 'O', 'U', 'N', 'T', 0 };
+static SQLWCHAR W_MONITOR_DISPOSAL_TIME[] = { 'M', 'O', 'N', 'I', 'T', 'O', 'R', '_', 'D', 'I', 'S', 'P', 'O', 'S', 'A', 'L', '_', 'T', 'I', 'M', 'E', 0 };
+static SQLWCHAR W_FAILURE_DETECTION_TIMEOUT[] = { 'F', 'A', 'I', 'L', 'U', 'R', 'E', '_', 'D', 'E', 'T', 'E', 'C', 'T', 'I', 'O', 'N', '_', 'T', 'I', 'M', 'E', 'O', 'U', 'T', 0 };
+
 /* DS_PARAM */
 /* externally used strings */
 const SQLWCHAR W_DRIVER_PARAM[]= {';', 'D', 'R', 'I', 'V', 'E', 'R', '=', 0};
@@ -266,7 +291,19 @@ SQLWCHAR *dsnparams[]= {W_DSN, W_DRIVER, W_DESCRIPTION, W_SERVER,
                         W_NO_TLS_1_2, W_NO_TLS_1_3,
                         W_SSLMODE, W_NO_DATE_OVERFLOW, W_LOAD_DATA_LOCAL_DIR,
                         W_OCI_CONFIG_FILE, W_TLS_VERSIONS,
-                        W_SSL_CRL, W_SSL_CRLPATH};
+                        W_SSL_CRL, W_SSL_CRLPATH,
+                        /* Failover */
+                        W_ENABLE_CLUSTER_FAILOVER, W_ALLOW_READER_CONNECTIONS, 
+                        W_GATHER_PERF_METRICS, W_GATHER_PERF_METRICS_PER_INSTANCE,
+                        W_HOST_PATTERN, W_CLUSTER_ID, W_TOPOLOGY_REFRESH_RATE,
+                        W_FAILOVER_TIMEOUT, W_FAILOVER_TOPOLOGY_REFRESH_RATE,
+                        W_FAILOVER_WRITER_RECONNECT_INTERVAL, 
+                        W_FAILOVER_READER_CONNECT_TIMEOUT, W_CONNECT_TIMEOUT,
+                        W_NETWORK_TIMEOUT,
+                        /* Monitoring */
+                        W_ENABLE_FAILURE_DETECTION, W_FAILURE_DETECTION_TIME,
+                        W_FAILURE_DETECTION_INTERVAL, W_FAILURE_DETECTION_COUNT,
+                        W_MONITOR_DISPOSAL_TIME, W_FAILURE_DETECTION_TIMEOUT};
 static const
 int dsnparamcnt= sizeof(dsnparams) / sizeof(SQLWCHAR *);
 /* DS_PARAM */
@@ -333,9 +370,23 @@ UWORD config_set(UWORD mode)
   return current;
 }
 
+unsigned int get_connect_timeout(unsigned int seconds) {
+  if (seconds && seconds > 0) {
+    return seconds;
+  }
+
+  return DEFAULT_CONNECT_TIMEOUT_SECS;
+}
+
+unsigned int get_network_timeout(unsigned int seconds) {
+  if (seconds && seconds > 0) {
+    return seconds;
+  }
+
+  return DEFAULT_NETWORK_TIMEOUT_SECS;
+}
 
 /* ODBC Installer Driver Wrapper */
-
 
 /*
  * Create a new driver object. All string data is pre-allocated.
@@ -690,6 +741,24 @@ DataSource *ds_new()
   ds->port = 3306;
   ds->has_port = false;
   ds->no_schema = 1;
+  ds->enable_cluster_failover = true;
+  ds->allow_reader_connections = false;
+  ds->gather_perf_metrics = false;
+  ds->topology_refresh_rate = TOPOLOGY_REFRESH_RATE_MS;
+  ds->failover_timeout = FAILOVER_TIMEOUT_MS;
+  ds->failover_reader_connect_timeout = FAILOVER_READER_CONNECT_TIMEOUT_MS;
+  ds->failover_topology_refresh_rate = FAILOVER_TOPOLOGY_REFRESH_RATE_MS;
+  ds->failover_writer_reconnect_interval = FAILOVER_WRITER_RECONNECT_INTERVAL_MS;
+  ds->connect_timeout = DEFAULT_CONNECT_TIMEOUT_SECS;
+  ds->network_timeout = DEFAULT_NETWORK_TIMEOUT_SECS;
+
+  ds->enable_failure_detection = ds->enable_cluster_failover;
+  ds->failure_detection_time = FAILURE_DETECTION_TIME_MS;
+  ds->failure_detection_interval = FAILURE_DETECTION_INTERVAL_MS;
+  ds->failure_detection_count = FAILURE_DETECTION_COUNT;
+  ds->monitor_disposal_time = MONITOR_DISPOSAL_TIME_MS;
+  ds->failure_detection_timeout = FAILURE_DETECTION_TIMEOUT_SECS;
+
   /* DS_PARAM */
 
   return ds;
@@ -763,15 +832,33 @@ void ds_delete(DataSource *ds)
   x_free(ds->ssl_crlpath8);
   x_free(ds->load_data_local_dir8);
 
+  x_free(ds->host_pattern);
+  x_free(ds->cluster_id);
+  x_free(ds->host_pattern8);
+  x_free(ds->cluster_id8);
+
   x_free(ds);
 }
-
 
 /*
  * Set a string attribute of a given data source object. The string
  * will be copied into the object.
  */
-int ds_set_strattr(SQLWCHAR **attr, const SQLWCHAR *val)
+int ds_set_strattr(SQLCHAR** attr, const SQLCHAR* val)
+{
+    x_free(*attr);
+    if (val && *val)
+        *attr = sqlchardup(val, SQL_NTS);
+    else
+        *attr = NULL;
+    return *attr || 0;
+}
+
+/*
+ * Set a string attribute of a given data source object. The string
+ * will be copied into the object.
+ */
+int ds_set_wstrattr(SQLWCHAR **attr, const SQLWCHAR *val)
 {
   x_free(*attr);
   if (val && *val)
@@ -785,7 +872,31 @@ int ds_set_strattr(SQLWCHAR **attr, const SQLWCHAR *val)
  * Same as ds_set_strattr, but allows truncating the given string. If
  * charcount is 0 or SQL_NTS, it will act the same as ds_set_strattr.
  */
-int ds_set_strnattr(SQLWCHAR **attr, const SQLWCHAR *val, size_t charcount)
+int ds_set_strnattr(SQLCHAR** attr, const SQLCHAR* val, size_t charcount)
+{
+    x_free(*attr);
+
+    if (charcount == SQL_NTS)
+        charcount = strlen((char*)val);
+
+    if (!charcount)
+    {
+        *attr = NULL;
+        return 1;
+    }
+
+    if (val && *val)
+        *attr = sqlchardup(val, charcount);
+    else
+        *attr = NULL;
+    return *attr || 0;
+}
+
+/*
+ * Same as ds_set_wstrattr, but allows truncating the given string. If
+ * charcount is 0 or SQL_NTS, it will act the same as ds_set_wstrattr.
+ */
+int ds_set_wstrnattr(SQLWCHAR **attr, const SQLWCHAR *val, size_t charcount)
 {
   x_free(*attr);
 
@@ -914,11 +1025,11 @@ void ds_map_param(DataSource *ds, const SQLWCHAR *param,
   else if (!sqlwcharcasecmp(W_SSLVERIFY, param))
     *intdest= &ds->sslverify;
   else if (!sqlwcharcasecmp(W_READTIMEOUT, param))
-    *intdest= &ds->readtimeout;
+    *intdest= &ds->read_timeout;
   else if (!sqlwcharcasecmp(W_WRITETIMEOUT, param))
-    *intdest= &ds->writetimeout;
+    *intdest= &ds->write_timeout;
   else if (!sqlwcharcasecmp(W_CLIENT_INTERACTIVE, param))
-    *intdest= &ds->clientinteractive;
+    *intdest= &ds->client_interactive;
   else if (!sqlwcharcasecmp(W_PREFETCH, param))
     *intdest= &ds->cursor_prefetch_number;
   else if (!sqlwcharcasecmp(W_FOUND_ROWS, param))
@@ -1011,6 +1122,47 @@ void ds_map_param(DataSource *ds, const SQLWCHAR *param,
   *strdest = &ds->ssl_crl;
   else if (!sqlwcharcasecmp(W_SSL_CRLPATH, param))
   *strdest = &ds->ssl_crlpath;
+  /* Failover*/
+  else if (!sqlwcharcasecmp(W_ENABLE_CLUSTER_FAILOVER, param))
+    *booldest = &ds->enable_cluster_failover;
+  else if (!sqlwcharcasecmp(W_ALLOW_READER_CONNECTIONS, param))
+    *booldest = &ds->allow_reader_connections;  
+  else if (!sqlwcharcasecmp(W_GATHER_PERF_METRICS, param))
+    *booldest = &ds->gather_perf_metrics;
+  else if (!sqlwcharcasecmp(W_GATHER_PERF_METRICS_PER_INSTANCE, param))
+    *booldest = &ds->gather_metrics_per_instance;
+  else if (!sqlwcharcasecmp(W_HOST_PATTERN, param))
+    *strdest = &ds->host_pattern;
+  else if (!sqlwcharcasecmp(W_CLUSTER_ID, param))
+    *strdest = &ds->cluster_id;
+  else if (!sqlwcharcasecmp(W_TOPOLOGY_REFRESH_RATE, param))
+    *intdest = &ds->topology_refresh_rate;
+  else if (!sqlwcharcasecmp(W_FAILOVER_TIMEOUT, param))
+    *intdest = &ds->failover_timeout;
+  else if (!sqlwcharcasecmp(W_FAILOVER_TOPOLOGY_REFRESH_RATE, param))
+    *intdest = &ds->failover_topology_refresh_rate;
+  else if (!sqlwcharcasecmp(W_FAILOVER_WRITER_RECONNECT_INTERVAL, param))
+    *intdest = &ds->failover_writer_reconnect_interval;
+  else if (!sqlwcharcasecmp(W_FAILOVER_READER_CONNECT_TIMEOUT, param))
+    *intdest = &ds->failover_reader_connect_timeout;
+  else if (!sqlwcharcasecmp(W_CONNECT_TIMEOUT, param))
+    *intdest = &ds->connect_timeout;
+  else if (!sqlwcharcasecmp(W_NETWORK_TIMEOUT, param))
+    *intdest = &ds->network_timeout;
+
+  /* Monitoring */
+  else if (!sqlwcharcasecmp(W_ENABLE_FAILURE_DETECTION, param))
+    *booldest = &ds->enable_failure_detection;
+  else if (!sqlwcharcasecmp(W_FAILURE_DETECTION_TIME, param))
+    *intdest = &ds->failure_detection_time;
+  else if (!sqlwcharcasecmp(W_FAILURE_DETECTION_INTERVAL, param))
+    *intdest = &ds->failure_detection_interval;
+  else if (!sqlwcharcasecmp(W_FAILURE_DETECTION_COUNT, param))
+    *intdest = &ds->failure_detection_count;
+  else if (!sqlwcharcasecmp(W_MONITOR_DISPOSAL_TIME, param))
+    *intdest = &ds->monitor_disposal_time;
+  else if (!sqlwcharcasecmp(W_FAILURE_DETECTION_TIMEOUT, param))
+    *intdest = &ds->failure_detection_timeout;
 
   /* DS_PARAM */
 }
@@ -1058,9 +1210,9 @@ int ds_lookup(DataSource *ds)
   OutputDebugString("Dumping SQLGetPrivateProfileStringW result");
   for (i= 0; i < size; ++i)
   {
-    sprintf(dbuf, "[%d] = %wc - 0x%x\n", i,
-            (entries[i] < 0x7f && isalpha(entries[i]) ? entries[i] : 'X'),
-            entries[i]);
+    snprintf(dbuf, sizeof(dbuf), "[%d] = %wc - 0x%x\n", i,
+             (entries[i] < 0x7f && isalpha(entries[i]) ? entries[i] : 'X'),
+             entries[i]);
     OutputDebugString(dbuf);
   }
   }
@@ -1111,7 +1263,7 @@ int ds_lookup(DataSource *ds)
     else if (!valsize)
       /* skip blanks */;
     else if (dest && !*dest)
-      ds_set_strnattr(dest, val, valsize);
+      ds_set_wstrnattr(dest, val, valsize);
     else if (intdest)
       *intdest= sqlwchartoul(val, NULL);
     else if (booldest)
@@ -1217,11 +1369,11 @@ int ds_from_kvpair(DataSource *ds, const SQLWCHAR *attrs, SQLWCHAR delim)
       {
         if (*split == '{' && *end == '}')
         {
-          ds_set_strnattr(dest, split + 1, end - split - 1);
+          ds_set_wstrnattr(dest, split + 1, end - split - 1);
           ++end;
         }
         else
-          ds_set_strnattr(dest, split, end - split);
+          ds_set_wstrnattr(dest, split, end - split);
       }
       else if (intdest)
       {
@@ -1390,12 +1542,13 @@ int ds_add_strprop(const SQLWCHAR *name, const SQLWCHAR *propname,
   /* don't write if its null or empty string */
   if (propval && *propval)
   {
-    BOOL rc;
     SAVE_MODE();
-    rc= SQLWritePrivateProfileStringW(name, propname, propval, W_ODBC_INI);
-    if (rc)
-      RESTORE_MODE();
-    return !rc;
+    if (SQLWritePrivateProfileStringW(name, propname, propval, W_ODBC_INI))
+    {
+        RESTORE_MODE();
+        return 0;
+    }
+    return 1;
   }
 
   return 0;
@@ -1500,9 +1653,9 @@ int ds_add(DataSource *ds)
   if (ds_add_intprop(ds->name, W_SSLVERIFY  , ds->sslverify  )) goto error;
   if(ds->has_port)
     if (ds_add_intprop(ds->name, W_PORT       , ds->port       )) goto error;
-  if (ds_add_intprop(ds->name, W_READTIMEOUT, ds->readtimeout)) goto error;
-  if (ds_add_intprop(ds->name, W_WRITETIMEOUT, ds->writetimeout)) goto error;
-  if (ds_add_intprop(ds->name, W_CLIENT_INTERACTIVE, ds->clientinteractive)) goto error;
+  if (ds_add_intprop(ds->name, W_READTIMEOUT, ds->read_timeout)) goto error;
+  if (ds_add_intprop(ds->name, W_WRITETIMEOUT, ds->write_timeout)) goto error;
+  if (ds_add_intprop(ds->name, W_CLIENT_INTERACTIVE, ds->client_interactive)) goto error;
   if (ds_add_intprop(ds->name, W_PREFETCH   , ds->cursor_prefetch_number)) goto error;
 
   if (ds_add_intprop(ds->name, W_FOUND_ROWS, ds->return_matching_rows)) goto error;
@@ -1550,7 +1703,30 @@ int ds_add(DataSource *ds)
   if (ds_add_strprop(ds->name, W_TLS_VERSIONS, ds->tls_versions)) goto error;
   if (ds_add_strprop(ds->name, W_SSL_CRL, ds->ssl_crl)) goto error;
   if (ds_add_strprop(ds->name, W_SSL_CRLPATH, ds->ssl_crlpath)) goto error;
-  /* DS_PARAM */
+  /* Failover */
+  if (ds_add_intprop(ds->name, W_ENABLE_CLUSTER_FAILOVER, ds->enable_cluster_failover, true)) goto error;
+  if (ds_add_intprop(ds->name, W_ALLOW_READER_CONNECTIONS, ds->allow_reader_connections)) goto error;
+  if (ds_add_intprop(ds->name, W_GATHER_PERF_METRICS, ds->gather_perf_metrics)) goto error;
+  if (ds_add_intprop(ds->name, W_GATHER_PERF_METRICS_PER_INSTANCE, ds->gather_metrics_per_instance)) goto error;
+  if (ds_add_strprop(ds->name, W_HOST_PATTERN, ds->host_pattern)) goto error;
+  if (ds_add_strprop(ds->name, W_CLUSTER_ID, ds->cluster_id)) goto error;
+  if (ds_add_intprop(ds->name, W_TOPOLOGY_REFRESH_RATE, ds->topology_refresh_rate)) goto error;
+  if (ds_add_intprop(ds->name, W_FAILOVER_TIMEOUT, ds->failover_timeout)) goto error;
+  if (ds_add_intprop(ds->name, W_FAILOVER_TOPOLOGY_REFRESH_RATE, ds->failover_topology_refresh_rate)) goto error;
+  if (ds_add_intprop(ds->name, W_FAILOVER_WRITER_RECONNECT_INTERVAL, ds->failover_writer_reconnect_interval)) goto error;
+  if (ds_add_intprop(ds->name, W_FAILOVER_READER_CONNECT_TIMEOUT, ds->failover_reader_connect_timeout)) goto error;
+  if (ds_add_intprop(ds->name, W_CONNECT_TIMEOUT, ds->connect_timeout)) goto error;
+  if (ds_add_intprop(ds->name, W_NETWORK_TIMEOUT, ds->network_timeout)) goto error;
+
+  /* Monitoring */
+  if (ds_add_intprop(ds->name, W_ENABLE_FAILURE_DETECTION, ds->enable_failure_detection, true)) goto error;
+  if (ds_add_intprop(ds->name, W_FAILURE_DETECTION_TIME, ds->failure_detection_time)) goto error;
+  if (ds_add_intprop(ds->name, W_FAILURE_DETECTION_INTERVAL, ds->failure_detection_interval)) goto error;
+  if (ds_add_intprop(ds->name, W_FAILURE_DETECTION_COUNT, ds->failure_detection_count)) goto error;
+  if (ds_add_intprop(ds->name, W_MONITOR_DISPOSAL_TIME, ds->monitor_disposal_time)) goto error;
+  if (ds_add_intprop(ds->name, W_FAILURE_DETECTION_TIMEOUT, ds->failure_detection_timeout)) goto error;
+
+ /* DS_PARAM */
 
   rc= 0;
 
@@ -1707,4 +1883,192 @@ ulong ds_get_options(DataSource *ds)
     options|= FLAG_DFLT_BIGINT_BIND_STR;
 
   return options;
+}
+
+/*
+ *  copy values from ds_source to ds
+ */
+void ds_copy(DataSource *ds, DataSource *ds_source) {
+    if (ds == NULL || ds_source == NULL) {
+        return;
+    }
+
+    if (ds_source->name != nullptr) {
+        ds_set_wstrnattr(&ds->name, ds_source->name,
+                         sqlwcharlen(ds_source->name));
+
+        // probably don't need to set the '8' variables, they seem to be set as
+        // needed based on the non - '8', but it would look like this
+        if (ds_source->name8 != nullptr) {
+            ds_get_utf8attr(ds->name, &ds->name8);
+        }
+    }
+    if (ds_source->driver != nullptr) {
+        ds_set_wstrnattr(&ds->driver, ds_source->driver,
+                         sqlwcharlen(ds_source->driver));
+    }
+    if (ds_source->description != nullptr) {
+        ds_set_wstrnattr(&ds->description, ds_source->description,
+                         sqlwcharlen(ds_source->description));
+    }
+    if (ds_source->server != nullptr) {
+        ds_set_wstrnattr(&ds->server, ds_source->server,
+                         sqlwcharlen(ds_source->server));
+    }
+    if (ds_source->uid != nullptr) {
+        ds_set_wstrnattr(&ds->uid, ds_source->uid, sqlwcharlen(ds_source->uid));
+    }
+    if (ds_source->pwd != nullptr) {
+        ds_set_wstrnattr(&ds->pwd, ds_source->pwd, sqlwcharlen(ds_source->pwd));
+    }
+    if (ds_source->database != nullptr) {
+        ds_set_wstrnattr(&ds->database, ds_source->database,
+                         sqlwcharlen(ds_source->database));
+    }
+    if (ds_source->socket != nullptr) {
+        ds_set_wstrnattr(&ds->socket, ds_source->socket,
+                         sqlwcharlen(ds_source->socket));
+    }
+    if (ds_source->initstmt != nullptr) {
+        ds_set_wstrnattr(&ds->initstmt, ds_source->initstmt,
+                         sqlwcharlen(ds_source->initstmt));
+    }
+    if (ds_source->charset != nullptr) {
+        ds_set_wstrnattr(&ds->charset, ds_source->charset,
+                         sqlwcharlen(ds_source->charset));
+    }
+    if (ds_source->sslkey != nullptr) {
+        ds_set_wstrnattr(&ds->sslkey, ds_source->sslkey,
+                         sqlwcharlen(ds_source->sslkey));
+    }
+    if (ds_source->sslcert != nullptr) {
+        ds_set_wstrnattr(&ds->sslcert, ds_source->sslcert,
+                         sqlwcharlen(ds_source->sslcert));
+    }
+    if (ds_source->sslca != nullptr) {
+        ds_set_wstrnattr(&ds->sslca, ds_source->sslca,
+                         sqlwcharlen(ds_source->sslca));
+    }
+    if (ds_source->sslcapath != nullptr) {
+        ds_set_wstrnattr(&ds->sslcapath, ds_source->sslcapath,
+                         sqlwcharlen(ds_source->sslcapath));
+    }
+    if (ds_source->sslcipher != nullptr) {
+        ds_set_wstrnattr(&ds->sslcipher, ds_source->sslcipher,
+                         sqlwcharlen(ds_source->sslcipher));
+    }
+    if (ds_source->sslmode != nullptr) {
+        ds_set_wstrnattr(&ds->sslmode, ds_source->sslmode,
+                         sqlwcharlen(ds_source->sslmode));
+    }
+    if (ds_source->rsakey != nullptr) {
+        ds_set_wstrnattr(&ds->rsakey, ds_source->rsakey,
+                         sqlwcharlen(ds_source->rsakey));
+    }
+    if (ds_source->savefile != nullptr) {
+        ds_set_wstrnattr(&ds->savefile, ds_source->savefile,
+                         sqlwcharlen(ds_source->savefile));
+    }
+    if (ds_source->plugin_dir != nullptr) {
+        ds_set_wstrnattr(&ds->plugin_dir, ds_source->plugin_dir,
+                         sqlwcharlen(ds_source->plugin_dir));
+    }
+    if (ds_source->default_auth != nullptr) {
+        ds_set_wstrnattr(&ds->default_auth, ds_source->default_auth,
+                         sqlwcharlen(ds_source->default_auth));
+    }
+    if (ds_source->load_data_local_dir != nullptr) {
+        ds_set_wstrnattr(&ds->load_data_local_dir,
+                         ds_source->load_data_local_dir,
+                         sqlwcharlen(ds_source->load_data_local_dir));
+    }
+
+    ds->has_port = ds_source->has_port;
+    ds->port = ds_source->port;
+    ds->read_timeout = ds_source->read_timeout;
+    ds->write_timeout = ds_source->write_timeout;
+    ds->client_interactive = ds_source->client_interactive;
+
+    /*  */
+    ds->return_matching_rows = ds_source->return_matching_rows;
+    ds->allow_big_results = ds_source->allow_big_results;
+    ds->use_compressed_protocol = ds_source->use_compressed_protocol;
+    ds->change_bigint_columns_to_int = ds_source->change_bigint_columns_to_int;
+    ds->safe = ds_source->safe;
+    ds->auto_reconnect = ds_source->auto_reconnect;
+    ds->auto_increment_null_search = ds_source->auto_increment_null_search;
+    ds->handle_binary_as_char = ds_source->handle_binary_as_char;
+    ds->can_handle_exp_pwd = ds_source->can_handle_exp_pwd;
+    ds->enable_cleartext_plugin = ds_source->enable_cleartext_plugin;
+    ds->get_server_public_key = ds_source->get_server_public_key;
+    /*  */
+    ds->dont_prompt_upon_connect = ds_source->dont_prompt_upon_connect;
+    ds->dynamic_cursor = ds_source->dynamic_cursor;
+    ds->user_manager_cursor = ds_source->user_manager_cursor;
+    ds->dont_use_set_locale = ds_source->dont_use_set_locale;
+    ds->pad_char_to_full_length = ds_source->pad_char_to_full_length;
+    ds->dont_cache_result = ds_source->dont_cache_result;
+    /*  */
+    ds->return_table_names_for_SqlDescribeCol =
+        ds_source->return_table_names_for_SqlDescribeCol;
+    ds->ignore_space_after_function_names =
+        ds_source->ignore_space_after_function_names;
+    ds->force_use_of_named_pipes = ds_source->force_use_of_named_pipes;
+    ds->no_catalog = ds_source->no_catalog;
+    ds->read_options_from_mycnf = ds_source->read_options_from_mycnf;
+    ds->disable_transactions = ds_source->disable_transactions;
+    ds->force_use_of_forward_only_cursors =
+        ds_source->force_use_of_forward_only_cursors;
+    ds->allow_multiple_statements = ds_source->allow_multiple_statements;
+    ds->limit_column_size = ds_source->limit_column_size;
+
+    ds->min_date_to_zero = ds_source->min_date_to_zero;
+    ds->zero_date_to_min = ds_source->zero_date_to_min;
+    ds->default_bigint_bind_str = ds_source->default_bigint_bind_str;
+    /* debug */
+    ds->save_queries = ds_source->save_queries;
+    /* SSL */
+    ds->sslverify = ds_source->sslverify;
+    ds->cursor_prefetch_number = ds_source->cursor_prefetch_number;
+    ds->no_ssps = ds_source->no_ssps;
+
+    ds->no_tls_1_2 = ds_source->no_tls_1_2;
+    ds->no_tls_1_3 = ds_source->no_tls_1_3;
+
+    ds->no_date_overflow = ds_source->no_date_overflow;
+    ds->enable_local_infile = ds_source->enable_local_infile;
+
+    ds->enable_dns_srv = ds_source->enable_dns_srv;
+    ds->multi_host = ds_source->multi_host;
+
+    /* Failover */
+    if (ds_source->host_pattern != nullptr) {
+        ds_set_wstrnattr(&ds->host_pattern, ds_source->host_pattern,
+                         sqlwcharlen(ds_source->host_pattern));
+    }
+    if (ds_source->cluster_id != nullptr) {
+        ds_set_wstrnattr(&ds->cluster_id, ds_source->cluster_id,
+                         sqlwcharlen(ds_source->cluster_id));
+    }
+
+    ds->enable_cluster_failover = ds_source->enable_cluster_failover;
+    ds->allow_reader_connections = ds_source->allow_reader_connections;
+    ds->gather_perf_metrics = ds_source->gather_perf_metrics;
+    ds->gather_metrics_per_instance = ds_source->gather_metrics_per_instance;
+    ds->topology_refresh_rate = ds_source->topology_refresh_rate;
+    ds->failover_timeout = ds_source->failover_timeout;
+    ds->failover_topology_refresh_rate =
+        ds_source->failover_topology_refresh_rate;
+    ds->failover_writer_reconnect_interval =
+        ds_source->failover_writer_reconnect_interval;
+    ds->failover_reader_connect_timeout =
+        ds_source->failover_reader_connect_timeout;
+    ds->connect_timeout = ds_source->connect_timeout;
+    ds->network_timeout = ds_source->network_timeout;
+    ds->enable_failure_detection = ds_source->enable_failure_detection;
+    ds->failure_detection_time = ds_source->failure_detection_time;
+    ds->failure_detection_interval = ds_source->failure_detection_interval;
+    ds->failure_detection_count = ds_source->failure_detection_count;
+    ds->monitor_disposal_time = ds_source->monitor_disposal_time;
+    ds->failure_detection_timeout = ds_source->failure_detection_timeout;
 }

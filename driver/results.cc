@@ -1,3 +1,5 @@
+// Modifications Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+//
 // Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
 //
 // This program is free software; you can redistribute it and/or modify
@@ -380,8 +382,8 @@ sql_get_data(STMT *stmt, SQLSMALLINT fCType, uint column_number,
              SQLPOINTER rgbValue, SQLLEN cbValueMax, SQLLEN *pcbValue,
              char *value, ulong length, DESCREC *arrec)
 {
-  MYSQL_FIELD *field= mysql_fetch_field_direct(stmt->result, column_number);
-  SQLLEN    tmp;
+  MYSQL_FIELD *field= stmt->dbc->mysql_proxy->fetch_field_direct(stmt->result, column_number);
+  SQLLEN    temp;
   long long numeric_value = 0;
   unsigned long long u_numeric_value = 0;
   my_bool   convert= 1;
@@ -449,7 +451,7 @@ sql_get_data(STMT *stmt, SQLSMALLINT fCType, uint column_number,
 
     if (!pcbValue)
     {
-      pcbValue= &tmp; /* Easier code */
+      pcbValue= &temp; /* Easier code */
     }
 
     if (field->type == MYSQL_TYPE_BIT)
@@ -909,9 +911,9 @@ sql_get_data(STMT *stmt, SQLSMALLINT fCType, uint column_number,
                just reverse binary data */
             char _value[21]; /* max string length of 64bit number */
             if (numeric_value)
-              sprintf(_value, "%ll", numeric_value);
+              snprintf(_value, sizeof(_value), "%ll", numeric_value);
             else
-              sprintf(_value, "%llu", u_numeric_value);
+              snprintf(_value, sizeof(_value), "%llu", u_numeric_value);
 
 
             sqlnum_from_str(_value, sqlnum, &overflow);
@@ -1594,10 +1596,10 @@ SQLRETURN SQL_API SQLMoreResults( SQLHSTMT hstmt )
   /* try to get next resultset */
   nRetVal = next_result(stmt);
 
-  /* call to mysql_next_result() failed */
+  /* call to next_result() failed */
   if (nRetVal > 0)
   {
-    nRetVal= mysql_errno(stmt->dbc->mysql);
+    nRetVal= stmt->dbc->mysql_proxy->error_code();
 
     switch ( nRetVal )
     {
@@ -1606,14 +1608,18 @@ SQLRETURN SQL_API SQLMoreResults( SQLHSTMT hstmt )
 #if MYSQL_VERSION_ID > 80023
       case ER_CLIENT_INTERACTION_TIMEOUT:
 #endif
-        nReturn = stmt->set_error("08S01", mysql_error( stmt->dbc->mysql ), nRetVal );
+        const char *error_code, *error_msg;
+        if (stmt->dbc->fh->trigger_failover_if_needed("08S01", error_code, error_msg))
+          nReturn = stmt->set_error(error_code, error_msg, 0);
+        else
+          nReturn = stmt->set_error(error_code, stmt->dbc->mysql_proxy->error(), nRetVal);
         goto exitSQLMoreResults;
       case CR_COMMANDS_OUT_OF_SYNC:
       case CR_UNKNOWN_ERROR:
         nReturn = stmt->set_error("HY000");
         goto exitSQLMoreResults;
       default:
-        nReturn = stmt->set_error("HY000", "unhandled error from mysql_next_result()", nRetVal );
+        nReturn = stmt->set_error("HY000", "unhandled error from next_result()", nRetVal );
         goto exitSQLMoreResults;
     }
   }
@@ -1768,7 +1774,6 @@ fill_fetch_bookmark_buffers(STMT *stmt, ulong value, uint rownum)
   {
     SQLLEN *pcbValue= NULL;
     SQLPOINTER TargetValuePtr= NULL;
-    ulong copy_bytes= 0;
 
     stmt->reset_getdata_position();
 
@@ -2027,7 +2032,7 @@ SQLRETURN SQL_API myodbc_single_fetch( SQLHSTMT             hstmt,
             stmt->set_error("01S07", "One or more row has error.", 0);
             return SQL_SUCCESS_WITH_INFO; //SQL_NO_DATA_FOUND
           case SQL_ERROR:   return stmt->set_error(MYERR_S1000,
-                                            mysql_error(stmt->dbc->mysql), 0);
+                                            stmt->dbc->mysql_proxy->error(), 0);
         }
       }
       else
@@ -2173,7 +2178,7 @@ exitSQLSingleFetch:
     stmt->rows_found_in_set= 1;
     *pcrow= cur_row;
 
-    disconnected= is_connection_lost(mysql_errno(stmt->dbc->mysql))
+    disconnected= is_connection_lost(stmt->dbc->mysql_proxy->error_code())
       && handle_connection_error(stmt);
 
     if ( upd_status && stmt->ird->rows_processed_ptr )
@@ -2250,7 +2255,6 @@ SQLRETURN SQL_API my_SQLExtendedFetch( SQLHSTMT             hstmt,
   MYSQL_ROW_OFFSET  save_position= 0;
   SQLULEN           dummy_pcrow;
   BOOL              disconnected= FALSE;
-  long              brow= 0;
   DECLARE_LOCALE_HANDLE
   try
   {
@@ -2266,7 +2270,7 @@ SQLRETURN SQL_API my_SQLExtendedFetch( SQLHSTMT             hstmt,
         return SQL_NO_DATA_FOUND;
       case OPS_STREAMS_PENDING:
         /* Magical out params fetch */
-        mysql_stmt_fetch(stmt->ssps);
+        stmt->dbc->mysql_proxy->stmt_fetch(stmt->ssps);
       default:
         /* TODO: Need to remember real fetch' result */
         /* just in case... */
@@ -2426,7 +2430,7 @@ SQLRETURN SQL_API my_SQLExtendedFetch( SQLHSTMT             hstmt,
       if (res != row_res || res != row_book)
       {
         /* Any successful row makes overall result SQL_SUCCESS_WITH_INFO */
-        if (SQL_SUCCEEDED(row_res) && SQL_SUCCEEDED(row_res))
+        if (SQL_SUCCEEDED(row_res))
         {
           res= SQL_SUCCESS_WITH_INFO;
         }
@@ -2463,7 +2467,7 @@ SQLRETURN SQL_API my_SQLExtendedFetch( SQLHSTMT             hstmt,
     stmt->rows_found_in_set= i;
     *pcrow= i;
 
-    disconnected= is_connection_lost(mysql_errno(stmt->dbc->mysql))
+    disconnected= is_connection_lost(stmt->dbc->mysql_proxy->error_code())
       && handle_connection_error(stmt);
 
     if ( upd_status && stmt->ird->rows_processed_ptr )

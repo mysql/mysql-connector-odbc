@@ -1,3 +1,5 @@
+// Modifications Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+//
 // Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
 //
 // This program is free software; you can redistribute it and/or modify
@@ -631,6 +633,22 @@ outp:
 }
 
 
+/*
+ * Duplicate a SQLCHAR string. Memory is allocated with myodbc_malloc()
+ * and should be freed with my_free() or the x_free() macro.
+ *
+ * @return A pointer to a new string.
+ */
+SQLCHAR* sqlchardup(const SQLCHAR* str, const size_t len)
+{
+    const size_t length = len == SQL_NTS ? strlen((char*)str) : len;
+    SQLCHAR* res = (SQLCHAR*)myodbc_malloc(length + 1, MYF(0));
+    if (!res)
+        return nullptr;
+    memcpy(res, str, length);
+    res[length] = 0;
+    return res;
+}
 
 
 /*
@@ -703,14 +721,14 @@ size_t sqlwcharlen(const SQLWCHAR *wstr)
  *
  * @return A pointer to a new string.
  */
-SQLWCHAR *sqlwchardup(const SQLWCHAR *wstr, size_t charlen)
+SQLWCHAR *sqlwchardup(const SQLWCHAR *wstr, const size_t len)
 {
-  size_t chars= charlen == SQL_NTS ? sqlwcharlen(wstr) : charlen;
-  SQLWCHAR *res= (SQLWCHAR *)myodbc_malloc((chars + 1) * sizeof(SQLWCHAR), MYF(0));
+  const size_t length = len == SQL_NTS ? sqlwcharlen(wstr) : len;
+  SQLWCHAR *res = (SQLWCHAR *)myodbc_malloc((length + 1) * sizeof(SQLWCHAR), MYF(0));
   if (!res)
-    return NULL;
-  memcpy(res, wstr, chars * sizeof(SQLWCHAR));
-  res[chars]= 0;
+    return nullptr;
+  memcpy(res, wstr, length * sizeof(SQLWCHAR));
+  res[length]= 0;
   return res;
 }
 
@@ -1389,11 +1407,11 @@ char *myodbc_stpmov(char *dst, const char *src)
 char *myodbc_ll2str(longlong val, char *dst, int radix)
 {
   char buffer[65];
-  char _dig_vec_upper[] =
+  char dig_vec_upper[] =
     "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
   char *p;
   long long_val;
-  char *dig_vec = _dig_vec_upper;
+  char *dig_vec = dig_vec_upper;
   ulonglong uval = (ulonglong)val;
 
   if (radix < 0)
@@ -1677,7 +1695,6 @@ bool myodbc_append_os_quoted_std(std::string &str, const char *append, ...) {
   const char *quote_str = "\'";
   const uint quote_len = 1;
 #endif /* _WIN32 */
-  bool ret = true;
   va_list dirty_text;
   str.reserve(str.length() + 128);
   str.append(quote_str, quote_len); /* Leading quote */

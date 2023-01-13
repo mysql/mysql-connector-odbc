@@ -1,3 +1,5 @@
+// Modifications Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+//
 // Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
 //
 // This program is free software; you can redistribute it and/or modify
@@ -86,12 +88,10 @@ SQLColAttributeImpl(SQLHSTMT hstmt, SQLUSMALLINT column,
   STMT *stmt= (STMT *)hstmt;
   SQLCHAR *value= NULL;
   SQLINTEGER len= SQL_NTS;
-  uint errors;
   SQLRETURN rc= MySQLColAttribute(hstmt, column, field, &value, num_attr);
 
   if (value)
   {
-    SQLCHAR *old_value= value;
     len= strlen((char *)value);
 
     /* We set the error only when the result is intented to be returned */
@@ -202,7 +202,6 @@ SQLDescribeCol(SQLHSTMT hstmt, SQLUSMALLINT column,
   SQLCHAR *value= NULL;
   SQLINTEGER len= SQL_NTS;
   SQLSMALLINT free_value= 0;
-  uint errors;
 
   SQLRETURN rc;
 
@@ -213,13 +212,12 @@ SQLDescribeCol(SQLHSTMT hstmt, SQLUSMALLINT column,
 
   if (free_value == -1)
   {
-    set_mem_error(stmt->dbc->mysql);
+    set_mem_error(stmt->dbc->mysql_proxy);
     return handle_connection_error(stmt);
   }
 
   if (value)
   {
-    SQLCHAR *old_value= value;
     len= strlen((char *)value);
 
     /* We set the error only when the result is intented to be returned */
@@ -289,7 +287,6 @@ SQLDriverConnect(SQLHDBC hdbc, SQLHWND hwnd, SQLCHAR *in, SQLSMALLINT in_len,
   if ((rc == SQL_SUCCESS || rc == SQL_SUCCESS_WITH_INFO) && out && out_max)
 #endif
   {
-    uint errors;
     /* Now we have to convert SQLWCHAR back into a SQLCHAR. */
     *out_len= (SQLSMALLINT)sqlwchar_as_sqlchar_buf(default_charset_info, out, out_max,
                                       outw, *out_len, &errors);
@@ -405,7 +402,6 @@ SQLGetConnectAttrImpl(SQLHDBC hdbc, SQLINTEGER attribute, SQLPOINTER value,
   if (char_value)
   {
     SQLINTEGER len= SQL_NTS;
-    uint errors;
 
     len= strlen((char *)char_value);
 
@@ -447,7 +443,6 @@ SQLGetCursorName(SQLHSTMT hstmt, SQLCHAR *cursor, SQLSMALLINT cursor_max,
   STMT *stmt= (STMT *)hstmt;
   SQLCHAR *name;
   SQLINTEGER len;
-  uint errors;
 
   LOCK_STMT(stmt);
   CLEAR_STMT_ERROR(stmt);
@@ -506,7 +501,6 @@ SQLGetDiagField(SQLSMALLINT handle_type, SQLHANDLE handle,
 
   if (value)
   {
-    uint errors;
     len= strlen((char *)value);
 
     /* We set the error only when the result is intented to be returned */
@@ -548,7 +542,6 @@ SQLGetDiagRecImpl(SQLSMALLINT handle_type, SQLHANDLE handle,
   DBC *dbc;
   SQLCHAR *msg_value= NULL, *sqlstate_value= NULL;
   SQLINTEGER len= SQL_NTS;
-  uint errors;
 
   if (handle == NULL)
   {
@@ -616,7 +609,6 @@ SQLGetInfo(SQLHDBC hdbc, SQLUSMALLINT type, SQLPOINTER value,
   DBC *dbc= (DBC *)hdbc;
   SQLCHAR *char_value= NULL;
   SQLINTEGER len= SQL_NTS;
-  uint errors;
 
   SQLRETURN rc;
 
@@ -718,8 +710,6 @@ SQLRETURN SQL_API
 SQLPrepareImpl(SQLHSTMT hstmt, SQLCHAR *str, SQLINTEGER str_len,
                bool force_prepare)
 {
-  STMT *stmt= (STMT *)hstmt;
-
   /*
     If the ANSI character set is the same as the connection character set,
     we can pass it straight through. Otherwise it needs to be converted to
@@ -805,10 +795,7 @@ SQLRETURN SQL_API
 SQLSetConnectAttrImpl(SQLHDBC hdbc, SQLINTEGER attribute,
                       SQLPOINTER value, SQLINTEGER value_len)
 {
-  SQLRETURN rc;
-  DBC *dbc= (DBC *)hdbc;
-  rc= MySQLSetConnectAttr(hdbc, attribute, value, value_len);
-  return rc;
+  return MySQLSetConnectAttr(hdbc, attribute, value, value_len);
 }
 
 

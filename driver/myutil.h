@@ -1,3 +1,5 @@
+// Modifications Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+//
 // Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
 //
 // This program is free software; you can redistribute it and/or modify
@@ -45,18 +47,11 @@
 
 #define if_forward_cache(st) ((st)->stmt_options.cursor_type == SQL_CURSOR_FORWARD_ONLY && \
            (st)->dbc->ds->dont_cache_result)
-#define is_connected(dbc)    ((dbc)->mysql && (dbc)->mysql->net.vio)
-#define trans_supported(db) ((db)->mysql->server_capabilities & CLIENT_TRANSACTIONS)
-#define autocommit_on(db) ((db)->mysql->server_status & SERVER_STATUS_AUTOCOMMIT)
-#define is_no_backslashes_escape_mode(db) ((db)->mysql->server_status & SERVER_STATUS_NO_BACKSLASH_ESCAPES)
+#define trans_supported(db) ((db)->mysql_proxy->get_server_capabilities() & CLIENT_TRANSACTIONS)
+#define autocommit_on(db) ((db)->mysql_proxy->get_server_status() & SERVER_STATUS_AUTOCOMMIT)
+#define is_no_backslashes_escape_mode(db) ((db)->mysql_proxy->get_server_status() & SERVER_STATUS_NO_BACKSLASH_ESCAPES)
 #define reset_ptr(x) {if (x) x= 0;}
 #define digit(A) ((int) (A - '0'))
-
-#define MYLOG_QUERY(A,B) {if ((A)->dbc->ds->save_queries) \
-               query_print((A)->dbc->query_log,(char*) B);}
-
-#define MYLOG_DBC_QUERY(A,B) {if((A)->ds->save_queries) \
-               query_print((A)->query_log,(char*) B);}
 
 /* A few character sets we care about. */
 #define ASCII_CHARSET_NUMBER  11
@@ -189,7 +184,7 @@ SQLRETURN set_desc_error  (DESC *desc, char *state,
                           const char *message, uint errcode);
 SQLRETURN handle_connection_error (STMT *stmt);
 my_bool   is_connection_lost      (uint errcode);
-void      set_mem_error           (MYSQL *mysql);
+void      set_mem_error           (MYSQL_PROXY *mysql_proxy);
 void      translate_error         (char *save_state, myodbc_errid errid, uint mysql_err);
 
 SQLSMALLINT get_sql_data_type_from_str(const char *mysql_type_name);
@@ -198,12 +193,12 @@ SQLSMALLINT compute_sql_data_type(STMT *stmt, SQLSMALLINT sql_type,
 SQLSMALLINT get_sql_data_type           (STMT *stmt, MYSQL_FIELD *field, char *buff);
 SQLULEN     get_column_size             (STMT *stmt, MYSQL_FIELD *field);
 SQLULEN     get_column_size_from_str    (STMT *stmt, const char *size_str);
-SQLULEN     fill_column_size_buff       (char *buff, STMT *stmt, MYSQL_FIELD *field);
+SQLULEN     fill_column_size_buff       (char *buff, size_t buff_size, STMT *stmt, MYSQL_FIELD *field);
 SQLSMALLINT get_decimal_digits          (STMT *stmt, MYSQL_FIELD *field);
 SQLLEN      get_transfer_octet_length   (STMT *stmt, MYSQL_FIELD *field);
 SQLLEN      fill_transfer_oct_len_buff  (char *buff, STMT *stmt, MYSQL_FIELD *field);
 SQLLEN      get_display_size            (STMT *stmt, MYSQL_FIELD *field);
-SQLLEN      fill_display_size_buff      (char *buff, STMT *stmt, MYSQL_FIELD *field);
+SQLLEN      fill_display_size_buff      (char *buff, size_t buff_size, STMT *stmt, MYSQL_FIELD *field);
 SQLSMALLINT get_dticode_from_concise_type       (SQLSMALLINT concise_type);
 SQLSMALLINT get_concise_type_from_datetime_code (SQLSMALLINT dticode);
 SQLSMALLINT get_concise_type_from_interval_code (SQLSMALLINT dticode);
@@ -267,14 +262,14 @@ void  myodbc_init               (void);
 void  myodbc_ov_init            (SQLINTEGER odbc_version);
 void  myodbc_sqlstate2_init     (void);
 void  myodbc_sqlstate3_init     (void);
-int   check_if_server_is_alive  (DBC *dbc);
+bool  is_server_alive           (DBC *dbc);
 
 bool   myodbc_append_quoted_name_std(std::string &str, const char *name);
 
 SQLRETURN set_handle_error          (SQLSMALLINT HandleType, SQLHANDLE handle,
                                     myodbc_errid errid, const char *errtext, SQLINTEGER errcode);
 SQLRETURN set_conn_error(DBC *dbc,myodbc_errid errid, const char *errtext,
-                        SQLINTEGER errcode);
+                        SQLINTEGER errcode, char* prefix = MYODBC_ERROR_PREFIX);
 SQLRETURN set_env_error (ENV * env,myodbc_errid errid, const char *errtext,
                         SQLINTEGER errcode);
 SQLRETURN copy_str_data (SQLSMALLINT HandleType, SQLHANDLE Handle,
@@ -323,11 +318,6 @@ void *ptr_offset_adjust   (void *ptr, SQLULEN *bind_offset,
 
 void free_internal_result_buffers(STMT *stmt);
 
-/* Functions used when debugging */
-void query_print          (FILE *log_file,char *query);
-FILE *init_query_log      (void);
-void end_query_log        (FILE *query_log);
-
 enum enum_field_types map_sql2mysql_type(SQLSMALLINT sql_type);
 
 /* proc_* functions - used to parse prcedures headers in SQLProcedureColumns */
@@ -339,10 +329,10 @@ SQLUINTEGER proc_get_param_size   (SQLCHAR *ptype, int len, int sql_type_index,
                                   SQLSMALLINT *dec);
 SQLLEN      proc_get_param_octet_len  (STMT *stmt, int sql_type_index,
                                       SQLULEN col_size, SQLSMALLINT decimal_digits,
-                                      unsigned int flags, char * str_buff);
+                                      unsigned int flags, char * str_buff, size_t buff_size);
 SQLLEN      proc_get_param_col_len    (STMT *stmt, int sql_type_index, SQLULEN col_size,
                                       SQLSMALLINT decimal_digits, unsigned int flags,
-                                      char * str_buff);
+                                      char * str_buff, size_t buff_size);
 int         proc_get_param_sql_type_index (const char*ptype, int len);
 SQLTypeMap *proc_get_param_map_by_index   (int index);
 char *      proc_param_next_token         (char *str, char *str_end);
@@ -383,7 +373,7 @@ unsigned long long binary2ull(char* src, uint64 srcLen);
 void fill_ird_data_lengths (DESC *ird, ulong *lengths, uint fields);
 
 /* Functions to work with prepared and regular statements  */
-#define IS_PS_OUT_PARAMS(_stmt) ((_stmt)->dbc->mysql->server_status & SERVER_PS_OUT_PARAMS)
+#define IS_PS_OUT_PARAMS(_stmt) ((_stmt)->dbc->mysql_proxy->get_server_status() & SERVER_PS_OUT_PARAMS)
 /* my_stmt.c */
 BOOL              ssps_used           (STMT *stmt);
 BOOL              returned_result     (STMT *stmt);
@@ -432,7 +422,7 @@ void stmt_result_free(STMT * stmt)
     x_free(stmt->result);
   }
   else
-    mysql_free_result(stmt->result);
+    stmt->dbc->mysql_proxy->free_result(stmt->result);
 
   stmt->result = NULL;
 }

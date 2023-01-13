@@ -1,0 +1,12 @@
+[ODBC Drivers]
+@TEST_DRIVER@ = Installed
+
+[@TEST_DRIVER@]
+Driver = @DRIVER_PATH@
+Description = @DRIVER_DESCRIPTION@
+Threading = @THREADING@
+
+[@DRIVER_PATH@]
+Driver = @DRIVER_PATH@
+Description = @DRIVER_DESCRIPTION@
+Threading = @THREADING@

@@ -1,3 +1,5 @@
+// Modifications Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+//
 // Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
 //
 // This program is free software; you can redistribute it and/or modify
@@ -82,20 +84,18 @@ SQLRETURN exec_stmt_query_std(STMT *stmt, const std::string &query,
 }
 
 /**
-
-
-/**
   Execute a SQL statement.
 
-  @param[in] dbc       The database connection
-  @param[in] query     The query to execute
-  @param[in] req_lock  The flag if dbc->lock thread lock should be used
-                       when executing a query
+  @param[in] dbc          The database connection
+  @param[in] query        The query to execute
+  @param[in] query_length The string length of the query
+  @param[in] req_lock     The flag if dbc->lock thread lock should be used
+                          when executing a query
   */
 SQLRETURN odbc_stmt(DBC *dbc, const char *query,
                     SQLULEN query_length, my_bool req_lock)
 {
-  SQLRETURN result= SQL_SUCCESS;
+  SQLRETURN result = SQL_SUCCESS;
   LOCK_DBC_DEFER(dbc);
 
   if (req_lock)
@@ -105,19 +105,54 @@ SQLRETURN odbc_stmt(DBC *dbc, const char *query,
 
   if (query_length == SQL_NTS)
   {
-    query_length= strlen(query);
+    query_length = strlen(query);
+  }
+  
+  // return immediately if not connected
+  if (!dbc->mysql_proxy->is_connected()) 
+  {
+    return set_conn_error(dbc, MYERR_08S01, "The active SQL connection was lost. Please discard this connection.", 0);
   }
 
-  if ( check_if_server_is_alive(dbc) ||
-       mysql_real_query(dbc->mysql, query, query_length) )
+  bool server_alive = is_server_alive(dbc);
+  if (!server_alive || dbc->mysql_proxy->real_query(query, query_length))
   {
-    result= set_conn_error(dbc,MYERR_S1000,mysql_error(dbc->mysql),
-                           mysql_errno(dbc->mysql));
+      const unsigned int mysql_error_code = dbc->mysql_proxy->error_code();
+
+      MYLOG_DBC_TRACE(dbc, dbc->mysql_proxy->error());
+      result = set_conn_error(dbc, MYERR_S1000, dbc->mysql_proxy->error(), mysql_error_code);
+
+      if (!server_alive || is_connection_lost(mysql_error_code))
+      {
+          bool rollback = (!autocommit_on(dbc) && trans_supported(dbc)) || dbc->transaction_open;
+          if (rollback)
+          {
+              MYLOG_DBC_TRACE(dbc, "Rolling back");
+              dbc->mysql_proxy->real_query("ROLLBACK", 8);
+          }
+
+          const char *error_code, *error_msg;
+          if (dbc->fh->trigger_failover_if_needed("08S01", error_code, error_msg))
+          {
+              if (strcmp(error_code, "08007") == 0)
+              {
+                  result = set_conn_error(dbc, MYERR_08007, "Connection failure during transaction.", 0);
+              }
+              else if (strcmp(error_code, "08S02") == 0)
+              {
+                  result = set_conn_error(dbc, MYERR_08S02, "The active SQL connection has changed.", 0);
+              }
+              else {
+                  result = set_conn_error(dbc, MYERR_08S01, "The active SQL connection was lost.", 0);
+              }
+          }
+          
+          dbc->transaction_open = false;
+      }
   }
 
   return result;
 }
-
 
 /**
   Link a list of fields to the current statement result.
@@ -162,7 +197,7 @@ void fix_row_lengths(STMT *stmt, const long* fix_rules, uint row, uint field_cou
     return;
 
   row_lengths =  stmt->lengths.get() + row * field_count;
-  orig_lengths= mysql_fetch_lengths(stmt->result);
+  orig_lengths = stmt->dbc->mysql_proxy->fetch_lengths(stmt->result);
 
   for (i= 0; i < field_count; ++i)
   {
@@ -1448,11 +1483,11 @@ void sqlulen_to_str(char *buff, SQLULEN value)
 
   @return  void
 */
-SQLLEN fill_display_size_buff(char *buff, STMT *stmt, MYSQL_FIELD *field)
+SQLLEN fill_display_size_buff(char *buff, size_t buff_size, STMT *stmt, MYSQL_FIELD *field)
 {
   /* See comment for fill_transfer_oct_len_buff()*/
   SQLLEN size= get_display_size(stmt, field);
-  sprintf(buff,size == SQL_NO_TOTAL ? "%d" : (sizeof(SQLLEN) == 4 ? "%lu" : "%lld"), size);
+  snprintf(buff, buff_size, size == SQL_NO_TOTAL ? "%d" : (sizeof(SQLLEN) == 4 ? "%lu" : "%lld"), size);
 
   return size;
 }
@@ -1466,7 +1501,7 @@ SQLLEN fill_display_size_buff(char *buff, STMT *stmt, MYSQL_FIELD *field)
 
   @return  void
 */
-SQLLEN fill_transfer_oct_len_buff(char *buff, STMT *stmt, MYSQL_FIELD *field)
+SQLLEN fill_transfer_oct_len_buff(char *buff, size_t buff_size, STMT *stmt, MYSQL_FIELD *field)
 {
   /* The only possible negative value get_transfer_octet_length can return is SQL_NO_TOTAL
      But it can return value which is greater that biggest signed integer(%ld).
@@ -1475,7 +1510,7 @@ SQLLEN fill_transfer_oct_len_buff(char *buff, STMT *stmt, MYSQL_FIELD *field)
   */
   SQLLEN len= get_transfer_octet_length(stmt, field);
 
-  sprintf(buff, len == SQL_NO_TOTAL ? "%d" : (sizeof(SQLLEN) == 4 ? "%lu" : "%lld"), len );
+  snprintf(buff, buff_size, len == SQL_NO_TOTAL ? "%d" : (sizeof(SQLLEN) == 4 ? "%lu" : "%lld"), len);
 
   return len;
 }
@@ -1489,11 +1524,11 @@ SQLLEN fill_transfer_oct_len_buff(char *buff, STMT *stmt, MYSQL_FIELD *field)
 
   @return  void
 */
-SQLULEN fill_column_size_buff(char *buff, STMT *stmt, MYSQL_FIELD *field)
+SQLULEN fill_column_size_buff(char *buff, size_t buff_size, STMT *stmt, MYSQL_FIELD *field)
 {
   SQLULEN size= get_column_size(stmt, field);
-  sprintf(buff, (size== SQL_NO_TOTAL ? "%d" :
-      (sizeof(SQLULEN) == 4 ? "%lu" : "%llu")), size);
+  snprintf(buff, buff_size, (size== SQL_NO_TOTAL ? "%d" :
+                            (sizeof(SQLULEN) == 4 ? "%lu" : "%llu")), size);
   return size;
 }
 
@@ -2207,7 +2242,8 @@ int str_to_ts(SQL_TIMESTAMP_STRUCT *ts, const char *str, int len, int zeroToMin,
               BOOL dont_use_set_locale)
 {
     uint year, length;
-    char buff[DATETIME_DIGITS + 1], *to;
+    char buff[DATETIME_DIGITS + 1] = {0};
+    char* to;
     const char *end;
     SQL_TIMESTAMP_STRUCT tmp_timestamp;
     SQLUINTEGER fraction;
@@ -2376,7 +2412,8 @@ my_bool str_to_time_st(SQL_TIME_STRUCT *ts, const char *str)
 my_bool str_to_date(SQL_DATE_STRUCT *rgbValue, const char *str,
                     uint length, int zeroToMin)
 {
-    uint field_length,year_length,digits,i,date[3];
+    uint field_length,year_length,digits,i;
+    uint date[3] = {0};
     const char *pos;
     const char *end= str+length;
     for ( ; !isdigit(*str) && str != end ; ++str ) ;
@@ -2477,14 +2514,14 @@ ulong str_to_time_as_long(const char *str, uint length)
   the server is up with mysql_ping (to force a reconnect)
 */
 
-int check_if_server_is_alive( DBC *dbc )
+bool is_server_alive( DBC *dbc )
 {
     time_t seconds= (time_t) time( (time_t*)0 );
-    int result= 0;
+    bool server_alive = true;
 
     if ( (ulong)(seconds - dbc->last_query_time) >= CHECK_IF_ALIVE )
     {
-        if ( mysql_ping( dbc->mysql ) )
+        if ( dbc->mysql_proxy->ping() )
         {
             /*  BUG: 14639
 
@@ -2501,13 +2538,13 @@ int check_if_server_is_alive( DBC *dbc )
                 PAH - 9.MAR.06
             */
 
-            if (is_connection_lost(mysql_errno( dbc->mysql )))
-                result = 1;
+            if (is_connection_lost(dbc->mysql_proxy->error_code()))
+                server_alive = false;
         }
     }
     dbc->last_query_time = seconds;
 
-    return result;
+    return server_alive;
 }
 
 
@@ -2543,8 +2580,8 @@ int reget_current_catalog(DBC *dbc)
         MYSQL_RES *res;
         MYSQL_ROW row;
 
-        if ( (res= mysql_store_result(dbc->mysql)) &&
-             (row= mysql_fetch_row(res)) )
+        if ( (res= dbc->mysql_proxy->store_result()) &&
+            (row = dbc->mysql_proxy->fetch_row(res)))
         {
 /*            if (cmp_database(row[0], dbc->database)) */
             {
@@ -2554,7 +2591,7 @@ int reget_current_catalog(DBC *dbc)
                 }
             }
         }
-        mysql_free_result(res);
+        dbc->mysql_proxy->free_result(res);
     }
 
     return 0;
@@ -2620,84 +2657,6 @@ void free_internal_result_buffers(STMT *stmt)
 {
   stmt->alloc_root.Clear();
 }
-
-/*
-  @type    : myodbc3 internal
-  @purpose : logs the queries sent to server
-*/
-
-void query_print(FILE *log_file,char *query)
-{
-    if ( log_file && query )
-    {
-      /*
-        because of bug 68201 we bring the result of time() call
-        to 64-bits in any case
-      */
-      long long time_now= time(NULL);
-
-      fprintf(log_file, "%lld:%s;\n", time_now, query);
-    }
-}
-
-
-FILE *init_query_log(void)
-{
-    FILE *query_log;
-#ifdef _WIN32
-    char filename[MAX_PATH];
-    size_t buffsize;
-
-    getenv_s(&buffsize, filename, sizeof(filename), "TEMP");
-
-    if (buffsize)
-    {
-      sprintf(filename + buffsize - 1, "\\%s", DRIVER_QUERY_LOGFILE);
-    }
-    else
-    {
-      sprintf(filename, "c:\\%s", DRIVER_QUERY_LOGFILE);
-    }
-
-    if ( (query_log= fopen(filename, "a+")) )
-#else
-    if ( (query_log= fopen(DRIVER_QUERY_LOGFILE, "a+")) )
-#endif
-    {
-        fprintf(query_log,"-- Query logging\n");
-        fprintf(query_log,"--\n");
-        fprintf(query_log,"--  Driver name: %s  Version: %s\n",DRIVER_NAME,
-                DRIVER_VERSION);
-#ifdef HAVE_LOCALTIME_R
-        {
-            time_t now= time(NULL);
-            struct tm start;
-            localtime_r(&now,&start);
-
-            fprintf(query_log,"-- Timestamp: %02d%02d%02d %2d:%02d:%02d\n",
-                    start.tm_year % 100,
-                    start.tm_mon+1,
-                    start.tm_mday,
-                    start.tm_hour,
-                    start.tm_min,
-                    start.tm_sec);
-        }
-#endif /* HAVE_LOCALTIME_R */
-      fprintf(query_log,"\n");
-    }
-    return query_log;
-}
-
-
-void end_query_log(FILE *query_log)
-{
-  if ( query_log )
-  {
-      fclose(query_log);
-      query_log= 0;
-  }
-}
-
 
 my_bool is_minimum_version(const char *server_version,const char *version)
 {
@@ -3199,7 +3158,6 @@ void sqlnum_to_str(SQL_NUMERIC_STRUCT *sqlnum, SQLCHAR *numstr,
   /* add zeros for negative scale */
   if (reqscale < 0)
   {
-    int i;
     reqscale *= -1;
     for (i= 1; i <= calcprec; ++i)
       *(numstr + i - reqscale)= *(numstr + i);
@@ -3277,10 +3235,10 @@ SQLRETURN set_sql_select_limit(DBC *dbc, SQLULEN lim_value, my_bool req_lock)
     return SQL_SUCCESS;
 
   if (lim_value > 0 && lim_value < sql_select_unlimited)
-    sprintf(query, "set @@sql_select_limit=%lu", (unsigned long)lim_value);
+    snprintf(query, sizeof(query), "set @@sql_select_limit=%lu", (unsigned long)lim_value);
   else
   {
-    strcpy(query, "set @@sql_select_limit=DEFAULT");
+    strncpy(query, "set @@sql_select_limit=DEFAULT", sizeof(query));
     lim_value= 0;
   }
 
@@ -3704,7 +3662,8 @@ Gets parameter columns size
 Returns parameter octet length
 */
 SQLLEN proc_get_param_col_len(STMT *stmt, int sql_type_index, SQLULEN col_size,
-                              SQLSMALLINT decimal_digits, unsigned int flags, char * str_buff)
+                              SQLSMALLINT decimal_digits, unsigned int flags,
+                              char * str_buff, size_t buff_size)
 {
   MYSQL_FIELD temp_fld;
 
@@ -3720,7 +3679,7 @@ SQLLEN proc_get_param_col_len(STMT *stmt, int sql_type_index, SQLULEN col_size,
 
   if (str_buff != NULL)
   {
-    return fill_column_size_buff(str_buff, stmt, &temp_fld);
+    return fill_column_size_buff(str_buff, buff_size, stmt, &temp_fld);
   }
   else
   {
@@ -3741,7 +3700,8 @@ SQLLEN proc_get_param_col_len(STMT *stmt, int sql_type_index, SQLULEN col_size,
   Returns parameter octet length
 */
 SQLLEN proc_get_param_octet_len(STMT *stmt, int sql_type_index, SQLULEN col_size,
-                                SQLSMALLINT decimal_digits, unsigned int flags, char * str_buff)
+                                SQLSMALLINT decimal_digits, unsigned int flags,
+                                char * str_buff, size_t buff_size)
 {
   MYSQL_FIELD temp_fld;
 
@@ -3757,7 +3717,7 @@ SQLLEN proc_get_param_octet_len(STMT *stmt, int sql_type_index, SQLULEN col_size
 
   if (str_buff != NULL)
   {
-    return fill_transfer_oct_len_buff(str_buff, stmt, &temp_fld);
+    return fill_transfer_oct_len_buff(str_buff, buff_size, stmt, &temp_fld);
   }
   else
   {
@@ -3858,7 +3818,7 @@ void set_row_count(STMT *stmt, my_ulonglong rows)
   if (stmt != NULL && stmt->result != NULL)
   {
     stmt->result->row_count= rows;
-    stmt->dbc->mysql->affected_rows= rows;
+    stmt->dbc->mysql_proxy->set_affected_rows(rows);
   }
 }
 
@@ -4337,7 +4297,7 @@ int got_out_parameters(STMT *stmt)
 }
 
 
-int get_session_variable(STMT *stmt, const char *var, char *result)
+int get_session_variable(STMT *stmt, const char *var, char *result, size_t result_size)
 {
   char buff[255+4*NAME_CHAR_LEN], *to;
   MYSQL_RES *res;
@@ -4355,19 +4315,19 @@ int get_session_variable(STMT *stmt, const char *var, char *result)
       return 0;
     }
 
-    res= mysql_store_result(stmt->dbc->mysql);
+    res = stmt->dbc->mysql_proxy->store_result();
     if (!res)
       return 0;
 
-    row= mysql_fetch_row(res);
+    row = stmt->dbc->mysql_proxy->fetch_row(res);
     if (row)
     {
-      strcpy(result, row[1]);
-      mysql_free_result(res);
+      strncpy(result, row[1], result_size);
+      stmt->dbc->mysql_proxy->free_result(res);
       return strlen(result);
     }
 
-    mysql_free_result(res);
+    stmt->dbc->mysql_proxy->free_result(res);
   }
 
   return 0;
@@ -4388,7 +4348,7 @@ SQLRETURN set_query_timeout(STMT *stmt, SQLULEN new_value)
   SQLRETURN rc= SQL_SUCCESS;
 
   if (new_value == stmt->stmt_options.query_timeout ||
-      !is_minimum_version(stmt->dbc->mysql->server_version, "5.7.8"))
+      !is_minimum_version(stmt->dbc->mysql_proxy->get_server_version(), "5.7.8"))
   {
     /* Do nothing if setting same timeout or MySQL server older than 5.7.8 */
     return SQL_SUCCESS;
@@ -4397,11 +4357,11 @@ SQLRETURN set_query_timeout(STMT *stmt, SQLULEN new_value)
   if (new_value > 0)
   {
     unsigned long long msec_value= (unsigned long long)new_value * 1000;
-    sprintf(query, "set @@max_execution_time=%llu", msec_value);
+    snprintf(query, sizeof(query), "set @@max_execution_time=%llu", msec_value);
   }
   else
   {
-    strcpy(query, "set @@max_execution_time=DEFAULT");
+    strncpy(query, "set @@max_execution_time=DEFAULT", sizeof(query));
     new_value= 0;
   }
 
@@ -4418,12 +4378,12 @@ SQLULEN get_query_timeout(STMT *stmt)
 {
   SQLULEN query_timeout= SQL_QUERY_TIMEOUT_DEFAULT; /* 0 */
 
-  if (is_minimum_version(stmt->dbc->mysql->server_version, "5.7.8"))
+  if (is_minimum_version(stmt->dbc->mysql_proxy->get_server_version(), "5.7.8"))
   {
     /* Be cautious with very long values even if they don't make sense */
     char query_timeout_char[32]= {0};
     uint length= get_session_variable(stmt, "MAX_EXECUTION_TIME",
-                                      (char*)query_timeout_char);
+                                      (char*)query_timeout_char, sizeof(query_timeout_char));
     /* Terminate the string just in case */
     query_timeout_char[length]= 0;
     /* convert */
@@ -4437,7 +4397,7 @@ const char get_identifier_quote(STMT *stmt)
 {
   const char tick= '`', quote= '"', empty= ' ';
 
-  if (is_minimum_version(stmt->dbc->mysql->server_version, "3.23.06"))
+  if (is_minimum_version(stmt->dbc->mysql_proxy->get_server_version(), "3.23.06"))
   {
     /*
       The full list of all SQL modes takes over 512 symbols, so we reserve
@@ -4448,7 +4408,7 @@ const char get_identifier_quote(STMT *stmt)
       The token finder skips the leading space and starts
       with the first non-space value. Thus (sql_mode+1).
     */
-    uint length= get_session_variable(stmt, "SQL_MODE", (char*)(sql_mode+1));
+    uint length= get_session_variable(stmt, "SQL_MODE", (char*)(sql_mode+1), sizeof(sql_mode)-1);
 
     const char *end=  sql_mode + length;
     if (find_first_token(stmt->dbc->ansi_charset_info, sql_mode, end, "ANSI_QUOTES"))

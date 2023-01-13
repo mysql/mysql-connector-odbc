@@ -1,0 +1,260 @@
+name: Failover Unit Tests
+
+on:
+  push:
+    branches:
+      - main
+      - myodbc
+  pull_request:
+    branches:
+      - '*'
+    paths-ignore:
+      - '**/*.md'
+      - '**/*.jpg'
+      - '**/README.txt'
+      - 'docs/**'
+      - 'ISSUE_TEMPLATE/**'
+      - '**/remove-old-artifacts.yml'
+
+env:
+  LINUX_BUILD_TYPE: Release
+  WINDOWS_BUILD_TYPE: Debug
+  MAC_BUILD_TYPE: Debug
+
+jobs:
+  build-windows:
+    name: Windows
+    runs-on: windows-2019
+    env:
+      CMAKE_GENERATOR: Visual Studio 16 2019
+      MYSQL_DIR: C:/mysql-8.0.30-winx64
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v2
+
+      - name: Install MySQL client libs and include files
+        if: steps.cache-mysql.outputs.cache-hit != 'true'
+        run: |
+          curl https://cdn.mysql.com/archives/mysql-8.0/mysql-8.0.30-winx64.zip -o mysql.zip
+          curl https://cdn.mysql.com/archives/mysql-8.0/mysql-8.0.30-winx64-debug-test.zip -o mysql-debug.zip
+          unzip -d C:/ mysql.zip
+          mkdir C:/mysql-8.0.30-winx64-debug
+          unzip -d C:/mysql-8.0.30-winx64-debug mysql-debug.zip
+          mv -Force C:/mysql-8.0.30-winx64-debug/mysql-8.0.30-winx64/lib/debug/mysqlclient.lib C:/mysql-8.0.30-winx64/lib/mysqlclient.lib
+            
+      - name: Create build environment
+        shell: bash
+        run: cmake -E make_directory ${{ github.workspace }}/build
+
+      - name: Configure CMake
+        shell: bash
+        run: cmake -S . -B build -A x64
+                -G "$CMAKE_GENERATOR"
+                -DCMAKE_BUILD_TYPE=$WINDOWS_BUILD_TYPE
+                -DMYSQLCLIENT_STATIC_LINKING=TRUE
+                -DENABLE_UNIT_TESTS=TRUE
+                -DENABLE_INTEGRATION_TESTS=FALSE
+
+      # Configure test environment
+      - name: Build Driver
+        shell: bash
+        working-directory: ${{ github.workspace }}/build
+        run: |
+          cmake --build . --config $WINDOWS_BUILD_TYPE
+
+      - name: Run failover tests
+        if: always()
+        working-directory: ${{ github.workspace }}/build/unit_testing
+        shell: bash
+        run: ctest -C $WINDOWS_BUILD_TYPE --output-on-failure
+
+      - name: Check memory leaks
+        if: always()
+        working-directory: ${{ github.workspace }}/build/unit_testing/Testing/Temporary
+        run:  |
+          $is_leaking = Select-String -Path ./LastTest.log -Pattern 'leak' -SimpleMatch
+          if ($is_leaking) {echo $is_leaking; exit 1;}
+
+      # Upload artifacts
+      - name: Upload build artifacts - Binaries
+        if: always()
+        uses: actions/upload-artifact@v2
+        with:
+          name: windows-failover-sln
+          path: ${{ github.workspace }}/build/MySQL_Connector_ODBC.sln
+      - name: Upload build artifacts - Binaries
+        if: always()
+        uses: actions/upload-artifact@v2
+        with:
+          name: windows-failover-binaries
+          path: ${{ github.workspace }}/build/bin/
+      - name: Upload build artifacts - Libraries
+        if: always()
+        uses: actions/upload-artifact@v2
+        with:
+          name: windows-failover-libraries
+          path: ${{ github.workspace }}/build/lib/
+      - name: Upload failover test artifacts
+        if: always()
+        uses: actions/upload-artifact@v2
+        with:
+          name: windows-failover-results
+          path: ${{ github.workspace }}/build/unit_testing/Testing/Temporary/LastTest.log
+
+  build-linux:
+    name: Linux
+    runs-on: ubuntu-20.04
+    env:
+      CMAKE_GENERATOR: Unix Makefiles
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v2
+
+      # Configure build environment/dependencies
+      - name: Install MySQL client libs & other dependencies
+        run: sudo apt-get update && sudo apt-get install 
+                build-essential 
+                libgtk-3-dev 
+                libmysqlclient-dev 
+                unixodbc
+                unixodbc-dev
+
+      - name: Create build environment
+        shell: bash
+        run: cmake -E make_directory ${{ github.workspace }}/build
+
+      - name: Configure CMake
+        shell: bash
+        run: cmake -S . -B build
+                -G "$CMAKE_GENERATOR"
+                -DCMAKE_BUILD_TYPE=$LINUX_BUILD_TYPE
+                -DMYSQLCLIENT_STATIC_LINKING=true
+                -DWITH_UNIXODBC=1
+                -DENABLE_UNIT_TESTS=TRUE
+                -DENABLE_INTEGRATION_TESTS=FALSE
+
+      # Build driver
+      - name: Build driver
+        working-directory: ${{ github.workspace }}/build
+        shell: bash
+        run: cmake --build . --config $LINUX_BUILD_TYPE
+
+      # Test driver
+      - name: Run failover tests on Linux
+        if: success()
+        working-directory: ${{ github.workspace }}/build/unit_testing
+        shell: bash
+        run: ctest --output-on-failure
+
+      # Upload artifacts
+      - name: Upload build artifacts - Binaries
+        if: always()
+        uses: actions/upload-artifact@v2
+        with:
+          name: linux-failover-binaries
+          path: ${{ github.workspace }}/build/bin/
+      - name: Upload build artifacts - Libraries
+        if: always()
+        uses: actions/upload-artifact@v2
+        with:
+          name: linux-failover-libraries
+          path: ${{ github.workspace }}/build/lib/
+      - name: Upload test artifacts
+        if: always()
+        uses: actions/upload-artifact@v2
+        with:
+          name: linux-failover-results
+          path: ${{ github.workspace }}/build/unit_testing/Testing/Temporary/LastTest.log
+
+  build-mac:
+    name: MacOS
+    runs-on: macos-11
+    env:
+      CMAKE_GENERATOR: Unix Makefiles
+      MYSQL_DIR: /usr/local/opt/mysql-client
+      ODBC_DM_INCLUDES: /usr/local/include
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v2
+
+      # Configure build environment/dependencies
+      # Removing some /usr/local/bin files to avoid symlink issues wih brew update
+      - name: Install MySQL client libs & other dependencies
+        run: |
+          rm '/usr/local/bin/2to3'
+          rm '/usr/local/bin/2to3-3.11'
+          rm '/usr/local/bin/idle3'
+          rm '/usr/local/bin/idle3.11'
+          rm '/usr/local/bin/pydoc3'
+          rm '/usr/local/bin/pydoc3.11'
+          rm '/usr/local/bin/python3'
+          rm '/usr/local/bin/python3-config'
+          rm '/usr/local/bin/python3.11'
+          rm '/usr/local/bin/python3.11-config'
+
+          brew update
+          brew unlink unixodbc
+          brew install libiodbc mysql-client
+      
+      - name: Create build environment
+        shell: bash
+        run: cmake -E make_directory ${{ github.workspace }}/build
+
+      - name: Configure CMake
+        shell: bash
+        run: cmake -S . -B build
+                -G "$CMAKE_GENERATOR"
+                -DCMAKE_BUILD_TYPE=$MAC_BUILD_TYPE
+                -DMYSQLCLIENT_STATIC_LINKING=true
+                -DODBC_INCLUDES=$ODBC_DM_INCLUDES
+                -DENABLE_UNIT_TESTS=TRUE
+                -DENABLE_INTEGRATION_TESTS=FALSE
+
+      # Build driver
+      - name: Build driver
+        working-directory: ${{ github.workspace }}/build
+        shell: bash
+        run: |
+          export LIBRARY_PATH=$LIBRARY_PATH:$(brew --prefix zstd)/lib/
+          cmake --build .
+
+      # Test driver
+      - name: Run driver tests
+        if: success()
+        working-directory: ${{ github.workspace }}/build/unit_testing
+        shell: bash
+        run: ctest
+
+      - name: Check memory leaks
+        if: always()
+        working-directory: ${{ github.workspace }}/build/unit_testing/bin
+        run:  |
+          leaks -atExit -- ./unit_testing > ../leaks_unit_testing.txt
+          export is_leaking=$?
+          if (( $is_leaking != 0 )); then echo $is_leaking; exit 1; else echo "no memory leaks"; fi;
+
+      # Upload artifacts
+      - name: Upload build artifacts - Binaries
+        if: always()
+        uses: actions/upload-artifact@v2
+        with:
+          name: macos-binaries
+          path: ${{ github.workspace }}/build/bin/
+      - name: Upload build artifacts - Libraries
+        if: always()
+        uses: actions/upload-artifact@v2
+        with:
+          name: macos-libraries
+          path: ${{ github.workspace }}/build/lib/
+      - name: Upload test artifacts
+        if: always()
+        uses: actions/upload-artifact@v2
+        with:
+          name: macos-failover-results
+          path: ${{ github.workspace }}/build/unit_testing/Testing/Temporary/LastTest.log
+      - name: Upload memory leaks check
+        if: always()
+        uses: actions/upload-artifact@v2
+        with:
+          name: macos-memory-leaks-results
+          path: ${{ github.workspace }}/build/unit_testing/leaks_unit_testing.txt

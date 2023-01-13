@@ -1,3 +1,5 @@
+// Modifications Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+//
 // Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
 //
 // This program is free software; you can redistribute it and/or modify
@@ -39,6 +41,8 @@
 
 #ifndef __ERROR_H__
 #define __ERROR_H__
+
+#include "mysql_proxy.h"
 
 /* Including driver version definitions */
 #include "../MYODBC_CONF.h"
@@ -125,6 +129,8 @@ typedef enum myodbc_errid
     MYERR_08S01,
     /* Please add new errors to the end of enum, and not in alphabet order */
     MYERR_08004,
+    MYERR_08S02,
+    MYERR_08007,
 } myodbc_errid;
 
 /*
@@ -191,9 +197,9 @@ struct MYERROR
     sqlstate.clear();
   }
 
-  MYERROR(const char* state, MYSQL* mysql) :
-    MYERROR(state, mysql_error(mysql),
-      mysql_errno(mysql), MYODBC_ERROR_PREFIX)
+  MYERROR(const char* state, MYSQL_PROXY* mysql_proxy) :
+    MYERROR(state, mysql_proxy->error(),
+      mysql_proxy->error_code(), MYODBC_ERROR_PREFIX)
   {}
 
   MYERROR(const char* state, std::string errmsg) :

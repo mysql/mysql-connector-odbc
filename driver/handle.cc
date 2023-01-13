@@ -1,3 +1,5 @@
+// Modifications Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+//
 // Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
 //
 // This program is free software; you can redistribute it and/or modify
@@ -69,9 +71,12 @@ bool ENV::has_connections()
   return conn_list.size() > 0;
 }
 
-DBC::DBC(ENV *p_env)  : env(p_env), mysql(nullptr),
-                        txn_isolation(DEFAULT_TXN_ISOLATION),
-                        last_query_time((time_t) time((time_t*) 0))
+DBC::DBC(ENV *p_env)
+    : id{last_dbc_id++},
+      env(p_env),
+      mysql_proxy(nullptr),
+      txn_isolation(DEFAULT_TXN_ISOLATION),
+      last_query_time((time_t)time((time_t *)0))
 {
   //mysql->net.vio = nullptr;
   myodbc_ov_init(env->odbc_ver);
@@ -103,9 +108,7 @@ void DBC::free_explicit_descriptors()
 
 void DBC::close()
 {
-  if (mysql)
-    mysql_close(mysql);
-  mysql = nullptr;
+  mysql_proxy->close();
 }
 
 DBC::~DBC()
@@ -115,6 +118,12 @@ DBC::~DBC()
 
   if (ds)
     ds_delete(ds);
+
+  if (mysql_proxy) 
+    delete mysql_proxy;
+
+  if (fh)
+    delete fh;
 
   free_explicit_descriptors();
 }
@@ -131,7 +140,7 @@ SQLRETURN DBC::set_error(char * state, const char * message, uint errcode)
 
 SQLRETURN DBC::set_error(char * state)
 {
-  return set_error(state, mysql_error(mysql), mysql_errno(mysql));
+  return set_error(state, mysql_proxy->error(), mysql_proxy->error_code());
 }
 
 
@@ -146,7 +155,10 @@ SQLRETURN SQL_API my_SQLAllocEnv(SQLHENV *phenv)
   ENV *env;
 
   std::lock_guard<std::mutex> env_guard(g_lock);
-  myodbc_init(); // This will call mysql_library_init()
+#ifndef _UNIX_
+#else
+  myodbc_init();  // This will call mysql_library_init()
+#endif /* _UNIX_ */
 
 #ifndef USE_IODBC
     env = new ENV(SQL_OV_ODBC3_80);
@@ -180,10 +192,10 @@ SQLRETURN SQL_API my_SQLFreeEnv(SQLHENV henv)
 {
     ENV *env= (ENV *) henv;
     delete env;
-#ifndef _UNIX_
-#else
+#ifdef _UNIX_
     myodbc_end();
 #endif /* _UNIX_ */
+    MONITOR_THREAD_CONTAINER::release_instance();
     return(SQL_SUCCESS);
 }
 
@@ -236,10 +248,12 @@ SQLRETURN SQL_API my_SQLAllocConnect(SQLHENV henv, SQLHDBC *phdbc)
 
     ++thread_count;
 
-    if (mysql_get_client_version() < MIN_MYSQL_VERSION)
+    if (MYSQL_PROXY::get_client_version() < MIN_MYSQL_VERSION)
     {
         char buff[255];
-        sprintf(buff, "Wrong libmysqlclient library version: %ld.  MyODBC needs at least version: %ld", mysql_get_client_version(), MIN_MYSQL_VERSION);
+        snprintf(buff, sizeof(buff), 
+                 "Wrong libmysqlclient library version: %ld.  MyODBC needs at least version: %ld",
+                 MYSQL_PROXY::get_client_version(), MIN_MYSQL_VERSION);
         return(set_env_error((ENV*)henv, MYERR_S1000, buff, 0));
     }
 
@@ -302,33 +316,33 @@ int wakeup_connection(DBC *dbc)
   {
     ds_get_utf8attr(ds->pwd1, &ds->pwd18);
     int fator = 2;
-    mysql_options4(dbc->mysql, MYSQL_OPT_USER_PASSWORD,
-                   &fator,
-                   ds->pwd18);
+    dbc->mysql_proxy->options4(MYSQL_OPT_USER_PASSWORD,
+                         &fator,
+                         ds->pwd18);
   }
 
   if(ds->pwd2 && ds->pwd2[0])
   {
     ds_get_utf8attr(ds->pwd2, &ds->pwd28);
     int fator = 2;
-    mysql_options4(dbc->mysql, MYSQL_OPT_USER_PASSWORD,
-                   &fator,
-                   ds->pwd28);
+    dbc->mysql_proxy->options4(MYSQL_OPT_USER_PASSWORD,
+                         &fator,
+                         ds->pwd28);
   }
 
   if(ds->pwd3 && ds->pwd3[0])
   {
     ds_get_utf8attr(ds->pwd3, &ds->pwd38);
     int fator = 3;
-    mysql_options4(dbc->mysql, MYSQL_OPT_USER_PASSWORD,
-                   &fator,
-                   ds->pwd38);
+    dbc->mysql_proxy->options4(MYSQL_OPT_USER_PASSWORD,
+                         &fator,
+                         ds->pwd38);
   }
 #endif
 
-  if (mysql_change_user(dbc->mysql, ds_get_utf8attr(ds->uid, &ds->uid8),
-                                     ds_get_utf8attr(ds->pwd, &ds->pwd8),
-                                     ds_get_utf8attr(ds->database, &ds->database8)))
+  if (dbc->mysql_proxy->change_user(ds_get_utf8attr(ds->uid, &ds->uid8),
+                              ds_get_utf8attr(ds->pwd, &ds->pwd8),
+                              ds_get_utf8attr(ds->database, &ds->database8)))
   {
     return 1;
   }
@@ -406,9 +420,6 @@ int adjust_param_bind_array(STMT *stmt)
 */
 SQLRETURN SQL_API my_SQLAllocStmt(SQLHDBC hdbc,SQLHSTMT *phstmt)
 {
-#ifndef _UNIX_
-  HGLOBAL  hstmt;
-#endif
   std::unique_ptr<STMT> stmt;
   DBC   *dbc= (DBC*) hdbc;
 

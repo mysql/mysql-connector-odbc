@@ -1,0 +1,10 @@
+services:
+  mysql-odbc-test:
+    image: mysql:8.0.31
+    container_name: myodbc-test
+    restart: on-failure
+    ports:
+      - 3306:3306
+    environment:
+      MYSQL_ROOT_PASSWORD: "root"
+      MYSQL_DATABASE: "test"

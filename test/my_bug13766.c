@@ -1,3 +1,5 @@
+// Modifications Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+//
 // Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
 //
 // This program is free software; you can redistribute it and/or modify
@@ -25,6 +27,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program; if not, write to the Free Software Foundation, Inc.,
 // 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
+
 /*
  * Tests for Bug #13766 - transforming dates to/from zero/invalid dates.
  * This is a separate file so the DSN OPTION doesn't affect other tests.
@@ -44,7 +47,7 @@ DECLARE_TEST(bug13766_result)
   DECLARE_BASIC_HANDLES(henv1, hdbc1, hstmt1);
 
   alloc_basic_handles_with_opt(&henv1, &hdbc1, &hstmt1, NULL, NULL, NULL,
-                               NULL, "FLAG_ZERO_DATE_TO_MIN=1");
+                               NULL, (SQLCHAR*)"FLAG_ZERO_DATE_TO_MIN=1");
   SQL_DATE_STRUCT xdate[EL_NUM];
   SQL_TIMESTAMP_STRUCT xts[EL_NUM];
   SQLLEN isNull[12];
@@ -163,7 +166,7 @@ DECLARE_TEST(bug13766_query)
   DECLARE_BASIC_HANDLES(henv1, hdbc1, hstmt1);
 
   alloc_basic_handles_with_opt(&henv1, &hdbc1, &hstmt1, NULL, NULL, NULL,
-                               NULL, "FLAG_MIN_DATE_TO_ZERO=1");
+                               NULL, (SQLCHAR*)"FLAG_MIN_DATE_TO_ZERO=1");
 
   ok_sql(hstmt1, "SET @@SESSION.SQL_MODE=''");
 

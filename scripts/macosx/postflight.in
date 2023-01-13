@@ -1,5 +1,7 @@
 #!/bin/sh
 
+# Modifications Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+#
 # Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved. 
 # 
 # This program is free software; you can redistribute it and/or modify 
@@ -50,8 +52,8 @@
 # application.
 # ----------------------------------------------------------------------
 
-libdir=@INSTALLDIR@/lib
-bindir=@INSTALLDIR@/bin
+libdir=@CPACK_PACKAGING_INSTALL_PREFIX@/lib
+bindir=@CPACK_PACKAGING_INSTALL_PREFIX@/bin
 
 for admdir in ~/Library/ODBC /Library/ODBC
 do

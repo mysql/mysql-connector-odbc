@@ -1,3 +1,5 @@
+// Modifications Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+//
 // Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
 //
 // This program is free software; you can redistribute it and/or modify
@@ -631,7 +633,7 @@ int ShowOdbcParamsDialog(DataSource* params, HWND ParentWnd, BOOL isPrompt)
       return 0;
     }
 
-    ds_set_strattr(&params->driver, driver->name);
+    ds_set_wstrattr(&params->driver, driver->name);
     driver_delete(driver);
   }
 

@@ -1,3 +1,5 @@
+// Modifications Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+//
 // Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
 //
 // This program is free software; you can redistribute it and/or modify
@@ -32,7 +34,6 @@
 /* UPDATE with no keys ...  */
 DECLARE_TEST(my_no_keys)
 {
-    SQLRETURN rc;
     SQLINTEGER nData;
 
   ok_sql(hstmt, "DROP TABLE IF EXISTS my_no_keys");
@@ -108,7 +109,6 @@ DECLARE_TEST(my_no_keys)
 
 DECLARE_TEST(my_foreign_keys)
 {
-    SQLRETURN   rc=0;
     SQLCHAR     dbc[255];
 
     ok_sql(hstmt,"DROP DATABASE IF EXISTS test_odbc_fk");
@@ -440,7 +440,6 @@ void t_strstr()
 DECLARE_TEST(t_bug16920750)
 {
   SQLCHAR buff[255];
-  SQLLEN len;
 
   ok_sql(hstmt, "DROP SCHEMA IF EXISTS fk_test");
   ok_sql(hstmt, "CREATE SCHEMA fk_test");

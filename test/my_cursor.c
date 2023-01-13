@@ -1,3 +1,5 @@
+// Modifications Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+//
 // Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
 //
 // This program is free software; you can redistribute it and/or modify
@@ -192,7 +194,6 @@ DECLARE_TEST(my_setpos_cursor)
 */
 DECLARE_TEST(t_bug5853)
 {
-  SQLRETURN rc;
   SQLHSTMT  hstmt_pos;
   SQLCHAR   nData[4];
   SQLLEN    nLen= SQL_DATA_AT_EXEC;
@@ -224,10 +225,10 @@ DECLARE_TEST(t_bug5853)
 
   ok_sql(hstmt, "SELECT * FROM t_bug5853");
 
+  char data[2][4] = { "uvw", "xyz" };
+
   while ((rc= SQLFetchScroll(hstmt, SQL_FETCH_NEXT, 0)) != SQL_NO_DATA_FOUND)
   {
-    char data[2][3] = { "uvw", "xyz" };
-
     expect_stmt(hstmt_pos, SQLExecute(hstmt_pos), SQL_NEED_DATA);
     rc= SQL_NEED_DATA;
 
@@ -237,8 +238,8 @@ DECLARE_TEST(t_bug5853)
       rc= SQLParamData(hstmt_pos, &token);
       if (rc == SQL_NEED_DATA)
       {
-        ok_stmt(hstmt_pos, SQLPutData(hstmt_pos, data[i++ % 2],
-                                      sizeof(data[0])));
+        char* str = data[i++ % 2];
+        ok_stmt(hstmt_pos, SQLPutData(hstmt_pos, str, strlen(str)));
       }
     }
   }
@@ -636,7 +637,6 @@ DECLARE_TEST(t_pos_datetime_delete)
 
 DECLARE_TEST(t_pos_datetime_delete1)
 {
-  SQLRETURN rc;
   SQLHSTMT hstmt1;
   SQLINTEGER int_data;
   SQLLEN row_count, cur_type;
@@ -765,7 +765,6 @@ DECLARE_TEST(t_pos_datetime_delete1)
 
 DECLARE_TEST(t_getcursor)
 {
-  SQLRETURN rc;
   SQLHSTMT hstmt1,hstmt2,hstmt3;
   SQLCHAR curname[50];
   SQLSMALLINT nlen;
@@ -828,7 +827,6 @@ DECLARE_TEST(t_getcursor)
 
 DECLARE_TEST(t_getcursor1)
 {
-  SQLRETURN rc;
   SQLHSTMT hstmt1;
   SQLCHAR curname[50];
   SQLSMALLINT nlen,index;
@@ -1044,7 +1042,6 @@ DECLARE_TEST(tmysql_setpos_del1)
 
 DECLARE_TEST(tmysql_setpos_upd)
 {
-    SQLRETURN rc;
     SQLINTEGER nData = 500;
     SQLLEN nlen;
     SQLCHAR szData[255]={0};
@@ -1152,7 +1149,6 @@ DECLARE_TEST(tmysql_setpos_upd)
 
 DECLARE_TEST(tmysql_setpos_add)
 {
-    SQLRETURN rc;
     SQLINTEGER nData= 500;
     SQLLEN nlen;
     SQLCHAR szData[255]={0};
@@ -1639,7 +1635,6 @@ DECLARE_TEST(tmysql_pos_dyncursor)
 
 DECLARE_TEST(tmysql_mtab_setpos_del)
 {
-    SQLRETURN rc;
     SQLINTEGER nData= 500;
     SQLLEN nlen;
     SQLCHAR szData[255]={0};
@@ -1711,7 +1706,6 @@ DECLARE_TEST(tmysql_mtab_setpos_del)
 
 DECLARE_TEST(tmysql_setpos_pkdel)
 {
-    SQLRETURN rc;
     SQLINTEGER nData= 500;
     SQLLEN nlen;
     SQLCHAR szData[255]={0};
@@ -1985,7 +1979,6 @@ DECLARE_TEST(tmysql_setpos_pkdel2)
 
 DECLARE_TEST(t_setpos_upd_bug1)
 {
-    SQLRETURN rc;
     SQLINTEGER id;
     SQLLEN len,id_len,f_len,l_len,ts_len;
     SQLCHAR fname[21],lname[21],szTable[256];
@@ -2098,7 +2091,6 @@ DECLARE_TEST(t_setpos_upd_bug1)
 
 DECLARE_TEST(my_setpos_upd_pk_order)
 {
-    SQLRETURN rc;
     SQLINTEGER nData= 500;
     SQLLEN nlen;
     SQLCHAR szData[255]={0};
@@ -2740,8 +2732,8 @@ DECLARE_TEST(t_bug32420)
   SQLULEN row_count;
 
   /* Don't cache result option in the connection string */
-  is(OK == alloc_basic_handles_with_opt(&henv1, &hdbc1, &hstmt1, USE_DRIVER,
-                                        NULL, NULL, NULL, "NO_CACHE=1"));
+  is(OK == alloc_basic_handles_with_opt(&henv1, &hdbc1, &hstmt1, (SQLCHAR*)USE_DRIVER,
+                                        NULL, NULL, NULL, (SQLCHAR*)"NO_CACHE=1"));
 
   ok_sql(hstmt1, "drop table if exists bug32420");
   ok_sql(hstmt1, "CREATE TABLE bug32420 ("\
@@ -2817,7 +2809,7 @@ DECLARE_TEST(t_bug32420)
      Result cache is enabled. Need to check that cached results are not
      broken
   */
-  is(OK == alloc_basic_handles_with_opt(&henv1, &hdbc1, &hstmt1, USE_DRIVER,
+  is(OK == alloc_basic_handles_with_opt(&henv1, &hdbc1, &hstmt1, (SQLCHAR*)USE_DRIVER,
                                         NULL, NULL, NULL, NULL));
 
   ok_stmt(hstmt1, SQLSetStmtAttr(hstmt1, SQL_ATTR_CURSOR_TYPE,
@@ -3111,7 +3103,7 @@ DECLARE_TEST(t_dae_setpos_insert)
   memset(data, 0, 2 * sizeof(t_dae_row));
   data[1].x= 20;
   data[1].z= 40;
-  sprintf(data[1].y, "1234567890");
+  sprintf((char*)data[1].y, "1234567890");
   data[1].ylen= SQL_LEN_DATA_AT_EXEC(10);
 
   ok_sql(hstmt, "drop table if exists t_dae");
@@ -3319,16 +3311,15 @@ DECLARE_TEST(t_bug41946)
 */
 DECLARE_TEST(t_sqlputdata)
 {
-  SQLRETURN rc;
-  SQLINTEGER  id, resId, i;
-  SQLINTEGER  resData;
+  SQLINTEGER  id, i;
+  SQLLEN resId, resData;
   SQLWCHAR wbuff[MAX_ROW_DATA_LEN+1];
   SQLWCHAR *wcdata= W(L"S\x00e3o Paolo");
 
   ok_sql(hstmt, "drop table if exists t_sqlputdata");
   ok_sql(hstmt, "CREATE TABLE t_sqlputdata( id INT, pdata varchar(50));");
 
-  ok_stmt(hstmt, SQLPrepare(hstmt, "INSERT INTO t_sqlputdata VALUES ( ?, ?)", SQL_NTS));
+  ok_stmt(hstmt, SQLPrepare(hstmt, (SQLCHAR*)"INSERT INTO t_sqlputdata VALUES ( ?, ?)", SQL_NTS));
   id= 1;
   resId = 0;
   resData = SQL_LEN_DATA_AT_EXEC(0);
@@ -3379,7 +3370,6 @@ DECLARE_TEST(t_sqlputdata)
 */
 DECLARE_TEST(t_18805455)
 {
-  SQLINTEGER  i;
   SQLCHAR     buff[10];
   SQLCHAR     buff1[10];
   SQLLEN      nRowCount;
@@ -3389,9 +3379,9 @@ DECLARE_TEST(t_18805455)
   ok_sql(hstmt, "insert into t_18805455 values ('value11')");
 
   /* create cursor and get first row */
-  ok_stmt(hstmt, SQLPrepare(hstmt, "select * from t_18805455 "
+  ok_stmt(hstmt, SQLPrepare(hstmt, (SQLCHAR*)"select * from t_18805455 "
                                    "where val = ?", SQL_NTS));
-  strcpy(buff, "value11");
+  strcpy((char*)buff, "value11");
   ok_stmt(hstmt, SQLBindParameter(hstmt, 1, SQL_PARAM_INPUT, SQL_C_CHAR,
                         SQL_CHAR, 10, 0, &buff, 10, NULL));
   ok_stmt(hstmt, SQLExecute(hstmt));
@@ -3400,7 +3390,7 @@ DECLARE_TEST(t_18805455)
   ok_stmt(hstmt, SQLFetchScroll(hstmt, SQL_FETCH_NEXT, 0));
   is_str(buff1, "value11", 7);
 
-  strcpy(buff1, "value12");
+  strcpy((char*)buff1, "value12");
   ok_stmt(hstmt, SQLSetPos(hstmt, 1, SQL_UPDATE, SQL_LOCK_NO_CHANGE));
   ok_stmt(hstmt, SQLRowCount(hstmt, &nRowCount));
   is_num(nRowCount, 1);

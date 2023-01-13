@@ -1,3 +1,5 @@
+// Modifications Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+//
 // Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
 //
 // This program is free software; you can redistribute it and/or modify
@@ -25,6 +27,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program; if not, write to the Free Software Foundation, Inc.,
 // 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
+
 /*
  * Tests for descriptors.
  */
@@ -492,7 +495,7 @@ DECLARE_TEST(t_set_null_use_implicit)
   SQLHANDLE expard, hstmt1;
   SQLINTEGER imp_result= 0, exp_result= 0;
 
-  if(using_unixodbc_version(henv, "2.2.11"))
+  if(using_unixodbc_version(henv, (SQLCHAR*)"2.2.11"))
     skip("unixODBC 2.2.11 doesn't handle resetting statement "
          "descriptors correctly");
 
@@ -541,7 +544,6 @@ DECLARE_TEST(t_set_null_use_implicit)
 DECLARE_TEST(t_free_stmt_with_exp_desc)
 {
   SQLHANDLE expard, hstmt1;
-  SQLINTEGER imp_result= 0, exp_result= 0;
 
   ok_con(hdbc, SQLAllocHandle(SQL_HANDLE_DESC, hdbc, &expard));
   ok_con(hdbc, SQLAllocHandle(SQL_HANDLE_STMT, hdbc, &hstmt1));
@@ -615,8 +617,8 @@ DECLARE_TEST(t_desc_curcatalog)
   SQLCHAR conn_in[512];
   SQLHANDLE ird;
 
-  is(OK == alloc_basic_handles_with_opt(&henv1, &hdbc1, &hstmt1, USE_DRIVER,
-                                        NULL, NULL, "", NULL));
+  is(OK == alloc_basic_handles_with_opt(&henv1, &hdbc1, &hstmt1, (SQLCHAR*)USE_DRIVER,
+                                        NULL, NULL, (SQLCHAR*)"", NULL));
 
   ok_sql(hstmt1, "select 10 AS no_catalog_column");
 

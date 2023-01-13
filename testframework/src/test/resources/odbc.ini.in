@@ -1,0 +1,11 @@
+[ODBC Data Sources]
+data_source_name = @TEST_DSN@
+
+[@TEST_DSN@]
+Driver          = @TEST_DRIVER@
+DATABASE        = @TEST_DATABASE@
+DESCRIPTION     = @DESCRIPTION@
+SERVER          = @TEST_SERVER@
+UID             = @TEST_UID@
+PASSWORD        =
+SOCKET          =

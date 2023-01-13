@@ -1,3 +1,5 @@
+// Modifications Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+//
 // Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
 //
 // This program is free software; you can redistribute it and/or modify
@@ -99,6 +101,8 @@ static MYODBC3_ERR_STR myodbc3_errors[]=
   {"42S22","Column not found", SQL_ERROR},
   {"08S01","Communication link failure", SQL_ERROR},
   {"08004","Server rejected the connection", SQL_ERROR},
+  {"08S02","Communication link changed", SQL_ERROR},
+  {"08007","Connection failure during transaction", SQL_ERROR}
 };
 
 
@@ -277,9 +281,9 @@ SQLRETURN set_env_error(ENV *env, myodbc_errid errid, const char *errtext,
 */
 
 SQLRETURN set_conn_error(DBC *dbc, myodbc_errid errid, const char *errtext,
-                         SQLINTEGER errcode)
+                         SQLINTEGER errcode, char* prefix)
 {
-  dbc->error = MYERROR(errid, errtext, errcode, MYODBC_ERROR_PREFIX);
+  dbc->error = MYERROR(errid, errtext, errcode, prefix);
   return dbc->error.retcode;
 }
 
@@ -288,11 +292,11 @@ SQLRETURN set_conn_error(DBC *dbc, myodbc_errid errid, const char *errtext,
   @type    : myodbc3 internal
   @purpose : sets a myodbc_malloc() failure on a MYSQL* connection
 */
-void set_mem_error(MYSQL *mysql)
+void set_mem_error(MYSQL_PROXY* mysql_proxy)
 {
-  mysql->net.last_errno= CR_OUT_OF_MEMORY;
-  myodbc_stpmov(mysql->net.last_error, "Memory allocation failed");
-  myodbc_stpmov(mysql->net.sqlstate, "HY001");
+  mysql_proxy->set_last_error_code(CR_OUT_OF_MEMORY);
+  myodbc_stpmov(mysql_proxy->get_last_error(), "Memory allocation failed");
+  myodbc_stpmov(mysql_proxy->get_sqlstate(), "HY001");
 }
 
 
@@ -303,7 +307,7 @@ void set_mem_error(MYSQL *mysql)
 */
 SQLRETURN handle_connection_error(STMT *stmt)
 {
-  unsigned int err= mysql_errno(stmt->dbc->mysql);
+  unsigned int err= stmt->dbc->mysql_proxy->error_code();
   switch (err) {
   case 0:  /* no error */
     return SQL_SUCCESS;
@@ -312,13 +316,17 @@ SQLRETURN handle_connection_error(STMT *stmt)
 #if MYSQL_VERSION_ID > 80023
   case ER_CLIENT_INTERACTION_TIMEOUT:
 #endif
-    return stmt->set_error("08S01", mysql_error(stmt->dbc->mysql), err);
+    const char *error_code, *error_msg;
+    if (stmt->dbc->fh->trigger_failover_if_needed("08S01", error_code, error_msg))
+      return stmt->set_error(error_code, error_msg, 0);
+    else
+      return stmt->set_error("08S01", stmt->dbc->mysql_proxy->error(), err);
   case CR_OUT_OF_MEMORY:
-    return stmt->set_error("HY001", mysql_error(stmt->dbc->mysql), err);
+    return stmt->set_error("HY001", stmt->dbc->mysql_proxy->error(), err);
   case CR_COMMANDS_OUT_OF_SYNC:
   case CR_UNKNOWN_ERROR:
   default:
-    return stmt->set_error("HY000", mysql_error(stmt->dbc->mysql), err);
+    return stmt->set_error("HY000", stmt->dbc->mysql_proxy->error(), err);
   }
 }
 
@@ -427,11 +435,11 @@ MySQLGetDiagRec(SQLSMALLINT handle_type, SQLHANDLE handle, SQLSMALLINT record,
 bool is_odbc3_subclass(std::string sqlstate)
 {
   char *states[]= { "01S00", "01S01", "01S02", "01S06", "01S07", "07S01",
-    "08S01", "21S01", "21S02", "25S01", "25S02", "25S03", "42S01", "42S02",
-    "42S11", "42S12", "42S21", "42S22", "HY095", "HY097", "HY098", "HY099",
-    "HY100", "HY101", "HY105", "HY107", "HY109", "HY110", "HY111", "HYT00",
-    "HYT01", "IM001", "IM002", "IM003", "IM004", "IM005", "IM006", "IM007",
-    "IM008", "IM010", "IM011", "IM012"};
+    "08S01", "08S02", "08007", "21S01", "21S02", "25S01", "25S02", "25S03",
+    "42S01", "42S02", "42S11", "42S12", "42S21", "42S22", "HY095", "HY097",
+    "HY098", "HY099", "HY100", "HY101", "HY105", "HY107", "HY109", "HY110", 
+    "HY111", "HYT00", "HYT01", "IM001", "IM002", "IM003", "IM004", "IM005", 
+    "IM006", "IM007", "IM008", "IM010", "IM011", "IM012"};
   size_t i;
 
   if (sqlstate.empty())
@@ -493,7 +501,7 @@ MySQLGetDiagField(SQLSMALLINT handle_type, SQLHANDLE handle, SQLSMALLINT record,
     if (!stmt->result)
       *(SQLLEN *)num_value= 0;
     else
-      *(SQLLEN *)num_value= (SQLLEN) mysql_num_rows(stmt->result);
+      *(SQLLEN *)num_value= (SQLLEN) dbc->mysql_proxy->num_rows(stmt->result);
     return SQL_SUCCESS;
 
   case SQL_DIAG_DYNAMIC_FUNCTION:
@@ -544,7 +552,7 @@ MySQLGetDiagField(SQLSMALLINT handle_type, SQLHANDLE handle, SQLSMALLINT record,
 
   case SQL_DIAG_CONNECTION_NAME:
   {
-    DataSource *ds;
+    DataSource *ds = nullptr;
     if (record <= 0)
       return SQL_ERROR;
 
@@ -580,7 +588,7 @@ MySQLGetDiagField(SQLSMALLINT handle_type, SQLHANDLE handle, SQLSMALLINT record,
 
   case SQL_DIAG_SERVER_NAME:
   {
-    DataSource *ds;
+    DataSource *ds = nullptr;
     if (record <= 0)
       return SQL_ERROR;
     if (handle_type == SQL_HANDLE_DESC)

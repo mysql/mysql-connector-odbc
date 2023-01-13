@@ -1,3 +1,5 @@
+// Modifications Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+//
 // Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
 //
 // This program is free software; you can redistribute it and/or modify
@@ -109,12 +111,13 @@ copy_and_convert(char *to, uint32 to_length, CHARSET_INFO *to_cs,
                  const char *from, uint32 from_length, CHARSET_INFO *from_cs,
                  uint32 *used_bytes, uint32 *used_chars, uint *errors);
 
+SQLCHAR* sqlchardup(const SQLCHAR* str, const size_t len);
 
 /* wcs* replacements */
 int sqlwcharcasecmp(const SQLWCHAR *s1, const SQLWCHAR *s2);
 const SQLWCHAR *sqlwcharchr(const SQLWCHAR *wstr, SQLWCHAR wchr);
 size_t sqlwcharlen(const SQLWCHAR *wstr);
-SQLWCHAR *sqlwchardup(const SQLWCHAR *wstr, size_t charlen);
+SQLWCHAR *sqlwchardup(const SQLWCHAR *wstr, const size_t len);
 unsigned long sqlwchartoul(const SQLWCHAR *wstr, const SQLWCHAR **endptr);
 void sqlwcharfromul(SQLWCHAR *wstr, unsigned long v);
 size_t sqlwcharncat2(SQLWCHAR *dest, const SQLWCHAR *src, size_t *n);

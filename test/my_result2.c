@@ -1,3 +1,5 @@
+// Modifications Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+//
 // Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
 //
 // This program is free software; you can redistribute it and/or modify
@@ -262,7 +264,6 @@ other than SQL_C_BIT variable
 */
 DECLARE_TEST(t_bug32821)
 {
-  SQLRETURN     rc;
   SQLUINTEGER   b;
   SQLUSMALLINT  c;
   SQLLEN        a_ind, b_ind, c_ind, i, j, k;
@@ -275,7 +276,7 @@ DECLARE_TEST(t_bug32821)
   SQLLEN      sPar= sizeof(SQLUINTEGER);
 
   /* 131071 = 0x1ffff - all 1 for field c*/
-  SQLCHAR * insStmt= "insert into t_bug32821 values (0,0,0),(1,1,1)\
+  SQLCHAR * insStmt= (SQLCHAR*)"insert into t_bug32821 values (0,0,0),(1,1,1)\
                       ,(1,255,131071),(1,258,?)";
   const unsigned char expected_a[]= {'\0', '\1', '\1', '\1'};
   const SQLUINTEGER   expected_b[]= {0L, 1L, 255L, 258L};
@@ -283,7 +284,7 @@ DECLARE_TEST(t_bug32821)
 
   ok_sql(hstmt, "DROP TABLE IF EXISTS t_bug32821");
 
-  ok_stmt(hstmt, SQLPrepare(hstmt, "CREATE TABLE t_bug32821 (a BIT(1), b BIT(16)\
+  ok_stmt(hstmt, SQLPrepare(hstmt, (SQLCHAR*)"CREATE TABLE t_bug32821 (a BIT(1), b BIT(16)\
                                    , c BIT(?))", SQL_NTS));
   ok_stmt(hstmt, SQLBindParameter(hstmt, 1, SQL_PARAM_INPUT, SQL_C_ULONG
     , SQL_INTEGER, 0, 0, &par, 0, &sPar ));
@@ -417,9 +418,9 @@ DECLARE_TEST(t_bug55024)
   SQLSMALLINT len;
   SQLLEN      res;
 
-  ok_stmt(hstmt, SQLExecDirect(hstmt, "DROP TABLE IF EXISTS t_test55024", SQL_NTS));
+  ok_stmt(hstmt, SQLExecDirect(hstmt, (SQLCHAR*)"DROP TABLE IF EXISTS t_test55024", SQL_NTS));
 
-  ok_stmt(hstmt, SQLExecDirect(hstmt, "CREATE TABLE t_test55024(col01 LONGTEXT, "\
+  ok_stmt(hstmt, SQLExecDirect(hstmt, (SQLCHAR*)"CREATE TABLE t_test55024(col01 LONGTEXT, "\
                                                                   "col02 BINARY(16),"\
                                                                   "col03 VARBINARY(16),"\
                                                                   "col04 LONGBLOB,"\
@@ -428,10 +429,12 @@ DECLARE_TEST(t_bug55024)
                                                                   "col07 BIT, col08 DOUBLE"\
                                                                   ") CHARSET latin1", SQL_NTS));
 
-  ok_stmt(hstmt, SQLExecDirect(hstmt, "INSERT INTO t_test55024 VALUES ('a', 'b', 'c', 'd', 999, 111, 1, 3.1415)", SQL_NTS));
+  ok_stmt(hstmt, SQLExecDirect(hstmt, 
+                               (SQLCHAR*)"INSERT INTO t_test55024 VALUES ('a', 'b', 'c', 'd', 999, 111, 1, 3.1415)",
+                               SQL_NTS));
 
 
-  ok_stmt(hstmt, SQLExecDirect(hstmt, "SELECT * FROM t_test55024", SQL_NTS));
+  ok_stmt(hstmt, SQLExecDirect(hstmt, (SQLCHAR*)"SELECT * FROM t_test55024", SQL_NTS));
 
   ok_stmt(hstmt, SQLColAttribute(hstmt, 1, SQL_DESC_TYPE, NULL, 0, &len, &res));
   is_num(res, SQL_LONGVARCHAR);
@@ -483,7 +486,7 @@ DECLARE_TEST(t_bug56677)
 
   ok_stmt(hstmt, SQLFreeStmt(hstmt, SQL_CLOSE));
 
-  ok_stmt(hstmt, SQLPrepare(hstmt, "select * from bug56677", SQL_NTS));
+  ok_stmt(hstmt, SQLPrepare(hstmt, (SQLCHAR*)"select * from bug56677", SQL_NTS));
   ok_stmt(hstmt, SQLNumResultCols(hstmt, &colCount));
 
   is_num(colCount, 2);
@@ -540,9 +543,9 @@ DECLARE_TEST(t_desccol_before_exec)
 
   ok_stmt(hstmt, SQLFreeStmt(hstmt, SQL_CLOSE));
 
-  ok_stmt(hstmt, SQLPrepare(hstmt, "select tt_varchar from desccol_before_exec where tt_int > ?", SQL_NTS));
+  ok_stmt(hstmt, SQLPrepare(hstmt, (SQLCHAR*)"select tt_varchar from desccol_before_exec where tt_int > ?", SQL_NTS));
 
-  ok_stmt(hstmt, SQLDescribeCol(hstmt, 1, colname, sizeof(colname), NULL,
+  ok_stmt(hstmt, SQLDescribeCol(hstmt, 1, (SQLCHAR*)colname, sizeof(colname), NULL,
     NULL, &collen, NULL, NULL));
 
   is_str(colname, "tt_varchar", 11);
@@ -568,7 +571,7 @@ DECLARE_TEST(t_desccol_before_exec)
 
   /* Now doing all the same things with SQLColAttribute */
   ok_stmt(hstmt, SQLFreeStmt(hstmt, SQL_CLOSE));
-  ok_stmt(hstmt, SQLPrepare(hstmt, "select tt_int, tt_varchar "
+  ok_stmt(hstmt, SQLPrepare(hstmt, (SQLCHAR*)"select tt_int, tt_varchar "
                                    "from desccol_before_exec "
                                    "where tt_int <= ?", SQL_NTS));
 
@@ -612,7 +615,7 @@ DECLARE_TEST(t_bug62657)
   ok_sql(hstmt, "insert into b62657 values(1),(2)");
 
 
-  ok_stmt(hstmt, SQLExecDirect(hstmt, "select * from b62657", SQL_NTS));
+  ok_stmt(hstmt, SQLExecDirect(hstmt, (SQLCHAR*)"select * from b62657", SQL_NTS));
 
   ok_stmt(hstmt, SQLFetch(hstmt));
 
@@ -661,7 +664,7 @@ DECLARE_TEST(t_row_status)
   ok_desc(ird, SQLSetDescField(ard, 0, SQL_DESC_ARRAY_SIZE,
                                 (SQLPOINTER)2, SQL_IS_INTEGER));
 
-  ok_stmt(hstmt, SQLExecDirect(hstmt, "select * from b_row_status\
+  ok_stmt(hstmt, SQLExecDirect(hstmt, (SQLCHAR*)"select * from b_row_status\
                                        where i=1", SQL_NTS));
 
   /* it has to be SQL_SUCCESS here */
@@ -678,7 +681,7 @@ DECLARE_TEST(t_row_status)
 
   ok_stmt(hstmt, SQLFreeStmt(hstmt, SQL_CLOSE));
 
-  ok_stmt(hstmt, SQLExecDirect(hstmt, "select if(i is NULL,NULL,repeat(char(64+i),8/i))\
+  ok_stmt(hstmt, SQLExecDirect(hstmt, (SQLCHAR*)"select if(i is NULL,NULL,repeat(char(64+i),8/i))\
                                        from b_row_status\
                                        order by i desc", SQL_NTS));
 
@@ -708,20 +711,20 @@ DECLARE_TEST(t_prefetch)
     DECLARE_BASIC_HANDLES(henv1, hdbc1, hstmt1);
 
     is(OK == alloc_basic_handles_with_opt(&henv1, &hdbc1, &hstmt1, NULL,
-                                        NULL, NULL, NULL, "PREFETCH=5"));
+                                        NULL, NULL, NULL, (SQLCHAR*)"PREFETCH=5"));
 
     ok_sql(hstmt, "DROP table IF EXISTS b_prefecth");
     ok_sql(hstmt, "CREATE table b_prefecth(i int)");
 
     ok_sql(hstmt, "insert into b_prefecth values(1),(2),(3),(4),(5),(6),(7)");
 
-    ok_stmt(hstmt1, SQLPrepare(hstmt1, "select* from b_prefecth;    ", SQL_NTS));
+    ok_stmt(hstmt1, SQLPrepare(hstmt1, (SQLCHAR*)"select* from b_prefecth;    ", SQL_NTS));
     ok_stmt(hstmt1, SQLExecute(hstmt1));
 
     free_basic_handles(&henv1, &hdbc1, &hstmt1);
 
     is(OK == alloc_basic_handles_with_opt(&henv1, &hdbc1, &hstmt1, NULL,
-                                        NULL, NULL, NULL, "MULTI_STATEMENTS=1"));
+                                        NULL, NULL, NULL, (SQLCHAR*)"MULTI_STATEMENTS=1"));
 
     ok_sql(hstmt1, "select* from b_prefecth;\
                    select * from b_prefecth where i < 7; ");
@@ -752,7 +755,7 @@ DECLARE_TEST(t_bug17386788)
   ok_sql(hstmt, "insert into b_bug17386788 values(1),(2),(3),(4),(5),(6),(7)");
 
   is(OK == alloc_basic_handles_with_opt(&henv1, &hdbc1, &hstmt1, NULL,
-                                        NULL, NULL, NULL, "PREFETCH=5"));
+                                        NULL, NULL, NULL, (SQLCHAR*)"PREFETCH=5"));
 
   ok_stmt(hstmt1,
           SQLPrepare(hstmt1,
@@ -936,12 +939,12 @@ DECLARE_TEST(t_bug11766437)
 
       sprintf((char *)tbuf, "name%d", i);
       /* Verifying inserted name field */
-      is_str(ptr, tbuf, strlen(tbuf));
+      is_str(ptr, tbuf, strlen((char*)tbuf));
       /* Incrementing ptr by MAX_CHAR_SIZE (max size kept for name column) */
       ptr+=MAX_CHAR_SIZE;
 
       /* Verifying length of name field */
-      is_num(*((SQLLEN *)ptr), strlen(tbuf));
+      is_num(*((SQLLEN *)ptr), strlen((char*)tbuf));
       /* Incrementing ptr by sizeof(SQLLEN) last parameter of SQLBindCol  */
       ptr += sizeof(SQLLEN);
 
@@ -968,9 +971,8 @@ DECLARE_TEST(t_bug11766437)
 */
 DECLARE_TEST(t_varbookmark)
 {
-  SQLLEN len= 0;
   SQLCHAR abookmark[20];
-  SQLINTEGER outlen;
+  SQLLEN outlen;
   SQLUSMALLINT rowStatus[11];
   SQLUINTEGER numRowsFetched;
   SQLINTEGER nData[11];
@@ -1030,39 +1032,39 @@ DECLARE_TEST(t_varbookmark)
 
   is_num(nData[0], 100);
   is_str(szData[0], "string 1", 8);
-  is_num(atol(bData[0]), 1);
+  is_num(atol((char*)bData[0]), 1);
   is_num(nData[1], 200);
   is_str(szData[1], "string 2", 8);
-  is_num(atol(bData[1]), 2);
+  is_num(atol((char*)bData[1]), 2);
   is_num(nData[2], 300);
   is_str(szData[2], "string 3", 8);
-  is_num(atol(bData[2]), 3);
+  is_num(atol((char*)bData[2]), 3);
   is_num(nData[3], 400);
   is_str(szData[3], "string 4", 8);
-  is_num(atol(bData[3]), 4);
+  is_num(atol((char*)bData[3]), 4);
 
   is_num(nData[4], 500);
   is_str(szData[4], "string 5", 8);
-  is_num(atol(bData[4]), 5);
+  is_num(atol((char*)bData[4]), 5);
   is_num(nData[5], 600);
   is_str(szData[5], "string 6", 8);
-  is_num(atol(bData[5]), 6);
+  is_num(atol((char*)bData[5]), 6);
   is_num(nData[6], 700);
   is_str(szData[6], "string 7", 8);
-  is_num(atol(bData[6]), 7);
+  is_num(atol((char*)bData[6]), 7);
   is_num(nData[7], 800);
   is_str(szData[7], "string 8", 8);
-  is_num(atol(bData[7]), 8);
+  is_num(atol((char*)bData[7]), 8);
 
   is_num(nData[8], 900);
   is_str(szData[8], "string 9", 8);
-  is_num(atol(bData[8]), 9);
+  is_num(atol((char*)bData[8]), 9);
   is_num(nData[9], 1000);
   is_str(szData[9], "string 10", 8);
-  is_num(atol(bData[9]), 10);
+  is_num(atol((char*)bData[9]), 10);
   is_num(nData[10], 1100);
   is_str(szData[10], "string 11", 8);
-  is_num(atol(bData[10]), 11);
+  is_num(atol((char*)bData[10]), 11);
 
   ok_stmt(hstmt, SQLSetPos(hstmt, 2, SQL_POSITION, SQL_LOCK_NO_CHANGE));
   ok_stmt(hstmt, SQLGetData(hstmt, 0, SQL_C_VARBOOKMARK, abookmark, 255, &outlen));
@@ -1074,13 +1076,13 @@ DECLARE_TEST(t_varbookmark)
 
   is_num(nData[0], 200);
   is_str(szData[0], "string 2", 8);
-  is_num(atol(bData[0]), 2);
+  is_num(atol((char*)bData[0]), 2);
   is_num(nData[1], 300);
   is_str(szData[1], "string 3", 8);
-  is_num(atol(bData[1]), 3);
+  is_num(atol((char*)bData[1]), 3);
   is_num(nData[2], 400);
   is_str(szData[2], "string 4", 8);
-  is_num(atol(bData[2]), 4);
+  is_num(atol((char*)bData[2]), 4);
 
   ok_stmt(hstmt, SQLFreeStmt(hstmt, SQL_CLOSE));
   ok_sql(hstmt, "drop table if exists t_bookmark");
@@ -1199,7 +1201,7 @@ DECLARE_TEST(t_bug17311065)
 {
   SQLCHAR     message[SQL_MAX_MESSAGE_LENGTH + 1];
   SQLCHAR     sqlstate[SQL_SQLSTATE_SIZE + 1];
-  char        colname[MYSQL_NAME_LEN];
+  SQLCHAR     colname[MYSQL_NAME_LEN];
   SQLULEN     collen;
   SQLINTEGER  error;
   SQLSMALLINT len;
@@ -1210,7 +1212,7 @@ DECLARE_TEST(t_bug17311065)
 
   ok_stmt(hstmt, SQLFreeStmt(hstmt, SQL_CLOSE));
 
-  ok_stmt(hstmt, SQLPrepare(hstmt, "select * from t_bug17311065 where id > ?", SQL_NTS));
+  ok_stmt(hstmt, SQLPrepare(hstmt, (SQLCHAR*)"select * from t_bug17311065 where id > ?", SQL_NTS));
 
   expect_stmt(hstmt, SQLDescribeCol(hstmt, 3, colname, sizeof(colname), NULL,
     NULL, &collen, NULL, NULL), SQL_ERROR);
@@ -1294,7 +1296,7 @@ DECLARE_TEST(t_prefetch_bug)
 
     is(OK == alloc_basic_handles_with_opt(
              &henv1, &hdbc1, &hstmt1, NULL,
-             NULL, NULL, NULL, "PREFETCH=5;NO_SSPS=1"));
+             NULL, NULL, NULL, (SQLCHAR*)"PREFETCH=5;NO_SSPS=1"));
 
     ok_sql(hstmt, "DROP table IF EXISTS b_prefecth");
     ok_sql(hstmt, "CREATE table b_prefecth(id int primary key)");

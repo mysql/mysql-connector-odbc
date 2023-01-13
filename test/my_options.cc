@@ -1,3 +1,5 @@
+// Modifications Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+//
 // Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
 //
 // This program is free software; you can redistribute it and/or modify
@@ -34,7 +36,6 @@
 #include <sstream>
 #include <cstdio>
 #include <map>
-#include <vector>
 #include <stdlib.h>
 
 #include "odbc_util.h"
@@ -350,7 +351,7 @@ do { \
             "OPTIONALLY ENCLOSED BY '\"' LINES TERMINATED BY '\n'";
 
         std::cout << " Result: ";
-        SQLRETURN rc = conn.execute(sstr.str().c_str());
+        rc = conn.execute(sstr.str().c_str());
         if (rc != SQL_SUCCESS)
           assert_num(SQL_SUCCESS_WITH_INFO, rc);
 
@@ -576,12 +577,12 @@ struct test_params
 int run_func_tests(test_params &par)
 {
 
-  SQLRETURN rc = SQL_SUCCESS;
+  SQLRETURN ret = SQL_SUCCESS;
   SQLCHAR buf[4096];
 
   DECLARE_BASIC_HANDLES(henv1, hdbc1, hstmt1);
 
-  auto check_results = [&](SQLRETURN ret, const char *func,
+  auto check_results = [&](SQLRETURN ret_code, const char *func,
                            const char *col1 = nullptr,
                            const char *col2 = nullptr)
   {
@@ -593,9 +594,9 @@ int run_func_tests(test_params &par)
     std::cout << func << std::endl;
 
     if (par.expected_res != SQL_ERROR)
-      ok_stmt(hstmt1, ret);
+      ok_stmt(hstmt1, ret_code);
 
-    is_num(par.expected_res, ret);
+    is_num(par.expected_res, ret_code);
 
     /* On expected error the rows do not need to be checked */
     if (par.expected_res == SQL_ERROR)
@@ -650,65 +651,65 @@ int run_func_tests(test_params &par)
                                  nullptr, nullptr, nullptr, nullptr,
                                  (SQLCHAR*)connstr.c_str());
 
-    rc = SQLTables(hstmt1, (SQLCHAR*)par.catalog_name, SQL_NTS,
+    ret = SQLTables(hstmt1, (SQLCHAR*)par.catalog_name, SQL_NTS,
                            (SQLCHAR*)par.schema_name, SQL_NTS,
                            (SQLCHAR*)"t_wl14490a", SQL_NTS,
                            (SQLCHAR*)"TABLE", SQL_NTS);
-    is_num(OK, check_results(rc, "SQLTables"));
+    is_num(OK, check_results(ret, "SQLTables"));
 
-    rc = SQLColumns(hstmt1, (SQLCHAR*)par.catalog_name, SQL_NTS,
+    ret = SQLColumns(hstmt1, (SQLCHAR*)par.catalog_name, SQL_NTS,
                             (SQLCHAR*)par.schema_name, SQL_NTS,
                             (SQLCHAR*)"t_wl14490a", SQL_NTS,
                             (SQLCHAR*)"a", SQL_NTS);
-    is_num(OK, check_results(rc, "SQLColumns"));
+    is_num(OK, check_results(ret, "SQLColumns"));
 
-    rc = SQLStatistics(hstmt1, (SQLCHAR*)par.catalog_name, SQL_NTS,
+    ret = SQLStatistics(hstmt1, (SQLCHAR*)par.catalog_name, SQL_NTS,
                                (SQLCHAR*)par.schema_name, SQL_NTS,
                                (SQLCHAR*)"t_wl14490a", SQL_NTS,
                                SQL_INDEX_ALL,SQL_QUICK);
-    is_num(OK, check_results(rc, "SQLStatistics"));
+    is_num(OK, check_results(ret, "SQLStatistics"));
 
-    rc = SQLSpecialColumns(hstmt1, SQL_ROWVER,
+    ret = SQLSpecialColumns(hstmt1, SQL_ROWVER,
                            (SQLCHAR*)par.catalog_name, SQL_NTS,
                            (SQLCHAR*)par.schema_name, SQL_NTS,
                            (SQLCHAR*)"t_wl14490a", SQL_NTS,
                            SQL_SCOPE_SESSION, SQL_NULLABLE);
-    is_num(OK, check_results(rc, "SQLSpecialColumns", nullptr, "b_ts"));
+    is_num(OK, check_results(ret, "SQLSpecialColumns", nullptr, "b_ts"));
 
-    rc = SQLPrimaryKeys(hstmt1, (SQLCHAR*)par.catalog_name, SQL_NTS,
+    ret = SQLPrimaryKeys(hstmt1, (SQLCHAR*)par.catalog_name, SQL_NTS,
                         (SQLCHAR*)par.schema_name, SQL_NTS,
                         (SQLCHAR*)"t_wl14490a", SQL_NTS);
-    is_num(OK, check_results(rc, "SQLPrimaryKeys"));
+    is_num(OK, check_results(ret, "SQLPrimaryKeys"));
 
-    rc = SQLForeignKeys(hstmt1, (SQLCHAR*)par.catalog_name, SQL_NTS,
+    ret = SQLForeignKeys(hstmt1, (SQLCHAR*)par.catalog_name, SQL_NTS,
                                 (SQLCHAR*)par.schema_name, SQL_NTS,
                                 NULL, 0, // All tables referenced by t_wl14490c
                                 (SQLCHAR*)par.catalog_name, SQL_NTS,
                                 (SQLCHAR*)par.schema_name, SQL_NTS,
                                 (SQLCHAR *)"t_wl14490c", SQL_NTS);
-    is_num(OK, check_results(rc, "SQLForeignKeys"));
+    is_num(OK, check_results(ret, "SQLForeignKeys"));
 
-    rc = SQLTablePrivileges(hstmt1, (SQLCHAR*)par.catalog_name, SQL_NTS,
+    ret = SQLTablePrivileges(hstmt1, (SQLCHAR*)par.catalog_name, SQL_NTS,
                             (SQLCHAR*)par.schema_name, SQL_NTS,
                             (SQLCHAR*)"t_wl14490a", SQL_NTS);
-    is_num(OK, check_results(rc, "SQLTablePrivileges"));
+    is_num(OK, check_results(ret, "SQLTablePrivileges"));
 
-    rc = SQLColumnPrivileges(hstmt1, (SQLCHAR*)par.catalog_name, SQL_NTS,
+    ret = SQLColumnPrivileges(hstmt1, (SQLCHAR*)par.catalog_name, SQL_NTS,
                             (SQLCHAR*)par.schema_name, SQL_NTS,
                             (SQLCHAR*)"t_wl14490a", SQL_NTS,
                             (SQLCHAR*)"a", SQL_NTS);
-    is_num(OK, check_results(rc, "SQLColumnPrivileges"));
+    is_num(OK, check_results(ret, "SQLColumnPrivileges"));
 
-    rc = SQLProcedures(hstmt1, (SQLCHAR*)par.catalog_name, SQL_NTS,
+    ret = SQLProcedures(hstmt1, (SQLCHAR*)par.catalog_name, SQL_NTS,
                             (SQLCHAR*)par.schema_name, SQL_NTS,
                             (SQLCHAR*)"procwl14490", SQL_NTS);
-    is_num(OK, check_results(rc, "SQLProcedures"));
+    is_num(OK, check_results(ret, "SQLProcedures"));
 
-    rc = SQLProcedureColumns(hstmt1, (SQLCHAR*)par.catalog_name, SQL_NTS,
+    ret = SQLProcedureColumns(hstmt1, (SQLCHAR*)par.catalog_name, SQL_NTS,
                             (SQLCHAR*)par.schema_name, SQL_NTS,
                             (SQLCHAR*)"procwl14490", SQL_NTS,
                             nullptr, 0);
-    is_num(OK, check_results(rc, "SQLProcedureColumns"));
+    is_num(OK, check_results(ret, "SQLProcedureColumns"));
 
     {
       SQLUSMALLINT cat_vals[] = {

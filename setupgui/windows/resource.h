@@ -1,4 +1,6 @@
 /////////////////////////////////////////////////////////////////////////////
+// Modifications Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+//
 // Copyright (c) 2006, 2018, Oracle and/or its affiliates. All rights reserved.
 //
 // This program is free software; you can redistribute it and/or modify
@@ -52,6 +54,7 @@
 #define IDD_TAB5                        136
 #define IDD_TAB6                        137
 #define IDD_TAB7                        138
+#define IDD_TAB8                        139
 #define IDC_LOGO                        1000
 #define IDC_EDIT_DRVNAME                1004
 #define IDC_EDIT_DRVDESC                1005
@@ -105,32 +108,33 @@
 #define IDC_CHECK_zero_date_to_min      10022
 #define IDC_CHECK_ignore_space_after_function_names 10023
 #define IDC_CHECK_no_catalog            10025
-#define IDC_CHECK_no_schema             10069
-#define IDC_CHECK_read_options_from_mycnf 10026
-#define IDC_CHECK_disable_transactions  10027
-#define IDC_CHECK_force_use_of_forward_only_cursors 10028
-#define IDC_CHECK_allow_multiple_statements 10029
-#define IDC_CHECK_limit_column_size     10030
-#define IDC_EDIT_sslca                  10031
-#define IDC_EDIT_sslcapath              10032
-#define IDC_EDIT_sslcert                10033
-#define IDC_EDIT_sslkey                 10034
-#define IDC_EDIT_sslcipher              10035
-#define IDC_CHECK_handle_binary_as_char 10036
-#define IDC_CHECK_save_queries          10037
-#define IDC_EDIT_charset                10038
-#define IDC_EDIT_initstmt               10039
-#define IDC_CHECK_clientinteractive     10040
-#define IDC_EDIT_socket                 10042
-#define IDC_RADIO_tcp                   10043
-#define IDC_RADIO_pipe                  10044
-#define IDC_CHECK_cursor_prefetch_active 10045
-#define IDC_EDIT_cursor_prefetch_number 10046
-#define IDC_CHECK_no_ssps               10047
-#define IDC_CHECK_can_handle_exp_pwd    10048
-#define IDC_CHECK_enable_cleartext_plugin 10049
-#define IDC_CHECK_default_bigint_bind_str 10050
-#define IDC_EDIT_rsakey                 10051
+#define IDC_CHECK_no_schema             10026
+#define IDC_CHECK_read_options_from_mycnf 10027
+#define IDC_CHECK_disable_transactions  10028
+#define IDC_CHECK_force_use_of_forward_only_cursors 10029
+#define IDC_CHECK_allow_multiple_statements 10030
+#define IDC_CHECK_limit_column_size     10031
+#define IDC_EDIT_sslca                  10032
+#define IDC_EDIT_sslcapath              10033
+#define IDC_EDIT_sslcert                10034
+#define IDC_EDIT_sslkey                 10035
+#define IDC_EDIT_sslcipher              10036
+#define IDC_CHECK_handle_binary_as_char 10037
+#define IDC_CHECK_save_queries          10038
+#define IDC_EDIT_charset                10039
+#define IDC_EDIT_initstmt               10040
+#define IDC_CHECK_client_interactive    10041
+#define IDC_CHECK_no_information_schema 10042
+#define IDC_EDIT_socket                 10043
+#define IDC_RADIO_tcp                   10044
+#define IDC_RADIO_pipe                  10045
+#define IDC_CHECK_cursor_prefetch_active 10046
+#define IDC_EDIT_cursor_prefetch_number 10047
+#define IDC_CHECK_no_ssps               10048
+#define IDC_CHECK_can_handle_exp_pwd    10049
+#define IDC_CHECK_enable_cleartext_plugin 10050
+#define IDC_CHECK_default_bigint_bind_str 10051
+#define IDC_EDIT_rsakey                 10052
 #define IDC_EDIT_plugin_dir             10053
 #define IDC_EDIT_default_auth           10054
 #define IDC_CHOOSER_plugin_dir          10055
@@ -151,6 +155,25 @@
 #define IDC_EDIT_tls_versions           10073
 #define IDC_EDIT_ssl_crl                10074
 #define IDC_EDIT_ssl_crlpath            10075
+#define IDC_CHECK_enable_cluster_failover 10076
+#define IDC_CHECK_gather_perf_metrics   10077
+#define IDC_CHECK_gather_metrics_per_instance 10078
+#define IDC_EDIT_host_pattern           10079
+#define IDC_EDIT_cluster_id             10080
+#define IDC_EDIT_topology_refresh_rate  10081
+#define IDC_EDIT_failover_timeout       10082
+#define IDC_EDIT_failover_topology_refresh_rate 10083
+#define IDC_EDIT_failover_writer_reconnect_interval 10084
+#define IDC_EDIT_failover_reader_connect_timeout 10085
+#define IDC_EDIT_connect_timeout		10086
+#define IDC_EDIT_network_timeout        10087
+#define IDC_CHECK_allow_reader_connections 10088
+#define IDC_CHECK_enable_failure_detection     10100
+#define IDC_EDIT_failure_detection_time        10101
+#define IDC_EDIT_failure_detection_interval    10102
+#define IDC_EDIT_failure_detection_count       10103
+#define IDC_EDIT_failure_detection_timeout     10104
+#define IDC_EDIT_monitor_disposal_time         10105
 #define IDC_BUTTON_TEST                 11014
 #define IDC_BUTTON_HELP                 11015
 #define IDC_STATIC                      -1
@@ -160,9 +183,9 @@
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
-#define _APS_NEXT_RESOURCE_VALUE        137
+#define _APS_NEXT_RESOURCE_VALUE        139
 #define _APS_NEXT_COMMAND_VALUE         32771
-#define _APS_NEXT_CONTROL_VALUE         1030
+#define _APS_NEXT_CONTROL_VALUE         1035
 #define _APS_NEXT_SYMED_VALUE           110
 #endif
 #endif

@@ -1,3 +1,5 @@
+// Modifications Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+//
 // Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
 //
 // This program is free software; you can redistribute it and/or modify
@@ -338,7 +340,6 @@ DECLARE_TEST(t_bug25846)
 
 DECLARE_TEST(t_time)
 {
-  SQLRETURN       rc;
   SQL_TIME_STRUCT tm;
   SQLCHAR         str[20];
 
@@ -395,7 +396,6 @@ DECLARE_TEST(t_time)
 /* Test for a simple time struct */
 DECLARE_TEST(t_time1)
 {
-  SQLRETURN       rc;
   SQL_TIME_STRUCT tt;
   SQLCHAR         data[30];
   SQLLEN          length;
@@ -1198,7 +1198,7 @@ DECLARE_TEST(t_b13975271)
                                     SQL_CHAR,0, 0, ts, sizeof(ts), NULL));
     ok_stmt(hstmt, SQLBindParameter(hstmt, 3, SQL_PARAM_INPUT, SQL_C_CHAR,
                                     SQL_CHAR,0, 0, ts, sizeof(ts), NULL));
-    ok_stmt(hstmt, SQLPrepare(hstmt, "INSERT INTO t_b13975271(ts,dt,t) \
+    ok_stmt(hstmt, SQLPrepare(hstmt, (SQLCHAR*)"INSERT INTO t_b13975271(ts,dt,t) \
                                       VALUES (?,?,?)",
                               SQL_NTS));
     ok_stmt(hstmt, SQLExecute(hstmt));
@@ -1351,12 +1351,12 @@ DECLARE_TEST(t_17613161_bookmark)
 
   ok_stmt(hstmt, SQLFetchScroll(hstmt, SQL_FETCH_BOOKMARK, 0));
 
-  is_num(atol(bData[0]), 1);
+  is_num(atol((char*)bData[0]), 1);
   is_num(tm[0].hour, 11);
   is_num(tm[0].minute, 02);
   is_num(tm[0].second, 19);
 
-  is_num(atol(bData[1]), 2);
+  is_num(atol((char*)bData[1]), 2);
   is_num(tm[1].hour, 100);
   is_num(tm[1].minute, 20);
   is_num(tm[1].second, 45);
@@ -1377,9 +1377,9 @@ DECLARE_TEST(t_date_overflow)
   DECLARE_BASIC_HANDLES(henv1, hdbc1, hstmt1);
 
   is(OK == alloc_basic_handles_with_opt(&henv1, &hdbc1, &hstmt1, NULL,
-           NULL, NULL, NULL, "NO_DATE_OVERFLOW=1"));
+           NULL, NULL, NULL, (SQLCHAR*)"NO_DATE_OVERFLOW=1"));
 
-  char *query_prep = "INSERT INTO t_date_overflow (a) VALUES (?)";
+  SQLCHAR *query_prep = (SQLCHAR*)"INSERT INTO t_date_overflow (a) VALUES (?)";
   SQL_TIMESTAMP_STRUCT ts;
 
   ts.day = 14;

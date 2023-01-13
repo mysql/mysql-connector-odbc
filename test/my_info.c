@@ -1,3 +1,5 @@
+// Modifications Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+//
 // Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
 //
 // This program is free software; you can redistribute it and/or modify
@@ -204,15 +206,13 @@ DECLARE_TEST(t_get_all_info)
     };
 
     int i= 0;
-    char buf[512], conn[4096] = { 0 };
-    SQLUSMALLINT pf_exists = 0;
+    SQLCHAR buf[512], conn[4096] = { 0 };
     SQLHDBC hdbc1;
     SQLHSTMT hstmt1;
 
-    sprintf((char *)conn, "DSN=%s;UID=%s;PASSWORD=%s",
-            mydsn, myuid, mypwd);
+    sprintf((char *)conn, "DSN=%s;UID=%s;PASSWORD=%s", mydsn, myuid, mypwd);
     ok_env(henv, SQLAllocHandle(SQL_HANDLE_DBC, henv, &hdbc1));
-    ok_con(hdbc1, SQLDriverConnect(hdbc1, NULL, conn, (SQLSMALLINT)strlen(conn), NULL, 0,
+    ok_con(hdbc1, SQLDriverConnect(hdbc1, NULL, conn, (SQLSMALLINT)strlen((char*)conn), NULL, 0,
                                    NULL, SQL_DRIVER_NOPROMPT));
     ok_con(hdbc1, SQLAllocHandle(SQL_HANDLE_STMT, hdbc1, &hstmt1));
 
@@ -227,7 +227,7 @@ DECLARE_TEST(t_get_all_info)
     printf("** SQLGetConnectAttr START\n");
     for (i = 0; i < sizeof(con_opt) / sizeof(SQLUSMALLINT); ++i)
     {
-      SQLSMALLINT str_len_ptr = 0;
+      SQLINTEGER str_len_ptr = 0;
       memset(buf, 0, sizeof(buf));
 
       SQLSetConnectAttr(hstmt1, con_opt[i], buf, 512);
@@ -240,7 +240,6 @@ DECLARE_TEST(t_get_all_info)
     for (i = 0; i < sizeof(stmt_opt) / sizeof(SQLUSMALLINT); ++i)
     {
       SQLINTEGER str_len_ptr = 0;
-      SQLULEN data1 = 0;
       SQLUINTEGER data2 = 0;
       SQLPOINTER p = 0;
       size_t size = 0;
@@ -275,9 +274,9 @@ DECLARE_TEST(t_get_all_info)
       printf("** SQLGetStmtAttr [%d]\n", (int)stmt_opt[i]);
     }
 
-    printf("** Freeing Handles!\n", (int)con_opt[i]);
+    printf("** Freeing Handles!\n");
     free_basic_handles(NULL, &hdbc1, &hstmt1);
-    printf("**Finished Freeing Handles!\n", (int)con_opt[i]);
+    printf("**Finished Freeing Handles!\n");
     return OK;
 }
 
@@ -497,8 +496,8 @@ DECLARE_TEST(t_bug3780)
   SQLINTEGER attrlen;
 
   /* The connection string must not include DATABASE. */
-  is(OK == alloc_basic_handles_with_opt(&henv1, &hdbc1, &hstmt1, USE_DRIVER,
-                                        NULL, NULL, "", NULL));
+  is(OK == alloc_basic_handles_with_opt(&henv1, &hdbc1, &hstmt1, (SQLCHAR*)USE_DRIVER,
+                                        NULL, NULL, (SQLCHAR*)"", NULL));
 
   ok_con(hdbc1, SQLGetInfo(hdbc1, SQL_DATABASE_NAME, rgbValue,
                            MAX_NAME_LEN, &pcbInfo));
@@ -587,7 +586,7 @@ DECLARE_TEST(t_bug30626)
   ok_env(henv1, SQLSetEnvAttr(henv1, SQL_ATTR_ODBC_VERSION,
 			      (SQLPOINTER) SQL_OV_ODBC2, SQL_IS_INTEGER));
   ok_env(henv1, SQLAllocHandle(SQL_HANDLE_DBC, henv1, &hdbc1));
-  ok_con(hdbc1, SQLDriverConnect(hdbc1, NULL, conn, (SQLSMALLINT)strlen(conn), NULL, 0,
+  ok_con(hdbc1, SQLDriverConnect(hdbc1, NULL, conn, (SQLSMALLINT)strlen((char*)conn), NULL, 0,
 				 NULL, SQL_DRIVER_NOPROMPT));
   ok_con(hdbc1, SQLAllocHandle(SQL_HANDLE_STMT, hdbc1, &hstmt1));
 
@@ -646,18 +645,18 @@ DECLARE_TEST(t_bug46910)
 	SQLCHAR     catalog[30];
 	SQLINTEGER  len, i;
 
-	SQLCHAR * initStmt[]= {"DROP PROCEDURE IF EXISTS `spbug46910_1`",
-		"CREATE PROCEDURE `spbug46910_1`()\
+	SQLCHAR * initStmt[]= {(SQLCHAR*)"DROP PROCEDURE IF EXISTS `spbug46910_1`",
+        (SQLCHAR*)"CREATE PROCEDURE `spbug46910_1`()\
 		BEGIN\
 		SELECT 1 AS ret;\
 		END"};
 
-	SQLCHAR * cleanupStmt= "DROP PROCEDURE IF EXISTS `spbug46910_1`;";
+	SQLCHAR * cleanupStmt= (SQLCHAR*)"DROP PROCEDURE IF EXISTS `spbug46910_1`;";
 
 	for (i= 0; i < 2; ++i)
 		ok_stmt(hstmt, SQLExecDirect(hstmt, initStmt[i], SQL_NTS));
 
-	SQLExecDirect(hstmt, "CALL spbug46910_1()", SQL_NTS);
+	SQLExecDirect(hstmt, (SQLCHAR*)"CALL spbug46910_1()", SQL_NTS);
 	/*
 	SQLRowCount(hstmt, &i);
 	SQLNumResultCols(hstmt, &i);*/
@@ -684,12 +683,12 @@ DECLARE_TEST(t_bug46910)
 */
 DECLARE_TEST(t_bug11749093)
 {
-  char        colName[512];
+  SQLCHAR     colName[512];
   SQLSMALLINT colNameLen;
   SQLSMALLINT maxColLen;
 
   ok_stmt(hstmt, SQLExecDirect(hstmt,
-              "SELECT 1234567890+2234567890+3234567890"
+              (SQLCHAR*)"SELECT 1234567890+2234567890+3234567890"
               "+4234567890+5234567890+6234567890+7234567890+"
               "+8234567890+9234567890+1034567890+1234567890+"
               "+1334567890+1434567890+1534567890+1634567890+"
@@ -720,7 +719,7 @@ DECLARE_TEST(t_bug11749093)
 DECLARE_TEST(t_getkeywordinfo)
 {
   SQLSMALLINT pccol;
-  SQLCHAR keywords[8192];
+  char keywords[8192];
 
   ok_con(hdbc, SQLGetInfo(hdbc, SQL_KEYWORDS, keywords,
                           sizeof(keywords), &pccol));
@@ -778,12 +777,12 @@ DECLARE_TEST(t_query_timeout)
     large_buf=gc_alloc(3000000);
 
     large_buf[0]= 0;
-    strcpy(large_buf, "INSERT INTO t_query_timeout1 VALUES ('a', 'b', 'c')");
+    strcpy((char*)large_buf, "INSERT INTO t_query_timeout1 VALUES ('a', 'b', 'c')");
 
     for (i= 1; i < 200; i++)
     {
-      sprintf(iquery, ",('col 1 tab 1 val %d', 'col 2 tab 1 val %d', 'col 3 tab 1 val %d')", i, i, i);
-      strcat(large_buf, iquery);
+      sprintf((char*)iquery, ",('col 1 tab 1 val %d', 'col 2 tab 1 val %d', 'col 3 tab 1 val %d')", i, i, i);
+      strcat((char*)large_buf, (char*)iquery);
     }
 
     ok_stmt(hstmt, SQLExecDirect(hstmt, large_buf, SQL_NTS));
@@ -799,8 +798,14 @@ DECLARE_TEST(t_query_timeout)
 
     t1= time(NULL);
 
-    expect_stmt(hstmt, SQLExecDirect(hstmt, "SELECT t1.c11 FROM t_query_timeout1 t1, t_query_timeout1 t2, t_query_timeout1 t3, t_query_timeout1 t4, t_query_timeout1 t5 WHERE (substring(t2.c13, -3) IN (select substring(concat(tt5.c11,tt4.c13,tt3.c11,tt2.c12), instr(tt5.c12, 'val '), 3) FROM t_query_timeout1 tt5, t_query_timeout1 tt4, t_query_timeout1 tt3, t_query_timeout1 tt2)) LIMIT 100", SQL_NTS),
-                                            SQL_ERROR);
+    expect_stmt(hstmt,
+                SQLExecDirect(
+                    hstmt,
+                    (SQLCHAR*)"SELECT t1.c11 FROM t_query_timeout1 t1, t_query_timeout1 t2, t_query_timeout1 t3, t_query_timeout1 t4, t_query_timeout1 t5 "
+                    "WHERE (substring(t2.c13, -3) IN (select substring(concat(tt5.c11,tt4.c13,tt3.c11,tt2.c12), instr(tt5.c12, 'val '), 3) "
+                    "FROM t_query_timeout1 tt5, t_query_timeout1 tt4, t_query_timeout1 tt3, t_query_timeout1 tt2)) LIMIT 100",
+                    SQL_NTS),
+                SQL_ERROR);
     t2= time(NULL);
 
     /* We check only for SQL_ERROR and SQLSTATE */

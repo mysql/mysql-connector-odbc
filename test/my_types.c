@@ -1,3 +1,5 @@
+// Modifications Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+//
 // Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
 //
 // This program is free software; you can redistribute it and/or modify
@@ -107,7 +109,6 @@ DECLARE_TEST(t_decimal)
   SQLCHAR         str[20],s_data[]="189.4567";
   SQLDOUBLE       d_data=189.4567;
   SQLINTEGER      i_data=189, l_data=-23;
-  SQLRETURN       rc;
 
   ok_sql(hstmt, "DROP TABLE IF EXISTS t_decimal");
     rc = tmysql_exec(hstmt,"create table t_decimal(d1 decimal(10,6))");
@@ -199,7 +200,6 @@ DECLARE_TEST(t_decimal)
 DECLARE_TEST(t_bigint)
 {
 #if SQLBIGINT_MADE_PORTABLE || defined(_WIN32)
-    SQLRETURN rc;
     SQLLEN nlen = 4;
     union {                    /* An union to get 4 byte alignment */
       SQLCHAR buf[20];
@@ -250,7 +250,7 @@ DECLARE_TEST(t_bigint)
     mycon(hdbc,rc);
 
     rc = SQLSpecialColumns(hstmt,SQL_ROWVER,NULL,SQL_NTS,NULL,SQL_NTS,
-                           "t_bigint",SQL_NTS,SQL_SCOPE_TRANSACTION,SQL_NULLABLE);
+                           (SQLCHAR*)"t_bigint",SQL_NTS,SQL_SCOPE_TRANSACTION,SQL_NULLABLE);
 
     mycon(hdbc,rc);
 
@@ -259,7 +259,7 @@ DECLARE_TEST(t_bigint)
     rc = SQLFreeStmt(hstmt,SQL_CLOSE);
     mystmt(hstmt,rc);
 
-    rc = SQLColumns(hstmt,NULL,SQL_NTS,NULL,SQL_NTS,"t_bigint",SQL_NTS,NULL,SQL_NTS);
+    rc = SQLColumns(hstmt,NULL,SQL_NTS,NULL,SQL_NTS,(SQLCHAR*)"t_bigint",SQL_NTS,NULL,SQL_NTS);
 
     mycon(hdbc,rc);
 
@@ -268,7 +268,7 @@ DECLARE_TEST(t_bigint)
     rc = SQLFreeStmt(hstmt,SQL_CLOSE);
     mystmt(hstmt,rc);
 
-    rc = SQLStatistics(hstmt,NULL,SQL_NTS,NULL,SQL_NTS,"t_bigint",SQL_NTS,SQL_INDEX_ALL,SQL_QUICK);
+    rc = SQLStatistics(hstmt,NULL,SQL_NTS,NULL,SQL_NTS,(SQLCHAR*)"t_bigint",SQL_NTS,SQL_INDEX_ALL,SQL_QUICK);
 
     mycon(hdbc,rc);
 
@@ -320,7 +320,6 @@ DECLARE_TEST(t_bigint)
 
 DECLARE_TEST(t_enumset)
 {
-    SQLRETURN rc;
     SQLCHAR szEnum[40]="MYSQL_E1";
     SQLCHAR szSet[40]="THREE,ONE,TWO";
 
@@ -707,7 +706,6 @@ DECLARE_TEST(t_bug32171)
 */
 DECLARE_TEST(t_bug91904)
 {
-  SQLUINTEGER pk;
   SQLCHAR char_true[4] = {'z','z','z','z'};
   SQLLEN char_true_length;
   SQLCHAR text[4] = {'z','z','z','z'};
@@ -727,7 +725,7 @@ DECLARE_TEST(t_bug91904)
                    ) ENGINE=InnoDB AUTO_INCREMENT=6");
 
 
-  ok_stmt(hstmt, SQLExecDirect(hstmt, "INSERT INTO t_bug91904 VALUES (1, 1, \"1\")", SQL_NTS));
+  ok_stmt(hstmt, SQLExecDirect(hstmt, (SQLCHAR*)"INSERT INTO t_bug91904 VALUES (1, 1, \"1\")", SQL_NTS));
 
   ok_sql(hstmt, "SELECT * FROM t_bug91904");
 
@@ -1178,13 +1176,13 @@ DECLARE_TEST(t_bug29402)
   SQLCHAR buf[80]= {0};
   SQLLEN buflen= 0;
   DECLARE_BASIC_HANDLES(henv1, hdbc1, hstmt1);
-  const SQLCHAR *expected= "\x80""100";
+  const SQLCHAR *expected= (const SQLCHAR*)"\x80""100";
 
   is(OK == alloc_basic_handles_with_opt(&henv1, &hdbc1, &hstmt1, NULL,
                                         NULL, NULL, NULL,
-                                        "NO_BINARY_RESULT=1;CHARSET=CP1250"));
+                                        (SQLCHAR*)"NO_BINARY_RESULT=1;CHARSET=CP1250"));
 
-  ok_stmt(hstmt1, SQLExecDirect(hstmt1, "SELECT CONCAT(_cp1250 0x80, 100) concated", SQL_NTS));
+  ok_stmt(hstmt1, SQLExecDirect(hstmt1, (SQLCHAR*)"SELECT CONCAT(_cp1250 0x80, 100) concated", SQL_NTS));
 
   ok_stmt(hstmt1, SQLDescribeCol(hstmt1, 1, column_name, sizeof(column_name),
                                 &name_length, &data_type, &column_size,
@@ -1197,7 +1195,7 @@ DECLARE_TEST(t_bug29402)
 
   is_num(buflen, 4);
 
-  if (strncmp(buf, expected, buflen) != 0)
+  if (strncmp((char*)buf, (char*)expected, buflen) != 0)
   {
     /* Because of this
        http://msdn.microsoft.com/en-us/library/ms716540%28v=vs.85%29.aspx
@@ -1335,7 +1333,7 @@ DECLARE_TEST(t_bug32135124)
   ok_sql(hstmt, "INSERT INTO t_bug32135124 (id, fnumber) "\
                 "VALUES (5, 1.79e+308)");
 
-  ok_stmt(hstmt, SQLPrepare(hstmt, "SELECT fnumber FROM t_bug32135124 "\
+  ok_stmt(hstmt, SQLPrepare(hstmt, (SQLCHAR*)"SELECT fnumber FROM t_bug32135124 "\
                                    "WHERE id = ?", SQL_NTS));
 
   ok_stmt(hstmt, SQLBindParameter( hstmt, 1, SQL_PARAM_INPUT, SQL_C_LONG,

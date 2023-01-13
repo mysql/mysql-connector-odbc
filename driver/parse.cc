@@ -1,3 +1,5 @@
+// Modifications Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+//
 // Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
 //
 // This program is free software; you can redistribute it and/or modify
@@ -374,7 +376,7 @@ const char * find_token(CHARSET_INFO *charset, const char * begin,
 const char * find_first_token(CHARSET_INFO *charset, const char * begin,
                         const char * end, const char * target)
 {
-  const char * token, *before= end;
+  const char * token;
 
   while ((token= mystr_get_next_token(charset, &begin, end)) != end)
   {
@@ -804,35 +806,35 @@ BOOL tokenize(MY_PARSER *parser)
 
 /* Returns TRUE if the rule has succeded and type has been identified */
 static
-BOOL process_rule(MY_PARSER *parser, const QUERY_TYPE_RESOLVING *rule)
+BOOL process_rule(MY_PARSER *parser, const QUERY_TYPE_RESOLVING *rule_param)
 {
   uint i;
   char *token;
 
-  for (i= rule->pos_from;
-       i <= myodbc_min(rule->pos_thru > 0 ? rule->pos_thru : rule->pos_from,
+  for (i= rule_param->pos_from;
+       i <= myodbc_min(rule_param->pos_thru > 0 ? rule_param->pos_thru : rule_param->pos_from,
                       TOKEN_COUNT(parser->query) - 1);
        ++i)
   {
     token= get_token(parser->query, i);
 
-    if (parser->pos && case_compare(parser->query, token, rule->keyword))
+    if (parser->pos && case_compare(parser->query, token, rule_param->keyword))
     {
-      if (rule->and_rule)
+      if (rule_param->and_rule)
       {
-        return process_rule(parser, rule->and_rule);
+        return process_rule(parser, rule_param->and_rule);
       }
       else
       {
-        parser->query->query_type= rule->query_type;
+        parser->query->query_type= rule_param->query_type;
         return TRUE;
       }
     }
   }
 
-  if (rule->or_rule)
+  if (rule_param->or_rule)
   {
-    return process_rule(parser, rule->or_rule);
+    return process_rule(parser, rule_param->or_rule);
   }
 
   return FALSE;
@@ -840,16 +842,16 @@ BOOL process_rule(MY_PARSER *parser, const QUERY_TYPE_RESOLVING *rule)
 
 
 QUERY_TYPE_ENUM detect_query_type(MY_PARSER *parser,
-                                  const QUERY_TYPE_RESOLVING *rule)
+                                  const QUERY_TYPE_RESOLVING *rule_param)
 {
-  while (rule->keyword != NULL)
+  while (rule_param->keyword != NULL)
   {
-    if (process_rule(parser, rule))
+    if (process_rule(parser, rule_param))
     {
       return parser->query->query_type;
     }
 
-    ++rule;
+    ++rule_param;
   }
 
   return myqtOther;

@@ -1,3 +1,5 @@
+// Modifications Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+//
 // Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
 //
 // This program is free software; you can redistribute it and/or modify
@@ -276,7 +278,7 @@ void syncTabsData(HWND hwnd, DataSource *params)
   GET_BOOL_TAB(CONNECTION_TAB, dont_prompt_upon_connect);
   GET_BOOL_TAB(CONNECTION_TAB, auto_reconnect);
   GET_BOOL_TAB(CONNECTION_TAB, allow_multiple_statements);
-  GET_BOOL_TAB(CONNECTION_TAB, clientinteractive);
+  GET_BOOL_TAB(CONNECTION_TAB, client_interactive);
   GET_BOOL_TAB(CONNECTION_TAB, can_handle_exp_pwd);
   GET_BOOL_TAB(CONNECTION_TAB, enable_cleartext_plugin);
   GET_BOOL_TAB(CONNECTION_TAB, get_server_public_key);
@@ -298,7 +300,38 @@ void syncTabsData(HWND hwnd, DataSource *params)
   GET_STRING_TAB(MFA_TAB, pwd3);
 #endif
 
-  /* 3 - Metadata*/
+  /* 3 - Failover */
+  GET_BOOL_TAB(FAILOVER_TAB, enable_cluster_failover);
+  GET_BOOL_TAB(FAILOVER_TAB, allow_reader_connections);
+  GET_BOOL_TAB(FAILOVER_TAB, gather_perf_metrics);
+  if (READ_BOOL_TAB(FAILOVER_TAB, gather_perf_metrics))
+  {
+    GET_BOOL_TAB(FAILOVER_TAB, gather_metrics_per_instance);
+  }
+
+  GET_STRING_TAB(FAILOVER_TAB, host_pattern);
+  GET_STRING_TAB(FAILOVER_TAB, cluster_id);
+  GET_UNSIGNED_TAB(FAILOVER_TAB, topology_refresh_rate);
+  GET_UNSIGNED_TAB(FAILOVER_TAB, failover_timeout);
+  GET_UNSIGNED_TAB(FAILOVER_TAB, failover_topology_refresh_rate);
+  GET_UNSIGNED_TAB(FAILOVER_TAB, failover_writer_reconnect_interval);
+  GET_UNSIGNED_TAB(FAILOVER_TAB, failover_reader_connect_timeout);
+  GET_UNSIGNED_TAB(FAILOVER_TAB, connect_timeout);
+  GET_UNSIGNED_TAB(FAILOVER_TAB, network_timeout);
+
+  /* 4 - Monitoring */
+  GET_BOOL_TAB(MONITORING_TAB, enable_failure_detection);
+  if (READ_BOOL_TAB(MONITORING_TAB, enable_failure_detection))
+  {
+    GET_UNSIGNED_TAB(MONITORING_TAB, failure_detection_time);
+    GET_UNSIGNED_TAB(MONITORING_TAB, failure_detection_timeout);
+    GET_UNSIGNED_TAB(MONITORING_TAB, failure_detection_interval);
+    GET_UNSIGNED_TAB(MONITORING_TAB, failure_detection_count);
+    GET_UNSIGNED_TAB(MONITORING_TAB, monitor_disposal_time);
+  }
+
+
+  /* 5 - Metadata */
   GET_BOOL_TAB(METADATA_TAB, change_bigint_columns_to_int);
   GET_BOOL_TAB(METADATA_TAB, handle_binary_as_char);
   GET_BOOL_TAB(METADATA_TAB, return_table_names_for_SqlDescribeCol);
@@ -306,7 +339,7 @@ void syncTabsData(HWND hwnd, DataSource *params)
   GET_BOOL_TAB(METADATA_TAB, no_schema);
   GET_BOOL_TAB(METADATA_TAB, limit_column_size);
 
-  /* 4 - Cursors/Results */
+  /* 6 - Cursors/Results */
   GET_BOOL_TAB(CURSORS_TAB, return_matching_rows);
   GET_BOOL_TAB(CURSORS_TAB, auto_increment_null_search);
   GET_BOOL_TAB(CURSORS_TAB, dynamic_cursor);
@@ -324,10 +357,10 @@ void syncTabsData(HWND hwnd, DataSource *params)
   {
     params->cursor_prefetch_number= 0;
   }
-  /* 5 - debug*/
+  /* 7 - debug*/
   GET_BOOL_TAB(DEBUG_TAB,save_queries);
 
-  /* 6 - ssl related */
+  /* 8 - ssl related */
   GET_STRING_TAB(SSL_TAB, sslkey);
   GET_STRING_TAB(SSL_TAB, sslcert);
   GET_STRING_TAB(SSL_TAB, sslca);
@@ -342,7 +375,7 @@ void syncTabsData(HWND hwnd, DataSource *params)
   GET_STRING_TAB(SSL_TAB, ssl_crl);
   GET_STRING_TAB(SSL_TAB, ssl_crlpath);
 
-  /* 7 - Misc*/
+  /* 9 - Misc*/
   GET_BOOL_TAB(MISC_TAB, safe);
   GET_BOOL_TAB(MISC_TAB, dont_use_set_locale);
   GET_BOOL_TAB(MISC_TAB, ignore_space_after_function_names);
@@ -354,6 +387,7 @@ void syncTabsData(HWND hwnd, DataSource *params)
   GET_BOOL_TAB(MISC_TAB, no_date_overflow);
   GET_BOOL_TAB(MISC_TAB, enable_local_infile);
   GET_STRING_TAB(MISC_TAB, load_data_local_dir);
+
 }
 
 /*
@@ -368,7 +402,7 @@ void syncTabs(HWND hwnd, DataSource *params)
   SET_BOOL_TAB(CONNECTION_TAB, auto_reconnect);
   SET_BOOL_TAB(CONNECTION_TAB, enable_dns_srv);
   SET_BOOL_TAB(CONNECTION_TAB, allow_multiple_statements);
-  SET_BOOL_TAB(CONNECTION_TAB, clientinteractive);
+  SET_BOOL_TAB(CONNECTION_TAB, client_interactive);
   SET_BOOL_TAB(CONNECTION_TAB, can_handle_exp_pwd);
   SET_BOOL_TAB(CONNECTION_TAB, enable_cleartext_plugin);
   SET_BOOL_TAB(CONNECTION_TAB, get_server_public_key);
@@ -380,10 +414,10 @@ void syncTabs(HWND hwnd, DataSource *params)
 #endif
   {
     SET_COMBO_TAB(CONNECTION_TAB, charset);
-    SET_STRING_TAB(CONNECTION_TAB,initstmt);
-    SET_STRING_TAB(CONNECTION_TAB,plugin_dir);
-    SET_STRING_TAB(CONNECTION_TAB,default_auth);
-    SET_STRING_TAB(CONNECTION_TAB,oci_config_file);
+    SET_STRING_TAB(CONNECTION_TAB, initstmt);
+    SET_STRING_TAB(CONNECTION_TAB, plugin_dir);
+    SET_STRING_TAB(CONNECTION_TAB, default_auth);
+    SET_STRING_TAB(CONNECTION_TAB, oci_config_file);
   }
 
 #if MFA_ENABLED
@@ -392,7 +426,75 @@ void syncTabs(HWND hwnd, DataSource *params)
   SET_STRING_TAB(MFA_TAB, pwd3);
 #endif
 
-  /* 3 - Metadata*/
+  /* 3 - Failover */
+  SET_BOOL_TAB(FAILOVER_TAB, enable_cluster_failover);
+  SET_BOOL_TAB(FAILOVER_TAB, allow_reader_connections);
+  SET_BOOL_TAB(FAILOVER_TAB, gather_perf_metrics);
+  if(READ_BOOL_TAB(FAILOVER_TAB, gather_perf_metrics))
+  {
+#ifdef _WIN32
+    SET_ENABLED(FAILOVER_TAB, IDC_CHECK_gather_metrics_per_instance, TRUE);
+#endif
+    SET_CHECKED_TAB(FAILOVER_TAB, gather_perf_metrics, TRUE);
+    SET_BOOL_TAB(FAILOVER_TAB, gather_metrics_per_instance);
+  }
+
+  SET_STRING_TAB(FAILOVER_TAB, host_pattern);
+  SET_STRING_TAB(FAILOVER_TAB, cluster_id);
+
+  if (params->topology_refresh_rate > 0)
+  {
+     SET_UNSIGNED_TAB(FAILOVER_TAB, topology_refresh_rate);
+  }
+
+  if (params->failover_timeout > 0)
+  {
+     SET_UNSIGNED_TAB(FAILOVER_TAB, failover_timeout);
+  }
+
+  if (params->failover_topology_refresh_rate > 0)
+  {
+     SET_UNSIGNED_TAB(FAILOVER_TAB, failover_topology_refresh_rate);
+  }
+
+  if (params->failover_writer_reconnect_interval > 0)
+  {
+     SET_UNSIGNED_TAB(FAILOVER_TAB, failover_writer_reconnect_interval);
+  }
+
+  if (params->failover_reader_connect_timeout > 0)
+  {
+     SET_UNSIGNED_TAB(FAILOVER_TAB, failover_reader_connect_timeout);
+  }
+
+  if (params->connect_timeout > 0)
+  {
+     SET_UNSIGNED_TAB(FAILOVER_TAB, connect_timeout);
+  }
+
+  if (params->network_timeout > 0)
+  {
+     SET_UNSIGNED_TAB(FAILOVER_TAB, network_timeout);
+  }
+
+  /* 4 - Monitoring */
+  SET_BOOL_TAB(MONITORING_TAB, enable_failure_detection);
+  if (READ_BOOL_TAB(MONITORING_TAB, enable_failure_detection)) {
+#ifdef _WIN32
+    SET_ENABLED(MONITORING_TAB, IDC_EDIT_failure_detection_time, TRUE);
+    SET_ENABLED(MONITORING_TAB, IDC_EDIT_failure_detection_interval, TRUE);
+    SET_ENABLED(MONITORING_TAB, IDC_EDIT_failure_detection_count, TRUE);
+    SET_ENABLED(MONITORING_TAB, IDC_EDIT_monitor_disposal_time, TRUE);
+    SET_ENABLED(MONITORING_TAB, IDC_EDIT_failure_detection_timeout, TRUE);
+#endif
+    SET_UNSIGNED_TAB(MONITORING_TAB, failure_detection_time);
+    SET_UNSIGNED_TAB(MONITORING_TAB, failure_detection_interval);
+    SET_UNSIGNED_TAB(MONITORING_TAB, failure_detection_count);
+    SET_UNSIGNED_TAB(MONITORING_TAB, monitor_disposal_time);
+    SET_UNSIGNED_TAB(MONITORING_TAB, failure_detection_timeout);
+  }
+
+  /* 5 - Metadata */
   SET_BOOL_TAB(METADATA_TAB, change_bigint_columns_to_int);
   SET_BOOL_TAB(METADATA_TAB, handle_binary_as_char);
   SET_BOOL_TAB(METADATA_TAB, return_table_names_for_SqlDescribeCol);
@@ -400,7 +502,7 @@ void syncTabs(HWND hwnd, DataSource *params)
   SET_BOOL_TAB(METADATA_TAB, no_schema);
   SET_BOOL_TAB(METADATA_TAB, limit_column_size);
 
-  /* 4 - Cursors/Results */
+  /* 6 - Cursors/Results */
   SET_BOOL_TAB(CURSORS_TAB, return_matching_rows);
   SET_BOOL_TAB(CURSORS_TAB, auto_increment_null_search);
   SET_BOOL_TAB(CURSORS_TAB, dynamic_cursor);
@@ -419,10 +521,10 @@ void syncTabs(HWND hwnd, DataSource *params)
     SET_UNSIGNED_TAB(CURSORS_TAB, cursor_prefetch_number);
   }
 
-  /* 5 - debug*/
+  /* 7 - debug*/
   SET_BOOL_TAB(DEBUG_TAB,save_queries);
 
-  /* 6 - ssl related */
+  /* 8 - ssl related */
 #ifdef _WIN32
   if ( getTabCtrlTabPages(SSL_TAB-1) )
 #endif
@@ -460,7 +562,7 @@ void syncTabs(HWND hwnd, DataSource *params)
     SET_STRING_TAB(SSL_TAB, tls_versions);
   }
 
-  /* 7 - Misc*/
+  /* 9 - Misc*/
   SET_BOOL_TAB(MISC_TAB, safe);
   SET_BOOL_TAB(MISC_TAB, dont_use_set_locale);
   SET_BOOL_TAB(MISC_TAB, ignore_space_after_function_names);
@@ -472,6 +574,7 @@ void syncTabs(HWND hwnd, DataSource *params)
   SET_BOOL_TAB(MISC_TAB, no_date_overflow);
   SET_BOOL_TAB(MISC_TAB, enable_local_infile);
   SET_STRING_TAB(MISC_TAB, load_data_local_dir);
+
 }
 
 void FillParameters(HWND hwnd, DataSource *params)

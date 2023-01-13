@@ -1,3 +1,5 @@
+// Modifications Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+//
 // Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
 //
 // This program is free software; you can redistribute it and/or modify
@@ -378,6 +380,8 @@ void btnDetails_Click (HWND hwnd)
 #if MFA_ENABLED
       L"MFA",
 #endif
+      L"Cluster Failover",
+      L"Monitoring",
       L"Metadata",
       L"Cursors/Results",
       L"Debug",
@@ -391,10 +395,12 @@ void btnDetails_Click (HWND hwnd)
                     MAKEINTRESOURCE(IDD_TAB4),
                     MAKEINTRESOURCE(IDD_TAB5),
                     MAKEINTRESOURCE(IDD_TAB6),
-#if MFA_ENABLED
                     MAKEINTRESOURCE(IDD_TAB7),
+                    MAKEINTRESOURCE(IDD_TAB8),
+#if MFA_ENABLED
+                    MAKEINTRESOURCE(IDD_TAB9),
 #endif
-0};
+                    0};
 
     New_TabControl( &TabCtrl_1,                 // address of TabControl struct
                     GetDlgItem(hwnd, IDC_TAB1), // handle to tab control
@@ -406,7 +412,7 @@ void btnDetails_Click (HWND hwnd)
     flag = true;
 
 
-    HWND ssl_tab = TabCtrl_1.hTabPages[4];
+    HWND ssl_tab = TabCtrl_1.hTabPages[SSL_TAB-1];
     HWND combo = GetDlgItem(ssl_tab, IDC_EDIT_sslmode);
 
     ComboBox_ResetContent(combo);
@@ -419,12 +425,10 @@ void btnDetails_Click (HWND hwnd)
     ComboBox_AddString(combo, LSTR(ODBC_SSL_MODE_VERIFY_IDENTITY));
 
     syncTabs(hwnd, pParams);
-  }
-  // To increase the height of the window modify the expression:
-  int new_height = rect.bottom - rect.top + 355*mod;
-  MoveWindow( hwnd, rect.left, rect.top, rect.right - rect.left, new_height, TRUE );
-  // Then change the height for IDD_DIALOG1 and SysTabControl32 inside
-  // odbcdialogparams.rc
+	}
+  
+  int h = (mod == -1) ? 420 : 810; /* rect.bottom - rect.top + 310*mod */
+	MoveWindow( hwnd, rect.left, rect.top, rect.right - rect.left, h, TRUE );
 }
 
 
@@ -667,6 +671,39 @@ void FormMain_OnCommand(HWND hwnd, int id, HWND hwndCtl, UINT codeNotify)
     case IDC_RADIO_pipe:
       SwitchTcpOrPipe(hwnd, !!Button_GetCheck(GetDlgItem(hwnd, IDC_RADIO_pipe)));
       break;
+    case IDC_CHECK_gather_perf_metrics:
+      {
+        HWND failoverTab = TabCtrl_1.hTabPages[FAILOVER_TAB-1];
+        assert(failoverTab);
+        HWND prefetch = GetDlgItem(failoverTab, IDC_CHECK_gather_metrics_per_instance);
+        assert(prefetch);
+
+        EnableWindow(prefetch, !!Button_GetCheck(GetDlgItem(failoverTab,
+            IDC_CHECK_gather_perf_metrics)));
+        setBoolFieldData(failoverTab, IDC_CHECK_gather_metrics_per_instance, Button_GetCheck(prefetch));
+      }
+      break;
+    case IDC_CHECK_enable_failure_detection:
+      {
+        HWND monitoringTab = TabCtrl_1.hTabPages[MONITORING_TAB - 1];
+        assert(monitoringTab);
+        HWND detectionTime = GetDlgItem(monitoringTab, IDC_EDIT_failure_detection_time);
+        HWND detectionInterval= GetDlgItem(monitoringTab, IDC_EDIT_failure_detection_interval);
+        HWND detectionCount = GetDlgItem(monitoringTab, IDC_EDIT_failure_detection_count);
+        HWND disposalTime = GetDlgItem(monitoringTab, IDC_EDIT_monitor_disposal_time);
+        HWND detectionTimeout = GetDlgItem(monitoringTab, IDC_EDIT_failure_detection_timeout);
+        assert(detectionTime);
+        assert(detectionInterval);
+        assert(detectionCount);
+        assert(disposalTime);
+
+        EnableWindow(detectionTime, !!Button_GetCheck(GetDlgItem(monitoringTab, IDC_CHECK_enable_failure_detection)));
+        EnableWindow(detectionInterval, !!Button_GetCheck(GetDlgItem(monitoringTab, IDC_CHECK_enable_failure_detection)));
+        EnableWindow(detectionCount, !!Button_GetCheck(GetDlgItem(monitoringTab, IDC_CHECK_enable_failure_detection)));
+        EnableWindow(disposalTime, !!Button_GetCheck(GetDlgItem(monitoringTab, IDC_CHECK_enable_failure_detection)));
+        EnableWindow(detectionTimeout, !!Button_GetCheck(GetDlgItem(monitoringTab, IDC_CHECK_enable_failure_detection)));
+      }
+      break;
     case IDC_CHECK_cursor_prefetch_active:
       {
         HWND cursorTab= TabCtrl_1.hTabPages[CURSORS_TAB-1];
@@ -846,8 +883,8 @@ BOOL FormMain_OnInitDialog(HWND hwnd, HWND hwndFocus, LPARAM lParam)
     RedrawWindow(hwnd,NULL,NULL,RDW_INVALIDATE);
   }
 
-  BOOL b = DoCreateDialogTooltip();
-  return 0;
+	DoCreateDialogTooltip();
+	return 0;
 }
 
 
@@ -906,7 +943,7 @@ int ShowOdbcParamsDialog(DataSource* params, HWND ParentWnd, BOOL isPrompt)
       driver_delete(driver);
       return 0;
     }
-    ds_set_strattr(&params->driver, driver->name);
+    ds_set_wstrattr(&params->driver, driver->name);
     driver_delete(driver);
   }
   DialogBox(ghInstance, MAKEINTRESOURCE(IDD_DIALOG1), ParentWnd,

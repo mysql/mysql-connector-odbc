@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- Generated with glade 3.22.2 -->
 <!-- *****************************************************************************************
+ Modifications Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+
  Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
 
  This program is free software; you can redistribute it and/or modify
@@ -1313,7 +1315,7 @@
                     <property name="border_width">8</property>
                     <child>
                       <object class="GtkCheckButton" id="save_queries">
-                        <property name="label" translatable="yes">Log queries to /tmp/myodbc.sql</property>
+                        <property name="label" translatable="yes">Log driver activity to /tmp/myodbc.log</property>
                         <property name="use_action_appearance">False</property>
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>

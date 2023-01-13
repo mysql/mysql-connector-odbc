@@ -45,8 +45,8 @@
 <p>
   This installer will:
   <ol>
-    <li>Copy the ODBC driver and setup libraries to <code>/usr/local/lib/</code>.</li>
-    <li>Copy command-line utilities to <code>/usr/local/bin/</code>.</li>
+    <li>Copy the ODBC driver and setup libraries to <code>@CPACK_PACKAGING_INSTALL_PREFIX@/lib/</code>.</li>
+    <li>Copy command-line utilities to <code>@CPACK_PACKAGING_INSTALL_PREFIX@/bin/</code>.</li>
     <li>Register the driver and setup libraries with the iODBC driver manager.</li>
   </ol>
 </p>
@@ -54,9 +54,9 @@
 <p>
   The library files are;
   <ul>
-    <li><code>/usr/local/lib/libmyodbc8w.*</code> (Unicode version)</li>
-    <li><code>/usr/local/lib/libmyodbc8a.*</code> (ANSI version)</li>
-    <li><code>/usr/local/lib/libmyodbc8S.*</code></li>
+    <li><code>@CPACK_PACKAGING_INSTALL_PREFIX@/lib/libmyodbc8w.*</code> (Unicode version)</li>
+    <li><code>@CPACK_PACKAGING_INSTALL_PREFIX@/lib/libmyodbc8a.*</code> (ANSI version)</li>
+    <li><code>@CPACK_PACKAGING_INSTALL_PREFIX@/lib/libmyodbc8S.*</code></li>
   </ul>
 </p>
 
@@ -65,16 +65,6 @@ The command-line utility file are;
 <ul>
   <li><code>/usr/local/bin/myodbc-installer</code></li>
 </ul>
-
-<p>
-  This package can be manually removed from your
-  system by removing all of the files installed
-  (see above) and by doing the following;
-</p>
-
-<pre>
-  $ sudo rm -r /Library/Receipts/MyODBC*
-</pre>
 
 </font>
 

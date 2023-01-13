@@ -1,3 +1,5 @@
+// Modifications Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+//
 // Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
 //
 // This program is free software; you can redistribute it and/or modify
@@ -56,22 +58,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-#ifdef _WIN32
-/* Driver does that - applications should do that too, to have same size of structures */
-# ifndef RC_INVOKED
-#  pragma pack(push, 1)
-# endif
-#endif
-
 #include <sql.h>
 #include <sqlext.h>
 #include <odbcinst.h>
-
-#ifdef _WIN32
-# ifndef RC_INVOKED
-#  pragma pack(pop)
-# endif
-#endif
 
 /* for clock() */
 #include <time.h>
@@ -82,6 +71,7 @@
 #include "mysql_version.h"
 #include "../util/unicode_transcode.h"
 
+SQLRETURN rc;
 
 void printMessage(const char *fmt, ...)
 {
@@ -341,7 +331,6 @@ int main(int argc, char **argv) \
 \
   for (i= 0; i < num_tests; i++ ) \
   { \
-    int rc; \
     if (tests[i].required_driver_type > -1 && tests[i].required_driver_type != unicode_driver) \
     { \
       printf("ok %d # SKIP This testcase is designed for %s drivers only\n", i+1, \
@@ -349,18 +338,19 @@ int main(int argc, char **argv) \
     } \
     else \
     { \
+      int ret; \
       if (alloc_basic_handles(&henv, &hdbc, &hstmt) != OK) \
         exit(1); \
       RUN_TESTS_ALARM; \
-      rc= tests[i].func(hdbc, hstmt, henv); \
+      ret = tests[i].func(hdbc, hstmt, henv); \
       printf("%s %d - %s%s %s%s\n", \
-           (rc == OK || rc == SKIP) ? "ok" : "not ok", \
+           (ret == OK || ret == SKIP) ? "ok" : "not ok", \
            i + 1, \
            tests[i].name, testname_suffix, \
            (tests[i].expect == FAIL ? "# TODO" : \
-            rc == SKIP ? "# SKIP " : ""), \
+            ret == SKIP ? "# SKIP " : ""), \
            SKIP_REASON ? SKIP_REASON : ""); \
-      if ((rc == FAIL) && (FAIL != tests[i].expect)) \
+      if ((ret == FAIL) && (FAIL != tests[i].expect)) \
         ++failcnt; \
       SKIP_REASON= NULL; /* Reset SKIP_REASON */ \
       (void)free_basic_handles(&henv, &hdbc, &hstmt); \
@@ -399,11 +389,11 @@ int main(int argc, char **argv) \
 */
 #define ok_sql(statement, query) \
 do { \
-  SQLRETURN rc= SQLExecDirect((statement), (SQLCHAR *)(query), SQL_NTS); \
-  print_diag(rc, SQL_HANDLE_STMT, (statement), \
+  SQLRETURN ret = SQLExecDirect((statement), (SQLCHAR *)(query), SQL_NTS); \
+  print_diag(ret, SQL_HANDLE_STMT, (statement), \
              "SQLExecDirect(" #statement ", \"" query "\", SQL_NTS)",\
              __FILE__, __LINE__); \
-  if (rc != SQL_SUCCESS && rc != SQL_SUCCESS_WITH_INFO) \
+  if (ret != SQL_SUCCESS && ret != SQL_SUCCESS_WITH_INFO) \
     TEST_RETURN_FAIL; \
 } while (0)
 
@@ -418,13 +408,13 @@ do { \
 */
 #define expect_sql(statement, query, expect) \
 do { \
-  SQLRETURN rc= SQLExecDirect((statement), (SQLCHAR *)(query), SQL_NTS); \
-  if (rc != (expect)) \
+  SQLRETURN ret = SQLExecDirect((statement), (SQLCHAR *)(query), SQL_NTS); \
+  if (ret != (expect)) \
   { \
-    print_diag(rc, SQL_HANDLE_STMT, (statement), \
+    print_diag(ret, SQL_HANDLE_STMT, (statement), \
                "SQLExecDirect(" #statement ", \"" query "\", SQL_NTS)",\
                __FILE__, __LINE__); \
-    printf("# Expected %d, but got %d in %s on line %d\n", expect, rc, \
+    printf("# Expected %d, but got %d in %s on line %d\n", expect, ret, \
            __FILE__, __LINE__); \
     TEST_RETURN_FAIL; \
   } \
@@ -440,9 +430,9 @@ do { \
 */
 #define ok_stmt(statement, call) \
 do { \
-  SQLRETURN _rc= (call); \
-  print_diag(_rc, SQL_HANDLE_STMT, (statement), #call, __FILE__, __LINE__); \
-  if (_rc != SQL_SUCCESS && _rc != SQL_SUCCESS_WITH_INFO) \
+  SQLRETURN ret = (call); \
+  print_diag(ret, SQL_HANDLE_STMT, (statement), #call, __FILE__, __LINE__); \
+  if (ret != SQL_SUCCESS && ret != SQL_SUCCESS_WITH_INFO) \
     TEST_RETURN_FAIL; \
 } while (0)
 
@@ -456,9 +446,9 @@ do { \
 */
 #define ok_desc(desc, call) \
 do { \
-  SQLRETURN rc= (call); \
-  print_diag(rc, SQL_HANDLE_DESC, (desc), #call, __FILE__, __LINE__); \
-  if (rc != SQL_SUCCESS && rc != SQL_SUCCESS_WITH_INFO) \
+  SQLRETURN ret = (call); \
+  print_diag(ret, SQL_HANDLE_DESC, (desc), #call, __FILE__, __LINE__); \
+  if (ret != SQL_SUCCESS && ret != SQL_SUCCESS_WITH_INFO) \
     TEST_RETURN_FAIL; \
 } while (0)
 
@@ -474,11 +464,11 @@ do { \
 */
 #define expect_odbc(hnd, type, call, expect) \
 do { \
-  SQLRETURN rc= (call); \
-  if (rc != (expect)) \
+  SQLRETURN ret = (call); \
+  if (ret != (expect)) \
   { \
-    print_diag(rc, (type), (hnd), #call, __FILE__, __LINE__); \
-    printf("# Expected %d, but got %d in %s on line %d\n", (expect), rc, \
+    print_diag(ret, (type), (hnd), #call, __FILE__, __LINE__); \
+    printf("# Expected %d, but got %d in %s on line %d\n", (expect), ret, \
            __FILE__, __LINE__); \
     TEST_RETURN_FAIL; \
   } \
@@ -510,9 +500,9 @@ do { \
 */
 #define ok_env(environ, call) \
 do { \
-  SQLRETURN _rc= (call); \
-  print_diag(_rc, SQL_HANDLE_ENV, (environ), #call, __FILE__, __LINE__); \
-  if (_rc != SQL_SUCCESS && _rc != SQL_SUCCESS_WITH_INFO) \
+  SQLRETURN ret = (call); \
+  print_diag(ret, SQL_HANDLE_ENV, (environ), #call, __FILE__, __LINE__); \
+  if (ret != SQL_SUCCESS && ret != SQL_SUCCESS_WITH_INFO) \
     TEST_RETURN_FAIL; \
 } while (0)
 
@@ -526,9 +516,9 @@ do { \
 */
 #define ok_con(con, call) \
 do { \
-  SQLRETURN _rc= (call); \
-  print_diag(_rc, SQL_HANDLE_DBC, (con), #call, __FILE__, __LINE__); \
-  if (_rc != SQL_SUCCESS && _rc != SQL_SUCCESS_WITH_INFO) \
+  SQLRETURN ret = (call); \
+  print_diag(ret, SQL_HANDLE_DBC, (con), #call, __FILE__, __LINE__); \
+  if (ret != SQL_SUCCESS && ret != SQL_SUCCESS_WITH_INFO) \
     TEST_RETURN_FAIL; \
 } while (0)
 
@@ -541,9 +531,9 @@ do { \
 */
 #define ok_install(call) \
 do { \
-  BOOL _rc= (call); \
-  print_diag_installer(_rc, #call, __FILE__, __LINE__); \
-  if (!_rc) \
+  BOOL ret = (call); \
+  print_diag_installer(ret, #call, __FILE__, __LINE__); \
+  if (!ret) \
     TEST_RETURN_FAIL; \
 } while (0)
 
@@ -615,7 +605,7 @@ do { \
 */
 #define is_num(a, b) \
 do { \
-  long long a1= (a), a2= (b); \
+  long long a1= (long long)(a), a2= (long long)(b); \
   if (a1 != a2) { \
     printf("# %s (%lld) != %lld in %s on line %d\n", \
            #a, a1, a2, __FILE__, __LINE__); \
@@ -667,10 +657,10 @@ int check_errmsg_ex(SQLHANDLE hnd, SQLSMALLINT hndtype, const char *msg)
   Print error and diagnostic information for ODBC API functions that did not
   finish with SQL_SUCCESS(_WITH_INFO) result
 */
-static void print_diag(SQLRETURN rc, SQLSMALLINT htype, SQLHANDLE handle,
-           const char *text, const char *file, int line)
+static void print_diag(SQLRETURN ret_code, SQLSMALLINT htype, SQLHANDLE handle,
+		       const char *text, const char *file, int line)
 {
-  if (rc != SQL_SUCCESS)
+  if (ret_code != SQL_SUCCESS)
   {
     SQLCHAR     sqlstate[6], message[SQL_MAX_MESSAGE_LENGTH];
     SQLINTEGER  native_error;
@@ -678,7 +668,7 @@ static void print_diag(SQLRETURN rc, SQLSMALLINT htype, SQLHANDLE handle,
     SQLRETURN   drc;
 
     /** @todo map rc to SQL_SUCCESS_WITH_INFO, etc */
-    printf("# %s = %d\n", text, rc);
+    printf("# %s = %d\n", text, ret_code);
 
     /** @todo Handle multiple diagnostic records. */
     drc= SQLGetDiagRec(htype, handle, 1, sqlstate, &native_error,
@@ -884,7 +874,6 @@ RESULT SET
 */
 int my_print_non_format_result(SQLHSTMT hstmt)
 {
-    SQLRETURN   rc;
     SQLUINTEGER nRowCount=0;
     SQLULEN     pcColDef;
     SQLCHAR     szColName[MAX_NAME_LEN+1];
@@ -937,7 +926,6 @@ int my_print_non_format_result(SQLHSTMT hstmt)
 */
 SQLINTEGER myresult(SQLHSTMT hstmt)
 {
-    SQLRETURN   rc;
     SQLUINTEGER nRowCount;
     SQLCHAR     ColName[MAX_NAME_LEN+1];
     SQLCHAR     Data[MAX_ROW_DATA_LEN+1];
@@ -999,7 +987,6 @@ SQLINTEGER myresult(SQLHSTMT hstmt)
 */
 SQLUINTEGER myrowcount(SQLHSTMT hstmt)
 {
-    SQLRETURN   rc;
     SQLUINTEGER nRowCount= 0;
 
     rc = SQLFetch(hstmt);
@@ -1108,7 +1095,6 @@ wchar_t *sqlwchar_to_wchar_t(SQLWCHAR *in)
 */
 wchar_t *my_fetch_wstr(SQLHSTMT hstmt, SQLWCHAR *buffer, SQLUSMALLINT icol)
 {
-  SQLRETURN rc;
   SQLLEN nLen;
 
   rc= SQLGetData(hstmt, icol, SQL_WCHAR, buffer, MAX_ROW_DATA_LEN + 1, &nLen);
@@ -1126,7 +1112,6 @@ wchar_t *my_fetch_wstr(SQLHSTMT hstmt, SQLWCHAR *buffer, SQLUSMALLINT icol)
 */
 int driver_supports_setpos(SQLHDBC hdbc)
 {
-  SQLRETURN    rc;
   SQLUSMALLINT status= TRUE;
 
   rc = SQLGetFunctions(hdbc, SQL_API_SQLSETPOS, &status);
@@ -1143,7 +1128,6 @@ int driver_supports_setpos(SQLHDBC hdbc)
 int mysql_min_version(SQLHDBC hdbc, char *min_version, unsigned int length)
 {
   char server_version[MYSQL_NAME_LEN+1];
-  SQLRETURN rc;
 
   rc = SQLGetInfo(hdbc,SQL_DBMS_VER,server_version,MYSQL_NAME_LEN,NULL);
   mycon(hdbc, rc);
@@ -1171,7 +1155,6 @@ int mysql_min_version(SQLHDBC hdbc, char *min_version, unsigned int length)
 int server_supports_trans(SQLHDBC hdbc)
 {
   SQLSMALLINT trans;
-  SQLRETURN   rc;
 
   rc = SQLGetInfo(hdbc,SQL_TXN_CAPABLE,&trans,0,NULL);
   mycon(hdbc,rc);
@@ -1310,50 +1293,50 @@ SQLCHAR *make_conn_str(const SQLCHAR *dsn, const SQLCHAR *uid,
    If dsn, uid, pwd or options is null - they defualt to mydsn, myuid, mypwd
    and my_str_options, respectively.
    myoption, mysock and myport values are used. */
-int get_connection(SQLHDBC *hdbc, const SQLCHAR *dsn, const SQLCHAR *uid,
-                   const SQLCHAR *pwd, const SQLCHAR *db,
-                   const SQLCHAR *options)
+SQLRETURN get_connection(SQLHDBC *hdbc, const SQLCHAR *dsn, const SQLCHAR *uid,
+                         const SQLCHAR *pwd, const SQLCHAR *db,
+                         const SQLCHAR *options)
 {
   /* Buffers have to be large enough to contain SSL options and long names */
   SQLCHAR     connOut[4096];
   SQLSMALLINT len;
-  SQLRETURN   rc;
+  SQLRETURN   ret;
   SQLCHAR     driver_name[16]; /* Should be enough for myodbc library file name */
   SQLCHAR     *connIn;
 
   connIn = make_conn_str(dsn, uid, pwd, db, options, 0);
-  rc= SQLDriverConnect(*hdbc, NULL, connIn, SQL_NTS, connOut,
-                       MAX_NAME_LEN, &len, SQL_DRIVER_NOPROMPT);
+  ret = SQLDriverConnect(*hdbc, NULL, connIn, SQL_NTS, connOut,
+                         MAX_NAME_LEN, &len, SQL_DRIVER_NOPROMPT);
 
-  if (!SQL_IS_SUCCESS(rc))
+  if (!SQL_IS_SUCCESS(ret))
   {
     /* re-build and print the connection string with hidden password */
     printf("# Connection failed with the following Connection string: " \
            "\n%s\n", (char*)make_conn_str(dsn, uid, pwd, db, options, 1));
-    return rc;
+    return ret;
   }
 
   /* Let's neglect possibility that error returned by get_connection() can be
      in fact error of turning autocommit on */
-  rc= SQLSetConnectAttr(*hdbc, SQL_ATTR_AUTOCOMMIT,
+  ret = SQLSetConnectAttr(*hdbc, SQL_ATTR_AUTOCOMMIT,
                                   (SQLPOINTER)SQL_AUTOCOMMIT_ON, 0);
-  if (!SQL_IS_SUCCESS(rc))
+  if (!SQL_IS_SUCCESS(ret))
   {
-    return rc;
+    return ret;
   }
 
   if (unicode_driver < 0)
   {
-    rc= SQLGetInfo(*hdbc, SQL_DRIVER_NAME, driver_name, sizeof(driver_name), NULL);
+    ret = SQLGetInfo(*hdbc, SQL_DRIVER_NAME, driver_name, sizeof(driver_name), NULL);
 
-    if (SQL_IS_SUCCESS(rc))
+    if (SQL_IS_SUCCESS(ret))
     {
       /* ANSI driver file name contains 5a.{dll|so} */
       unicode_driver= strstr((char*)driver_name, "a.") == NULL ? 1 : 0;
     }
   }
 
-  return rc;
+  return ret;
 }
 
 
@@ -1374,7 +1357,7 @@ int alloc_basic_handles_with_opt(SQLHENV *henv, SQLHDBC *hdbc,
                               (SQLPOINTER)SQL_OV_ODBC3, 0));
   if (myenable_pooling)
   {
-    SQLRETURN rc= SQLSetEnvAttr(*henv, SQL_ATTR_CP_MATCH, (SQLPOINTER)SQL_CP_STRICT_MATCH, 0);
+    rc= SQLSetEnvAttr(*henv, SQL_ATTR_CP_MATCH, (SQLPOINTER)SQL_CP_STRICT_MATCH, 0);
 
     if( !SQL_IS_SUCCESS(rc))
     {
@@ -1405,7 +1388,6 @@ int alloc_basic_handles(SQLHENV *henv, SQLHDBC *hdbc, SQLHSTMT *hstmt)
 
 int free_basic_handles(SQLHENV *henv,SQLHDBC *hdbc, SQLHSTMT *hstmt)
 {
-
   if(hstmt && *hstmt)
   {
     ok_stmt(*hstmt, SQLFreeStmt(*hstmt, SQL_DROP));

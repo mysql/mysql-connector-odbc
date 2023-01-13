@@ -1,3 +1,5 @@
+// Modifications Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+//
 // Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved. 
 // 
 // This program is free software; you can redistribute it and/or modify 
@@ -31,7 +33,6 @@
 /* perform positioned update and delete */
 DECLARE_TEST(my_dynamic_pos_cursor)
 {
-    SQLRETURN   rc;
     SQLLEN      nRowCount;
     SQLHSTMT    hstmt_pos;
     SQLINTEGER  nData = 500;
@@ -155,7 +156,6 @@ DECLARE_TEST(my_dynamic_pos_cursor)
 /* perform positioned update and delete */
 DECLARE_TEST(my_dynamic_pos_cursor1)
 {
-    SQLRETURN   rc;
     SQLLEN      nRowCount;
     SQLHSTMT    hstmt_pos;
     SQLINTEGER  i,nData[15];
@@ -296,7 +296,6 @@ DECLARE_TEST(my_dynamic_pos_cursor1)
 /* CURSOR POSITION - rowset size 1 */
 DECLARE_TEST(my_position)
 {
-    SQLRETURN rc;
     SQLLEN    nlen;
     char      szData[255]= {0};
     SQLINTEGER nData;
@@ -470,7 +469,6 @@ DECLARE_TEST(my_position1)
 /* IROW VALUE - 0 */
 DECLARE_TEST(my_zero_irow_update)
 {
-    SQLRETURN rc;
     SQLLEN    nlen[15]= {0}, nrow[15]= {0};
     char      szData[15][15]={0};
     SQLINTEGER nData[15];
@@ -554,7 +552,6 @@ DECLARE_TEST(my_zero_irow_update)
 /* IROW VALUE - 0 - DELETE */
 DECLARE_TEST(my_zero_irow_delete)
 {
-    SQLRETURN rc;
     SQLLEN    nlen[15]= {0}, nrow[15]= {0};
     char      szData[15][15]={0};
     SQLINTEGER nData[15];
@@ -632,7 +629,6 @@ DECLARE_TEST(my_zero_irow_delete)
 /* DYNAMIC CURSOR TESTING */
 DECLARE_TEST(my_dynamic_cursor)
 {
-    SQLRETURN rc;
     SQLLEN nlen;
     SQLINTEGER nData = 500;
     SQLCHAR szData[255]={0};

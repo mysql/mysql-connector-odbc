@@ -1,3 +1,5 @@
+// Modifications Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+//
 // Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
 //
 // This program is free software; you can redistribute it and/or modify
@@ -72,7 +74,8 @@ and (some) IS_NULLABLE
 DECLARE_TEST(t_bug34272)
 {
   SQLCHAR dummy[20];
-  SQLULEN col6, col18, length;
+  SQLULEN col6, col18;
+  SQLLEN length;
 
   ok_sql(hstmt, "drop table if exists t_bug34272");
   ok_sql(hstmt, "create table t_bug34272 (x int unsigned)");
@@ -194,7 +197,7 @@ DECLARE_TEST(t_bug36441)
                 "unique_key int unsigned not null unique,"
 	              "primary key(pk_for_table1, c1_for_table1))");
 
-  ok_stmt(hstmt, SQLPrimaryKeys(hstmt, NULL, SQL_NTS, NULL, SQL_NTS, "t_bug36441_0123456789", SQL_NTS));
+  ok_stmt(hstmt, SQLPrimaryKeys(hstmt, NULL, SQL_NTS, NULL, SQL_NTS, (SQLCHAR*)"t_bug36441_0123456789", SQL_NTS));
 
   /* Test of SQLRowCount with SQLPrimaryKeys */
   ok_stmt(hstmt, SQLRowCount(hstmt, &rowCount));
@@ -315,9 +318,9 @@ DECLARE_TEST(t_bug50195)
   ok_sql(hstmt, "FLUSH PRIVILEGES");
 
   is(OK == alloc_basic_handles_with_opt(&henv1, &hdbc1, &hstmt1, NULL,
-                                        "bug50195", "a", NULL, NULL));
+                                        (SQLCHAR*)"bug50195", (SQLCHAR*)"a", NULL, NULL));
 
-  ok_stmt(hstmt1, SQLTablePrivileges(hstmt1, "mysql", SQL_NTS, 0, 0, "tables_priv", SQL_NTS));
+  ok_stmt(hstmt1, SQLTablePrivileges(hstmt1, (SQLCHAR*)"mysql", SQL_NTS, 0, 0, (SQLCHAR*)"tables_priv", SQL_NTS));
 
   /* Testing SQLTablePrivileges a bit, as we don't have separate test of it */
 
@@ -342,9 +345,6 @@ DECLARE_TEST(t_bug50195)
 
 DECLARE_TEST(t_sqlprocedurecolumns)
 {
-  SQLRETURN rc= 0;
-  SQLCHAR szName[255]= {0};
-
   typedef struct
   {
     char *c01_procedure_cat;
@@ -368,7 +368,7 @@ DECLARE_TEST(t_sqlprocedurecolumns)
     char *c19_is_nullable;
   }sqlproccol;
 
-  int total_params= 0, iter= 0;
+  int iter = 0;
 
   sqlproccol data_to_check[] = {
     /*cat    schem  proc_name                  col_name     col_type         data_type    type_name */
@@ -586,8 +586,8 @@ DECLARE_TEST(t_sqlprocedurecolumns)
                 );
 
   ok_stmt(hstmt, SQLProcedureColumns(hstmt, NULL, 0, NULL, 0,
-                                     "procedure_columns_test%", SQL_NTS,
-                                     "re_%", SQL_NTS));
+                                     (SQLCHAR*)"procedure_columns_test%", SQL_NTS,
+                                     (SQLCHAR*)"re_%", SQL_NTS));
 
   while(SQLFetch(hstmt) == SQL_SUCCESS)
   {
@@ -671,8 +671,8 @@ DECLARE_TEST(t_bug57182)
 
   my_print_non_format_result(hstmt);
 
-  ok_stmt(hstmt, SQLProcedureColumns(hstmt, "test", SQL_NTS, NULL, 0,
-    "bug57182", SQL_NTS,
+  ok_stmt(hstmt, SQLProcedureColumns(hstmt, (SQLCHAR*)"test", SQL_NTS, NULL, 0,
+      (SQLCHAR*)"bug57182", SQL_NTS,
     NULL, 0));
 
   ok_stmt(hstmt, SQLRowCount(hstmt, &nRowCount));
@@ -696,9 +696,8 @@ DECLARE_TEST(t_bug57182)
   ok_stmt(hstmt, SQLFreeStmt(hstmt, SQL_CLOSE));
 
   /* Almost the same thing but with column specified */
-  ok_stmt(hstmt, SQLProcedureColumns(hstmt, "test", SQL_NTS, NULL, 0,
-    "bug57182", SQL_NTS,
-    "id", SQL_NTS));
+  ok_stmt(hstmt, SQLProcedureColumns(hstmt, (SQLCHAR*)"test", SQL_NTS, NULL, 0,
+      (SQLCHAR*)"bug57182", SQL_NTS, (SQLCHAR*)"id", SQL_NTS));
 
   ok_stmt(hstmt, SQLRowCount(hstmt, &nRowCount));
   is_num(1, nRowCount);
@@ -714,9 +713,8 @@ DECLARE_TEST(t_bug57182)
   ok_stmt(hstmt, SQLFreeStmt(hstmt, SQL_CLOSE));
 
   /* And testing impossible column condition - expecting to get no rows */
-   ok_stmt(hstmt, SQLProcedureColumns(hstmt, "test", SQL_NTS, NULL, 0,
-    "bug57182", SQL_NTS,
-    "non_existing_column%", SQL_NTS));
+  ok_stmt(hstmt, SQLProcedureColumns(hstmt, (SQLCHAR*)"test", SQL_NTS, NULL, 0,
+    (SQLCHAR*)"bug57182", SQL_NTS, (SQLCHAR*)"non_existing_column%", SQL_NTS));
 
   ok_stmt(hstmt, SQLRowCount(hstmt, &nRowCount));
   is_num(0, nRowCount);
@@ -740,7 +738,7 @@ DECLARE_TEST(t_bug55870)
   SQLLEN  rowCount;
   SQLCHAR query[256];
 
-  if (strcmp(myserver, "localhost"))
+  if (strcmp((char*)myserver, "localhost"))
     return OK;
 
   ok_sql(hstmt, "drop table if exists bug55870r");
@@ -750,32 +748,30 @@ DECLARE_TEST(t_bug55870)
     "b varchar(20) not null, c varchar(100) not null, INDEX(b)) ENGINE=InnoDB");
 
   is(OK == alloc_basic_handles_with_opt(&henv1, &hdbc1, &hstmt1, NULL, NULL,
-                                        NULL, "", ""));
+                                        NULL, (SQLCHAR*)"", (SQLCHAR*)""));
 
 
-  sprintf(query, "grant Insert, Select on bug55870 to '%s'@'localhost'", myuid);
+  sprintf((char*)query, "grant Insert, Select on bug55870 to '%s'@'localhost'", myuid);
   ok_stmt(hstmt, SQLExecDirect(hstmt, query, SQL_NTS));
-  sprintf(query, "grant Insert (c), Select (c), Update (c) on bug55870 to '%s'@'localhost'", myuid);
+  sprintf((char*)query, "grant Insert (c), Select (c), Update (c) on bug55870 to '%s'@'localhost'", myuid);
   ok_stmt(hstmt, SQLExecDirect(hstmt, query, SQL_NTS));
 
   ok_stmt(hstmt1, SQLStatistics(hstmt1, NULL, 0, NULL, 0,
-                                   "bug55870", SQL_NTS,
-                                   SQL_INDEX_UNIQUE, SQL_QUICK));
+                                (SQLCHAR*)"bug55870", SQL_NTS, SQL_INDEX_UNIQUE, SQL_QUICK));
   ok_stmt(hstmt1, SQLRowCount(hstmt1, &rowCount));
   is_num(rowCount, 1);
 
   ok_stmt(hstmt1, SQLFreeStmt(hstmt1, SQL_CLOSE));
 
-  ok_stmt(hstmt1, SQLTablePrivileges(hstmt1, "test", SQL_NTS, 0, 0, "bug55870",
-                                    SQL_NTS));
+  ok_stmt(hstmt1, SQLTablePrivileges(hstmt1, (SQLCHAR*)"test", SQL_NTS, 0, 0, (SQLCHAR*)"bug55870", SQL_NTS));
 
   ok_stmt(hstmt1, SQLRowCount(hstmt1, &rowCount));
   is_num(rowCount, my_print_non_format_result(hstmt1));
 
   ok_stmt(hstmt1, SQLFreeStmt(hstmt1, SQL_CLOSE));
 
-  ok_stmt(hstmt1, SQLColumnPrivileges(hstmt1, "test", SQL_NTS, 0, 0, "bug55870",
-                                      SQL_NTS, "c", SQL_NTS));
+  ok_stmt(hstmt1, SQLColumnPrivileges(hstmt1, (SQLCHAR*)"test", SQL_NTS, 0, 0, (SQLCHAR*)"bug55870",
+                                      SQL_NTS, (SQLCHAR*)"c", SQL_NTS));
 
   ok_stmt(hstmt1, SQLRowCount(hstmt1, &rowCount));
   is_num(rowCount, my_print_non_format_result(hstmt1));
@@ -801,10 +797,10 @@ DECLARE_TEST(t_bug55870)
   /** surprise-surprise - just removing table is not enough to remove related
       records from tables_priv and columns_priv
   */
-  sprintf(query, "revoke select,insert on bug55870 from '%s'@'localhost'", myuid);
+  sprintf((char*)query, "revoke select,insert on bug55870 from '%s'@'localhost'", myuid);
   ok_stmt(hstmt, SQLExecDirect(hstmt, query, SQL_NTS));
 
-  sprintf(query, "revoke select (c),insert (c),update (c) on bug55870 from '%s'@'localhost'", myuid);
+  sprintf((char*)query, "revoke select (c),insert (c),update (c) on bug55870 from '%s'@'localhost'", myuid);
   ok_stmt(hstmt, SQLExecDirect(hstmt, query, SQL_NTS));
 
 
@@ -865,13 +861,13 @@ DECLARE_TEST(bug12824839)
                 "(id int, vc_col varchar(32) UNIQUE, int_col int,"
                 "primary key(id,int_col))");
 
-  expect_stmt(hstmt, SQLPrepare(hstmt, "SELECT * from any_non_existing_table",
+  expect_stmt(hstmt, SQLPrepare(hstmt, (SQLCHAR*)"SELECT * from any_non_existing_table",
                      SQL_NTS), SQL_ERROR);
 
   /* this will fail */
   expect_stmt(hstmt, SQLNumResultCols(hstmt, &col_count), SQL_ERROR);
 
-  ok_stmt(hstmt, SQLColumns(hstmt, "test", SQL_NTS, NULL, 0, "b12824839",
+  ok_stmt(hstmt, SQLColumns(hstmt, (SQLCHAR*)"test", SQL_NTS, NULL, 0, (SQLCHAR*)"b12824839",
                             SQL_NTS, NULL, 0));
 
   ok_stmt(hstmt, SQLRowCount(hstmt, &row_count));
@@ -880,7 +876,7 @@ DECLARE_TEST(bug12824839)
   ok_stmt(hstmt, SQLFreeStmt(hstmt, SQL_CLOSE));
 
   ok_stmt(hstmt, SQLPrimaryKeys(hstmt, NULL, SQL_NTS, NULL, SQL_NTS,
-                                "b12824839a", SQL_NTS));
+                                (SQLCHAR*)"b12824839a", SQL_NTS));
 
   ok_stmt(hstmt, SQLRowCount(hstmt, &row_count));
   is_num(2, row_count);
@@ -888,7 +884,7 @@ DECLARE_TEST(bug12824839)
   ok_stmt(hstmt, SQLFreeStmt(hstmt, SQL_CLOSE));
 
   /* SQLColumns was not completely fixed */
-  ok_stmt(hstmt, SQLColumns(hstmt, "test", SQL_NTS, NULL, 0, NULL,
+  ok_stmt(hstmt, SQLColumns(hstmt, (SQLCHAR*)"test", SQL_NTS, NULL, 0, NULL,
                             SQL_NTS, NULL, 0));
   ok_stmt(hstmt, SQLRowCount(hstmt, &row_count));
 
@@ -910,8 +906,8 @@ DECLARE_TEST(sqlcolumns_nodbselected)
   ok_sql(hstmt, "DROP TABLE IF EXISTS sqlcolumns_nodbselected");
   ok_sql(hstmt, "CREATE TABLE sqlcolumns_nodbselected (id int)");
 
-  is(OK == alloc_basic_handles_with_opt(&henv1, &hdbc1, &hstmt1, USE_DRIVER,
-                                        NULL, NULL, "", NULL));
+  is(OK == alloc_basic_handles_with_opt(&henv1, &hdbc1, &hstmt1, (SQLCHAR*)USE_DRIVER,
+                                        NULL, NULL, (SQLCHAR*)"", NULL));
 
   ok_con(hdbc1, SQLGetInfo(hdbc1, SQL_DATABASE_NAME,
             (SQLPOINTER) conn_in, sizeof(conn_in), NULL));
@@ -958,19 +954,19 @@ DECLARE_TEST(t_bug14085211_part1)
                              "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"\
                              "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
 
-  sprintf(buff, "DROP DATABASE IF EXISTS %s", db_64_name);
+  sprintf((char*)buff, "DROP DATABASE IF EXISTS %s", db_64_name);
   ok_stmt(hstmt, SQLExecDirect(hstmt, buff, SQL_NTS));
 
-  sprintf(buff, "CREATE DATABASE %s", db_64_name);
+  sprintf((char*)buff, "CREATE DATABASE %s", db_64_name);
   ok_stmt(hstmt, SQLExecDirect(hstmt, buff, SQL_NTS));
 
-  sprintf(buff, "CREATE TABLE %s.%s(%s varchar(10))", db_64_name, tab_64_name, col_64_name);
+  sprintf((char*)buff, "CREATE TABLE %s.%s(%s varchar(10))", db_64_name, tab_64_name, col_64_name);
   ok_stmt(hstmt, SQLExecDirect(hstmt, buff, SQL_NTS));
 
   /* Lets check if SQLTables can get these long names  */
   ok_stmt(hstmt, SQLTables(hstmt, (SQLCHAR *)db_64_name, SQL_NTS, NULL, SQL_NTS,
                                   (SQLCHAR *)tab_64_name, SQL_NTS,
-                                  "TABLE,VIEW", SQL_NTS));
+                                  (SQLCHAR*)"TABLE,VIEW", SQL_NTS));
 
   ok_stmt(hstmt, SQLFetch(hstmt));
   /* check the database name */
@@ -987,12 +983,12 @@ DECLARE_TEST(t_bug14085211_part1)
   /* Lets check if SQLTables can ignore 1024-characters for table name */
   expect_stmt(hstmt, SQLTables(hstmt, (SQLCHAR *)tab_1024_name, SQL_NTS, NULL, SQL_NTS,
                                   (SQLCHAR *)tab_1024_name, SQL_NTS,
-                                  "TABLE,VIEW", SQL_NTS), SQL_ERROR);
+                                  (SQLCHAR*)"TABLE,VIEW", SQL_NTS), SQL_ERROR);
   is_num(check_sqlstate(hstmt, "HY090"), OK);
 
   ok_stmt(hstmt, SQLFreeStmt(hstmt, SQL_CLOSE));
 
-  sprintf(buff, "DROP DATABASE IF EXISTS %s", db_64_name);
+  sprintf((char*)buff, "DROP DATABASE IF EXISTS %s", db_64_name);
   ok_stmt(hstmt, SQLExecDirect(hstmt, buff, SQL_NTS));
 
   return OK;
@@ -1055,9 +1051,8 @@ DECLARE_TEST(t_bug14555713)
                  set p2= b'100100001';\
                 end");
 
-  ok_stmt(hstmt, SQLProcedureColumns(hstmt, NULL, 0, NULL, 0,
-                                     "b14555713", SQL_NTS,
-                                     "p%", SQL_NTS));
+  ok_stmt(hstmt, SQLProcedureColumns(hstmt, NULL, 0, NULL, 0, (SQLCHAR*)"b14555713", SQL_NTS,
+                                     (SQLCHAR*)"p%", SQL_NTS));
 
   ok_stmt(hstmt, SQLFetch(hstmt));
   is_num(my_fetch_int(hstmt, 6), SQL_BIT);
@@ -1088,7 +1083,7 @@ DECLARE_TEST(t_bug69448)
   ok_sql(hstmt, "CREATE TABLE `table``69448`(id int primary key)");
 
   ok_stmt(hstmt, SQLPrimaryKeys(hstmt, NULL, SQL_NTS, NULL, SQL_NTS,
-                               "table`69448", SQL_NTS));
+                                (SQLCHAR*)"table`69448", SQL_NTS));
 
   ok_stmt(hstmt, SQLFetch(hstmt));
 
@@ -1114,7 +1109,6 @@ DECLARE_TEST(t_bug69448)
 */
 DECLARE_TEST(t_bug69554)
 {
-  int num_rows= 0;
   SQLHSTMT hstmt1;
 
   ok_con(hdbc, SQLAllocStmt(hdbc, &hstmt1));
@@ -1140,38 +1134,38 @@ DECLARE_TEST(t_bug69554)
 
   ok_sql(hstmt, "SELECT * FROM table69554a");
   is_num(my_print_non_format_result(hstmt), 1);
-  ok_stmt(hstmt1, SQLPrimaryKeys(hstmt1, NULL, 0, NULL, 0, "table69554a", SQL_NTS));
+  ok_stmt(hstmt1, SQLPrimaryKeys(hstmt1, NULL, 0, NULL, 0, (SQLCHAR*)"table69554a", SQL_NTS));
   is_num(my_print_non_format_result(hstmt1), 2);
 
   ok_sql(hstmt, "SELECT * FROM table69554a");
   is_num(my_print_non_format_result(hstmt), 1);
   ok_stmt(hstmt1, SQLTables(hstmt1, NULL, 0, NULL, 0,
-                           "table69554%", SQL_NTS, NULL, 0));
+                            (SQLCHAR*)"table69554%", SQL_NTS, NULL, 0));
   is_num(my_print_non_format_result(hstmt1), 3);
 
   ok_sql(hstmt, "SELECT * FROM table69554a");
   is_num(my_print_non_format_result(hstmt), 1);
-  ok_stmt(hstmt1, SQLColumns(hstmt1, NULL, 0, NULL, 0, "table69554a", SQL_NTS, NULL, 0));
+  ok_stmt(hstmt1, SQLColumns(hstmt1, NULL, 0, NULL, 0, (SQLCHAR*)"table69554a", SQL_NTS, NULL, 0));
   is_num(my_print_non_format_result(hstmt1), 3);
 
   ok_sql(hstmt, "SELECT * FROM table69554a");
   is_num(my_print_non_format_result(hstmt), 1);
-  ok_stmt(hstmt1, SQLColumnPrivileges(hstmt1, NULL, 0, NULL, 0, "table69554a", SQL_NTS, "%", SQL_NTS));
+  ok_stmt(hstmt1, SQLColumnPrivileges(hstmt1, NULL, 0, NULL, 0, (SQLCHAR*)"table69554a", SQL_NTS, (SQLCHAR*)"%", SQL_NTS));
   is(my_print_non_format_result(hstmt1) > 1);
 
   ok_sql(hstmt, "SELECT * FROM table69554a");
   is_num(my_print_non_format_result(hstmt), 1);
-  ok_stmt(hstmt1, SQLTablePrivileges(hstmt1, NULL, 0, NULL, 0, "table69554a", SQL_NTS));
+  ok_stmt(hstmt1, SQLTablePrivileges(hstmt1, NULL, 0, NULL, 0, (SQLCHAR*)"table69554a", SQL_NTS));
   is(my_print_non_format_result(hstmt1) > 1);
 
   ok_sql(hstmt, "SELECT * FROM table69554a");
   is_num(my_print_non_format_result(hstmt), 1);
-  ok_stmt(hstmt1, SQLProcedures(hstmt1, NULL, 0, NULL, 0, "proc69554%", SQL_NTS));
+  ok_stmt(hstmt1, SQLProcedures(hstmt1, NULL, 0, NULL, 0, (SQLCHAR*)"proc69554%", SQL_NTS));
   is_num(my_print_non_format_result(hstmt1), 2);
 
   ok_sql(hstmt, "SELECT * FROM table69554a");
   is_num(my_print_non_format_result(hstmt), 1);
-  ok_stmt(hstmt1, SQLProcedureColumns(hstmt1, NULL, 0, NULL, 0, "proc69554a", SQL_NTS, "%", SQL_NTS));
+  ok_stmt(hstmt1, SQLProcedureColumns(hstmt1, NULL, 0, NULL, 0, (SQLCHAR*)"proc69554a", SQL_NTS, (SQLCHAR*)"%", SQL_NTS));
   is_num(my_print_non_format_result(hstmt1), 2);
 
   ok_stmt(hstmt1, SQLFreeStmt(hstmt1, SQL_CLOSE));
@@ -1198,7 +1192,7 @@ DECLARE_TEST(t_bug_14005343)
   SQLINTEGER nrows= 0;
 
   /* Test for all catalogs (SQL_ALL_CATALOGS) with table type table and view */
-  ok_stmt(hstmt, SQLTables(hstmt, SQL_ALL_CATALOGS, 1, 0, 0, 0, 0, "TABLE,VIEW", SQL_NTS));
+  ok_stmt(hstmt, SQLTables(hstmt, (SQLCHAR*)SQL_ALL_CATALOGS, 1, 0, 0, 0, 0, (SQLCHAR*)"TABLE,VIEW", SQL_NTS));
   while (SQLFetch(hstmt) == SQL_SUCCESS)
   {
     ++nrows;
@@ -1259,7 +1253,7 @@ DECLARE_TEST(t_bug_14005343)
 
   /* Test for all tables in test catalog */
   nrows= 0;
-  ok_stmt(hstmt, SQLTables(hstmt, "test", SQL_NTS, NULL, 0, NULL, 0, NULL, 0));
+  ok_stmt(hstmt, SQLTables(hstmt, (SQLCHAR*)"test", SQL_NTS, NULL, 0, NULL, 0, NULL, 0));
   while (SQLFetch(hstmt) == SQL_SUCCESS)
   {
     ++nrows;
@@ -1279,7 +1273,7 @@ DECLARE_TEST(t_bug_14005343)
 
   /* Test for all catalogs (SQL_ALL_CATALOGS) with table type table */
   nrows= 0;
-  ok_stmt(hstmt, SQLTables(hstmt, SQL_ALL_CATALOGS, 1, 0, 0, 0, 0, "TABLE", SQL_NTS));
+  ok_stmt(hstmt, SQLTables(hstmt, (SQLCHAR*)SQL_ALL_CATALOGS, 1, 0, 0, 0, 0, (SQLCHAR*)"TABLE", SQL_NTS));
   while (SQLFetch(hstmt) == SQL_SUCCESS)
   {
     ++nrows;

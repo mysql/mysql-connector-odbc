@@ -1,0 +1,226 @@
+name: Dockerized Tests
+
+on:
+  push:
+    branches:
+      - main
+      - myodbc
+  pull_request:
+    branches:
+      - '*'
+    paths-ignore:
+      - '**/*.md'
+      - '**/*.jpg'
+      - '**/README.txt'
+      - 'docs/**'
+      - 'ISSUE_TEMPLATE/**'
+      - '**/remove-old-artifacts.yml'
+
+env:
+  BUILD_TYPE: Release
+
+jobs:
+  build-dockerized-community-tests:
+    name: Dockerized Community Tests
+    runs-on: ubuntu-20.04
+    env:
+      CMAKE_GENERATOR: Unix Makefiles
+
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v2
+
+      # Configure build environment/dependencies
+      - name: Install MySQL client libs & other dependencies
+        run: sudo apt-get update && sudo apt-get install 
+                build-essential 
+                libgtk-3-dev 
+                libmysqlclient-dev 
+                unixodbc
+                unixodbc-dev
+                curl
+                libcurl4-openssl-dev
+
+      - name: Create build environment
+        shell: bash
+        run: cmake -E make_directory ${{ github.workspace }}/build
+
+      - name: Configure CMake
+        shell: bash
+        run: cmake -S . -B build
+                -G "$CMAKE_GENERATOR"
+                -DCMAKE_BUILD_TYPE=$BUILD_TYPE
+                -DMYSQLCLIENT_STATIC_LINKING=TRUE
+                -DENABLE_INTEGRATION_TESTS=FALSE
+                -DENABLE_PERFORMANCE_TESTS=FALSE
+                -DENABLE_UNIT_TESTS=TRUE
+                -DWITH_UNIXODBC=1
+
+      # Build driver
+      - name: Build driver
+        working-directory: ${{ github.workspace }}/build
+        shell: bash
+        run: cmake --build . --config $BUILD_TYPE
+
+      - name: 'Set up JDK 8'
+        uses: actions/setup-java@v1
+        with:
+          java-version: 8
+      
+      - name: 'Run Community Tests'
+        working-directory: ${{ github.workspace }}/testframework
+        run: |
+          ./gradlew --no-parallel --no-daemon test-community --info
+        env:
+          TEST_DSN: myodbc8a
+          TEST_USERNAME: root
+          TEST_PASSWORD: root
+          DRIVER_PATH: ${{ github.workspace }}/build
+          
+  build-dockerized-integration-tests:
+    concurrency: # Cancel previous runs in the same branch
+      group: environment-${{ github.ref }}
+      cancel-in-progress: true
+    name: Dockerized Integration Tests 
+    runs-on: ubuntu-20.04
+    env:
+      CMAKE_GENERATOR: Unix Makefiles
+
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v2
+
+      # Configure build environment/dependencies
+      - name: Install MySQL client libs & other dependencies
+        run: sudo apt-get update && sudo apt-get install 
+                build-essential 
+                libgtk-3-dev 
+                libmysqlclient-dev 
+                unixodbc
+                unixodbc-dev
+                curl
+                libcurl4-openssl-dev
+
+      - name: Create build environment
+        shell: bash
+        run: cmake -E make_directory ${{ github.workspace }}/build
+
+      - name: Configure CMake
+        shell: bash
+        # Performance tests are disabled by default
+        run: cmake -S . -B build
+                -G "$CMAKE_GENERATOR"
+                -DCMAKE_BUILD_TYPE=$BUILD_TYPE
+                -DMYSQLCLIENT_STATIC_LINKING=TRUE
+                -DENABLE_INTEGRATION_TESTS=TRUE
+                -DENABLE_PERFORMANCE_TESTS=FALSE
+                -DENABLE_UNIT_TESTS=FALSE
+                -DWITH_UNIXODBC=1
+
+      # Build driver
+      - name: Build driver
+        working-directory: ${{ github.workspace }}/build
+        shell: bash
+        run: cmake --build . --config $BUILD_TYPE
+
+      - name: 'Set up JDK 8'
+        uses: actions/setup-java@v1
+        with:
+          java-version: 8
+
+      - name: 'Configure AWS Credentials'
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
+
+      - name: 'Set up Temp AWS Credentials'
+        run: |
+          creds=($(aws sts get-session-token \
+            --duration-seconds 3600 \
+            --query 'Credentials.[AccessKeyId, SecretAccessKey, SessionToken]' \
+            --output text \
+          | xargs));
+          echo "::add-mask::${creds[0]}"
+          echo "::add-mask::${creds[1]}"
+          echo "::add-mask::${creds[2]}"
+          echo "TEMP_AWS_ACCESS_KEY_ID=${creds[0]}" >> $GITHUB_ENV
+          echo "TEMP_AWS_SECRET_ACCESS_KEY=${creds[1]}" >> $GITHUB_ENV
+          echo "TEMP_AWS_SESSION_TOKEN=${creds[2]}" >> $GITHUB_ENV
+      
+      - name: 'Run Integration Tests'
+        working-directory: ${{ github.workspace }}/testframework
+        run: |
+          ./gradlew --no-parallel --no-daemon test-failover --info
+        env:
+          TEST_DSN: atlas
+          TEST_USERNAME: ${{ secrets.TEST_USERNAME }}
+          TEST_PASSWORD: ${{ secrets.TEST_PASSWORD }}
+          TEST_DB_CLUSTER_IDENTIFIER: ${{ secrets.TEST_DB_CLUSTER_IDENTIFIER }}-${{ github.run_id }}-${{ github.run_attempt }}
+          AWS_ACCESS_KEY_ID: ${{ env.TEMP_AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ env.TEMP_AWS_SECRET_ACCESS_KEY }}
+          AWS_SESSION_TOKEN: ${{ env.TEMP_AWS_SESSION_TOKEN }}
+          DRIVER_PATH: ${{ github.workspace }}/build
+
+      - name: 'Get Github Action IP'
+        id: ip
+        uses: haythem/public-ip@v1.2
+        
+      - name: 'Remove Github Action IP'
+        if: always()
+        run: |
+          aws ec2 revoke-security-group-ingress \
+            --group-name default \
+            --protocol tcp \
+            --port 3306 \
+            --cidr ${{ steps.ip.outputs.ipv4 }}/32 \
+          2>&1 > /dev/null;
+
+      - name: 'Display and save log'
+        if: always()
+        working-directory: ${{ github.workspace }}/build
+        run: |
+          echo "Displaying logs"
+          mkdir -p ./reports/tests
+          if [[ -f myodbc.log && -s myodbc.log ]]; then 
+            cat myodbc.log
+            cp myodbc.log ./reports/tests/myodbc.log
+          fi
+          if [[ -f failover_performance.xlsx && -s failover_performance.xlsx ]]; then
+            cp failover_performance.xlsx ./reports/tests/failover_performance.xlsx
+          fi
+          if [[ -f efm_performance.xlsx && -s efm_performance.xlsx ]]; then
+            cp efm_performance.xlsx ./reports/tests/efm_performance.xlsx
+          fi
+          if [[ -f efm_detection_performance.xlsx && -s efm_detection_performance.xlsx ]]; then
+            cp efm_detection_performance.xlsx ./reports/tests/efm_detection_performance.xlsx
+          fi
+
+      - name: 'Archive log results'
+        if: always()
+        uses: actions/upload-artifact@v2
+        with:
+          name: 'integration-test-logs'
+          path: build/reports/tests/
+          retention-days: 3
+
+      - name: 'Delete Test Clusters if Ungraceful Cancel'
+        if: cancelled()
+        run: |
+          db_instances=($(aws rds describe-db-clusters \
+            --db-cluster-identifier ${{ secrets.TEST_DB_CLUSTER_IDENTIFIER }}-${{ github.run_id }}-${{ github.run_attempt }} \
+            --query 'DBClusters[].DBClusterMembers[].DBInstanceIdentifier' \
+            --output text \
+          | xargs));
+          for ((i = 0; i < ${#db_instances[@]}; i++)); \
+            do \
+              aws rds delete-db-instance \
+              --db-instance-identifier ${db_instances[i]} \
+              --skip-final-snapshot \
+            2>&1 > /dev/null; \
+          done;
+          aws rds delete-db-cluster \
+            --db-cluster-identifier ${{ secrets.TEST_DB_CLUSTER_IDENTIFIER }}-${{ github.run_id }}-${{ github.run_attempt }} \
+            --skip-final-snapshot \
+          2>&1 > /dev/null;

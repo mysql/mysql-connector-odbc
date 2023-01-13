@@ -332,7 +332,7 @@ static char *prefix_name(const MY_UCA *uca) {
   static char prefix[MY_UCA_VERSION_SIZE];
   const char *s;
   char *d;
-  strcpy(prefix, "uca");
+  strncpy(prefix, "uca", sizeof(prefix));
   for (s = uca->version, d = prefix + strlen(prefix); *s; s++) {
     if ((*s >= '0' && *s <= '9') || (*s >= 'a' && *s <= 'z')) *d++ = *s;
   }

@@ -1,3 +1,5 @@
+// Modifications Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+//
 // Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved. 
 // 
 // This program is free software; you can redistribute it and/or modify 
@@ -36,7 +38,6 @@ DECLARE_TEST(t_use_result)
 {
   SQLINTEGER i, row_count= 0;
   SQLCHAR    ch[]= "MySQL AB";
-  SQLRETURN  rc;
 
   ok_sql(hstmt, "DROP TABLE IF EXISTS t_use_result");
   ok_sql(hstmt, "CREATE TABLE t_use_result (id INT, name CHAR(10))");
@@ -119,7 +120,6 @@ DECLARE_TEST(t_bug39878)
 {
   int         i;
   SQLINTEGER  row_count= 0;
-  SQLRETURN   rc;
   DECLARE_BASIC_HANDLES(henv1, hdbc1, hstmt1);
 
   ok_stmt(hstmt, SQLSetStmtAttr(hstmt, SQL_ATTR_CURSOR_TYPE,

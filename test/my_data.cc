@@ -1,3 +1,5 @@
+// Modifications Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+//
 // Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
 //
 // This program is free software; you can redistribute it and/or modify
@@ -104,7 +106,6 @@ DECLARE_TEST(my_json)
 
 DECLARE_TEST(my_local_infile)
 {
-  SQLRETURN rc = 0;
   SQLINTEGER num_rows = 0;
   FILE *csv_file = NULL;
 

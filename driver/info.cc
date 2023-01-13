@@ -1,3 +1,5 @@
+// Modifications Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+//
 // Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
 //
 // This program is free software; you can redistribute it and/or modify
@@ -133,7 +135,7 @@ MySQLGetInfo(SQLHDBC hdbc, SQLUSMALLINT fInfoType,
                      0);
 
   case SQL_COLLATION_SEQ:
-    MYINFO_SET_STR(dbc->mysql->charset->name);
+    MYINFO_SET_STR(dbc->mysql_proxy->get_character_set()->name);
 
   case SQL_COLUMN_ALIAS:
     MYINFO_SET_STR("Y");
@@ -199,7 +201,7 @@ MySQLGetInfo(SQLHDBC hdbc, SQLUSMALLINT fInfoType,
 
   case SQL_CREATE_VIEW:
     /** @todo SQL_CV_LOCAL ? */
-    if (is_minimum_version(dbc->mysql->server_version, "5.0"))
+    if (is_minimum_version(dbc->mysql_proxy->get_server_version(), "5.0"))
       MYINFO_SET_ULONG(SQL_CV_CREATE_VIEW | SQL_CV_CHECK_OPTION |
                        SQL_CV_CASCADED);
     else
@@ -226,7 +228,7 @@ MySQLGetInfo(SQLHDBC hdbc, SQLUSMALLINT fInfoType,
     MYINFO_SET_STR("N");
 
   case SQL_DATABASE_NAME:
-    if (is_connected(dbc) && reget_current_catalog(dbc))
+    if (dbc->mysql_proxy->is_connected() && reget_current_catalog(dbc))
       return dbc->set_error("HY000",
                            "SQLGetInfo() failed to return current catalog.",
                            0);
@@ -241,7 +243,7 @@ MySQLGetInfo(SQLHDBC hdbc, SQLUSMALLINT fInfoType,
 
   case SQL_DBMS_VER:
     /** @todo technically this is not right: should be ##.##.#### */
-    MYINFO_SET_STR(dbc->mysql->server_version);
+    MYINFO_SET_STR(dbc->mysql_proxy->get_server_version());
 
   case SQL_DDL_INDEX:
     MYINFO_SET_ULONG(SQL_DI_CREATE_INDEX | SQL_DI_DROP_INDEX);
@@ -284,7 +286,7 @@ MySQLGetInfo(SQLHDBC hdbc, SQLUSMALLINT fInfoType,
     MYINFO_SET_ULONG(SQL_DT_DROP_TABLE | SQL_DT_CASCADE | SQL_DT_RESTRICT);
 
   case SQL_DROP_VIEW:
-    if (is_minimum_version(dbc->mysql->server_version, "5.0"))
+    if (is_minimum_version(dbc->mysql_proxy->get_server_version(), "5.0"))
       MYINFO_SET_ULONG(SQL_DV_DROP_VIEW | SQL_DV_CASCADE | SQL_DV_RESTRICT);
     else
       MYINFO_SET_ULONG(0);
@@ -359,7 +361,7 @@ MySQLGetInfo(SQLHDBC hdbc, SQLUSMALLINT fInfoType,
     We have INFORMATION_SCHEMA.SCHEMATA, but we don't report it
     because the driver exposes databases (schema) as catalogs.
     */
-    if (is_minimum_version(dbc->mysql->server_version, "5.1"))
+    if (is_minimum_version(dbc->mysql_proxy->get_server_version(), "5.1"))
       MYINFO_SET_ULONG(SQL_ISV_CHARACTER_SETS | SQL_ISV_COLLATIONS |
                        SQL_ISV_COLUMN_PRIVILEGES | SQL_ISV_COLUMNS |
                        SQL_ISV_KEY_COLUMN_USAGE |
@@ -367,7 +369,7 @@ MySQLGetInfo(SQLHDBC hdbc, SQLUSMALLINT fInfoType,
                        /* SQL_ISV_SCHEMATA | */ SQL_ISV_TABLE_CONSTRAINTS |
                        SQL_ISV_TABLE_PRIVILEGES | SQL_ISV_TABLES |
                        SQL_ISV_VIEWS);
-    else if (is_minimum_version(dbc->mysql->server_version, "5.0"))
+    else if (is_minimum_version(dbc->mysql_proxy->get_server_version(), "5.0"))
       MYINFO_SET_ULONG(SQL_ISV_CHARACTER_SETS | SQL_ISV_COLLATIONS |
                        SQL_ISV_COLUMN_PRIVILEGES | SQL_ISV_COLUMNS |
                        SQL_ISV_KEY_COLUMN_USAGE | /* SQL_ISV_SCHEMATA | */
@@ -393,7 +395,7 @@ MySQLGetInfo(SQLHDBC hdbc, SQLUSMALLINT fInfoType,
     the MySQL Reference Manual (which is, in turn, generated from the source)
     with the pre-reserved ODBC keywords removed.
     */
-    if (is_minimum_version(dbc->mysql->server_version, "8.0.22"))
+    if (is_minimum_version(dbc->mysql_proxy->get_server_version(), "8.0.22"))
       MYINFO_SET_STR("ACCESSIBLE,ANALYZE,ASENSITIVE,BEFORE,BIGINT,BINARY,BLOB,"
                      "CALL,CHANGE,CONDITION,DATABASE,DATABASES,DAY_HOUR,"
                      "DAY_MICROSECOND,DAY_MINUTE,DAY_SECOND,DELAYED,"
@@ -418,7 +420,7 @@ MySQLGetInfo(SQLHDBC hdbc, SQLUSMALLINT fInfoType,
                      "TINYBLOB,TINYINT,TINYTEXT,TRIGGER,UNDO,UNLOCK,UNSIGNED,"
                      "USE,UTC_DATE,UTC_TIME,UTC_TIMESTAMP,VARBINARY,"
                      "VARCHARACTER,WHILE,X509,XOR,YEAR_MONTH,ZEROFILL");
-    else if (is_minimum_version(dbc->mysql->server_version, "5.7"))
+    else if (is_minimum_version(dbc->mysql_proxy->get_server_version(), "5.7"))
       MYINFO_SET_STR("ACCESSIBLE,ANALYZE,ASENSITIVE,BEFORE,BIGINT,BINARY,BLOB,"
                      "CALL,CHANGE,CONDITION,DATABASE,DATABASES,DAY_HOUR,"
                      "DAY_MICROSECOND,DAY_MINUTE,DAY_SECOND,DELAYED,"
@@ -443,7 +445,7 @@ MySQLGetInfo(SQLHDBC hdbc, SQLUSMALLINT fInfoType,
                      "TINYBLOB,TINYINT,TINYTEXT,TRIGGER,UNDO,UNLOCK,UNSIGNED,"
                      "USE,UTC_DATE,UTC_TIME,UTC_TIMESTAMP,VARBINARY,"
                      "VARCHARACTER,WHILE,X509,XOR,YEAR_MONTH,ZEROFILL");
-    else if (is_minimum_version(dbc->mysql->server_version, "5.6"))
+    else if (is_minimum_version(dbc->mysql_proxy->get_server_version(), "5.6"))
       MYINFO_SET_STR("ACCESSIBLE,ANALYZE,ASENSITIVE,BEFORE,BIGINT,BINARY,BLOB,"
                      "CALL,CHANGE,CONDITION,DATABASE,DATABASES,DAY_HOUR,"
                      "DAY_MICROSECOND,DAY_MINUTE,DAY_SECOND,DELAYED,"
@@ -468,7 +470,7 @@ MySQLGetInfo(SQLHDBC hdbc, SQLUSMALLINT fInfoType,
                      "TINYBLOB,TINYINT,TINYTEXT,TRIGGER,UNDO,UNLOCK,UNSIGNED,"
                      "USE,UTC_DATE,UTC_TIME,UTC_TIMESTAMP,VARBINARY,"
                      "VARCHARACTER,WHILE,X509,XOR,YEAR_MONTH,ZEROFILL");
-    else if (is_minimum_version(dbc->mysql->server_version, "5.5"))
+    else if (is_minimum_version(dbc->mysql_proxy->get_server_version(), "5.5"))
       MYINFO_SET_STR("ACCESSIBLE,ANALYZE,ASENSITIVE,BEFORE,BIGINT,BINARY,BLOB,"
                      "CALL,CHANGE,CONDITION,DATABASE,DATABASES,DAY_HOUR,"
                      "DAY_MICROSECOND,DAY_MINUTE,DAY_SECOND,DELAYED,"
@@ -491,7 +493,7 @@ MySQLGetInfo(SQLHDBC hdbc, SQLUSMALLINT fInfoType,
                      "TINYBLOB,TINYINT,TINYTEXT,TRIGGER,UNDO,UNLOCK,UNSIGNED,"
                      "USE,UTC_DATE,UTC_TIME,UTC_TIMESTAMP,VARBINARY,"
                      "VARCHARACTER,WHILE,X509,XOR,YEAR_MONTH,ZEROFILL");
-    else if (is_minimum_version(dbc->mysql->server_version, "5.1"))
+    else if (is_minimum_version(dbc->mysql_proxy->get_server_version(), "5.1"))
       MYINFO_SET_STR("ACCESSIBLE,ANALYZE,ASENSITIVE,BEFORE,BIGINT,BINARY,BLOB,"
                      "CALL,CHANGE,CONDITION,DATABASE,DATABASES,DAY_HOUR,"
                      "DAY_MICROSECOND,DAY_MINUTE,DAY_SECOND,DELAYED,"
@@ -513,7 +515,7 @@ MySQLGetInfo(SQLHDBC hdbc, SQLUSMALLINT fInfoType,
                      "TINYTEXT,TRIGGER,UNDO,UNLOCK,UNSIGNED,USE,UTC_DATE,"
                      "UTC_TIME,UTC_TIMESTAMP,VARBINARY,VARCHARACTER,WHILE,X509,"
                      "XOR,YEAR_MONTH,ZEROFILL");
-    else if (is_minimum_version(dbc->mysql->server_version, "5.0"))
+    else if (is_minimum_version(dbc->mysql_proxy->get_server_version(), "5.0"))
       MYINFO_SET_STR("ANALYZE,ASENSITIVE,BEFORE,BIGINT,BINARY,BLOB,CALL,CHANGE,"
                      "CONDITION,DATABASE,DATABASES,DAY_HOUR,DAY_MICROSECOND,"
                      "DAY_MINUTE,DAY_SECOND,DELAYED,DETERMINISTIC,DISTINCTROW,"
@@ -602,7 +604,7 @@ MySQLGetInfo(SQLHDBC hdbc, SQLUSMALLINT fInfoType,
     MYINFO_SET_USHORT(NAME_LEN);
 
   case SQL_MAX_INDEX_SIZE:
-    if (is_minimum_version(dbc->mysql->server_version, "5.0"))
+    if (is_minimum_version(dbc->mysql_proxy->get_server_version(), "5.0"))
       MYINFO_SET_USHORT(3072);
     else
       MYINFO_SET_USHORT(1024);
@@ -630,7 +632,7 @@ MySQLGetInfo(SQLHDBC hdbc, SQLUSMALLINT fInfoType,
     MYINFO_SET_USHORT(NAME_LEN);
 
   case SQL_MAX_TABLES_IN_SELECT:
-    if (is_minimum_version(dbc->mysql->server_version, "5.0"))
+    if (is_minimum_version(dbc->mysql_proxy->get_server_version(), "5.0"))
       MYINFO_SET_USHORT(63);
     else
       MYINFO_SET_USHORT(31);
@@ -688,13 +690,13 @@ MySQLGetInfo(SQLHDBC hdbc, SQLUSMALLINT fInfoType,
     MYINFO_SET_ULONG(SQL_PAS_NO_BATCH);
 
   case SQL_PROCEDURE_TERM:
-    if (is_minimum_version(dbc->mysql->server_version, "5.0"))
+    if (is_minimum_version(dbc->mysql_proxy->get_server_version(), "5.0"))
       MYINFO_SET_STR("stored procedure");
     else
       MYINFO_SET_STR("");
 
   case SQL_PROCEDURES:
-    if (is_minimum_version(dbc->mysql->server_version, "5.0"))
+    if (is_minimum_version(dbc->mysql_proxy->get_server_version(), "5.0"))
       MYINFO_SET_STR("Y");
     else
       MYINFO_SET_STR("N");
@@ -733,7 +735,7 @@ MySQLGetInfo(SQLHDBC hdbc, SQLUSMALLINT fInfoType,
     MYINFO_SET_STR("\\");
 
   case SQL_SERVER_NAME:
-    MYINFO_SET_STR(dbc->mysql->host_info);
+    MYINFO_SET_STR(dbc->mysql_proxy->get_host_info());
 
   case SQL_SPECIAL_CHARACTERS:
     /* We can handle anything but / and \xff. */
@@ -910,12 +912,10 @@ MySQLGetInfo(SQLHDBC hdbc, SQLUSMALLINT fInfoType,
   default:
   {
     char buff[80];
-    sprintf(buff, "Unsupported option: %d to SQLGetInfo", fInfoType);
+    snprintf(buff, sizeof(buff), "Unsupported option: %d to SQLGetInfo", fInfoType);
     return set_conn_error((DBC*)hdbc, MYERR_S1C00, buff, 4000);
   }
   }
-
-  return SQL_SUCCESS;
 }
 
 

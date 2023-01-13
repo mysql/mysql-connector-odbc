@@ -1,3 +1,5 @@
+// Modifications Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+//
 // Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved. 
 // 
 // This program is free software; you can redistribute it and/or modify 
@@ -307,7 +309,6 @@ DECLARE_TEST(t_relative1)
 /* Testing SQL_FETCH_RELATIVE with row_set_size as 2 */
 DECLARE_TEST(t_relative2)
 {
-  SQLRETURN rc;
   SQLULEN nrows;
   SQLUINTEGER i, iarray[15];
   const SQLUINTEGER max_rows=10;
@@ -555,7 +556,6 @@ DECLARE_TEST(t_relative2)
 
 DECLARE_TEST(t_rows_fetched_ptr)
 {
-    SQLRETURN    rc;
     SQLULEN rowsFetched, rowsSize;
     long         i;
 
@@ -676,7 +676,6 @@ DECLARE_TEST(t_rows_fetched_ptr)
 
 DECLARE_TEST(t_rows_fetched_ptr1)
 {
-  SQLRETURN   rc;
   SQLULEN     rowsFetched, rowsSize;
   SQLINTEGER  i;
 

@@ -1,3 +1,5 @@
+# Modifications Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+#
 # Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved. 
 # 
 # This program is free software; you can redistribute it and/or modify 
@@ -71,7 +73,6 @@ FOREACH(FN my_basics.c my_blob.c my_bulk.c my_catalog1.c my_catalog2.c
           COMPILE_FLAGS "${MYSQLODBCCONN_COMPILE_FLAGS_ENV} ${MYSQL_CXXFLAGS}")
   ENDIF(MYSQL_CXX_LINKAGE)
 
-  INSTALL(TARGETS ${T} DESTINATION test COMPONENT tests)
   SET_TARGET_PROPERTIES(${T} PROPERTIES 
       LINK_FLAGS "${MYSQLODBCCONN_LINK_FLAGS_ENV} ${MYSQL_LINK_FLAGS}")
 
@@ -135,7 +136,6 @@ IF(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
               COMPILE_FLAGS "${MYSQLODBCCONN_COMPILE_FLAGS_ENV} ${MYSQL_CXXFLAGS}")
       ENDIF(MYSQL_CXX_LINKAGE)
 
-      INSTALL(TARGETS ${T} DESTINATION test COMPONENT tests)
       SET_TARGET_PROPERTIES(${T} PROPERTIES 
           LINK_FLAGS "${MYSQLODBCCONN_LINK_FLAGS_ENV} ${MYSQL_LINK_FLAGS}")
 
@@ -210,17 +210,3 @@ add_custom_target(generate_test_config_files
 )
 
 set_target_properties(generate_test_config_files PROPERTIES FOLDER Misc)
-
-
-INSTALL(FILES
-	${CMAKE_CURRENT_BINARY_DIR}/CTestTestfile.cmake
-	${CMAKE_CURRENT_BINARY_DIR}/odbc.ini
-	${CMAKE_CURRENT_BINARY_DIR}/odbcinst.ini
-        DESTINATION test COMPONENT tests)
-
-INSTALL(DIRECTORY
-       ${PROJECT_BINARY_DIR}/test/Debug/
-       DESTINATION test
-       CONFIGURATIONS Debug
-       FILES_MATCHING PATTERN *.pdb
-)

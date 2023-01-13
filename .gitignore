@@ -1,4 +1,47 @@
-﻿driver/drivera.def
+﻿# Build artifacts
+build/
+bin/
+lib/
+out/
+x64/
+x86/
+**/*.dir
+*.pkg
+
+# Test artifacts
+test/Testing/**
+# Ignore all test binaries, and keep everything else
+test/*
+!test/docker
+!test/CMakeLists.txt
+!test/*.c
+!test/*.cc
+!test/*.h
+!test/*.in
+!test/unit.pl
+unit_testing/build/**
+unit_testing/bin/**
+integration/bin/**
+
+# Test dependencies
+_deps/**
+*/_deps/**
+
+# CMake generated files
+CPack*.cmake
+**/CMakeFiles
+**/cmake_install.cmake
+**/CMakeCache.txt
+**/Makefile
+cmake/sql*.c
+*.cmake
+mysql_strings/uca900_ja_tbls.cc
+mysql_strings/uca900_zh_tbls.cc
+getmysqlversion.c
+_CPack_Packages/
+install_manifest*.txt
+
+driver/drivera.def
 driver/drivera.rc
 driver/driverw.def
 driver/driverw.rc
@@ -9,3 +52,44 @@ INFO_SRC
 Install.bat
 myodbc3.spec
 Uninstall.bat
+
+# Visual Studio files
+/.vs
+/.vscode
+*.vcxproj*
+*.sln
+**/*.aps
+
+# Java build files
+testframework/bin/
+testframework/build/
+testframework/buildtest/
+testframework/dist/
+testframework/nbproject/
+testframework/patches/
+testframework/src/test/resources/*.ini
+*~
+*.lock
+*.swp
+*.DS_Store
+*.diff
+*.dot
+*.dot.png
+*.class
+*.iml
+*.project.elrade
+*.attach_pid*
+*.gradle
+*.idea
+testframework/hs_err_pid*.log
+*.sh
+*.patch
+
+# Wix files
+*.wixobj
+*.wixpdb
+/wix/mysql-odbc-*.xml
+/wix/*.msi
+/wix/myodbc_version.xml
+/wix/x64
+/wix/x86

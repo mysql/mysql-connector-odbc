@@ -1,5 +1,7 @@
 @ECHO OFF
 
+REM Modifications Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+REM
 REM Copyright (c) 2006, 2018, Oracle and/or its affiliates. All rights reserved. 
 REM 
 REM This program is free software; you can redistribute it and/or modify 

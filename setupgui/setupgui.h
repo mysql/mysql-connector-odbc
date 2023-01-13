@@ -1,3 +1,5 @@
+// Modifications Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+//
 // Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
 //
 // This program is free software; you can redistribute it and/or modify
@@ -37,17 +39,21 @@
 
 #if MFA_ENABLED
 #define MFA_TAB         2
-#define METADATA_TAB    3
-#define CURSORS_TAB     4
-#define DEBUG_TAB       5
-#define SSL_TAB         6
-#define MISC_TAB        7
+#define FAILOVER_TAB    3
+#define MONITORING_TAB  4
+#define METADATA_TAB    5
+#define CURSORS_TAB     6
+#define DEBUG_TAB       7
+#define SSL_TAB         8
+#define MISC_TAB        9
 #else
-#define METADATA_TAB    2
-#define CURSORS_TAB     3
-#define DEBUG_TAB       4
-#define SSL_TAB         5
-#define MISC_TAB        6
+#define FAILOVER_TAB    2
+#define MONITORING_TAB  3
+#define METADATA_TAB    4
+#define CURSORS_TAB     5
+#define DEBUG_TAB       6
+#define SSL_TAB         7
+#define MISC_TAB        8
 #endif
 
 #else

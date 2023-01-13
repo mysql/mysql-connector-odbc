@@ -1,3 +1,5 @@
+// Modifications Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+//
 // Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
 //
 // This program is free software; you can redistribute it and/or modify
@@ -81,6 +83,10 @@ void myodbc_init(void)
 
   if (myodbc_inited > 1)
     return;
+
+  // This library_init call is causing the test my_data to crash on mac.
+  // TODO: Find alternate solution
+  // mysql_library_init(0, nullptr, nullptr);
 
   if(!mysys_inited)
   {
@@ -170,7 +176,7 @@ void dll_location_init(HMODULE inst)
   std::string dll_loc;
   dll_loc.reserve(buflen);
 
-  GetModuleFileNameA((HMODULE)inst, dll_loc.data(), buflen);
+  GetModuleFileNameA((HMODULE)inst, (LPSTR)dll_loc.data(), buflen);
   current_dll_location = dll_loc.data();
   auto bs_pos = current_dll_location.find_last_of('\\');
   if (bs_pos != std::string::npos)

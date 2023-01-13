@@ -1,3 +1,5 @@
+// Modifications Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+//
 // Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
 //
 // This program is free software; you can redistribute it and/or modify
@@ -33,7 +35,6 @@
 /* result set demo */
 DECLARE_TEST(my_resultset)
 {
-    SQLRETURN   rc;
     SQLUINTEGER nRowCount=0;
     SQLULEN     pcColDef;
     SQLCHAR     szColName[MAX_NAME_LEN+1];
@@ -128,7 +129,6 @@ DECLARE_TEST(my_resultset)
 /* To test a convertion type */
 DECLARE_TEST(t_convert_type)
 {
-  SQLRETURN   rc;
   SQLSMALLINT SqlType, DateType;
   SQLCHAR     ColName[MAX_NAME_LEN];
   SQLCHAR     DbVersion[MAX_NAME_LEN];
@@ -241,7 +241,6 @@ static SQLINTEGER desc_col_check(SQLHSTMT hstmt,
                            SQLSMALLINT scale,
                            SQLSMALLINT nullable)
 {
-  SQLRETURN   rc;
   SQLSMALLINT pcbColName, pfSqlType, pibScale, pfNullable;
   SQLULEN     pcbColDef;
   SQLCHAR     szColName[MAX_NAME_LEN];
@@ -345,7 +344,6 @@ DECLARE_TEST(t_desc_col)
 /* Test for misc CONVERT bug #1082 */
 DECLARE_TEST(t_convert)
 {
-  SQLRETURN  rc;
   SQLLEN     data_len;
   SQLCHAR    data[50];
 
@@ -399,7 +397,6 @@ DECLARE_TEST(t_convert)
 
 DECLARE_TEST(t_max_rows)
 {
-  SQLRETURN rc;
   SQLUINTEGER i;
   SQLSMALLINT cc;
 
@@ -509,7 +506,7 @@ DECLARE_TEST(t_max_rows)
     DECLARE_BASIC_HANDLES(henv1, hdbc1, hstmt1);
 
     is(OK == alloc_basic_handles_with_opt(&henv1, &hdbc1, &hstmt1, NULL,
-                                        NULL, NULL, NULL, "PREFETCH=5"));
+                                        NULL, NULL, NULL, (SQLCHAR*)"PREFETCH=5"));
 
     /* max_rows is bigger than a prefetch, and is not divided evenly by it */
     ok_stmt(hstmt1, SQLSetStmtAttr(hstmt1,SQL_ATTR_MAX_ROWS,(SQLPOINTER)7,0));
@@ -558,7 +555,6 @@ DECLARE_TEST(t_max_rows)
 
 DECLARE_TEST(t_multistep)
 {
-  SQLRETURN  rc;
   SQLCHAR    szData[150];
   SQLLEN     pcbValue;
   SQLINTEGER id;
@@ -663,7 +659,6 @@ DECLARE_TEST(t_multistep)
 
 DECLARE_TEST(t_zerolength)
 {
-  SQLRETURN  rc;
   SQLCHAR    szData[100], bData[100], bData1[100];
   SQLLEN     pcbValue,pcbValue1,pcbValue2;
 
@@ -944,7 +939,6 @@ DECLARE_TEST(t_non_cache_bug)
 
 DECLARE_TEST(t_empty_str_bug)
 {
-  SQLRETURN    rc;
   SQLINTEGER   id;
   SQLLEN       name_len, desc_len;
   SQLCHAR      name[20], desc[20];
@@ -1038,7 +1032,6 @@ DECLARE_TEST(t_empty_str_bug)
 
 DECLARE_TEST(t_desccol)
 {
-    SQLRETURN rc;
     SQLCHAR colname[20];
     SQLSMALLINT collen,datatype,decptr,nullable;
     SQLULEN colsize;
@@ -1097,7 +1090,6 @@ int desccol(SQLHSTMT hstmt, char *cname, SQLSMALLINT clen,
             SQLSMALLINT sqltype, SQLULEN size,
             SQLSMALLINT scale, SQLSMALLINT isNull)
 {
-    SQLRETURN   rc =0;
     SQLCHAR     lcname[254];
     SQLSMALLINT lclen;
     SQLSMALLINT lsqltype;
@@ -1136,8 +1128,6 @@ int desccol(SQLHSTMT hstmt, char *cname, SQLSMALLINT clen,
 
 DECLARE_TEST(t_desccolext)
 {
-  SQLRETURN rc;
-
   ok_sql(hstmt, "DROP TABLE IF EXISTS t_desccolext");
 
   ok_sql(hstmt, "create table t_desccolext\
@@ -1240,8 +1230,6 @@ DECLARE_TEST(t_desccolext)
 
 DECLARE_TEST(t_desccol1)
 {
-    SQLRETURN rc;
-
   ok_sql(hstmt, "DROP TABLE IF EXISTS t_desccol1");
     rc = SQLExecDirect(hstmt,(SQLCHAR *)"create table t_desccol1\
                  ( record decimal(8,0),\
@@ -1384,7 +1372,6 @@ DECLARE_TEST(t_colattributes)
 
 DECLARE_TEST(t_exfetch)
 {
-    SQLRETURN rc;
     SQLUINTEGER i;
 
     ok_stmt(hstmt, SQLSetStmtAttr(hstmt, SQL_ATTR_CURSOR_TYPE,
@@ -1514,7 +1501,6 @@ DECLARE_TEST(t_exfetch)
 
 DECLARE_TEST(tmysql_rowstatus)
 {
-    SQLRETURN rc;
     SQLHSTMT hstmt1;
     SQLULEN pcrow[4];
     SQLUSMALLINT rgfRowStatus[6];
@@ -2012,7 +1998,6 @@ DECLARE_TEST(t_bug31246)
   SQLCHAR     field1[20];
   SQLINTEGER  field2;
   SQLCHAR     field3[20];
-  SQLRETURN   rc;
 
   ok_sql(hstmt, "DROP TABLE IF EXISTS t_bug31246");
   ok_sql(hstmt, "CREATE TABLE t_bug31246 ("
@@ -2125,10 +2110,10 @@ DECLARE_TEST(t_bug13776_auto)
 
   /** @todo get the full path to the library using getenv */
 #ifdef _WIN64
-  env_path= getenv("CommonProgramW6432");
+  env_path= (SQLCHAR*)getenv("CommonProgramW6432");
   if (!env_path)
   {
-    env_path= getenv("CommonProgramFiles");
+    env_path= (SQLCHAR*)getenv("CommonProgramFiles");
   }
 #else
   env_path= getenv("CommonProgramFiles");
@@ -2141,9 +2126,9 @@ DECLARE_TEST(t_bug13776_auto)
     return FAIL;
   }
 
-  sprintf(szFileToLoad, "%s\\System\\ado\\msado15.dll", env_path);
+  sprintf((char*)szFileToLoad, "%s\\System\\ado\\msado15.dll", env_path);
 
-  ado_dll= LoadLibrary(szFileToLoad);
+  ado_dll= LoadLibrary((LPCSTR)szFileToLoad);
   if (!ado_dll)
   {
     printf("# Could not load %s in %s on line %d\n",

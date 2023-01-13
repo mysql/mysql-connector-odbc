@@ -279,14 +279,14 @@ int main(int argc, char **argv [[maybe_unused]]) {
   memset(&ncs, 0, sizeof(ncs));
   memset(&all_charsets, 0, sizeof(all_charsets));
 
-  sprintf(filename, "%s/%s", argv[1], "Index.xml");
+  snprintf(filename, sizeof(filename), "%s/%s", argv[1], "Index.xml");
   my_read_charset_file(filename);
 
   for (cs = all_charsets; cs < all_charsets + array_elements(all_charsets);
        cs++) {
     if (cs->number && !(cs->state & MY_CS_COMPILED)) {
       if ((!simple_cs_is_full(cs)) && (cs->csname)) {
-        sprintf(filename, "%s/%s.xml", argv[1], cs->csname);
+        snprintf(filename, sizeof(filename), "%s/%s.xml", argv[1], cs->csname);
         my_read_charset_file(filename);
       }
     }

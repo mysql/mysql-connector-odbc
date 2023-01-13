@@ -1,3 +1,5 @@
+// Modifications Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+//
 // Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved. 
 // 
 // This program is free software; you can redistribute it and/or modify 
@@ -30,7 +32,6 @@
 
 DECLARE_TEST(t_odbc3_envattr)
 {
-    SQLRETURN rc;
     SQLHENV henv1;
     SQLHDBC hdbc1;
     SQLINTEGER ov_version;
@@ -69,7 +70,6 @@ DECLARE_TEST(t_odbc3_envattr)
 
 DECLARE_TEST(t_odbc3_handle)
 {
-    SQLRETURN rc;
     SQLHENV henv1;
     SQLHDBC hdbc1;
     SQLHSTMT hstmt1;
@@ -120,7 +120,7 @@ DECLARE_TEST(t_driver_connect)
 
   is(OK == alloc_basic_handles_with_opt(&henv1, &hdbc1, &hstmt1, NULL,
                                         NULL, NULL, NULL, 
-                                        "OPTION=3;STMT=use mysql"));
+                                        (SQLCHAR*)"OPTION=3;STMT=use mysql"));
   
   free_basic_handles(&henv1, &hdbc1, &hstmt1);
 

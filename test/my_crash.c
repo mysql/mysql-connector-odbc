@@ -1,3 +1,5 @@
+// Modifications Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+//
 // Copyright (c) 2018, 2014, Oracle and/or its affiliates. All rights reserved.
 //
 // This program is free software; you can redistribute it and/or modify
@@ -94,7 +96,7 @@ DECLARE_TEST(t_bug18805392)
 
   DECLARE_BASIC_HANDLES(henv1, hdbc1, hstmt1);
   is(OK == alloc_basic_handles_with_opt(&henv1, &hdbc1, &hstmt1,
-             NULL, NULL, NULL, NULL, "DYNAMIC_CURSOR=1;NO_SSPS=1"));
+             NULL, NULL, NULL, NULL, (SQLCHAR*)"DYNAMIC_CURSOR=1;NO_SSPS=1"));
 
   ok_stmt(hstmt1, SQLSetStmtAttr(hstmt1, SQL_ATTR_CURSOR_TYPE,
                                  (SQLPOINTER)SQL_CURSOR_DYNAMIC, 0));
@@ -126,7 +128,6 @@ DECLARE_TEST(t_bug18805392)
 DECLARE_TEST(t_bug19148246)
 {
   SQLBIGINT val = 0;
-  SQLLEN  StrLen = 0;
 
   ok_stmt(hstmt, SQLPrepare(hstmt, (SQLCHAR *)"SELECT ?", SQL_NTS));
 
@@ -150,7 +151,7 @@ DECLARE_TEST(t_bug69950)
 
   /* Create an EMPTY fake result set */
   ok_stmt(hstmt, SQLTables(hstmt, mydb, SQL_NTS, NULL, 0,
-                           "t_bug69950", SQL_NTS, "TABLE", SQL_NTS));
+                           (SQLCHAR*)"t_bug69950", SQL_NTS, (SQLCHAR*)"TABLE", SQL_NTS));
 
   expect_stmt(hstmt, SQLFetch(hstmt), SQL_NO_DATA_FOUND);
   expect_stmt(hstmt, SQLMoreResults(hstmt), SQL_NO_DATA_FOUND);
@@ -246,17 +247,17 @@ DECLARE_TEST(t_bug17587913)
 {
   SQLHDBC hdbc1;
   SQLCHAR str[1024]={0};
-  SQLLEN len= 0;
-  SQLCHAR *DatabaseName = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"\
-                          "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"\
-                          "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"\
-                          "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"\
-                          "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"\
-                          "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"\
-                          "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"\
-                          "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"\
-                          "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"\
-                          "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+  SQLINTEGER len= 0;
+  SQLCHAR *DatabaseName = (SQLCHAR*)"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"\
+                                    "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"\
+                                    "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"\
+                                    "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"\
+                                    "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"\
+                                    "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"\
+                                    "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"\
+                                    "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"\
+                                    "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"\
+                                    "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
   /*
     We are not going to use alloc_basic_handles() for a special purpose:
     SQLSetConnectAttr() is to be called before the connection is made
@@ -267,7 +268,7 @@ DECLARE_TEST(t_bug17587913)
   get_connection(&hdbc1, NULL, NULL, NULL, DatabaseName, NULL);
 
   ok_con(hdbc1, SQLSetConnectAttr(hdbc1, SQL_ATTR_CURRENT_CATALOG,
-                                  DatabaseName, strlen(DatabaseName)));
+                                  DatabaseName, strlen((char*)DatabaseName)));
 
   /* Expecting error here */
   SQLGetConnectAttr(hdbc1, SQL_ATTR_CURRENT_CATALOG, str, 100, &len);
@@ -315,7 +316,6 @@ DECLARE_TEST(t_bug17857204)
 
   while (1)
   {
-    SQLRETURN rc= 0;
     memset(TmpBuff,0,256);
     rc= SQLFetch(hstmt);
     if (rc != SQL_SUCCESS)
@@ -344,19 +344,16 @@ DECLARE_TEST(t_bug17857204)
 */
 DECLARE_TEST(t_bug17854697)
 {
-  SQLCHAR *any_name = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"\
-                      "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"\
-                      "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"\
-                      "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"\
-                      "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"\
-                      "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"\
-                      "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"\
-                      "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"\
-                      "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"\
-                      "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
-  SQLCHAR buf[1024]= {0};
-
-  int len= strlen(any_name);
+  SQLCHAR *any_name = (SQLCHAR*)"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"\
+                                "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"\
+                                "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"\
+                                "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"\
+                                "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"\
+                                "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"\
+                                "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"\
+                                "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"\
+                                "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"\
+                                "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
 
   /* lets check all catalog functions */
   expect_stmt(hstmt, SQLColumnPrivileges(hstmt, any_name, SQL_NTS, NULL, 0,
@@ -419,7 +416,7 @@ DECLARE_TEST(t_bug17999659)
 
   /* getting error here */
   expect_dbc(hdbc1, get_connection(&hdbc1, NULL, NULL, NULL, NULL,
-             "CHARSET=wrongcharset"), SQL_ERROR);
+             (SQLCHAR*)"CHARSET=wrongcharset"), SQL_ERROR);
 
   ok_con(hdbc1, SQLFreeConnect(hdbc1));
   return OK;
@@ -440,7 +437,7 @@ DECLARE_TEST(t_bug17966018)
   sprintf(opt_buff, "OPTION_%0*d=1", 1000, 0);
 
   result_connect= alloc_basic_handles_with_opt(&henv1, &hdbc1, &hstmt1, NULL,
-                                               NULL, NULL, NULL, opt_buff);
+                                               NULL, NULL, NULL, (SQLCHAR*)opt_buff);
   is_num(result_connect, FAIL);
 
   free_basic_handles(&henv1, &hdbc1, &hstmt1);
@@ -455,7 +452,7 @@ DECLARE_TEST(t_bug17841121)
 {
   SQLHSTMT hstmt1;
   SQLHANDLE expard;
-  SQLINTEGER imp_result= 0, exp_result= 0;
+  SQLINTEGER exp_result= 0;
   int i= 0, *num, attempts_left= 20;
 
   do
@@ -509,7 +506,6 @@ DECLARE_TEST(t_bug17841121)
 */
 DECLARE_TEST(t_bookmark_update_zero_rec)
 {
-  SQLLEN len= 0;
   SQLUSMALLINT rowStatus[4];
   SQLULEN numRowsFetched;
   SQLINTEGER nData[4];
@@ -565,8 +561,8 @@ DECLARE_TEST(t_bookmark_update_zero_rec)
 */
 DECLARE_TEST(t_bug17085344)
 {
-  expect_stmt(hstmt, SQLExecDirect(hstmt, "", SQL_NTS), SQL_ERROR);
-  expect_stmt(hstmt, SQLExecDirect(hstmt, "  ", SQL_NTS), SQL_ERROR);
+  expect_stmt(hstmt, SQLExecDirect(hstmt, (SQLCHAR*)"", SQL_NTS), SQL_ERROR);
+  expect_stmt(hstmt, SQLExecDirect(hstmt, (SQLCHAR*)"  ", SQL_NTS), SQL_ERROR);
 
   return OK;
 }
@@ -594,15 +590,12 @@ DECLARE_TEST(t_bug18325878)
 #undef RCNT
 #endif
 #define RCNT 8
-  char TmpBuff[1024] = {0};
   SQLUINTEGER j = 0;
   SQLUINTEGER k = 0;
   SQLUINTEGER uintval[RCNT] = {0};
 #ifdef USE_SQLPARAMOPTIONS_SQLULEN_PTR
-  SQLULEN lval[RCNT] = {0};
 # define PARAMTYPE SQLULEN
 #else
-  SQLUINTEGER lval[RCNT] = {0};
 # define PARAMTYPE SQLUINTEGER
 #endif
 
@@ -647,27 +640,27 @@ DECLARE_TEST(t_bug18286366)
   int i, len= 0;
 
   is(OK == alloc_basic_handles_with_opt(&henv1, &hdbc1, &hstmt1, NULL, NULL,
-                                        NULL, NULL, ""));
+                                        NULL, NULL, (SQLCHAR*)""));
 
   ok_sql(hstmt, "DROP TABLE IF EXISTS t_bug18286366b, t_bug18286366a");
-  len= sprintf(buff, "CREATE TABLE t_bug18286366a ( ");
+  len= sprintf((char*)buff, "CREATE TABLE t_bug18286366a ( ");
   for (i= 0; i < 20; i++)
   {
-    len+= sprintf(buff + len, "`id%02d` INT, UNIQUE(`id%02d`),", i, i);
+    len+= sprintf((char*)buff + len, "`id%02d` INT, UNIQUE(`id%02d`),", i, i);
   }
-  len= sprintf(buff + len - 1, ")");
-  ok_stmt(hstmt, SQLExecDirect(hstmt, (SQLCHAR*)buff, SQL_NTS));
+  len= sprintf((char*)buff + len - 1, ")");
+  ok_stmt(hstmt, SQLExecDirect(hstmt, buff, SQL_NTS));
 
-  len= sprintf(buff, "CREATE TABLE t_bug18286366b ( ");
+  len= sprintf((char*)buff, "CREATE TABLE t_bug18286366b ( ");
   for (i= 0; i < 20; i++)
   {
-    len+= sprintf(buff + len, "`id%02d` INT, "
+    len+= sprintf((char*)buff + len, "`id%02d` INT, "
                               "CONSTRAINT `cons%02d` FOREIGN KEY "
                               "(`id%02d`) REFERENCES `t_bug18286366a` (`id%02d`),",
                               i, i, i, i);
   }
-  len= sprintf(buff + len - 1, ")");
-  ok_stmt(hstmt, SQLExecDirect(hstmt, (SQLCHAR*)buff, SQL_NTS));
+  len= sprintf((char*)buff + len - 1, ")");
+  ok_stmt(hstmt, SQLExecDirect(hstmt, buff, SQL_NTS));
 
 
   ok_stmt(hstmt1, SQLForeignKeys(hstmt1, NULL, 0, NULL, 0,
@@ -676,13 +669,13 @@ DECLARE_TEST(t_bug18286366)
 
   for (i= 0; i < 20; i++)
   {
-    len= sprintf(tmp_buff, "id%02d", i);
+    len= sprintf((char*)tmp_buff, "id%02d", i);
     ok_stmt(hstmt1, SQLFetch(hstmt1));
     is_str(my_fetch_str(hstmt1, buff, 3), "t_bug18286366a", 14);
     is_str(my_fetch_str(hstmt1, buff, 4), tmp_buff, len);
     is_str(my_fetch_str(hstmt1, buff, 7), "t_bug18286366b", 14);
     is_str(my_fetch_str(hstmt1, buff, 8), tmp_buff, len);
-    len= sprintf(tmp_buff, "cons%02d", i);
+    len= sprintf((char*)tmp_buff, "cons%02d", i);
     is_str(my_fetch_str(hstmt1, buff, 12), tmp_buff, len);
   }
 
@@ -704,38 +697,38 @@ DECLARE_TEST(t_bug18286366_2)
   int i, len= 0;
 
   is(OK == alloc_basic_handles_with_opt(&henv1, &hdbc1, &hstmt1, NULL, NULL,
-                                        NULL, NULL, ""));
+                                        NULL, NULL, (SQLCHAR*)""));
 
   ok_sql(hstmt, "DROP TABLE IF EXISTS t_bug182863662c,  t_bug182863662b, t_bug182863662a");
-  len= sprintf(buff, "CREATE TABLE t_bug182863662a ( ");
+  len= sprintf((char*)buff, "CREATE TABLE t_bug182863662a ( ");
   for (i= 0; i < MAX_18286366_KEYS; i++)
   {
-    len+= sprintf(buff + len, "`id%03d` INT, UNIQUE(`id%03d`),", i, i);
+    len+= sprintf((char*)buff + len, "`id%03d` INT, UNIQUE(`id%03d`),", i, i);
   }
-  len= sprintf(buff + len - 1, ")");
-  ok_stmt(hstmt, SQLExecDirect(hstmt, (SQLCHAR*)buff, SQL_NTS));
+  len= sprintf((char*)buff + len - 1, ")");
+  ok_stmt(hstmt, SQLExecDirect(hstmt, buff, SQL_NTS));
 
-  len= sprintf(buff, "CREATE TABLE t_bug182863662b ( ");
+  len= sprintf((char*)buff, "CREATE TABLE t_bug182863662b ( ");
   for (i= 0; i < MAX_18286366_KEYS; i++)
   {
-    len+= sprintf(buff + len, "`id%03d` INT, "
+    len+= sprintf((char*)buff + len, "`id%03d` INT, "
                               "CONSTRAINT `consb%d` FOREIGN KEY "
                               "(`id%03d`) REFERENCES `t_bug182863662a` (`id%03d`),",
                               i, i, i, i);
   }
-  len= sprintf(buff + len - 1, ")");
-  ok_stmt(hstmt, SQLExecDirect(hstmt, (SQLCHAR*)buff, SQL_NTS));
+  len= sprintf((char*)buff + len - 1, ")");
+  ok_stmt(hstmt, SQLExecDirect(hstmt, buff, SQL_NTS));
 
-  len= sprintf(buff, "CREATE TABLE t_bug182863662c ( ");
+  len= sprintf((char*)buff, "CREATE TABLE t_bug182863662c ( ");
   for (i= 0; i < MAX_18286366_KEYS; i++)
   {
-    len+= sprintf(buff + len, "`id%03d` INT, "
+    len+= sprintf((char*)buff + len, "`id%03d` INT, "
                               "CONSTRAINT `consc%03d` FOREIGN KEY "
                               "(`id%03d`) REFERENCES `t_bug182863662a` (`id%03d`),",
                               i, i, i, i);
   }
-  len= sprintf(buff + len - 1, ")");
-  ok_stmt(hstmt, SQLExecDirect(hstmt, (SQLCHAR*)buff, SQL_NTS));
+  len= sprintf((char*)buff + len - 1, ")");
+  ok_stmt(hstmt, SQLExecDirect(hstmt, buff, SQL_NTS));
 
   ok_stmt(hstmt1, SQLForeignKeys(hstmt1, NULL, 0, NULL, 0,
                                 (SQLCHAR *)"t_bug182863662a", SQL_NTS, NULL, 0,
@@ -859,27 +852,25 @@ DECLARE_TEST(t_bug18286118)
   char *tabname2= (char*)"t2";
   char *colname1= (char*)"col1";
   char *colname2= (char*)") Specialname (";
-  char tmpBuff[2048]= {0};
+  SQLCHAR tmpBuff[2048]= {0};
   SQLSMALLINT col_count= 0;
-  SQLLEN nLen= 0;
   SQLRETURN sqlrc= SQL_SUCCESS;
-  int i= 0;
   is_num(OK, alloc_basic_handles_with_opt(&henv1, &hdbc1, &hstmt1, NULL,
                                       NULL, NULL, NULL,
                                       (SQLCHAR*)""));
 
-  sprintf(tmpBuff, "DROP TABLE IF EXISTS %s,%s CASCADE", tabname2,tabname1);
+  sprintf((char*)tmpBuff, "DROP TABLE IF EXISTS %s,%s CASCADE", tabname2,tabname1);
   ok_stmt(hstmt1, SQLExecDirect(hstmt1, (SQLCHAR*)tmpBuff, SQL_NTS));
 
-  sprintf(tmpBuff, "CREATE TABLE %s (id int, %s bigint, primary key(%s,id)) "\
-                   "COMMENT  \"  Comment1 \"", tabname1, colname1, colname1);
+  sprintf((char*)tmpBuff, "CREATE TABLE %s (id int, %s bigint, primary key(%s,id)) "\
+                          "COMMENT  \"  Comment1 \"", tabname1, colname1, colname1);
   ok_stmt(hstmt1, SQLExecDirect(hstmt1, (SQLCHAR*)tmpBuff, SQL_NTS));
 
-  sprintf(tmpBuff, "CREATE TABLE %s (id  int, `%s` bigint, bd1 double, "\
-                   "FOREIGN KEY (`%s`) REFERENCES %s(%s) ON DELETE CASCADE) "\
-                   "COMMENT  \" Comment 2\"", tabname2, colname2, colname2,
-                   tabname1, colname1);
-  ok_stmt(hstmt1, SQLExecDirect(hstmt1, (SQLCHAR*)tmpBuff, SQL_NTS));
+  sprintf((char*)tmpBuff, "CREATE TABLE %s (id  int, `%s` bigint, bd1 double, "\
+                          "FOREIGN KEY (`%s`) REFERENCES %s(%s) ON DELETE CASCADE) "\
+                          "COMMENT  \" Comment 2\"", tabname2, colname2, colname2,
+                          tabname1, colname1);
+  ok_stmt(hstmt1, SQLExecDirect(hstmt1, tmpBuff, SQL_NTS));
 
   ok_stmt(hstmt1, SQLForeignKeys(hstmt1, NULL, 0, NULL, 0, (SQLCHAR*)tabname1,
           SQL_NTS, NULL, 0, NULL, 0, (SQLCHAR*)tabname2, SQL_NTS));
@@ -891,7 +882,7 @@ DECLARE_TEST(t_bug18286118)
   {
     memset(tmpBuff, 0, sizeof(tmpBuff));
     /* PKTABLE_CAT */
-    is_str(my_fetch_str(hstmt1, tmpBuff, 1), mydb, strlen(mydb));
+    is_str(my_fetch_str(hstmt1, tmpBuff, 1), mydb, strlen((char*)mydb));
 
     /* PKTABLE_NAME */
     is_str(my_fetch_str(hstmt1, tmpBuff, 3), tabname1, strlen(tabname1));
@@ -900,7 +891,7 @@ DECLARE_TEST(t_bug18286118)
     is_str(my_fetch_str(hstmt1, tmpBuff, 4), colname1, strlen(colname1));
 
     /* FKTABLE_CAT */
-    is_str(my_fetch_str(hstmt1, tmpBuff, 5), mydb, strlen(mydb));
+    is_str(my_fetch_str(hstmt1, tmpBuff, 5), mydb, strlen((char*)mydb));
 
     /* FKTABLE_NAME */
     is_str(my_fetch_str(hstmt1, tmpBuff, 7), tabname2, strlen(tabname2));
@@ -910,8 +901,8 @@ DECLARE_TEST(t_bug18286118)
   }
   ok_stmt(hstmt1, SQLFreeStmt(hstmt, SQL_CLOSE));
 
-  sprintf(tmpBuff, "DROP TABLE %s,%s CASCADE", tabname2,tabname1);
-  ok_stmt(hstmt1, SQLExecDirect(hstmt1, (SQLCHAR*)tmpBuff, SQL_NTS));
+  sprintf((char*)tmpBuff, "DROP TABLE %s,%s CASCADE", tabname2,tabname1);
+  ok_stmt(hstmt1, SQLExecDirect(hstmt1, tmpBuff, SQL_NTS));
 
   free_basic_handles(&henv1, &hdbc1, &hstmt1);
   return OK;
@@ -936,10 +927,10 @@ DECLARE_TEST(t_setpos_update_no_ssps)
 
   /* Connect with SSPS enabled */
   alloc_basic_handles_with_opt(&henv1, &hdbc1, &hstmt1, NULL, NULL, NULL,
-                               NULL, "NO_SSPS=0");
+                               NULL, (SQLCHAR*)"NO_SSPS=0");
   /* create cursor and get first row */
-  ok_stmt(hstmt, SQLPrepare(hstmt1, "select x from t_setpos_update_no_ssps "
-                                   "where x > ?", SQL_NTS));
+  ok_stmt(hstmt, SQLPrepare(hstmt1, (SQLCHAR*)"select x from t_setpos_update_no_ssps "
+                                    "where x > ?", SQL_NTS));
   id= 1;
   ok_stmt(hstmt1, SQLBindParameter(hstmt1, 1, SQL_PARAM_INPUT, SQL_C_ULONG,
                         SQL_INTEGER, 0, 0, &id, 0, NULL));
@@ -982,7 +973,7 @@ DECLARE_TEST(t_bug18796005)
 
   /* Connect with SSPS enabled */
   alloc_basic_handles_with_opt(&henv1, &hdbc1, &hstmt1, NULL, NULL, NULL,
-                               NULL, "NO_SSPS=1");
+                               NULL, (SQLCHAR*)"NO_SSPS=1");
 
   for (i = 0; i < 2; ++i)
   {

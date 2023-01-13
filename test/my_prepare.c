@@ -1,3 +1,5 @@
+// Modifications Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+//
 // Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
 //
 // This program is free software; you can redistribute it and/or modify
@@ -27,8 +29,6 @@
 // 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 
 #include "odbctap.h"
-
-SQLRETURN rc;
 
 /* Basic prepared statements - binary protocol test */
 DECLARE_TEST(t_prep_basic)
@@ -283,7 +283,7 @@ DECLARE_TEST(t_prep_scroll)
 
   for (i= 1; ; i++)
   {
-    SQLRETURN rc= SQLFetchScroll(hstmt, SQL_FETCH_NEXT, 0);
+    rc= SQLFetchScroll(hstmt, SQL_FETCH_NEXT, 0);
     if (rc == SQL_NO_DATA)
         break;
 
@@ -701,7 +701,6 @@ DECLARE_TEST(t_sps)
 
 DECLARE_TEST(t_prepare)
 {
-  SQLRETURN rc;
   SQLINTEGER nidata= 200, nodata;
   SQLLEN    nlen;
   char      szodata[20],szidata[20]="MySQL";
@@ -769,7 +768,6 @@ DECLARE_TEST(t_prepare)
 
 DECLARE_TEST(t_prepare1)
 {
-  SQLRETURN rc;
   SQLINTEGER nidata= 1000;
 
   ok_sql(hstmt, "DROP TABLE IF EXISTS t_prepare1");
@@ -823,7 +821,6 @@ DECLARE_TEST(t_prepare1)
 
 DECLARE_TEST(tmysql_bindcol)
 {
-    SQLRETURN rc;
     SQLINTEGER nodata, nidata = 200;
     SQLLEN     nlen;
     SQLCHAR   szodata[20],szidata[20]="MySQL";
@@ -892,7 +889,6 @@ DECLARE_TEST(tmysql_bindcol)
 
 DECLARE_TEST(tmysql_bindparam)
 {
-    SQLRETURN rc;
     SQLINTEGER nodata, nidata= 200;
     SQLLEN    nlen;
     SQLCHAR   szodata[20],szidata[20]="MySQL";
@@ -969,7 +965,6 @@ DECLARE_TEST(tmysql_bindparam)
 
 DECLARE_TEST(t_acc_update)
 {
-    SQLRETURN rc;
     SQLINTEGER id,id1;
     SQLLEN pcrow;
     SQLHSTMT hstmt1;
@@ -1084,8 +1079,7 @@ DECLARE_TEST(t_bug29871)
 */
 DECLARE_TEST(t_bug67340)
 {
-  SQLCHAR *param= (SQLCHAR *)"1";
-  SQLCHAR     data[255]= "abcdefg";
+  SQLCHAR data[255]= "abcdefg";
   SQLLEN paramlen= 7;
   int i, stmt_count= 0;
 
@@ -1101,7 +1095,7 @@ DECLARE_TEST(t_bug67340)
 
   for(i=0; i < 100; i++)
   {
-    ok_stmt(hstmt, SQLPrepare(hstmt, "INSERT INTO t_bug67340(id, vc) "\
+    ok_stmt(hstmt, SQLPrepare(hstmt, (SQLCHAR*)"INSERT INTO t_bug67340(id, vc) "\
                                      "VALUES (NULL, ?)", SQL_NTS));
     ok_stmt(hstmt, SQLBindParameter(hstmt, 1, SQL_PARAM_INPUT, SQL_C_CHAR,
                                     SQL_CHAR, 0, 0, data, sizeof(data),
@@ -1137,15 +1131,15 @@ DECLARE_TEST(t_bug67702)
 
   SQLLEN paramlen= 0;
 
-  ok_stmt(hstmt, SQLExecDirect(hstmt, "drop table if exists bug67702",
+  ok_stmt(hstmt, SQLExecDirect(hstmt, (SQLCHAR*)"drop table if exists bug67702",
                                       SQL_NTS));
 
-  ok_stmt(hstmt, SQLExecDirect(hstmt, "create table bug67702"\
+  ok_stmt(hstmt, SQLExecDirect(hstmt, (SQLCHAR*)"create table bug67702"\
                                       "(id int auto_increment primary key,"\
                                       "vc varchar(32), yesno bit(1))",
                                       SQL_NTS));
 
-  ok_stmt(hstmt, SQLExecDirect(hstmt, "INSERT INTO bug67702(id, vc, yesno)"\
+  ok_stmt(hstmt, SQLExecDirect(hstmt, (SQLCHAR*)"INSERT INTO bug67702(id, vc, yesno)"\
                                       "VALUES (1, 'abcd', 1)",
                                       SQL_NTS));
 
@@ -1167,18 +1161,18 @@ DECLARE_TEST(t_bug67702)
                                   SQL_BIT, 1, 0, &c2, 0, NULL));
 
   /* The prepared query looks exactly as MS Access does it */
-  ok_stmt(hstmt, SQLExecDirect(hstmt, "UPDATE `bug67702` SET `yesno`=?  "\
+  ok_stmt(hstmt, SQLExecDirect(hstmt, (SQLCHAR*)"UPDATE `bug67702` SET `yesno`=?  "\
                                       "WHERE `id` = ? AND `vc` = ? AND "\
                                       "`yesno` = ?", SQL_NTS));
   SQLFreeStmt(hstmt, SQL_CLOSE);
 
   /* Now check the result of update the bit field should be set to 0 */
-  ok_stmt(hstmt, SQLExecDirect(hstmt, "SELECT `yesno` FROM `bug67702`", SQL_NTS));
+  ok_stmt(hstmt, SQLExecDirect(hstmt, (SQLCHAR*)"SELECT `yesno` FROM `bug67702`", SQL_NTS));
   ok_stmt(hstmt, SQLFetch(hstmt));
   is(my_fetch_int(hstmt, 1) == 0);
 
   SQLFreeStmt(hstmt, SQL_CLOSE);
-  ok_stmt(hstmt, SQLExecDirect(hstmt, "drop table if exists bug67702", SQL_NTS));
+  ok_stmt(hstmt, SQLExecDirect(hstmt, (SQLCHAR*)"drop table if exists bug67702", SQL_NTS));
   return OK;
 }
 
@@ -1192,22 +1186,20 @@ DECLARE_TEST(t_bug68243)
   char c1 = 1, c2= 0;
   int id= 1;
 
-  SQLLEN paramlen= 0;
-
-  ok_stmt(hstmt, SQLExecDirect(hstmt, "drop table if exists bug68243",
+  ok_stmt(hstmt, SQLExecDirect(hstmt, (SQLCHAR*)"drop table if exists bug68243",
                                       SQL_NTS));
 
-  ok_stmt(hstmt, SQLExecDirect(hstmt, "create table bug68243"\
+  ok_stmt(hstmt, SQLExecDirect(hstmt, (SQLCHAR*)"create table bug68243"\
                                       "(id int primary key,"\
                                       "yesno bit(1))",
                                       SQL_NTS));
 
-  ok_stmt(hstmt, SQLExecDirect(hstmt, "INSERT INTO bug68243(id, yesno)"\
+  ok_stmt(hstmt, SQLExecDirect(hstmt, (SQLCHAR*)"INSERT INTO bug68243(id, yesno)"\
                                       "VALUES (1, 1)",
                                       SQL_NTS));
 
   is(OK == alloc_basic_handles_with_opt(&henv1, &hdbc1, &hstmt1, NULL,
-                                        NULL, NULL, NULL, "NO_SSPS=1"));
+                                        NULL, NULL, NULL, (SQLCHAR*)"NO_SSPS=1"));
 
   /* Set parameter values here to make it clearer where each one goes */
   c1= 0;
@@ -1223,18 +1215,18 @@ DECLARE_TEST(t_bug68243)
                                   SQL_BIT, 1, 0, &c2, 0, NULL));
 
   /* The prepared query looks exactly as MS Access does it */
-  ok_stmt(hstmt1, SQLExecDirect(hstmt1, "UPDATE `bug68243` SET `yesno`=?  "\
-                                      "WHERE `id` = ? AND `yesno` = ?",
-                                      SQL_NTS));
+  ok_stmt(hstmt1, SQLExecDirect(hstmt1, (SQLCHAR*)"UPDATE `bug68243` SET `yesno`=?  "\
+                                        "WHERE `id` = ? AND `yesno` = ?",
+                                        SQL_NTS));
   SQLFreeStmt(hstmt1, SQL_CLOSE);
 
   /* Now check the result of update the bit field should be set to 0 */
-  ok_stmt(hstmt, SQLExecDirect(hstmt, "SELECT `yesno` FROM `bug68243`", SQL_NTS));
+  ok_stmt(hstmt, SQLExecDirect(hstmt, (SQLCHAR*)"SELECT `yesno` FROM `bug68243`", SQL_NTS));
   ok_stmt(hstmt, SQLFetch(hstmt));
   is(my_fetch_int(hstmt, 1) == 0);
 
   SQLFreeStmt(hstmt, SQL_CLOSE);
-  ok_stmt(hstmt, SQLExecDirect(hstmt, "drop table if exists bug68243", SQL_NTS));
+  ok_stmt(hstmt, SQLExecDirect(hstmt, (SQLCHAR*)"drop table if exists bug68243", SQL_NTS));
 
   free_basic_handles(&henv1, &hdbc1, &hstmt1);
 
@@ -1247,7 +1239,7 @@ DECLARE_TEST(t_bug68243)
 */
 DECLARE_TEST(t_bug67920)
 {
-  ok_stmt(hstmt, SQLPrepare(hstmt, "SELECT 1", SQL_NTS));
+  ok_stmt(hstmt, SQLPrepare(hstmt, (SQLCHAR*)"SELECT 1", SQL_NTS));
 
   expect_stmt(hstmt, SQLMoreResults(hstmt), SQL_NO_DATA);
 
@@ -1271,7 +1263,7 @@ DECLARE_TEST(t_bug31667091)
   // Make sure the limit is applied
   is_num(my_print_non_format_result(hstmt), 1);
 
-  ok_stmt(hstmt, SQLPrepare(hstmt, "SELECT * FROM bug31667091 WHERE id < ?",
+  ok_stmt(hstmt, SQLPrepare(hstmt, (SQLCHAR*)"SELECT * FROM bug31667091 WHERE id < ?",
                             SQL_NTS));
   // Remove row number limit
   ok_stmt(hstmt, SQLSetStmtAttr(hstmt, SQL_ATTR_MAX_ROWS, (SQLPOINTER)0, 0));

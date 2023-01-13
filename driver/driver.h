@@ -1,3 +1,5 @@
+// Modifications Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+//
 // Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
 //
 // This program is free software; you can redistribute it and/or modify
@@ -34,10 +36,14 @@
 #ifndef __DRIVER_H__
 #define __DRIVER_H__
 
+#include <atomic>
+
 #include "../MYODBC_MYSQL.h"
 #include "../MYODBC_CONF.h"
 #include "../MYODBC_ODBC.h"
-#include "installer.h"
+#include "util/installer.h"
+#include "failover.h"
+#include "mysql_proxy.h"
 
 /* Disable _attribute__ on non-gcc compilers. */
 #if !defined(__attribute__) && !defined(__GNUC__)
@@ -111,15 +117,15 @@
 
 #if defined(__APPLE__)
 
-#define DRIVER_QUERY_LOGFILE "/tmp/myodbc.sql"
+#define DRIVER_LOG_FILE "/tmp/myodbc.log"
 
-#elif defined(_UNIX_)
+#elif defined(__UNIX__)
 
-#define DRIVER_QUERY_LOGFILE "/tmp/myodbc.sql"
+#define DRIVER_LOG_FILE "/tmp/myodbc.log"
 
 #else
 
-#define DRIVER_QUERY_LOGFILE "myodbc.sql"
+#define DRIVER_LOG_FILE "myodbc.log"
 
 #endif
 
@@ -237,7 +243,7 @@ extern std::mutex global_fido_mutex;
 
 #if defined _WIN32
 
-  #define DECLARE_LOCALE_HANDLE int loc;
+  #define DECLARE_LOCALE_HANDLE int loc = 0;
 
     #define __LOCALE_SET(LOC) \
     { \
@@ -289,6 +295,15 @@ extern std::mutex global_fido_mutex;
     DONT_USE_LOCALE_CHECK(STMT) \
     __LOCALE_RESTORE()
 
+struct Srv_host_detail {
+  std::string name;
+  unsigned int port = MYSQL_PORT;
+};
+
+std::vector<Srv_host_detail> parse_host_list(const char *hosts_str,
+                                             unsigned int default_port);
+
+std::shared_ptr<HOST_INFO> get_host_info_from_ds(DataSource* ds);
 
 typedef struct {
   int perms;
@@ -516,16 +531,16 @@ struct DESC {
     std::list<STMT*> stmt_list;
 
 
-  void stmt_list_remove(STMT *stmt)
+  void stmt_list_remove(STMT * p_stmt)
   {
     if (alloc_type == SQL_DESC_ALLOC_USER)
-      stmt_list.remove(stmt);
+      stmt_list.remove(p_stmt);
   }
 
-  void stmt_list_add(STMT *stmt)
+  void stmt_list_add(STMT *p_stmt)
   {
     if (alloc_type == SQL_DESC_ALLOC_USER)
-      stmt_list.emplace_back(stmt);
+      stmt_list.emplace_back(p_stmt);
   }
 
   inline bool is_apd()
@@ -589,44 +604,45 @@ struct	ENV
 };
 
 
+static std::atomic_ulong last_dbc_id{1};
+
 /* Connection handler */
 
 struct DBC
 {
-  ENV           *env;
-  MYSQL         *mysql;
+  ENV              *env;
+  MYSQL_PROXY      *mysql_proxy;
   std::list<STMT*> stmt_list;
   std::list<DESC*> desc_list; // Explicit descriptors
-  STMT_OPTIONS  stmt_options;
-  MYERROR       error;
-  FILE          *query_log = nullptr;
-  char          st_error_prefix[255] = { 0 };
-  std::string   database;
-  SQLUINTEGER   login_timeout = 0;
-  time_t        last_query_time = 0;
-  int           txn_isolation = 0;
-  uint          port = 0;
-  uint          cursor_count = 0;
-  ulong         net_buffer_len = 0;
-  uint          commit_flag = 0;
-  bool          has_query_attrs = false;
+  STMT_OPTIONS     stmt_options;
+  MYERROR          error;
+  std::shared_ptr<FILE> log_file; // empty shared_ptr
+  char             st_error_prefix[255] = { 0 };
+  std::string      database;
+  SQLUINTEGER      login_timeout = 0;
+  time_t           last_query_time = 0;
+  int              txn_isolation = 0;
+  uint             port = 0;
+  uint             cursor_count = 0;
+  ulong            net_buffer_len = 0;
+  uint             commit_flag = 0;
+  bool             has_query_attrs = false;
+  ulong            id;
+
   std::recursive_mutex lock;
 
-  // Whether SQL*ConnectW was used
-  bool          unicode = false;
-  // 'ANSI' charset (SQL_C_CHAR)
-  CHARSET_INFO  *ansi_charset_info = nullptr,
-  // Connection charset ('ANSI' or utf-8)
-                *cxn_charset_info = nullptr;
-  MY_SYNTAX_MARKERS *syntax = nullptr;
-  // data source used to connect (parsed or stored)
-  DataSource    *ds = nullptr;
-  // value of the sql_select_limit currently set for a session
-  //   (SQLULEN)(-1) if wasn't set
-  SQLULEN       sql_select_limit = -1;
-  // Connection have been put to the pool
-  int           need_to_wakeup = 0;
+  bool               unicode = false;              // Whether SQL*ConnectW was used 
+  CHARSET_INFO       *ansi_charset_info = nullptr, // 'ANSI' charset (SQL_C_CHAR)
+                     *cxn_charset_info = nullptr;  // Connection charset ('ANSI' or utf-8)
+  MY_SYNTAX_MARKERS  *syntax = nullptr;
+  DataSource         *ds = nullptr;                // data source used to connect (parsed or stored)
+  SQLULEN            sql_select_limit = -1;        // value of the sql_select_limit currently set for a session
+                                                   //   (SQLULEN)(-1) if wasn't set
+  int                need_to_wakeup = 0;           // Connection have been put to the pool
+  bool               transaction_open = false;     // Flag to indicate whether we have a transaction open
   fido_callback_func fido_callback = nullptr;
+
+  FAILOVER_HANDLER *fh = nullptr; /* Failover handler */
 
   DBC(ENV *p_env);
   void free_explicit_descriptors();
@@ -635,15 +651,17 @@ struct DBC
   void remove_desc(DESC *desc);
   SQLRETURN set_error(char *state, const char *message, uint errcode);
   SQLRETURN set_error(char *state);
-  SQLRETURN connect(DataSource *ds);
+  SQLRETURN connect(DataSource *dsrc, bool failover_enabled);
   void execute_prep_stmt(MYSQL_STMT *pstmt, std::string &query,
     MYSQL_BIND *param_bind, MYSQL_BIND *result_bind);
 
-  inline bool transactions_supported()
-  { return mysql->server_capabilities & CLIENT_TRANSACTIONS; }
+  inline bool transactions_supported() {
+    return mysql_proxy->get_server_capabilities() & CLIENT_TRANSACTIONS;
+  }
 
-  inline bool autocommit_is_on()
-  { return mysql->server_status & SERVER_STATUS_AUTOCOMMIT; }
+  inline bool autocommit_is_on() {
+    return mysql_proxy->get_server_status() & SERVER_STATUS_AUTOCOMMIT;
+  }
 
   void close();
   ~DBC();
@@ -765,7 +783,7 @@ struct ODBC_RESULTSET
   {}
 
   void reset(MYSQL_RES *r = nullptr)
-  { if (res) mysql_free_result(res); res = r; }
+  { if (res) mysql_free_result(res); res = r; } // TODO Replace with proxy call
 
   MYSQL_RES *release()
   {
@@ -955,9 +973,9 @@ struct ODBC_STMT
 {
   MYSQL_STMT *m_stmt;
 
-  ODBC_STMT(MYSQL *mysql) { m_stmt = mysql_stmt_init(mysql); }
+  ODBC_STMT(MYSQL_PROXY *mysql_proxy) { m_stmt = mysql_proxy->stmt_init(); }
   operator MYSQL_STMT*() { return m_stmt; }
-  ~ODBC_STMT() { mysql_stmt_close(m_stmt); }
+  ~ODBC_STMT() { mysql_stmt_close(m_stmt); } // TODO Replace with proxy call
 };
 
 
@@ -1072,7 +1090,7 @@ struct STMT
   */
   SQLRETURN set_error(const char *state);
 
-  STMT(DBC *d) : dbc(d), result(NULL), array(NULL), result_array(NULL),
+  STMT(DBC *d) : dbc(d), result(NULL), fake_result(FALSE), array(NULL), result_array(NULL),
     current_values(NULL), fields(NULL), end_of_set(NULL),
     tempbuf(),
     stmt_options(dbc->stmt_options), lengths(nullptr), affected_rows(0),
@@ -1148,7 +1166,7 @@ namespace myodbc {
       SQLWSTRING  string_connect_in;
 
       assert(params->driver && *params->driver);
-      ds_set_strattr(&params->name, NULL);
+      ds_set_wstrattr(&params->name, NULL);
       ds_to_kvpair(params, string_connect_in, ';');
       if (SQLAllocHandle(SQL_HANDLE_DBC, henv, &hdbc) != SQL_SUCCESS)
       {
@@ -1232,7 +1250,8 @@ void          delete_param_bind(DYNAMIC_ARRAY *param_bind);
 
 
 #include "myutil.h"
-#include "stringutil.h"
+#include "util/stringutil.h"
+#include "mylog.h"
 
 
 SQLRETURN SQL_API MySQLColAttribute(SQLHSTMT hstmt, SQLUSMALLINT column,

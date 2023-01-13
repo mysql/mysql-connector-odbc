@@ -1,3 +1,5 @@
+# Modifications Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+#
 # Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
 #
 # This program is free software; you can redistribute it and/or modify
@@ -80,6 +82,22 @@ message(STATUS "BIG_ENDIAN: ${BIG_ENDIAN}")
 if (BIG_ENDIAN)
   add_definitions(-DIS_BIG_ENDIAN)
 endif()
+
+#-----------------------------------------------------
+
+include(FetchContent)
+FetchContent_Declare(
+  ctpl
+  URL https://github.com/vit-vit/CTPL/archive/refs/tags/ctpl_v.0.0.2.zip
+)
+
+FetchContent_MakeAvailable(ctpl)
+
+#-----------------------------------------------------
+
+IF(ENABLE_UNIT_TESTS)
+  ADD_DEFINITIONS(-DUNIT_TEST_BUILD)
+ENDIF(ENABLE_UNIT_TESTS)
 
 #-----------------------------------------------------
 
@@ -285,7 +303,6 @@ ENDIF(MYSQL8)
 
 
 CONFIGURE_FILE(${CMAKE_SOURCE_DIR}/VersionInfo.h.cmake ${CMAKE_SOURCE_DIR}/VersionInfo.h @ONLY)
-CONFIGURE_FILE(${CMAKE_SOURCE_DIR}/scripts/macosx/postflight.in ${CMAKE_SOURCE_DIR}/scripts/macosx/postflight @ONLY)
 IF(WIN32)
   CONFIGURE_FILE(${CMAKE_SOURCE_DIR}/Install.bat.cmake ${CMAKE_SOURCE_DIR}/Install.bat @ONLY)
   CONFIGURE_FILE(${CMAKE_SOURCE_DIR}/Uninstall.bat.cmake ${CMAKE_SOURCE_DIR}/Uninstall.bat @ONLY)
@@ -446,8 +463,12 @@ IF(WIN32)
                         # Add some additional help for debug builds
                         IF(CMAKE_BUILD_TYPE STREQUAL "Debug")
                                 STRING(REPLACE "/Zi" "/ZI" NEW_FLAGS "${NEW_FLAGS}")
-                                SET(NEW_FLAGS "${NEW_FLAGS} /RTC1 /RTCc")
+                                SET(NEW_FLAGS "${NEW_FLAGS} /RTC1")
                         ENDIF(CMAKE_BUILD_TYPE STREQUAL "Debug")
+
+                        IF(CMAKE_BUILD_TYPE STREQUAL "RELWITHDEBINFO")
+                          SET(NEW_FLAGS "${NEW_FLAGS} /Od")
+                        ENDIF(CMAKE_BUILD_TYPE STREQUAL "RELWITHDEBINFO")
 
                         # *FORCE* to override whats already placed into the cache
                         SET(CMAKE_${TYPE}_FLAGS${CFG} "${NEW_FLAGS}" CACHE STRING
@@ -508,21 +529,55 @@ setup_ssl_libs()
 
 INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR})
 
+INCLUDE_DIRECTORIES(${ctpl_SOURCE_DIR})
+
 ADD_SUBDIRECTORY(util)
 ADD_SUBDIRECTORY(driver)
 
 IF(NOT DISABLE_GUI)
-        ADD_SUBDIRECTORY(setupgui)
+  ADD_SUBDIRECTORY(setupgui)
 ENDIF(NOT DISABLE_GUI)
 
 ADD_SUBDIRECTORY(dltest)
 ADD_SUBDIRECTORY(installer)
 ADD_SUBDIRECTORY(test)
 
+IF(ENABLE_INTEGRATION_TESTS OR ENABLE_PERFORMANCE_TESTS)
+  ADD_SUBDIRECTORY(integration)
+ENDIF()
+
+IF(ENABLE_UNIT_TESTS)
+  ADD_SUBDIRECTORY(unit_testing)
+ENDIF()
+
 # For dynamic linking use the built-in sys and strings
 IF(NOT MYSQLCLIENT_STATIC_LINKING)
   ADD_SUBDIRECTORY(mysql_sys)
   ADD_SUBDIRECTORY(mysql_strings)
+ENDIF()
+
+# Set values to help generate odbc.ini and odbcinst.ini files for Dockerized tests
+IF(ENABLE_UNIT_TESTS OR ENABLE_INTEGRATION_TESTS)
+  SET(ODBC_PATH ${CMAKE_SOURCE_DIR}/testframework/src/test/resources/)
+  SET(TEST_DRIVER "MyODBCa")
+  SET(DRIVER_PATH "/app/lib/libmyodbc8a.so")
+  SET(DRIVER_DESCRIPTION "ANSI Driver for connecting to MySQL database server")
+  SET(DESCRIPTION "MySQL ODBC ${CONNECTOR_MAJOR}.${CONNECTOR_MINOR} ANSI Driver for Dockerized tests")
+
+  IF(ENABLE_UNIT_TESTS)
+    SET(TEST_DSN "myodbc8a")
+    SET(TEST_DATABASE "test")
+    SET(TEST_SERVER "mysql-instance")
+    SET(TEST_UID "root")
+  ENDIF()
+
+  IF(ENABLE_INTEGRATION_TESTS)
+    SET(TEST_DSN "atlas")
+    SET(THREADING "0")
+  ENDIF()
+
+  CONFIGURE_FILE(${ODBC_PATH}/odbcinst.ini.in ${ODBC_PATH}/odbcinst.ini @ONLY)
+  CONFIGURE_FILE(${ODBC_PATH}/odbc.ini.in     ${ODBC_PATH}/odbc.ini @ONLY)
 ENDIF()
 
 ##############################################################################
@@ -555,21 +610,31 @@ SET(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Connector/ODBC ${CONNECTOR_BASE_VERSION},
 SET(CPACK_PACKAGE_NAME                "mysql-connector-odbc${EXTRA_NAME_SUFFIX}")
 
 SET(CPACK_RESOURCE_FILE_LICENSE     "${CMAKE_SOURCE_DIR}/LICENSE.txt")
-if(EXISTS "${CMAKE_SOURCE_DIR}/README.txt")
+IF(EXISTS "${CMAKE_SOURCE_DIR}/README.txt")
   SET(CPACK_PACKAGE_DESCRIPTION_FILE    "${CMAKE_SOURCE_DIR}/README.txt")
-else()
+ELSE()
   SET(CPACK_PACKAGE_DESCRIPTION_FILE    "${CMAKE_SOURCE_DIR}/README.md")
-endif()
+ENDIF()
 
 SET(CPACK_SOURCE_PACKAGE_FILE_NAME    "${CPACK_PACKAGE_NAME}-${CONNECTOR_VERSION}-src")
 SET(CPACK_PACKAGE_INSTALL_DIRECTORY   "${CPACK_PACKAGE_NAME}-${CONNECTOR_VERSION}${EXTRA_NAME_SUFFIX2}${PACKAGE_DRIVER_TYPE_SUFFIX}-${CONNECTOR_PLATFORM}")
 IF(WIN32)
   SET(CPACK_GENERATOR                 "ZIP")
   SET(CPACK_PACKAGE_FILE_NAME         "${CPACK_PACKAGE_NAME}-noinstall-${CONNECTOR_VERSION}${EXTRA_NAME_SUFFIX2}${PACKAGE_DRIVER_TYPE_SUFFIX}-${CONNECTOR_PLATFORM}")
-ELSE(WIN32)
+ELSEIF(APPLE)
+  SET(CPACK_GENERATOR                 "productbuild")
+  SET(CPACK_PACKAGE_FILE_NAME         "${CPACK_PACKAGE_INSTALL_DIRECTORY}")
+  SET(CPACK_PACKAGING_INSTALL_PREFIX  "/usr/local/${CPACK_PACKAGE_FILE_NAME}")
+  CONFIGURE_FILE(${CMAKE_SOURCE_DIR}/scripts/macosx/Welcome.html.in ${CMAKE_SOURCE_DIR}/scripts/macosx/Welcome.html @ONLY)
+  CONFIGURE_FILE(${CMAKE_SOURCE_DIR}/scripts/macosx/ReadMe.html.in ${CMAKE_SOURCE_DIR}/scripts/macosx/ReadMe.html @ONLY)
+  CONFIGURE_FILE(${CMAKE_SOURCE_DIR}/scripts/macosx/postflight.in ${CMAKE_SOURCE_DIR}/scripts/macosx/postflight @ONLY)
+  SET(CPACK_RESOURCE_FILE_WELCOME     "${CMAKE_CURRENT_SOURCE_DIR}/scripts/macosx/Welcome.html")
+  SET(CPACK_RESOURCE_FILE_README "${CMAKE_CURRENT_SOURCE_DIR}/scripts/macosx/ReadMe.html")
+  SET(CPACK_POSTFLIGHT_UNSPECIFIED_SCRIPT "${CMAKE_CURRENT_SOURCE_DIR}/scripts/macosx/postflight")
+ELSE()
   SET(CPACK_GENERATOR                 "TGZ")
   SET(CPACK_PACKAGE_FILE_NAME         "${CPACK_PACKAGE_INSTALL_DIRECTORY}")
-ENDIF(WIN32)
+ENDIF()
 
 SET(CPACK_SOURCE_IGNORE_FILES
 \\\\.bzr/
@@ -768,6 +833,12 @@ function(bundle_lib lib)
 
 endfunction(bundle_lib)
 
+macro(copy_lib_for_wix lib)
+
+  get_filename_component(lib_name ${lib} NAME)  
+  configure_file(${lib} ${CMAKE_SOURCE_DIR}/wix/x64/${lib_name} COPYONLY)
+
+endmacro(copy_lib_for_wix)
 
 # Bundle libraries listed in a list variable ${to_bundle}.
 # Libraries that were found and bundled are removed from ${to_bundle} list. 
@@ -822,6 +893,7 @@ macro(bundle_libs to_bundle ignored)
         #message(STATUS "removing from list: ${name}")
         list(REMOVE_ITEM ${to_bundle} ${name})
         bundle_lib(${lib})
+        copy_lib_for_wix(${lib})
         set(found ${name})
         break()
       endif()
@@ -893,6 +965,8 @@ macro(bundle_plugins ignored)
       DESTINATION "${LIB_SUBDIR}/plugin"
       COMPONENT ODBCDll
     )
+     
+    configure_file(${lib} ${CMAKE_SOURCE_DIR}/wix/x64/plugin/${lib_name}.dll COPYONLY)
 
     # See if libsasl is bundled to also bundle sasl plugins
     if("${DEPS_${plugin}}" MATCHES "sasl")

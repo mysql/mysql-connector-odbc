@@ -1,3 +1,5 @@
+// Modifications Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+//
 // Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
 //
 // This program is free software; you can redistribute it and/or modify
@@ -236,8 +238,6 @@ void print_odbc_error(SQLHANDLE hnd, SQLSMALLINT type)
  */
 int list_driver_details(Driver *driver)
 {
-  SQLWCHAR buf[50000];
-  SQLWCHAR *entries= buf;
   int rc;
 
   /* lookup the driver */
@@ -518,6 +518,10 @@ int list_datasource_details(DataSource *ds)
   if (ds->plugin_dir  ) printf("Plugin directory:    %s\n", ds_get_utf8attr(ds->plugin_dir, &ds->plugin_dir8));
   if (ds->default_auth) printf("Default Authentication Library: %s\n", ds_get_utf8attr(ds->default_auth, &ds->default_auth8));
   if (ds->oci_config_file) printf("OCI Config File: %s\n", ds_get_utf8attr(ds->oci_config_file, &ds->oci_config_file8));
+  /* Failover */
+  if (ds->host_pattern) printf("Failover Instance Host pattern:   %s\n", ds_get_utf8attr(ds->host_pattern, &ds->host_pattern8));
+  if (ds->cluster_id) printf("Failover Cluster ID:   %s\n", ds_get_utf8attr(ds->cluster_id, &ds->cluster_id8));
+
   printf("Options:\n");
   if (ds->return_matching_rows) printf("\tFOUND_ROWS\n");
   if (ds->allow_big_results) printf("\tBIG_PACKETS\n");
@@ -540,7 +544,7 @@ int list_datasource_details(DataSource *ds)
   if (ds->dont_cache_result) printf("\tNO_CACHE\n");
   if (ds->force_use_of_forward_only_cursors) printf("\tFORWARD_CURSOR\n");
   if (ds->auto_reconnect) printf("\tAUTO_RECONNECT\n");
-  if (ds->clientinteractive) printf("\tINTERACTIVE\n");
+  if (ds->client_interactive) printf("\tINTERACTIVE\n");
   if (ds->auto_increment_null_search) printf("\tAUTO_IS_NULL\n");
   if (ds->zero_date_to_min) printf("\tZERO_DATE_TO_MIN\n");
   if (ds->min_date_to_zero) printf("\tMIN_DATE_TO_ZERO\n");
@@ -554,13 +558,32 @@ int list_datasource_details(DataSource *ds)
   if (ds->no_tls_1_3) printf("\tNO_TLS_1_3\n");
   if (ds->no_ssps) printf("\tNO_SSPS\n");
   if (ds->cursor_prefetch_number) printf("\tPREFETCH=%d\n", ds->cursor_prefetch_number);
-  if (ds->readtimeout) printf("\tREADTIMEOUT=%d\n", ds->readtimeout);
-  if (ds->writetimeout) printf("\tWRITETIMEOUT=%d\n", ds->writetimeout);
+  if (ds->read_timeout) printf("\tREAD_TIMEOUT=%d\n", ds->read_timeout);
+  if (ds->write_timeout) printf("\tWRITE_TIMEOUT=%d\n", ds->write_timeout);
   if (ds->can_handle_exp_pwd) printf("\tCAN_HANDLE_EXP_PWD\n");
   if (ds->enable_cleartext_plugin) printf("\tENABLE_CLEARTEXT_PLUGIN\n");
   if (ds->get_server_public_key) printf("\tGET_SERVER_PUBLIC_KEY\n");
   if (ds->enable_dns_srv) printf("\tENABLE_DNS_SRV\n");
   if (ds->multi_host) printf("\tMULTI_HOST\n");
+  /* Failover */
+  if (ds->enable_cluster_failover) printf("\tENABLE_CLUSTER_FAILOVER\n");
+  if (ds->allow_reader_connections) printf("\tALLOW_READER_CONNECTIONS\n");
+  if (ds->gather_perf_metrics) printf("\tGATHER_PERF_METRICS\n");
+  if (ds->gather_metrics_per_instance) printf("\tGATHER_METRICS_PER_INSTANCE\n");
+  if (ds->topology_refresh_rate) printf("\tTOPOLOGY_REFRESH_RATE=%d\n", ds->topology_refresh_rate);
+  if (ds->failover_timeout) printf("\tFAILOVER_TIMEOUT=%d\n", ds->failover_timeout);
+  if (ds->failover_topology_refresh_rate) printf("\tFAILOVER_TOPOLOGY_REFRESH_RATE=%d\n", ds->failover_topology_refresh_rate);
+  if (ds->failover_writer_reconnect_interval) printf("\tFAILOVER_WRITER_RECONNECT_INTERVAL=%d\n", ds->failover_writer_reconnect_interval);
+  if (ds->failover_reader_connect_timeout) printf("\tFAILOVER_READER_CONNECT_TIMEOUT=%d\n", ds->failover_reader_connect_timeout);
+  if (ds->connect_timeout) printf("\tCONNECT_TIMEOUT=%d\n", ds->connect_timeout);
+  if (ds->network_timeout) printf("\tNETWORK_TIMEOUT=%d\n", ds->network_timeout);
+  /* Monitoring */
+  if (ds->enable_failure_detection) printf("\tENABLE_FAILURE_DETECTION\n");
+  if (ds->failure_detection_time) printf("\tFAILURE_DETECTION_TIME=%d\n", ds->failure_detection_time);
+  if (ds->failure_detection_timeout) printf("\tFAILURE_DETECTION_TIMEOUT=%d\n", ds->failure_detection_timeout);
+  if (ds->failure_detection_interval) printf("\tFAILURE_DETECTION_INTERVAL=%d\n", ds->failure_detection_interval);
+  if (ds->failure_detection_count) printf("\tFAILURE_DETECTION_COUNT=%d\n", ds->failure_detection_count);
+  if (ds->monitor_disposal_time) printf("\tMONITOR_DISPOSAL_TIME=%d\n", ds->monitor_disposal_time);
 
   return 0;
 }
@@ -574,7 +597,7 @@ int list_datasources()
   SQLHANDLE env;
   SQLRETURN rc;
   SQLUSMALLINT dir= 0; /* SQLDataSources fetch direction */
-  SQLCHAR name[256];
+  SQLCHAR server_name[256];
   SQLCHAR description[256];
 
   /* determine 'direction' to pass to SQLDataSources */
@@ -608,10 +631,10 @@ int list_datasources()
   }
 
   /* retrieve and print data source */
-  while ((rc= SQLDataSources(env, dir, name, 256, NULL, description,
+  while ((rc= SQLDataSources(env, dir, server_name, 256, NULL, description,
                              256, NULL)) == SQL_SUCCESS)
   {
-    printf("%-20s - %s\n", name, description);
+    printf("%-20s - %s\n", server_name, description);
     dir= SQL_FETCH_NEXT;
   }
 
@@ -715,7 +738,7 @@ int handle_datasource_action()
 
   /* set name if given */
   if (name)
-    ds_set_strattr(&ds->name, wname);
+    ds_set_wstrattr(&ds->name, wname);
 
   /* perform given action */
   switch (action)

@@ -1,3 +1,5 @@
+// Modifications Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+//
 // Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
 //
 // This program is free software; you can redistribute it and/or modify
@@ -63,6 +65,27 @@ typedef struct {
 #define ODBCDRIVER_STRLEN SQL_MAX_OPTION_STRING_LENGTH
 #define ODBCDATASOURCE_STRLEN SQL_MAX_OPTION_STRING_LENGTH
 
+// Failover default settings
+#define TOPOLOGY_REFRESH_RATE_MS 30000
+#define FAILOVER_TOPOLOGY_REFRESH_RATE_MS 5000
+#define FAILOVER_TIMEOUT_MS 60000
+#define FAILOVER_READER_CONNECT_TIMEOUT_MS 30000
+#define FAILOVER_WRITER_RECONNECT_INTERVAL_MS 5000
+
+// Monitoring default settings
+#define FAILURE_DETECTION_TIME_MS 30000
+#define FAILURE_DETECTION_INTERVAL_MS 5000
+#define FAILURE_DETECTION_COUNT 3
+#define MONITOR_DISPOSAL_TIME_MS 60000
+#define FAILURE_DETECTION_TIMEOUT_SECS 5
+
+// Default timeout settings
+#define DEFAULT_CONNECT_TIMEOUT_SECS 30
+#define DEFAULT_NETWORK_TIMEOUT_SECS 30
+
+unsigned int get_connect_timeout(unsigned int seconds);
+unsigned int get_network_timeout(unsigned int seconds);
+
 Driver *driver_new();
 void driver_delete(Driver *driver);
 int driver_lookup_name(Driver *driver);
@@ -70,7 +93,7 @@ int driver_lookup(Driver *driver);
 int driver_from_kvpair_semicolon(Driver *driver, const SQLWCHAR *attrs);
 int driver_to_kvpair_null(Driver *driver, SQLWCHAR *attrs, size_t attrslen);
 
-typedef struct {
+typedef struct DataSource {
   SQLWCHAR *name;
   SQLWCHAR *driver; /* driver filename */
   SQLWCHAR *description;
@@ -104,9 +127,9 @@ typedef struct {
 
   bool has_port;
   unsigned int port;
-  unsigned int readtimeout;
-  unsigned int writetimeout;
-  unsigned int clientinteractive;
+  unsigned int read_timeout;
+  unsigned int write_timeout;
+  unsigned int client_interactive;
 
   SQLCHAR *name8;
   SQLCHAR *driver8;
@@ -188,6 +211,32 @@ typedef struct {
 
   BOOL enable_dns_srv;
   BOOL multi_host;
+
+  /* Failover */
+  BOOL enable_cluster_failover;
+  BOOL allow_reader_connections;
+  BOOL gather_perf_metrics;
+  BOOL gather_metrics_per_instance;
+  SQLCHAR *host_pattern8;
+  SQLCHAR *cluster_id8;
+  SQLWCHAR *host_pattern;
+  SQLWCHAR *cluster_id;
+  unsigned int topology_refresh_rate;
+  unsigned int failover_timeout;
+  unsigned int failover_topology_refresh_rate;
+  unsigned int failover_writer_reconnect_interval;
+  unsigned int failover_reader_connect_timeout;
+  unsigned int connect_timeout;
+  unsigned int network_timeout;
+
+  /* Monitoring */
+  BOOL enable_failure_detection;
+  unsigned int failure_detection_time;
+  unsigned int failure_detection_interval;
+  unsigned int failure_detection_count;
+  unsigned int failure_detection_timeout;
+  unsigned int monitor_disposal_time;
+
 } DataSource;
 
 /* perhaps that is a good idea to have const ds object with defaults */
@@ -206,8 +255,10 @@ typedef struct{
 
 DataSource *ds_new();
 void ds_delete(DataSource *ds);
-int ds_set_strattr(SQLWCHAR **attr, const SQLWCHAR *val);
-int ds_set_strnattr(SQLWCHAR **attr, const SQLWCHAR *val, size_t charcount);
+int ds_set_strattr(SQLCHAR** attr, const SQLCHAR* val);
+int ds_set_wstrattr(SQLWCHAR **attr, const SQLWCHAR *val);
+int ds_set_strnattr(SQLCHAR** attr, const SQLCHAR* val, size_t charcount);
+int ds_set_wstrnattr(SQLWCHAR **attr, const SQLWCHAR *val, size_t charcount);
 int ds_lookup(DataSource *ds);
 int ds_from_kvpair(DataSource *ds, const SQLWCHAR *attrs, SQLWCHAR delim);
 int ds_add(DataSource *ds);
@@ -216,6 +267,7 @@ char *ds_get_utf8attr(SQLWCHAR *attrw, SQLCHAR **attr8);
 int ds_setattr_from_utf8(SQLWCHAR **attr, SQLCHAR *val8);
 void ds_set_options(DataSource *ds, ulong options);
 ulong ds_get_options(DataSource *ds);
+void ds_copy(DataSource *ds, DataSource *ds_source);
 
 extern const SQLWCHAR W_DRIVER_PARAM[];
 extern const SQLWCHAR W_DRIVER_NAME[];

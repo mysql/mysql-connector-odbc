@@ -1,0 +1,204 @@
+name: Community Tests
+
+on:
+  push:
+    branches:
+      - main
+      - myodbc
+  pull_request:
+    branches:
+      - '*'
+    paths-ignore:
+      - '**/*.md'
+      - '**/*.jpg'
+      - '**/README.txt'
+      - 'docs/**'
+      - 'ISSUE_TEMPLATE/**'
+      - '**/remove-old-artifacts.yml'
+
+env:
+  BUILD_TYPE: Release
+
+jobs:
+  build-windows:
+    name: Windows
+    runs-on: windows-2019
+    env:
+      CMAKE_GENERATOR: Visual Studio 16 2019
+      MYSQL_DIR: C:/mysql-8.0.30-winx64
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v2
+      
+      # Configure build environment/dependencies
+      - name: Install MySQL client libs
+        run: |
+          curl https://cdn.mysql.com/archives/mysql-8.0/mysql-8.0.30-winx64.zip -o mysql.zip
+          unzip -d C:/ mysql.zip
+            
+      - name: Create build environment
+        shell: bash
+        run: cmake -E make_directory ${{ github.workspace }}/build
+
+      - name: Configure CMake
+        shell: bash
+        run: cmake -S . -B build
+                -G "$CMAKE_GENERATOR"
+                -DMYSQL_SQL="C:/mysql-8.0.30-winx64"
+                -DCMAKE_BUILD_TYPE=$BUILD_TYPE
+                -DMYSQLCLIENT_STATIC_LINKING=TRUE
+
+      # Configure test environment
+      - name: Build Driver and Copy files
+        shell: bash
+        working-directory: ${{ github.workspace }}/build
+        run: |
+          cmake --build . --config $BUILD_TYPE
+          cp -r lib/Release/* C:/Windows/System32/
+          cp -r bin/Release/* C:/Windows/System32/
+
+      - name: Add DSN to registry
+        shell: bash
+        working-directory: C:/Windows/System32
+        run: |
+          ./myodbc-installer -d -a -n "MySQL ODBC 8.0 Driver" -t "DRIVER=myodbc8a.dll;SETUP=myodbc8S.dll"
+          ./myodbc-installer -s -a -c2 -n "test" -t "DRIVER=MySQL ODBC 8.0 Driver;SERVER=localhost;DATABASE=test;UID=root;PWD="
+          
+      - name: Start MySQL server for tests
+        if: success()
+        shell: bash
+        run: |
+            $MYSQL_DIR/bin/mysqld --initialize-insecure --console
+            $MYSQL_DIR/bin/mysqld --console &
+            sleep 20
+            $MYSQL_DIR/bin/mysql -u root -e "create database test"
+
+      # Test driver
+      - name: Run community tests
+        if: success()
+        working-directory: ${{ github.workspace }}/build/test
+        shell: bash
+        run: ctest -C $BUILD_TYPE --output-on-failure
+        env:
+          TEST_DSN: test
+          TEST_UID: root
+          TEST_DATABASE: test
+          TEST_DRIVER: MySQL ODBC 8.0 Driver
+
+      # Upload artifacts
+      - name: Upload build artifacts - Binaries
+        if: always()
+        uses: actions/upload-artifact@v2
+        with:
+          name: windows-sln
+          path: ${{ github.workspace }}/build/MySQL_Connector_ODBC.sln
+      - name: Upload build artifacts - Binaries
+        if: always()
+        uses: actions/upload-artifact@v2
+        with:
+          name: windows-binaries
+          path: ${{ github.workspace }}/build/bin/
+      - name: Upload build artifacts - Libraries
+        if: always()
+        uses: actions/upload-artifact@v2
+        with:
+          name: windows-community-libraries
+          path: ${{ github.workspace }}/build/lib/
+      - name: Upload community test artifacts
+        if: always()
+        uses: actions/upload-artifact@v2
+        with:
+          name: windows-community-results
+          path: ${{ github.workspace }}/build/test/Testing/Temporary/LastTest.log
+
+  build-mac:
+    name: MacOS
+    runs-on: macos-11
+    env:
+      CMAKE_GENERATOR: Unix Makefiles
+      MYSQL_DIR: /usr/local/opt/mysql-client
+      ODBC_DM_INCLUDES: /usr/local/include
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v2
+
+      # Configure build environment/dependencies
+      # Removing some /usr/local/bin files to avoid symlink issues wih brew update
+      - name: Install MySQL client libs & other dependencies
+        run: |
+          rm '/usr/local/bin/2to3'
+          rm '/usr/local/bin/2to3-3.11'
+          rm '/usr/local/bin/idle3'
+          rm '/usr/local/bin/idle3.11'
+          rm '/usr/local/bin/pydoc3'
+          rm '/usr/local/bin/pydoc3.11'
+          rm '/usr/local/bin/python3'
+          rm '/usr/local/bin/python3-config'
+          rm '/usr/local/bin/python3.11'
+          rm '/usr/local/bin/python3.11-config'
+
+          brew update
+          brew unlink unixodbc
+          brew install libiodbc mysql mysql-client
+      
+      - name: Create build environment
+        shell: bash
+        run: cmake -E make_directory ${{ github.workspace }}/build
+
+      - name: Configure CMake
+        shell: bash
+        run: cmake -S . -B build
+                -G "$CMAKE_GENERATOR"
+                -DCMAKE_BUILD_TYPE=$BUILD_TYPE
+                -DMYSQLCLIENT_STATIC_LINKING=true
+                -DODBC_INCLUDES=$ODBC_DM_INCLUDES
+
+      # Build driver
+      - name: Build driver
+        working-directory: ${{ github.workspace }}/build
+        shell: bash
+        run: |
+          export LIBRARY_PATH=$LIBRARY_PATH:$(brew --prefix zstd)/lib/
+          cmake --build .
+
+      # Configure test environment
+      - name: Start MySQL server for tests
+        if: success()
+        working-directory: ${{ github.workspace }}/test/docker
+        shell: bash
+        run: |
+          mysql.server start
+          mysql -u root -e "create database test"
+      # Test driver
+      - name: Run driver tests
+        if: success()
+        working-directory: ${{ github.workspace }}/build/test
+        shell: bash
+        run: ctest
+        env:
+          TEST_DSN: myodbc8a
+          TEST_UID: root
+          TEST_PASSWORD: 
+          TEST_DRIVER: ${{ github.workspace }}/build/lib/libmyodbc8a.dylib
+          ODBCINI: ${{ github.workspace }}/build/test/odbc.ini
+          ODBCINSTINI: ${{ github.workspace }}/build/test/odbcinst.ini
+
+      # Upload artifacts
+      - name: Upload build artifacts - Binaries
+        if: always()
+        uses: actions/upload-artifact@v2
+        with:
+          name: macos-community-binaries
+          path: ${{ github.workspace }}/build/bin/
+      - name: Upload build artifacts - Libraries
+        if: always()
+        uses: actions/upload-artifact@v2
+        with:
+          name: macos-libraries
+          path: ${{ github.workspace }}/build/lib/
+      - name: Upload test artifacts
+        if: always()
+        uses: actions/upload-artifact@v2
+        with:
+          name: macos-community-results
+          path: ${{ github.workspace }}/build/test/Testing/Temporary/LastTest.log
