@@ -257,6 +257,9 @@ void fix_result_types(STMT *stmt)
       {
         irrec->literal_prefix= (SQLCHAR *) "0x";
         irrec->literal_suffix= (SQLCHAR *) "";
+        // The charset number must be only changed for JSON
+        if (field->type == MYSQL_TYPE_JSON)
+          field->charsetnr = UTF8_CHARSET_NUMBER;
         break;
       }
       /* FALLTHROUGH */

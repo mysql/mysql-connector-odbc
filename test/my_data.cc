@@ -682,7 +682,7 @@ DECLARE_TEST(t_wl15423_json)
       odbc::sql(hstmt, "SELECT * FROM " + tab.table_name);
 
       // Get info about 1st column in the result.
-      
+
       SQLCHAR col_name[20];
       SQLSMALLINT data_type = 0;
       SQLULEN col_size = 0;
@@ -728,7 +728,7 @@ DECLARE_TEST(t_wl15423_json)
 
       get_attr(SQL_DESC_LENGTH);
       is_num(num_attr, UINT32_MAX/4);
-      
+
       get_attr(SQL_DESC_DISPLAY_SIZE);
       is_num(num_attr, UINT32_MAX/4);
 
@@ -742,8 +742,46 @@ DECLARE_TEST(t_wl15423_json)
   ENDCATCH;
 }
 
+// Bug #33353465: ODBC JSON utf8mb4 support
+DECLARE_TEST(t_bug33353465_json_utf8mb4) {
+  try {
+    odbc::connection con(nullptr, nullptr, nullptr, nullptr, "CHARSET=utf8mb4");
+    odbc::HSTMT hstmt(con);
+    odbc::table tab(hstmt, mydb, "json_utf8mb4",
+      "jcol JSON, tcol TEXT", "DEFAULT CHARSET=UTF8MB4");
+    odbc::xbuf data(255);
+
+    // This is a JSON string containing UTF8MB4 characters.
+    const char *insert_val =
+        "{\"entry_id\": 1, "
+        "\"entry_title\": \"Za\xC5\xBC\xC3\xB3\xC5\x82\xC4\x87 "
+        "g\xC4\x99\xC5\x9Bl\xC4\x85 ja\xC5\xBA\xC5\x84\"}";
+
+    // Do inserts as binary parameters to avoid possibility of conversion.
+    odbc::stmt_prepare(hstmt, "INSERT INTO json_utf8mb4 VALUES (?, ?)");
+    for (int i = 1; i < 3; ++i) {
+      ok_stmt(hstmt, SQLBindParameter(hstmt, i,
+        SQL_PARAM_INPUT, SQL_C_BINARY,
+        SQL_BINARY, 0, 0, (SQLPOINTER)insert_val,
+        strlen(insert_val), nullptr));
+    }
+    odbc::stmt_execute(hstmt);
+
+    // Check the JSON and TEXT data inserted in the table.
+    // Both should be identical.
+    odbc::sql(hstmt, "SELECT * FROM " + tab.table_name);
+    while (SQL_SUCCESS == SQLFetch(hstmt)) {
+      for (int i = 1; i < 3; ++i)
+      {
+        is_str(insert_val, my_fetch_str(hstmt, data, i), SQL_NTS);
+      }
+    }
+  }
+  ENDCATCH;
+}
 
 BEGIN_TESTS
+  ADD_TEST(t_bug33353465_json_utf8mb4)
   ADD_TEST(t_wl15423_json)
   ADD_TEST(t_conn_attr_data)
   ADD_TEST(t_bug33401384_JSON_param)
