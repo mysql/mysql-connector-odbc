@@ -686,7 +686,7 @@ void STMT::free_reset_params()
 {
   if (ssps)
   {
-    mysql_stmt_reset(ssps);
+    // mysql_stmt_reset(ssps);
   }
   /* remove all params and reset count to 0 (per spec) */
   /* http://msdn2.microsoft.com/en-us/library/ms709284.aspx */
