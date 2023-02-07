@@ -28,6 +28,8 @@
 
 #include <string>
 #include <vector>
+#include <chrono>
+#include <locale>
 
 #include "odbc_util.h"
 #include "../VersionInfo.h"
@@ -780,7 +782,84 @@ DECLARE_TEST(t_bug33353465_json_utf8mb4) {
   ENDCATCH;
 }
 
+// Bug 34350417 - ODBC Massive Performance hit
+DECLARE_TEST(t_bug_34350417_performance) {
+  // Save the original locale.
+  char *default_locale = setlocale(LC_NUMERIC, nullptr);
+  int res = OK;
+  struct lconv *tmp;
+
+  // Set locale with comma as decimal point.
+  setlocale(LC_NUMERIC, "pl_PL");
+
+  tmp = localeconv();
+  odbc::xstring decimal_point = tmp->decimal_point;
+  std::cout << "Decimal point: [" << decimal_point << "]\n";
+
+  try {
+    odbc::table tab(hstmt, "perf_tab",
+      "c1 VARCHAR(32), c2 DOUBLE");
+
+    odbc::stmt_prepare(hstmt, "INSERT INTO " + tab.table_name +
+      "(c1,c2)VALUES(?,?)");
+
+    char *c_val = "4.2345678902345678e+20";
+    double d_val = 4.2345678902345678e+20;
+    char c_res[64];
+    double d_res = 0;
+
+    // Make driver convert DOUBLE into CHAR.
+    ok_stmt(hstmt, SQLBindParameter(hstmt, 1, SQL_PARAM_INPUT, SQL_C_DOUBLE,
+      SQL_CHAR, 10, 4, &d_val, 0, nullptr));
+
+    // Make driver convert CHAR into DOUBLE.
+    ok_stmt(hstmt, SQLBindParameter(hstmt, 2, SQL_PARAM_INPUT, SQL_C_CHAR,
+      SQL_DOUBLE, 0, 0, c_val, strlen(c_val), nullptr));
+
+    odbc::stmt_execute(hstmt);
+    odbc::stmt_close(hstmt);
+
+    odbc::sql(hstmt, "SELECT * FROM " + tab.table_name);
+    while (SQL_SUCCESS == SQLFetch(hstmt)) {
+      for (int i = 1; i < 3; ++i) {
+        // Check CHAR conversion
+        ok_stmt(hstmt, SQLGetData(hstmt, i, SQL_C_CHAR, c_res,
+          sizeof(c_res), nullptr));
+        // Skip comparing last digits in fraction that might be inexact.
+        is_str(c_val, c_res, 17);
+        // Check that the power is correct.
+        char *power = c_res + strlen(c_res) - 2;
+        is_str(power, "20", 2);
+      }
+    }
+    odbc::stmt_close(hstmt);
+
+    // Need to run another query to get data as DOUBLE
+    // because SQLGetData() can only be called once per column per row.
+    odbc::sql(hstmt, "SELECT * FROM " + tab.table_name);
+    while (SQL_SUCCESS == SQLFetch(hstmt)) {
+      for (int i = 1; i < 3; ++i) {
+        // Check DOUBLE conversion.
+        ok_stmt(hstmt, SQLGetData(hstmt, i, SQL_C_DOUBLE, &d_res,
+          sizeof(d_res), nullptr));
+        is(d_val == d_res);
+      }
+    }
+    odbc::stmt_close(hstmt);
+
+  } catch (odbc::Exception &ex) {
+    std::cout << "Test failed: " << ex.msg << std::endl;
+    res = FAIL;
+  } catch (...) {
+    res = FAIL;
+  }
+  setlocale(LC_NUMERIC, "");
+  setlocale(LC_NUMERIC, default_locale);
+  return res;
+}
+
 BEGIN_TESTS
+  ADD_TEST(t_bug_34350417_performance)
   ADD_TEST(t_bug33353465_json_utf8mb4)
   ADD_TEST(t_wl15423_json)
   ADD_TEST(t_conn_attr_data)

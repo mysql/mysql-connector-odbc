@@ -249,7 +249,6 @@ SQLRETURN insert_params(STMT *stmt, SQLULEN row, char **finalquery,
   char *query= GET_QUERY(&stmt->query);
   uint i,length, had_info= 0;
   SQLRETURN rc= SQL_SUCCESS;
-  DECLARE_LOCALE_HANDLE
 
   LOCK_DBC(stmt->dbc);
 
