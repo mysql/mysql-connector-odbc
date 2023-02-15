@@ -38,6 +38,9 @@ DECLARE_TEST(t_bulk_insert)
              txt[MAX_INSERT_COUNT][60],
              ltxt[MAX_INSERT_COUNT][70];
   SQLDOUBLE  dt, dbl[MAX_INSERT_COUNT];
+  SQLLEN     name_len[MAX_INSERT_COUNT],
+             txt_len[MAX_INSERT_COUNT],
+             ltxt_len[MAX_INSERT_COUNT];
 
   ok_sql(hstmt, "DROP TABLE IF EXISTS t_bulk_insert");
   ok_sql(hstmt, "CREATE TABLE t_bulk_insert (id INT, v VARCHAR(100),"
@@ -55,10 +58,10 @@ DECLARE_TEST(t_bulk_insert)
                                 (SQLPOINTER)SQL_CONCUR_ROWVER, 0));
 
   ok_stmt(hstmt, SQLBindCol(hstmt, 1, SQL_C_LONG, id, 0, NULL));
-  ok_stmt(hstmt, SQLBindCol(hstmt, 2, SQL_C_CHAR, name, sizeof(name[0]), NULL));
-  ok_stmt(hstmt, SQLBindCol(hstmt, 3, SQL_C_CHAR, txt, sizeof(txt[0]), NULL));
+  ok_stmt(hstmt, SQLBindCol(hstmt, 2, SQL_C_CHAR, name, sizeof(name[0]), &name_len[0]));
+  ok_stmt(hstmt, SQLBindCol(hstmt, 3, SQL_C_CHAR, txt, sizeof(txt[0]), &txt_len[0]));
   ok_stmt(hstmt, SQLBindCol(hstmt, 4, SQL_C_DOUBLE, dbl, 0, NULL));
-  ok_stmt(hstmt, SQLBindCol(hstmt, 5, SQL_C_CHAR, ltxt, sizeof(ltxt[0]), NULL));
+  ok_stmt(hstmt, SQLBindCol(hstmt, 5, SQL_C_CHAR, ltxt, sizeof(ltxt[0]), &ltxt_len[0]));
 
   ok_sql(hstmt, "SELECT id, v, txt, ft, ltxt FROM t_bulk_insert");
 
@@ -72,6 +75,9 @@ DECLARE_TEST(t_bulk_insert)
     sprintf((char *)name[i], "Varchar%d", i);
     sprintf((char *)txt[i],  "Text%d", i);
     sprintf((char *)ltxt[i], "LongText, id row:%d", i);
+    name_len[i] = strlen(name[i]);
+    txt_len[i] = strlen(txt[i]);
+    ltxt_len[i] = strlen(ltxt[i]);
   }
 
   ok_stmt(hstmt, SQLBulkOperations(hstmt, SQL_ADD));

@@ -858,7 +858,64 @@ DECLARE_TEST(t_bug_34350417_performance) {
   return res;
 }
 
+// Bug#35075941 - Client side prepared statements cause
+// "illegal mix of collations" error.
+DECLARE_TEST(t_utf8mb4_param) {
+  try {
+    if (!mysql_min_version(hdbc, "8.0.30", 6))
+      skip("server does not support the additional collations");
+
+    odbc::xstring opts = "NO_SSPS=1;";
+
+    // For ANSI driver the charset must be utf8mb4
+    if (!unicode_driver)
+      opts.append("CHARSET=utf8mb4");
+
+    odbc::connection con(nullptr, nullptr, nullptr, nullptr, opts);
+    odbc::HSTMT hstmt1(con);
+
+    odbc::sql(hstmt1, "set collation_connection=utf8mb4_0900_as_cs;");
+    odbc::sql(hstmt1, "set default_collation_for_utf8mb4=utf8mb4_general_ci;");
+
+    odbc::sql(hstmt1, "show variables like '%collation%'");
+    my_print_non_format_result(hstmt1);
+
+    // The table collation and collation_connection
+    // should be the same (case sensitive).
+    // The default_collation_for_utf8mb4 should be case insensitive
+    // to allow checking for "illegal mix of collations" error.
+    odbc::table tab(hstmt1, nullptr, "test_illegal_mix", "vc varchar(32)",
+                    "COLLATE=utf8mb4_0900_as_cs");
+    tab.insert("('aud')");
+
+    SQLWCHAR *param = W(L"AUD");
+
+    // Without use of variable the bug could not be reproduced.
+    // For example, if parameter was directly inserted into
+    // query like this ".. WHERE vc = ?"
+    odbc::stmt_prepare(hstmt1, "SET @Currency = ?");
+    ok_stmt(hstmt1, SQLBindParameter(hstmt1, 1, SQL_PARAM_INPUT, SQL_C_WCHAR,
+                                     SQL_WCHAR, 0, 0, param, 6 * 2, nullptr));
+
+    odbc::stmt_execute(hstmt1);
+
+    // @Currency should use `collation_connection` collation
+    // which is case sensitive and therefore 0 rows should be returned
+    // when executing SELECT query.
+    // Before bug#35075941 `default_collation_for_utf8mb4` was used
+    // which is case insensitive and would return 1 row
+    // (but even before that server errors out because of bad mix
+    // of collations).
+    odbc::sql(hstmt1, "SELECT * FROM " + tab.table_name +
+              " WHERE vc = @Currency");
+
+    is_num(0, my_print_non_format_result(hstmt1));
+  }
+  ENDCATCH;
+}
+
 BEGIN_TESTS
+  ADD_TEST(t_utf8mb4_param)
   ADD_TEST(t_bug_34350417_performance)
   ADD_TEST(t_bug33353465_json_utf8mb4)
   ADD_TEST(t_wl15423_json)

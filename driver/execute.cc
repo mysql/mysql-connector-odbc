@@ -1008,16 +1008,12 @@ SQLRETURN insert_param(STMT *stmt, MYSQL_BIND *bind, DESC* apd,
           {
             if (bind != NULL)
             {
-                if (bind_param(bind, data, length, MYSQL_TYPE_BLOB))
+              if (bind_param(bind, data, length, MYSQL_TYPE_BLOB))
               {
                 goto memerror;
               }
 
               goto out;
-            }
-            else
-            {
-              stmt->add_to_buffer("_utf8mb4", 8);
             }
           }
           else if (aprec->concise_type != SQL_C_WCHAR &&
@@ -1032,12 +1028,6 @@ SQLRETURN insert_param(STMT *stmt, MYSQL_BIND *bind, DESC* apd,
               }
 
               goto out;
-            }
-            else
-            {
-              stmt->add_to_buffer("_", 1);
-              stmt->add_to_buffer(dbc->ansi_charset_info->csname,
-                                  strlen(dbc->ansi_charset_info->csname));
             }
           }
           /* We have only added the introducer, data is added below. */
