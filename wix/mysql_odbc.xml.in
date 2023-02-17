@@ -40,8 +40,18 @@
     SetVersion updates: Name, Id, Version. Do not change them manually.
   -->
 
-  <Product Id="@CONNECTOR_PKG_ID1@" UpgradeCode="FF073FBB-32E2-4052-B6B2-830C5ED4A809" Codepage="utf-8"
-    Name="MySQL Connector/ODBC $(var.odbc_ver_short)" Version="$(var.odbc_ver_long)" Language="1033" Manufacturer="Oracle Corporation">
+  <?if $(var.odbc_64bit) = 1 ?>
+    <?define odbc_platform="x64" ?>
+    <?define odbc_arch="64-bit" ?>
+    <?define upgrade_code="FF073FBB-32E2-4052-B6B2-830C5ED4A809" ?>
+  <?else ?>
+    <?define odbc_platform="x86" ?>
+    <?define odbc_arch="32-bit" ?>
+    <?define upgrade_code="7AEDB3F3-7B9D-4FE2-8D8F-3CE3DE6F5B6B" ?>
+  <?endif ?>
+
+  <Product Id="@CONNECTOR_PKG_ID1@" UpgradeCode="$(var.upgrade_code)" Codepage="utf-8"
+    Name="MySQL Connector/ODBC $(var.odbc_ver_short)$(var.odbc_license_suffix) ($(var.odbc_arch))" Version="$(var.odbc_ver_long)" Language="1033" Manufacturer="Oracle Corporation">
 
   <!-- *****************************************************************************************
     Package
@@ -49,11 +59,6 @@
   <!--
     SetVersion updates: Id. Do not change it manually.
   -->
-    <?if $(var.odbc_64bit) = 1 ?>
-    <?define odbc_platform="x64" ?>
-    <?else ?>
-    <?define odbc_platform="x86" ?>
-    <?endif ?>
 
     <Package Id="@CONNECTOR_PKG_ID2@" Keywords="Installer,MSI,Database"
       Description="MySQL Connector/ODBC" Manufacturer="Oracle Corporation"
@@ -71,7 +76,7 @@
       Upgrade Information
     -->
 
-    <Upgrade Id="FF073FBB-32E2-4052-B6B2-830C5ED4A809">
+    <Upgrade Id="$(var.upgrade_code)">
       <!-- !!!SetVersion updates: Minimum, Maximum -->
       <UpgradeVersion Property="PREVIOUSVERSIONINSTALLED" Minimum="5.0.999" Maximum="$(var.odbc_ver_prev)" IncludeMaximum="yes"
         IncludeMinimum="yes"  />
@@ -234,6 +239,7 @@
       <ComponentRef Id="setup" />
       <ComponentRef Id="installer" />
       <ComponentRef Id="ssl" />
+      <ComponentRef Id="dependencies" />
       <ComponentRef Id="plugins" />
     <?if $(var.odbc_64bit) = 1 ?>
     </Feature>
