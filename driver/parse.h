@@ -124,7 +124,7 @@ typedef struct parsed_query
   char          *query;     /* Original query itself                   */
   char          *query_end; /* query end                               */
   char          *last_char; /* mainly for remove_braces                */
-  /*unsigned int  begin;    /* offset 1st meaningful character - 1st token */
+  //unsigned int  begin;    /* offset 1st meaningful character - 1st token */
   std::vector<uint> token2;     /* positions of tokens            */
   std::vector<uint> param_pos;  /* positions of parameter markers */
 

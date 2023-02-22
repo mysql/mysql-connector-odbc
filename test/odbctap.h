@@ -615,7 +615,7 @@ do { \
 */
 #define is_num(a, b) \
 do { \
-  long long a1= (a), a2= (b); \
+  long long a1= (long long)(a), a2= (long long)(b); \
   if (a1 != a2) { \
     printf("# %s (%lld) != %lld in %s on line %d\n", \
            #a, a1, a2, __FILE__, __LINE__); \

@@ -775,7 +775,7 @@ void AdjustLayout(HWND hwnd)
     ShowWindow( TabCtrl_1.hTab, Visible );
   }
 
-  PWSTR pButtonCaption = Visible? L"Details <<" : L"Details >>";
+  PCWSTR pButtonCaption = Visible? L"Details <<" : L"Details >>";
   SetWindowText( GetDlgItem(hwnd,IDC_BUTTON_DETAILS), pButtonCaption );
   const int dY = 20;
   AlignWindowToBottom( GetDlgItem(hwnd,IDC_BUTTON_DETAILS), dY);

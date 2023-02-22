@@ -198,7 +198,7 @@ SQLRETURN set_desc_error(DESC *        desc,
 
 void translate_error(char *save_state, myodbc_errid errid, uint mysql_err)
 {
-    char *state= myodbc3_errors[errid].sqlstate;
+    const char *state= myodbc3_errors[errid].sqlstate;
 
     switch (mysql_err)
     {
@@ -413,7 +413,7 @@ MySQLGetDiagRec(SQLSMALLINT handle_type, SQLHANDLE handle, SQLSMALLINT record,
 
 bool is_odbc3_subclass(std::string sqlstate)
 {
-  char *states[]= { "01S00", "01S01", "01S02", "01S06", "01S07", "07S01",
+  const char *states[]= { "01S00", "01S01", "01S02", "01S06", "01S07", "07S01",
     "08S01", "21S01", "21S02", "25S01", "25S02", "25S03", "42S01", "42S02",
     "42S11", "42S12", "42S21", "42S22", "HY095", "HY097", "HY098", "HY099",
     "HY100", "HY101", "HY105", "HY107", "HY109", "HY110", "HY111", "HYT00",

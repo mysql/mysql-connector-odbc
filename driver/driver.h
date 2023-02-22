@@ -40,7 +40,7 @@
 #include "installer.h"
 
 /* Disable _attribute__ on non-gcc compilers. */
-#if !defined(__attribute__) && !defined(__GNUC__)
+#if !defined(__attribute__) && !defined(__GNUC__) && !defined(__clang__)
 # define __attribute__(arg)
 #endif
 
