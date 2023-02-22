@@ -1,4 +1,4 @@
-// Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License, version 2.0, as
@@ -1245,6 +1245,18 @@ MySQLColAttribute(SQLHSTMT hstmt, SQLUSMALLINT column,
   case SQL_DESC_PRECISION:
   case SQL_DESC_SCALE:
   case SQL_DESC_SEARCHABLE:
+    // Mark the result column as not searchable for BIT(N > 1) columns.
+    // This is needed to prevent the use of such columns in comparisons
+    // like " WHERE bit_col = _binary'....'" which is not supported
+    // by MySQL Server.
+    // The type name for such columns is "bit", but the type ID is
+    // changed to SQL_BINARY (-2).
+    if (SQL_BINARY == irrec->concise_type &&
+        strncmp((const char *)irrec->type_name, "bit", 3) == 0) {
+      *num_attr = SQL_PRED_NONE;
+      break;
+    }
+
   case SQL_DESC_TYPE:
   case SQL_DESC_CONCISE_TYPE:
   case SQL_DESC_UNNAMED:

@@ -1,30 +1,30 @@
-# Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved. 
-# 
-# This program is free software; you can redistribute it and/or modify 
-# it under the terms of the GNU General Public License, version 2.0, as 
-# published by the Free Software Foundation. 
+# Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
 #
-# This program is also distributed with certain software (including 
-# but not limited to OpenSSL) that is licensed under separate terms, 
-# as designated in a particular file or component or in included license 
-# documentation. The authors of MySQL hereby grant you an 
-# additional permission to link the program and your derivative works 
-# with the separately licensed software that they have included with 
-# MySQL. 
-# 
-# Without limiting anything contained in the foregoing, this file, 
-# which is part of MySQL Connector/ODBC, is also subject to the 
-# Universal FOSS Exception, version 1.0, a copy of which can be found at 
-# http://oss.oracle.com/licenses/universal-foss-exception. 
-# 
-# This program is distributed in the hope that it will be useful, but 
-# WITHOUT ANY WARRANTY; without even the implied warranty of 
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-# See the GNU General Public License, version 2.0, for more details. 
-# 
-# You should have received a copy of the GNU General Public License 
-# along with this program; if not, write to the Free Software Foundation, Inc., 
-# 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA 
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License, version 2.0, as
+# published by the Free Software Foundation.
+#
+# This program is also distributed with certain software (including
+# but not limited to OpenSSL) that is licensed under separate terms,
+# as designated in a particular file or component or in included license
+# documentation. The authors of MySQL hereby grant you an
+# additional permission to link the program and your derivative works
+# with the separately licensed software that they have included with
+# MySQL.
+#
+# Without limiting anything contained in the foregoing, this file,
+# which is part of MySQL Connector/ODBC, is also subject to the
+# Universal FOSS Exception, version 1.0, a copy of which can be found at
+# http://oss.oracle.com/licenses/universal-foss-exception.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+# See the GNU General Public License, version 2.0, for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 
 ##########################################################################
 
@@ -50,10 +50,10 @@ FOREACH(FN my_basics.c my_blob.c my_bulk.c my_catalog1.c my_catalog2.c
     my_prepare.c my_relative.c my_result1.c my_result2.c my_scroll.c
     my_setup.c my_tran.c my_types.c my_unicode.c my_unixodbc.c
     my_use_result.c my_bug13766.c my_pooling.c my_auth.cc my_data.cc
-    my_catalog3.cc my_options.cc my_param2.cc)
-    
+    my_catalog3.cc my_options.cc my_param2.cc my_result3.cc)
+
   GET_FILENAME_COMPONENT(T ${FN} NAME_WE)
-    
+
   IF(WIN32)
     ADD_EXECUTABLE(${T} ${FN} odbctap.h)
   ELSE(WIN32)
@@ -65,14 +65,14 @@ FOREACH(FN my_basics.c my_blob.c my_bulk.c my_catalog1.c my_catalog2.c
   set_target_properties(${T} PROPERTIES FOLDER Tests)
 
   IF(MYSQL_CXX_LINKAGE)
-    SET_TARGET_PROPERTIES(${T} PROPERTIES 
+    SET_TARGET_PROPERTIES(${T} PROPERTIES
           LINKER_LANGUAGE CXX
           LINK_FLAGS "${MYSQLODBCCONN_LINK_FLAGS_ENV} ${MYSQL_LINK_FLAGS}"
           COMPILE_FLAGS "${MYSQLODBCCONN_COMPILE_FLAGS_ENV} ${MYSQL_CXXFLAGS}")
   ENDIF(MYSQL_CXX_LINKAGE)
 
   INSTALL(TARGETS ${T} DESTINATION test COMPONENT tests)
-  SET_TARGET_PROPERTIES(${T} PROPERTIES 
+  SET_TARGET_PROPERTIES(${T} PROPERTIES
       LINK_FLAGS "${MYSQLODBCCONN_LINK_FLAGS_ENV} ${MYSQL_LINK_FLAGS}")
 
   IF(WIN32)
@@ -129,14 +129,14 @@ IF(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
       ENDIF(WIN32)
 
       IF(MYSQL_CXX_LINKAGE)
-        SET_TARGET_PROPERTIES(${T} PROPERTIES 
+        SET_TARGET_PROPERTIES(${T} PROPERTIES
               LINKER_LANGUAGE CXX
               LINK_FLAGS "${MYSQLODBCCONN_LINK_FLAGS_ENV} ${MYSQL_LINK_FLAGS}"
               COMPILE_FLAGS "${MYSQLODBCCONN_COMPILE_FLAGS_ENV} ${MYSQL_CXXFLAGS}")
       ENDIF(MYSQL_CXX_LINKAGE)
 
       INSTALL(TARGETS ${T} DESTINATION test COMPONENT tests)
-      SET_TARGET_PROPERTIES(${T} PROPERTIES 
+      SET_TARGET_PROPERTIES(${T} PROPERTIES
           LINK_FLAGS "${MYSQLODBCCONN_LINK_FLAGS_ENV} ${MYSQL_LINK_FLAGS}")
 
       IF(WIN32)
