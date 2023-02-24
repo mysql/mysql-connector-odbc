@@ -612,8 +612,15 @@ elseif(MYSQL_DIR AND
   get_filename_component(MYSQL_LIB_DIR "${MYSQL_LIB}" PATH)
   set(MYSQL_LIBRARIES "${MYSQL_LIB}")
 
-  if(NOT DEFINED MYSQL_PLUGIN_DIR AND MYSQL_LIB_DIR)
-    set(MYSQL_PLUGIN_DIR "${MYSQL_LIB_DIR}/plugin")
+  if(((NOT DEFINED MYSQL_PLUGIN_DIR) OR (NOT ${MYSQL_PLUGIN_DIR})) AND MYSQL_LIB_DIR)
+    if(EXISTS "${MYSQL_LIB_DIR}/plugin")
+      set(MYSQL_PLUGIN_DIR "${MYSQL_LIB_DIR}/plugin")
+    else()
+      #If directory does not exist it must be a debug dir layout
+      if(EXISTS "${MYSQL_LIB_DIR}/../plugin/")
+        set(MYSQL_PLUGIN_DIR "${MYSQL_LIB_DIR}/../plugin")
+      endif()
+    endif()
   endif()
 
 elseif(MYSQL_CONFIG_EXECUTABLE)
