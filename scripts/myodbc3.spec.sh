@@ -72,9 +72,6 @@ BuildRequires:  gtk2-devel
 %if 0%{?rhel} != 6 && 0%{?suse_version} != 1315
 BuildRequires:  gtk3-devel
 %endif
-%if 0%{?sle_version} >= 150400
-Requires:       unixODBC
-%endif
 
 %if 0%{?odbc_gui}
 %package setup
