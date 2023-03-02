@@ -62,6 +62,8 @@ bool fido_callback_is_set = false;
 fido_callback_func global_fido_callback = nullptr;
 std::mutex global_fido_mutex;
 
+bool oci_plugin_is_loaded = false;
+
 /**
   Get the connection flags based on the driver options.
 
@@ -430,7 +432,7 @@ SQLRETURN DBC::connect(DataSource *dsrc)
   bool oci_config_file_set = dsrc->oci_config_file && dsrc->oci_config_file[0];
   bool oci_config_profile_set = dsrc->oci_config_profile && dsrc->oci_config_profile[0];
 
-  if(oci_config_file_set || oci_config_profile_set)
+  if(oci_config_file_set || oci_config_profile_set || oci_plugin_is_loaded)
   {
     /* load client authentication plugin if required */
     struct st_mysql_client_plugin *plugin =
@@ -443,24 +445,32 @@ SQLRETURN DBC::connect(DataSource *dsrc)
       return set_error("HY000", "Couldn't load plugin authentication_oci_client", 0);
     }
 
-    if (oci_config_file_set)
+    oci_plugin_is_loaded = true;
+
+    // Set option value or reset by giving nullptr to prevent
+    // re-using the value set by another connect (plugin does not
+    // reset its options automatically).
+    const void *val_to_set = oci_config_file_set ?
+      ds_get_utf8attr(dsrc->oci_config_file, &dsrc->oci_config_file8) :
+      nullptr;
+
+    if (mysql_plugin_options(plugin, "oci-config-file", val_to_set) &&
+        val_to_set)
     {
-      if (mysql_plugin_options(plugin, "oci-config-file",
-        ds_get_utf8attr(dsrc->oci_config_file,
-          &dsrc->oci_config_file8)))
-      {
-        return set_error("HY000", "Failed to set config file for authentication_oci_client plugin", 0);
-      }
+      // Error should only be returned if setting non-null option value.
+      return set_error("HY000",
+          "Failed to set config file for authentication_oci_client plugin", 0);
     }
 
-    if (oci_config_profile_set)
+    val_to_set = oci_config_file_set ?
+      ds_get_utf8attr(dsrc->oci_config_profile, &dsrc->oci_config_profile8) :
+      nullptr;
+
+    if (mysql_plugin_options(plugin, "authentication-oci-client-config-profile",
+      val_to_set) && val_to_set)
     {
-      if (mysql_plugin_options(plugin, "authentication-oci-client-config-profile",
-        ds_get_utf8attr(dsrc->oci_config_profile,
-          &dsrc->oci_config_profile8)))
-      {
-        return set_error("HY000", "Failed to set config profile for authentication_oci_client plugin", 0);
-      }
+      return set_error("HY000",
+          "Failed to set config profile for authentication_oci_client plugin", 0);
     }
   }
 
