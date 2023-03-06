@@ -632,14 +632,14 @@ IF(WIN32)
     ${PROJECT_BINARY_DIR}/bin/RelWithDebInfo/
     DESTINATION bin
     CONFIGURATIONS RelWithDebInfo
-    FILES_MATCHING PATTERN *.pdb
+    FILES_MATCHING PATTERN myodbc-installer.pdb
   )
 
   INSTALL(DIRECTORY
     ${PROJECT_BINARY_DIR}/bin/Debug/
     DESTINATION bin/Debug
     CONFIGURATIONS Debug
-    FILES_MATCHING PATTERN *.pdb
+    FILES_MATCHING PATTERN myodbc-installer.pdb
   )
 
   INSTALL(DIRECTORY

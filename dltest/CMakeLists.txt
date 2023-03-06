@@ -30,8 +30,7 @@
 
 ADD_EXECUTABLE(dltest dltest.c)
 set_target_properties(dltest PROPERTIES FOLDER Tests)
-
-INSTALL(TARGETS dltest DESTINATION test COMPONENT tests)
+set_target_properties(dltest PROPERTIES PDB_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/test/)
 
 IF(NOT WIN32)
 
@@ -43,4 +42,4 @@ IF(NOT WIN32)
 
 ENDIF(NOT WIN32)
 
-
+INSTALL(TARGETS dltest DESTINATION test COMPONENT tests)
