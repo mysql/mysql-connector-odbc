@@ -19,11 +19,8 @@ Depends: dpkg-dev,
          mysql-@DEB_SERVERPRODUCT@-client-plugins,
          ${misc:Depends},
          ${shlibs:Depends}
-Recommends: libodbc1 | libiodbc2
+Requires: unixodbc >=2.3
 Conflicts: mysql-connector-odbc@NOT_PRODUCT_SUFFIX@
-Breaks: libiodbc2 (<< 3.52.7-2~),
-        odbcinst1debian2 (<< 2.2.14p2-3),
-        unixodbc (<< 2.2.14p2-3)
 Description: MySQL ODBC driver
  This package allows you to connect to MySQL database servers using
  ODBC, the Open Database Connectivity abstraction layer which is
