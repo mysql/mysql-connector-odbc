@@ -73,6 +73,13 @@ BuildRequires:  gtk2-devel
 BuildRequires:  gtk3-devel
 %endif
 
+%if 0%{?rhel} != 6
+Requires:       unixODBC >= 2.3
+%else
+# RHEL still has UnixODBC 2.2.14
+Requires:       unixODBC >= 2.2.14
+%endif
+
 %if 0%{?odbc_gui}
 %package setup
 Summary:	An ODBC @CONNECTOR_BASE_VERSION@ driver for MySQL - setup library
