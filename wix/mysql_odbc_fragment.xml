@@ -111,11 +111,10 @@
               <?endif ?>
             </Component>
           <?endif ?>
-            </Directory>  <!--INSTALLDIR-->
-            <Directory Id="Plugindir" Name="plugin">
-              <?include mysql_odbc_plugins.xml ?>
-            </Directory>
-          </Directory>
+          <?include mysql_odbc_dependencies.xml ?>
+          <Directory Id="Plugindir" Name="plugin"><?include mysql_odbc_plugins.xml ?></Directory>
+        </Directory>  <!--INSTALLDIR-->
+      </Directory>
       <!-- needed to make candle happy -->
       <?if $(var.odbc_64bit) = 1 ?>
         </Directory>

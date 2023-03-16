@@ -814,11 +814,35 @@ DECLARE_TEST(t_query_timeout)
   return OK;
 }
 
+// Bug#34916959  - ODBC driver reports incorrect number of active
+// statements per connection
+DECLARE_TEST(t_bug34916959_active_statements) {
+  SQLSMALLINT stmt_count = 0, out_count = 0;
+  ok_stmt(hstmt, SQLGetInfo(hdbc, SQL_ACTIVE_STATEMENTS, &stmt_count,
+                            2, &out_count));
+
+  // Driver supports only one ACTIVE statement per connection.
+  // Even if several statements are created in the same connection
+  // they cannot be active at the same time (like simultaneous getting rows
+  // from several stmt's that belong to the same connection)
+  is_num(1, stmt_count);
+  is_num(2, out_count);
+
+  stmt_count = 0;
+  out_count = 0;
+  ok_stmt(hstmt, SQLGetInfo(hdbc, SQL_MAX_CONCURRENT_ACTIVITIES, &stmt_count,
+                            2, &out_count));
+  is_num(1, stmt_count);
+  is_num(2, out_count);
+  return OK;
+}
+
 
 BEGIN_TESTS
   /* Query timeout should go first */
   ADD_TEST(t_get_all_info)
   ADD_TEST(t_query_timeout)
+  ADD_TEST(t_bug34916959_active_statements)
   ADD_TEST(t_bug28385722)
   ADD_TEST(sqlgetinfo)
   ADD_TEST(t_gettypeinfo)

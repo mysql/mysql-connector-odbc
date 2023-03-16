@@ -686,7 +686,7 @@ void STMT::free_reset_params()
 {
   if (ssps)
   {
-    mysql_stmt_reset(ssps);
+    // mysql_stmt_reset(ssps);
   }
   /* remove all params and reset count to 0 (per spec) */
   /* http://msdn2.microsoft.com/en-us/library/ms709284.aspx */
@@ -1179,9 +1179,10 @@ char * ssps_get_string(STMT *stmt, ulong column_number, char *value, ulong *leng
 /* }}} */
 
 
-long double ssps_get_double(STMT *stmt, ulong column_number, char *value, ulong length)
+double ssps_get_double(STMT *stmt, ulong column_number, char *value, ulong length)
 {
   MYSQL_BIND *col_rbind= &stmt->result_bind[column_number];
+  double ret = 0;
 
   if (*col_rbind->is_null)
   {
@@ -1197,18 +1198,17 @@ long double ssps_get_double(STMT *stmt, ulong column_number, char *value, ulong 
     case MYSQL_TYPE_LONG:
     case MYSQL_TYPE_LONGLONG:
     {
-      long double ret;
       BOOL is_it_unsigned = col_rbind->is_unsigned != 0;
 
       if (is_it_unsigned)
       {
         unsigned long long ival = ssps_get_int64<unsigned long long>(stmt, column_number, value, length);
-        ret = (long double)(ival);
+        ret = (double)(ival);
       }
       else
       {
         long long ival = ssps_get_int64<long long>(stmt, column_number, value, length);
-        ret = (long double)(ival);
+        ret = (double)(ival);
       }
 
       return ret;
@@ -1225,20 +1225,20 @@ long double ssps_get_double(STMT *stmt, ulong column_number, char *value, ulong 
     case MYSQL_TYPE_VAR_STRING:
     {
       char buf[50];
-      long double ret = strtold(ssps_get_string(stmt, column_number, value,
-                                                &length, buf), NULL);
+      ret = myodbc_strtod(ssps_get_string(stmt, column_number, value,
+                          &length, buf), length);
       return ret;
     }
 
     case MYSQL_TYPE_FLOAT:
     {
-      long double ret = !*col_rbind->is_null? *(float *)(col_rbind->buffer):0.;
+      ret = !*col_rbind->is_null ? *(float *)(col_rbind->buffer) : 0.;
       return ret;
     }
 
     case MYSQL_TYPE_DOUBLE:
     {
-      long double ret = !*col_rbind->is_null? *(double *)(col_rbind->buffer):0.;
+      ret = !*col_rbind->is_null ? *(double *)(col_rbind->buffer) : 0.;
       return ret;
     }
 

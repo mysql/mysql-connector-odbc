@@ -349,7 +349,6 @@ const char *get_fractional_part   (const char * str, int len,
                                   SQLUINTEGER * fraction);
 /* Convert MySQL timestamp to full ANSI timestamp format. */
 char *          complete_timestamp  (const char * value, ulong length, char buff[21]);
-long double     myodbc_strtold             (const char *nptr, char **endptr);
 BOOL            myodbc_isspace      (CHARSET_INFO* cs, const char * begin, const char *end);
 BOOL            myodbc_isnum        (CHARSET_INFO* cs, const char * begin, const char *end);
 
@@ -410,7 +409,7 @@ unsigned long long get_uint64(STMT * stmt, ulong column_number, char* value,
                           ulong length);
 char *        get_string  (STMT *stmt, ulong column_number, char *value,
                           ulong *length, char * buffer);
-long double   get_double  (STMT *stmt, ulong column_number, char *value,
+double        get_double  (STMT *stmt, ulong column_number, char *value,
                           ulong length);
 BOOL          is_null     (STMT *stmt, ulong column_number, char *value);
 SQLRETURN     prepare     (STMT *stmt, char * query, SQLINTEGER query_length,
@@ -458,7 +457,7 @@ BOOL        ssps_buffers_need_extending(STMT *stmt);
 
 template <typename T>
 T ssps_get_int64 (STMT *stmt, ulong column_number, char *value, ulong length);
-long double ssps_get_double       (STMT *stmt, ulong column_number, char *value,
+double ssps_get_double            (STMT *stmt, ulong column_number, char *value,
                                   ulong length);
 char *      ssps_get_string       (STMT *stmt, ulong column_number, char *value,
                                   ulong *length, char * buffer);

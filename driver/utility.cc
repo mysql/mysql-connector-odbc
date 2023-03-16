@@ -257,6 +257,9 @@ void fix_result_types(STMT *stmt)
       {
         irrec->literal_prefix= (SQLCHAR *) "0x";
         irrec->literal_suffix= (SQLCHAR *) "";
+        // The charset number must be only changed for JSON
+        if (field->type == MYSQL_TYPE_JSON)
+          field->charsetnr = UTF8_CHARSET_NUMBER;
         break;
       }
       /* FALLTHROUGH */
@@ -3957,54 +3960,6 @@ char * complete_timestamp(const char * value, ulong length, char buff[21])
   }
 
   return buff;
-}
-
-
-/*
-  HPUX has some problems with long double : http://docs.hp.com/en/B3782-90716/ch02s02.html
-
-  strtold() has implementations that return struct long_double, 128bit one,
-  which contains four 32bit words.
-  Fix described :
-  --------
-  union {
-  long_double l_d;
-  long double ld;
-  } u;
-  // convert str to a long_double; store return val in union
-  //(Putting value into union enables converted value to be
-  // accessed as an ANSI C long double)
-  u.l_d = strtold( (const char *)str, (char **)NULL);
-  --------
-  reinterpret_cast doesn't work :(
-*/
-long double myodbc_strtold(const char *nptr, char **endptr)
-{
-/*
- * Experienced odd compilation errors on one of windows build hosts -
- * cmake reported there is strold function. Since double and long double on windows
- * are of the same size - we are using strtod on those platforms regardless
- * to the HAVE_FUNCTION_STRTOLD value
- */
-#ifdef _WIN32
-  return strtod(nptr, endptr);
-#else
-# ifndef HAVE_FUNCTION_STRTOLD
-  return strtod(nptr, endptr);
-# else
-#  if defined(__hpux) && defined(_LONG_DOUBLE)
-  union {
-    long_double l_d;
-    long double ld;
-  } u;
-  u.l_d = strtold( nptr, endptr);
-  return u.ld;
-#  else
-  return strtold(nptr, endptr);
-#  endif
-# endif
-#endif
-
 }
 
 

@@ -197,7 +197,7 @@ BOOL              tokenize(MY_PARSER *parser);
 QUERY_TYPE_ENUM   detect_query_type(MY_PARSER *parser,
                                     const QUERY_TYPE_RESOLVING *rule);
 
-BOOL              compare     (MY_PARSER *parser, const MY_STRING *str);
+BOOL              parser_compare     (MY_PARSER *parser, const MY_STRING *str);
 BOOL              case_compare(MY_PARSED_QUERY *parser, const char *pos,
                                const MY_STRING *str);
 

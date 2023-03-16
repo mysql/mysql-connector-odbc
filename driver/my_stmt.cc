@@ -379,8 +379,8 @@ char * get_string(STMT *stmt, ulong column_number, char *value, ulong *length,
 }
 
 
-long double get_double(STMT *stmt, ulong column_number, char *value,
-                         ulong length)
+double get_double(STMT *stmt, ulong column_number, char *value,
+                  ulong length)
 {
   if (ssps_used(stmt))
   {
@@ -388,7 +388,7 @@ long double get_double(STMT *stmt, ulong column_number, char *value,
   }
   else
   {
-    return myodbc_strtold(value, NULL);
+    return myodbc_strtod(value, length);
   }
 }
 

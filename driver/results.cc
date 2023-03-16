@@ -1,4 +1,4 @@
-// Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License, version 2.0, as
@@ -1245,6 +1245,18 @@ MySQLColAttribute(SQLHSTMT hstmt, SQLUSMALLINT column,
   case SQL_DESC_PRECISION:
   case SQL_DESC_SCALE:
   case SQL_DESC_SEARCHABLE:
+    // Mark the result column as not searchable for BIT(N > 1) columns.
+    // This is needed to prevent the use of such columns in comparisons
+    // like " WHERE bit_col = _binary'....'" which is not supported
+    // by MySQL Server.
+    // The type name for such columns is "bit", but the type ID is
+    // changed to SQL_BINARY (-2).
+    if (SQL_BINARY == irrec->concise_type &&
+        strncmp((const char *)irrec->type_name, "bit", 3) == 0) {
+      *num_attr = SQL_PRED_NONE;
+      break;
+    }
+
   case SQL_DESC_TYPE:
   case SQL_DESC_CONCISE_TYPE:
   case SQL_DESC_UNNAMED:
@@ -1456,7 +1468,6 @@ SQLRETURN SQL_API SQLGetData(SQLHSTMT      StatementHandle,
     SQLRETURN result = SQL_SUCCESS;
     ulong length= 0;
     DESCREC *irrec, *arrec;
-    DECLARE_LOCALE_HANDLE
     /*
       Signed column number required for bookmark column 0,
       which will become -1 when decremented later.
@@ -1522,8 +1533,6 @@ SQLRETURN SQL_API SQLGetData(SQLHSTMT      StatementHandle,
 
     assert(irrec);
 
-    C_LOCALE_SET(stmt)
-
     if ((sColNum == -1 && stmt->stmt_options.bookmarks == SQL_UB_VARIABLE))
     {
       char _value[21];
@@ -1554,10 +1563,6 @@ SQLRETURN SQL_API SQLGetData(SQLHSTMT      StatementHandle,
                           TargetValuePtr, BufferLength, StrLen_or_IndPtr,
                           value, length, arrec);
     }
-
-
-
-    DEFAULT_LOCALE_SET(stmt)
 
     return result;
 }
@@ -1918,7 +1923,6 @@ SQLRETURN SQL_API myodbc_single_fetch( SQLHSTMT             hstmt,
   SQLULEN           dummy_pcrow;
   BOOL              disconnected= FALSE;
   long              brow= 0;
-  DECLARE_LOCALE_HANDLE
 
   try
   {
@@ -2088,8 +2092,6 @@ SQLRETURN SQL_API myodbc_single_fetch( SQLHSTMT             hstmt,
       }
     }
 
-    C_LOCALE_SET(stmt)
-
     res= SQL_SUCCESS;
     {
       save_position= row_tell(stmt);
@@ -2205,8 +2207,6 @@ exitSQLSingleFetch:
       stmt->end_of_set= row_seek(stmt, save_position);
     }
 
-    DEFAULT_LOCALE_SET(stmt)
-
     if (SQL_SUCCEEDED(res)
       && stmt->rows_found_in_set < stmt->ard->array_size)
     {
@@ -2254,7 +2254,6 @@ SQLRETURN SQL_API my_SQLExtendedFetch( SQLHSTMT             hstmt,
   SQLULEN           dummy_pcrow;
   BOOL              disconnected= FALSE;
   long              brow= 0;
-  DECLARE_LOCALE_HANDLE
   try
   {
     if ( !stmt->result )
@@ -2330,8 +2329,6 @@ SQLRETURN SQL_API my_SQLExtendedFetch( SQLHSTMT             hstmt,
         return SQL_NO_DATA_FOUND;
       }
     }
-
-    C_LOCALE_SET(stmt)
 
     res= SQL_SUCCESS;
     for (i= 0 ; i < rows_to_fetch ; ++i)
@@ -2497,8 +2494,6 @@ SQLRETURN SQL_API my_SQLExtendedFetch( SQLHSTMT             hstmt,
       /* reset result position */
       stmt->end_of_set= row_seek(stmt, save_position);
     }
-
-    DEFAULT_LOCALE_SET(stmt)
 
     if (SQL_SUCCEEDED(res)
       && stmt->rows_found_in_set < stmt->ard->array_size)

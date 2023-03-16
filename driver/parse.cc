@@ -539,11 +539,11 @@ BOOL skip_comment(MY_PARSER *parser)
 {
   while(END_NOT_REACHED(parser) &&
         ((parser->hash_comment &&
-            !compare(parser, &parser->syntax->new_line_end)) ||
+            !parser_compare(parser, &parser->syntax->new_line_end)) ||
           (parser->dash_comment &&
-            !compare(parser, &parser->syntax->new_line_end)) ||
+            !parser_compare(parser, &parser->syntax->new_line_end)) ||
           (parser->c_style_comment &&
-            !compare(parser, &parser->syntax->c_style_close_comment))))
+            !parser_compare(parser, &parser->syntax->c_style_close_comment))))
   {
     step_char(parser);
   }
@@ -600,22 +600,22 @@ BOOL is_comment(MY_PARSER *parser)
   parser->dash_comment= FALSE;
   parser->c_style_comment= FALSE;
 
-  if (compare(parser, &parser->syntax->hash_comment))
+  if (parser_compare(parser, &parser->syntax->hash_comment))
   {
     parser->hash_comment= TRUE;
     return TRUE;
   }
-  else if (compare(parser, &parser->syntax->dash_comment))
+  else if (parser_compare(parser, &parser->syntax->dash_comment))
   {
     parser->dash_comment= TRUE;
     return TRUE;
   }
   /* C style comment variant which is consided not as comment */
-  else if (compare(parser, &parser->syntax->c_var_open_comment))
+  else if (parser_compare(parser, &parser->syntax->c_var_open_comment))
   {
     return FALSE;
   }
-  else if (compare(parser, &parser->syntax->c_style_open_comment))
+  else if (parser_compare(parser, &parser->syntax->c_style_open_comment))
   {
     parser->c_style_comment= TRUE;
     return TRUE;
@@ -718,7 +718,7 @@ BOOL is_query_separator(MY_PARSER *parser)
 
   for (i=0; i < sizeof(parser->syntax->query_sep)/sizeof(MY_STRING); ++i)
   {
-    if (compare(parser, &parser->syntax->query_sep[i]))
+    if (parser_compare(parser, &parser->syntax->query_sep[i]))
     {
       parser->pos+= parser->syntax->query_sep[i].bytes;
       get_ctype(parser);
@@ -855,7 +855,7 @@ QUERY_TYPE_ENUM detect_query_type(MY_PARSER *parser,
   return myqtOther;
 }
 
-BOOL compare(MY_PARSER *parser, const MY_STRING *str)
+BOOL parser_compare(MY_PARSER *parser, const MY_STRING *str)
 {
   if (str && BYTES_LEFT(parser->query, parser->pos) >= (int)str->bytes)
   {

@@ -138,6 +138,7 @@ bool myodbc_dynstr_realloc(DYNAMIC_STRING *str, size_t additional_size);
 
 unsigned int get_charset_maxlen(unsigned int num);
 void delocalize_radix(char* buffer);
+double myodbc_strtod(const char *str, int len);
 
 #ifdef __cplusplus
 }

@@ -28,6 +28,8 @@
 
 #include <string>
 #include <vector>
+#include <chrono>
+#include <locale>
 
 #include "odbc_util.h"
 #include "../VersionInfo.h"
@@ -682,7 +684,7 @@ DECLARE_TEST(t_wl15423_json)
       odbc::sql(hstmt, "SELECT * FROM " + tab.table_name);
 
       // Get info about 1st column in the result.
-      
+
       SQLCHAR col_name[20];
       SQLSMALLINT data_type = 0;
       SQLULEN col_size = 0;
@@ -728,7 +730,7 @@ DECLARE_TEST(t_wl15423_json)
 
       get_attr(SQL_DESC_LENGTH);
       is_num(num_attr, UINT32_MAX/4);
-      
+
       get_attr(SQL_DESC_DISPLAY_SIZE);
       is_num(num_attr, UINT32_MAX/4);
 
@@ -742,8 +744,180 @@ DECLARE_TEST(t_wl15423_json)
   ENDCATCH;
 }
 
+// Bug #33353465: ODBC JSON utf8mb4 support
+DECLARE_TEST(t_bug33353465_json_utf8mb4) {
+  try {
+    odbc::connection con(nullptr, nullptr, nullptr, nullptr, "CHARSET=utf8mb4");
+    odbc::HSTMT hstmt(con);
+    odbc::table tab(hstmt, mydb, "json_utf8mb4",
+      "jcol JSON, tcol TEXT", "DEFAULT CHARSET=UTF8MB4");
+    odbc::xbuf data(255);
+
+    // This is a JSON string containing UTF8MB4 characters.
+    const char *insert_val =
+        "{\"entry_id\": 1, "
+        "\"entry_title\": \"Za\xC5\xBC\xC3\xB3\xC5\x82\xC4\x87 "
+        "g\xC4\x99\xC5\x9Bl\xC4\x85 ja\xC5\xBA\xC5\x84\"}";
+
+    // Do inserts as binary parameters to avoid possibility of conversion.
+    odbc::stmt_prepare(hstmt, "INSERT INTO json_utf8mb4 VALUES (?, ?)");
+    for (int i = 1; i < 3; ++i) {
+      ok_stmt(hstmt, SQLBindParameter(hstmt, i,
+        SQL_PARAM_INPUT, SQL_C_BINARY,
+        SQL_BINARY, 0, 0, (SQLPOINTER)insert_val,
+        strlen(insert_val), nullptr));
+    }
+    odbc::stmt_execute(hstmt);
+
+    // Check the JSON and TEXT data inserted in the table.
+    // Both should be identical.
+    odbc::sql(hstmt, "SELECT * FROM " + tab.table_name);
+    while (SQL_SUCCESS == SQLFetch(hstmt)) {
+      for (int i = 1; i < 3; ++i)
+      {
+        is_str(insert_val, my_fetch_str(hstmt, data, i), SQL_NTS);
+      }
+    }
+  }
+  ENDCATCH;
+}
+
+// Bug 34350417 - ODBC Massive Performance hit
+DECLARE_TEST(t_bug_34350417_performance) {
+  // Save the original locale.
+  char *default_locale = setlocale(LC_NUMERIC, nullptr);
+  int res = OK;
+  struct lconv *tmp;
+
+  // Set locale with comma as decimal point.
+  setlocale(LC_NUMERIC, "pl_PL");
+
+  tmp = localeconv();
+  odbc::xstring decimal_point = tmp->decimal_point;
+  std::cout << "Decimal point: [" << decimal_point << "]\n";
+
+  try {
+    odbc::table tab(hstmt, "perf_tab",
+      "c1 VARCHAR(32), c2 DOUBLE");
+
+    odbc::stmt_prepare(hstmt, "INSERT INTO " + tab.table_name +
+      "(c1,c2)VALUES(?,?)");
+
+    char *c_val = "4.2345678902345678e+20";
+    double d_val = 4.2345678902345678e+20;
+    char c_res[64];
+    double d_res = 0;
+
+    // Make driver convert DOUBLE into CHAR.
+    ok_stmt(hstmt, SQLBindParameter(hstmt, 1, SQL_PARAM_INPUT, SQL_C_DOUBLE,
+      SQL_CHAR, 10, 4, &d_val, 0, nullptr));
+
+    // Make driver convert CHAR into DOUBLE.
+    ok_stmt(hstmt, SQLBindParameter(hstmt, 2, SQL_PARAM_INPUT, SQL_C_CHAR,
+      SQL_DOUBLE, 0, 0, c_val, strlen(c_val), nullptr));
+
+    odbc::stmt_execute(hstmt);
+    odbc::stmt_close(hstmt);
+
+    odbc::sql(hstmt, "SELECT * FROM " + tab.table_name);
+    while (SQL_SUCCESS == SQLFetch(hstmt)) {
+      for (int i = 1; i < 3; ++i) {
+        // Check CHAR conversion
+        ok_stmt(hstmt, SQLGetData(hstmt, i, SQL_C_CHAR, c_res,
+          sizeof(c_res), nullptr));
+        // Skip comparing last digits in fraction that might be inexact.
+        is_str(c_val, c_res, 17);
+        // Check that the power is correct.
+        char *power = c_res + strlen(c_res) - 2;
+        is_str(power, "20", 2);
+      }
+    }
+    odbc::stmt_close(hstmt);
+
+    // Need to run another query to get data as DOUBLE
+    // because SQLGetData() can only be called once per column per row.
+    odbc::sql(hstmt, "SELECT * FROM " + tab.table_name);
+    while (SQL_SUCCESS == SQLFetch(hstmt)) {
+      for (int i = 1; i < 3; ++i) {
+        // Check DOUBLE conversion.
+        ok_stmt(hstmt, SQLGetData(hstmt, i, SQL_C_DOUBLE, &d_res,
+          sizeof(d_res), nullptr));
+        is(d_val == d_res);
+      }
+    }
+    odbc::stmt_close(hstmt);
+
+  } catch (odbc::Exception &ex) {
+    std::cout << "Test failed: " << ex.msg << std::endl;
+    res = FAIL;
+  } catch (...) {
+    res = FAIL;
+  }
+  setlocale(LC_NUMERIC, "");
+  setlocale(LC_NUMERIC, default_locale);
+  return res;
+}
+
+// Bug#35075941 - Client side prepared statements cause
+// "illegal mix of collations" error.
+DECLARE_TEST(t_utf8mb4_param) {
+  try {
+    if (!mysql_min_version(hdbc, "8.0.30", 6))
+      skip("server does not support the additional collations");
+
+    odbc::xstring opts = "NO_SSPS=1;";
+
+    // For ANSI driver the charset must be utf8mb4
+    if (!unicode_driver)
+      opts.append("CHARSET=utf8mb4");
+
+    odbc::connection con(nullptr, nullptr, nullptr, nullptr, opts);
+    odbc::HSTMT hstmt1(con);
+
+    odbc::sql(hstmt1, "set collation_connection=utf8mb4_0900_as_cs;");
+    odbc::sql(hstmt1, "set default_collation_for_utf8mb4=utf8mb4_general_ci;");
+
+    odbc::sql(hstmt1, "show variables like '%collation%'");
+    my_print_non_format_result(hstmt1);
+
+    // The table collation and collation_connection
+    // should be the same (case sensitive).
+    // The default_collation_for_utf8mb4 should be case insensitive
+    // to allow checking for "illegal mix of collations" error.
+    odbc::table tab(hstmt1, nullptr, "test_illegal_mix", "vc varchar(32)",
+                    "COLLATE=utf8mb4_0900_as_cs");
+    tab.insert("('aud')");
+
+    SQLWCHAR *param = W(L"AUD");
+
+    // Without use of variable the bug could not be reproduced.
+    // For example, if parameter was directly inserted into
+    // query like this ".. WHERE vc = ?"
+    odbc::stmt_prepare(hstmt1, "SET @Currency = ?");
+    ok_stmt(hstmt1, SQLBindParameter(hstmt1, 1, SQL_PARAM_INPUT, SQL_C_WCHAR,
+                                     SQL_WCHAR, 0, 0, param, 6 * 2, nullptr));
+
+    odbc::stmt_execute(hstmt1);
+
+    // @Currency should use `collation_connection` collation
+    // which is case sensitive and therefore 0 rows should be returned
+    // when executing SELECT query.
+    // Before bug#35075941 `default_collation_for_utf8mb4` was used
+    // which is case insensitive and would return 1 row
+    // (but even before that server errors out because of bad mix
+    // of collations).
+    odbc::sql(hstmt1, "SELECT * FROM " + tab.table_name +
+              " WHERE vc = @Currency");
+
+    is_num(0, my_print_non_format_result(hstmt1));
+  }
+  ENDCATCH;
+}
 
 BEGIN_TESTS
+  ADD_TEST(t_utf8mb4_param)
+  ADD_TEST(t_bug_34350417_performance)
+  ADD_TEST(t_bug33353465_json_utf8mb4)
   ADD_TEST(t_wl15423_json)
   ADD_TEST(t_conn_attr_data)
   ADD_TEST(t_bug33401384_JSON_param)
