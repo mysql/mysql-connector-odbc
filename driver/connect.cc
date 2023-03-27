@@ -462,7 +462,7 @@ SQLRETURN DBC::connect(DataSource *dsrc)
           "Failed to set config file for authentication_oci_client plugin", 0);
     }
 
-    val_to_set = oci_config_file_set ?
+    val_to_set = oci_config_profile_set ?
       ds_get_utf8attr(dsrc->oci_config_profile, &dsrc->oci_config_profile8) :
       nullptr;
 
