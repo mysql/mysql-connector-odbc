@@ -247,7 +247,11 @@ SQLRETURN SQL_API my_SQLAllocConnect(SQLHENV henv, SQLHDBC *phdbc)
     if (mysql_get_client_version() < MIN_MYSQL_VERSION)
     {
         char buff[255];
-        sprintf(buff, "Wrong libmysqlclient library version: %ld.  MyODBC needs at least version: %ld", mysql_get_client_version(), MIN_MYSQL_VERSION);
+        myodbc_snprintf(buff, sizeof(buff),
+          "Wrong libmysqlclient library version: %ld. "
+          "MyODBC needs at least version: %ld",
+          mysql_get_client_version(), MIN_MYSQL_VERSION);
+
         return(set_env_error((ENV*)henv, MYERR_S1000, buff, 0));
     }
 

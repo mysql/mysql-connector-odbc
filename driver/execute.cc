@@ -570,27 +570,26 @@ SQLRETURN convert_c_type2str(STMT *stmt, SQLSMALLINT ctype, DESCREC *iprec,
     case SQL_C_FLOAT:
       if ( iprec->concise_type != SQL_NUMERIC && iprec->concise_type != SQL_DECIMAL )
       {
-        sprintf(buff, "%.17e", *((float*) *res));
+        // Better precision
+        myodbc_d2str(*((float *)*res), buff, buff_max);
       }
       else
       {
-        /* We should perpare this data for string comparison */
-        sprintf(buff, "%.15e", *((float*) *res));
+        // We should perpare this data for string comparison, less precision
+        myodbc_d2str(*((float *)*res), buff, buff_max, false);
       }
-      delocalize_radix(buff);
       *length= strlen(*res= buff);
       break;
     case SQL_C_DOUBLE:
       if ( iprec->concise_type != SQL_NUMERIC && iprec->concise_type != SQL_DECIMAL )
       {
-        sprintf(buff,"%.17e",*((double*) *res));
+        myodbc_d2str(*((double *)*res), buff, buff_max);
       }
       else
       {
-        /* We should perpare this data for string comparison */
-        sprintf(buff,"%.15e",*((double*) *res));
+        // We should perpare this data for string comparison, less precision
+        myodbc_d2str(*((double*)*res), buff, buff_max, false);
       }
-      delocalize_radix(buff);
       *length= strlen(*res= buff);
       break;
     case SQL_C_DATE:
@@ -600,11 +599,12 @@ SQLRETURN convert_c_type2str(STMT *stmt, SQLSMALLINT ctype, DESCREC *iprec,
         if (stmt->dbc->ds->min_date_to_zero && !date->year
           && (date->month == date->day == 1))
         {
-          *length= sprintf(buff, "0000-00-00");
+          *length = myodbc_snprintf(buff, buff_max, "0000-00-00");
         }
         else
         {
-          *length= sprintf(buff, "%04d-%02d-%02d", date->year, date->month, date->day);
+          *length = myodbc_snprintf(buff, buff_max, "%04d-%02d-%02d",
+                                    date->year, date->month, date->day);
         }
         *res= buff;
         break;
@@ -619,8 +619,8 @@ SQLRETURN convert_c_type2str(STMT *stmt, SQLSMALLINT ctype, DESCREC *iprec,
           return stmt->set_error("22008", "Not a valid time value supplied", 0);
         }
 
-        *length= sprintf(buff, "%02d:%02d:%02d",
-                                time->hour, time->minute, time->second);
+        *length = myodbc_snprintf(buff, buff_max, "%02d:%02d:%02d",
+                                  time->hour, time->minute, time->second);
         *res= buff;
         break;
       }
@@ -632,12 +632,13 @@ SQLRETURN convert_c_type2str(STMT *stmt, SQLSMALLINT ctype, DESCREC *iprec,
         if (stmt->dbc->ds->min_date_to_zero &&
             !time->year && (time->month == time->day == 1))
         {
-          *length= sprintf(buff, "0000-00-00 %02d:%02d:%02d", time->hour,
-                  time->minute, time->second);
+          *length = myodbc_snprintf(buff, buff_max, "0000-00-00 %02d:%02d:%02d",
+                                    time->hour, time->minute, time->second);
         }
         else
         {
-          *length= sprintf(buff, "%04d-%02d-%02d %02d:%02d:%02d",
+          *length = myodbc_snprintf(buff, buff_max,
+                    "%04d-%02d-%02d %02d:%02d:%02d",
                     time->year, time->month, time->day,
                     time->hour, time->minute, time->second);
         }
@@ -649,7 +650,8 @@ SQLRETURN convert_c_type2str(STMT *stmt, SQLSMALLINT ctype, DESCREC *iprec,
           /* Start cleaning from the end */
           int tmp_pos= 9;
 
-          sprintf(tmp_buf, ".%09d", time->fraction);
+          myodbc_snprintf(tmp_buf, buff_max - *length,
+                          ".%09d", time->fraction);
 
           /*
             ODBC specification defines nanoseconds granularity for
@@ -704,28 +706,32 @@ SQLRETURN convert_c_type2str(STMT *stmt, SQLSMALLINT ctype, DESCREC *iprec,
           /* Dirty-hackish */
           if (ssps_used(stmt))
           {
-            *length= sprintf(buff, "%d:%02d:00", interval->intval.day_second.hour,
-                                               interval->intval.day_second.minute);
+            *length = myodbc_snprintf(buff, buff_max, "%d:%02d:00",
+                                      interval->intval.day_second.hour,
+                                      interval->intval.day_second.minute);
           }
           else
           {
-            *length= sprintf(buff, "'%d:%02d:00'", interval->intval.day_second.hour,
-                                               interval->intval.day_second.minute);
+            *length = myodbc_snprintf(buff, buff_max, "'%d:%02d:00'",
+                                      interval->intval.day_second.hour,
+                                      interval->intval.day_second.minute);
           }
         }
         else
         {
           if (ssps_used(stmt))
           {
-            *length= sprintf(buff, "%d:%02d:%02d", interval->intval.day_second.hour,
-                                                 interval->intval.day_second.minute,
-                                                 interval->intval.day_second.second);
+            *length = myodbc_snprintf(buff, buff_max, "%d:%02d:%02d",
+                                      interval->intval.day_second.hour,
+                                      interval->intval.day_second.minute,
+                                      interval->intval.day_second.second);
           }
           else
           {
-            *length= sprintf(buff, "'%d:%02d:%02d'", interval->intval.day_second.hour,
-                                                 interval->intval.day_second.minute,
-                                                 interval->intval.day_second.second);
+            *length = myodbc_snprintf(buff, buff_max, "'%d:%02d:%02d'",
+                                      interval->intval.day_second.hour,
+                                      interval->intval.day_second.minute,
+                                      interval->intval.day_second.second);
           }
         }
 
@@ -1071,11 +1077,13 @@ SQLRETURN insert_param(STMT *stmt, MYSQL_BIND *bind, DESC* apd,
 
           if (bind != NULL)
           {
-            length= sprintf(buff, "%02d:%02d:%02d", time->hour, time->minute, time->second);
+            length = myodbc_snprintf(buff, sizeof(buff), "%02d:%02d:%02d",
+                                     time->hour, time->minute, time->second);
           }
           else
           {
-            length= sprintf(buff, "'%02d:%02d:%02d'", time->hour, time->minute, time->second);
+            length = myodbc_snprintf(buff, sizeof(buff), "'%02d:%02d:%02d'",
+                                     time->hour, time->minute, time->second);
           }
 
           if (put_param_value(stmt, bind, buff, length))
@@ -1109,17 +1117,17 @@ SQLRETURN insert_param(STMT *stmt, MYSQL_BIND *bind, DESC* apd,
 
           if (bind != NULL)
           {
-            length= sprintf(buff, "%02d:%02d:%02d",
-                  hours,
-                  (int) time/100%100,
-                  (int) time%100);
+            length = myodbc_snprintf(buff, sizeof(buff), "%02d:%02d:%02d",
+                                     hours,
+                                     (int) time/100%100,
+                                     (int) time%100);
           }
           else
           {
-            length= sprintf(buff, "'%02d:%02d:%02d'",
-                  hours,
-                  (int) time/100%100,
-                  (int) time%100);
+            length = myodbc_snprintf(buff, sizeof(buff), "'%02d:%02d:%02d'",
+                                     hours,
+                                     (int) time/100%100,
+                                     (int) time%100);
           }
 
           if (put_param_value(stmt, bind, buff, length))
@@ -1923,7 +1931,7 @@ SQLRETURN SQL_API SQLCancel(SQLHSTMT hstmt)
   {
     char buff[40];
     /* buff is always big enough because max length of %lu is 15 */
-    sprintf(buff, "KILL /*!50000 QUERY */ %lu", mysql_thread_id(dbc->mysql));
+    myodbc_snprintf(buff, sizeof(buff), "KILL /*!50000 QUERY */ %lu", mysql_thread_id(dbc->mysql));
     if (mysql_real_query(second, buff, strlen(buff)))
     {
       mysql_close(second);

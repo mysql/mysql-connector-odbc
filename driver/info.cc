@@ -912,7 +912,9 @@ MySQLGetInfo(SQLHDBC hdbc, SQLUSMALLINT fInfoType,
   default:
   {
     char buff[80];
-    sprintf(buff, "Unsupported option: %d to SQLGetInfo", fInfoType);
+    myodbc_snprintf(buff, sizeof(buff),
+                    "Unsupported option: %d to SQLGetInfo",
+                    fInfoType);
     return ((DBC*)hdbc)->set_error(MYERR_S1C00, buff, 4000);
   }
   }

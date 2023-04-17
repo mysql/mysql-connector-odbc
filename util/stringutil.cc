@@ -1388,6 +1388,11 @@ char *myodbc_stpmov(char *dst, const char *src)
   return dst - 1;
 }
 
+char *myodbc_d2str(double val, char *buf, size_t buf_size, bool max_precision) {
+  myodbc_snprintf(buf, buf_size, max_precision ? "%.17e" : "%.15e", val);
+  delocalize_radix(buf);
+  return buf;
+}
 
 char *myodbc_ll2str(longlong val, char *dst, int radix)
 {

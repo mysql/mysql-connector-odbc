@@ -125,7 +125,8 @@ char * myodbc_strlwr(char *target, size_t len);
 SQLCHAR* sqlwchar_as_utf8_simple(SQLWCHAR *s);
 char *myodbc_stpmov(char *dst, const char *src);
 char *myodbc_ll2str(longlong val, char *dst, int radix);
-
+char *myodbc_d2str(double val, char *buf, size_t buf_size,
+                   bool max_precision = true);
 typedef int(*qsort_cmp)(const void *, const void *);
 
 void myodbc_qsort(void *base_ptr, size_t count, size_t size, qsort_cmp cmp);

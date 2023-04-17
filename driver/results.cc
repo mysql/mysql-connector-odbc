@@ -907,14 +907,13 @@ sql_get_data(STMT *stmt, SQLSMALLINT fCType, uint column_number,
             /* Lazy way - converting number we have to a string.
                If it couldn't happen we have to scale/unscale number - we would
                just reverse binary data */
-            char _value[21]; /* max string length of 64bit number */
+            std::string _value;
             if (numeric_value)
-              sprintf(_value, "%ll", numeric_value);
+              _value = std::to_string(numeric_value);
             else
-              sprintf(_value, "%llu", u_numeric_value);
+              _value = std::to_string(u_numeric_value);
 
-
-            sqlnum_from_str(_value, sqlnum, &overflow);
+            sqlnum_from_str(_value.c_str(), sqlnum, &overflow);
             *pcbValue = sizeof(ulonglong);
           }
 
@@ -1535,15 +1534,13 @@ SQLRETURN SQL_API SQLGetData(SQLHSTMT      StatementHandle,
 
     if ((sColNum == -1 && stmt->stmt_options.bookmarks == SQL_UB_VARIABLE))
     {
-      char _value[21];
+      std::string _value;
       /* save position set using SQLSetPos in buffer */
-      int _len= sprintf(_value, "%ld", (stmt->cursor_row > 0) ?
-                                    stmt->cursor_row : 0);
-
+      _value = std::to_string((stmt->cursor_row > 0) ? stmt->cursor_row : 0);
       arrec= desc_get_rec(stmt->ard, sColNum, FALSE);
       result= sql_get_bookmark_data(stmt, TargetType, sColNum,
                                     TargetValuePtr, BufferLength, StrLen_or_IndPtr,
-                                    _value, _len, arrec);
+                                    (char*)_value.data(), _value.length(), arrec);
     }
     else
     {
@@ -1766,8 +1763,6 @@ fill_fetch_bookmark_buffers(STMT *stmt, ulong value, uint rownum)
 {
   SQLRETURN res= SQL_SUCCESS, tmp_res;
   DESCREC *arrec;
-  ulong length= 0;
-  char _value[21];
 
   IS_BOOKMARK_VARIABLE(stmt);
   arrec= desc_get_rec(stmt->ard, -1, FALSE);
@@ -1796,10 +1791,10 @@ fill_fetch_bookmark_buffers(STMT *stmt, ulong value, uint rownum)
                                     sizeof(SQLLEN), rownum);
     }
 
-    length= sprintf(_value, "%ld", (value > 0) ? value : 0);
+    std::string _value = std::to_string((value > 0) ? value : 0);
     tmp_res= sql_get_bookmark_data(stmt, arrec->concise_type, (uint)0,
                           TargetValuePtr, arrec->octet_length, pcbValue,
-                          _value, length, arrec);
+                          (char*)_value.data(), _value.length(), arrec);
     if (tmp_res != SQL_SUCCESS)
     {
       if (tmp_res == SQL_SUCCESS_WITH_INFO)

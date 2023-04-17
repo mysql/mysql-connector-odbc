@@ -53,15 +53,6 @@ static char * my_ul_to_a(char * buf, size_t buf_size, unsigned long long a)
 /* }}} */
 
 
-/* {{{ my_f_to_a() -I- */
-static char * my_f_to_a(char * buf, size_t buf_size, double a)
-{
-  myodbc_snprintf(buf, buf_size, "%.17e", a);
-  return buf;
-}
-/* }}} */
-
-
 /* {{{ ssps_init() -I- */
 void ssps_init(STMT *stmt)
 {
@@ -1150,8 +1141,8 @@ char * ssps_get_string(STMT *stmt, ulong column_number, char *value, ulong *leng
     case MYSQL_TYPE_DOUBLE:
     {
       buffer= ALLOC_IFNULL(buffer, 50);
-      my_f_to_a(buffer, 49, ssps_get_double(stmt, column_number, value,
-                                            *length));
+      myodbc_d2str(ssps_get_double(stmt, column_number, value, *length),
+        buffer, 49);
 
       *length= strlen(buffer);
       return buffer;

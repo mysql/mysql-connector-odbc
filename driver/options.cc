@@ -366,7 +366,10 @@ MySQLSetConnectAttr(SQLHDBC hdbc, SQLINTEGER Attribute,
     case SQL_TRANSLATE_OPTION:
       {
         char buff[100];
-        sprintf(buff,"Suppose to set this attribute '%d' through driver manager, not by the driver",(int) Attribute);
+        myodbc_snprintf(buff, sizeof(buff),
+                        "Suppose to set this attribute '%d' through driver "
+                        "manager, not by the driver",
+                        (int)Attribute);
         return ((DBC*)hdbc)->set_error(MYERR_01S02, buff, 0);
       }
 
