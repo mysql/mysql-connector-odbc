@@ -604,7 +604,13 @@ void processCharsetCombobox(HWND hwnd, HWND hwndCtl, UINT codeNotify)
     case(CBN_DROPDOWN):
     {
       //FillParameters(hwnd, *pParams);
-      auto csl = mygetcharsets(hwnd, pParams);
+      std::vector<SQLWSTRING> csl;
+      try
+      {
+        csl = mygetcharsets(hwnd, pParams);
+      }
+      catch (MYERROR &e) {
+      }
 
       ComboBox_ResetContent(hwndCtl);
 
