@@ -1,5 +1,5 @@
 /////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License, version 2.0, as
@@ -70,14 +70,14 @@ BEGIN
         BEGIN
             VALUE "Comments", "provides setup library functionality\0"
             VALUE "CompanyName", "Oracle Corporation\0"
-            VALUE "FileDescription", "MySQL ODBC 8.0 Driver Setup Library\0"
+            VALUE "FileDescription", "MySQL ODBC 8.1 Driver Setup Library\0"
             VALUE "FileVersion", MYODBC_STRFILEVER
             VALUE "InternalName", "myodbc8S\0"
             VALUE "LegalCopyright", "Copyright (c) 1995, 2018, Oracle and/or its affiliates.\0"
             VALUE "LegalTrademarks", "MySQL, MyODBC, Connector/ODBC are trademarks of Oracle Corporation\0"
             VALUE "OriginalFilename", "myodbc8S.dll\0"
             VALUE "PrivateBuild", "Production\0"
-            VALUE "ProductName", "Connector/ODBC 8.0\0"
+            VALUE "ProductName", "Connector/ODBC 8.1\0"
             VALUE "ProductVersion", MYODBC_STRPRODUCTVER
             VALUE "SpecialBuild", "GA release\0"
         END

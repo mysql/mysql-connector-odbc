@@ -1,4 +1,4 @@
-# Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License, version 2.0, as
@@ -27,8 +27,8 @@
 # 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 
 SET(CONNECTOR_MAJOR "8")
-SET(CONNECTOR_MINOR "0")
-SET(CONNECTOR_PATCH "34")
+SET(CONNECTOR_MINOR "1")
+SET(CONNECTOR_PATCH "0")
 SET(CONNECTOR_LEVEL "")
 SET(CONNECTOR_QUALITY "GA")
 

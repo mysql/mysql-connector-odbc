@@ -9,7 +9,7 @@ Before reporting a new bug, please check first to see if a similar bug [exists](
 Bug reports should be as complete as possible.  Please try and include the following:
 
 * Complete steps to reproduce the issue
-* Any information about platform and environment that could be specific to the bug  
+* Any information about platform and environment that could be specific to the bug
 * Specific version of the product you are using
 * Specific version of the server being used
 * Code written in C/C++/VB or another language to help reproduce the issue if possible
@@ -35,7 +35,7 @@ To run the unit tests you need to perform the following steps:
 * Run MySQL Server
 * Set the following environment variables (optional):
   * TEST_DSN = <the name of DSN previously created> (default = test)
-  * TEST_DRIVER = <the name of ODBC driver as registered in odbcinst.ini> (default = MySQL ODBC 8.0 Driver)
+  * TEST_DRIVER = <the name of ODBC driver as registered in odbcinst.ini> (default = MySQL ODBC 8.1 Driver)
   * TEST_UID = <MySQL user name> (default = root)
   * TEST_PASSWORD = <MySQL password> (default is an empty string)
   * TEST_SOCKET = <the path to the socket file in Unix-like OS> (default is an empty string)

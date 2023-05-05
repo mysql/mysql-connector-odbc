@@ -1,5 +1,5 @@
 #!/bin/sh
-# Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License, version 2.0, as
@@ -37,12 +37,12 @@ set -e
 
 echo "Registering Unicode driver from in file"
 /usr/bin/myodbc-installer -a -d \
-   -n "MySQL ODBC 8.0 Unicode Driver" \
+   -n "MySQL ODBC 8.1 Unicode Driver" \
    -t "DRIVER=/usr/lib/${DEB_HOST_MULTIARCH}/odbc/libmyodbc8w.so"
-	  
+
 echo "Registering ANSI driver from in file"
 /usr/bin/myodbc-installer -a -d \
-  -n "MySQL ODBC 8.0 ANSI Driver" \
+  -n "MySQL ODBC 8.1 ANSI Driver" \
   -t "DRIVER=/usr/lib/${DEB_HOST_MULTIARCH}/odbc/libmyodbc8a.so"
 
 set +e

@@ -1,5 +1,5 @@
 #!/bin/sh
-# Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License, version 2.0, as
@@ -34,15 +34,15 @@ DEB_HOST_MULTIARCH="$(dpkg-architecture -qDEB_HOST_MULTIARCH)"
 
 set -e
     echo "Registering Unicode driver using setup package"
-    myodbc-installer -r -d -n "MySQL ODBC 8.0 Unicode Driver"
+    myodbc-installer -r -d -n "MySQL ODBC 8.1 Unicode Driver"
     myodbc-installer -a -d \
-    -n "MySQL ODBC 8.0 Unicode Driver" \
+    -n "MySQL ODBC 8.1 Unicode Driver" \
     -t "DRIVER=/usr/lib/${DEB_HOST_MULTIARCH}/odbc/libmyodbc8w.so;SETUP=/usr/lib/${DEB_HOST_MULTIARCH}/odbc/libmyodbc8S.so"
 
     echo "Registering ANSI driver using setup"
-    myodbc-installer -r -d -n "MySQL ODBC 8.0 ANSI Driver"
+    myodbc-installer -r -d -n "MySQL ODBC 8.1 ANSI Driver"
     myodbc-installer -a -d \
-    -n "MySQL ODBC 8.0 ANSI Driver" \
+    -n "MySQL ODBC 8.1 ANSI Driver" \
     -t "DRIVER=/usr/lib/${DEB_HOST_MULTIARCH}/odbc/libmyodbc8a.so;SETUP=/usr/lib/${DEB_HOST_MULTIARCH}/odbc/libmyodbc8S.so"
 
 set +e
