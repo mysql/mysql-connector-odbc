@@ -59,8 +59,7 @@
                     freeing the value is now up to the driver
 */
 SQLRETURN SQL_API MySQLPrepare(SQLHSTMT hstmt, SQLCHAR *query, SQLINTEGER len,
-                               bool dupe, bool reset_select_limit,
-                               bool force_prepare)
+                               bool reset_select_limit, bool force_prepare)
 {
   STMT *stmt= (STMT *)hstmt;
   /*
@@ -71,10 +70,10 @@ SQLRETURN SQL_API MySQLPrepare(SQLHSTMT hstmt, SQLCHAR *query, SQLINTEGER len,
 
   if (GET_QUERY(&stmt->orig_query) != NULL)
   {
-    reset_parsed_query(&stmt->orig_query, NULL, NULL, NULL);
+    stmt->orig_query.reset(NULL, NULL, NULL);
   }
 
-  return my_SQLPrepare(hstmt, query, len, dupe, reset_select_limit,
+  return my_SQLPrepare(hstmt, query, len, reset_select_limit,
                        force_prepare);
 }
 
@@ -84,24 +83,13 @@ SQLRETURN SQL_API MySQLPrepare(SQLHSTMT hstmt, SQLCHAR *query, SQLINTEGER len,
   @purpose : prepares an SQL string for execution
 */
 SQLRETURN my_SQLPrepare(SQLHSTMT hstmt, SQLCHAR *szSqlStr, SQLINTEGER cbSqlStr,
-                        bool dupe, bool reset_select_limit,
-                        bool force_prepare)
+                        bool reset_select_limit, bool force_prepare)
 {
   STMT *stmt= (STMT *) hstmt;
 
   CLEAR_STMT_ERROR(stmt);
 
-  reset_parsed_query(&stmt->query, NULL, NULL, NULL);
-
-  /* If we need to make a copy - !dupe or empty query string pointer
-     (dupp_str will make it an empty string) */
-  if (!(dupe && szSqlStr))
-  {
-    if (!(szSqlStr= (SQLCHAR*)dupp_str((char *)szSqlStr, cbSqlStr)))
-    {
-      return stmt->set_error( MYERR_S1001, NULL, 4001);
-    }
-  }
+  stmt->query.reset(NULL, NULL, NULL);
 
   return prepare(stmt, (char*)szSqlStr, cbSqlStr, reset_select_limit,
                  force_prepare);
@@ -152,7 +140,7 @@ SQLRETURN SQL_API my_SQLBindParameter( SQLHSTMT     StatementHandle,
         Access treats BIGINT as a string on linked tables.
         The value is read correctly, but bound as a string.
       */
-      if (ParameterType == SQL_BIGINT && stmt->dbc->ds->default_bigint_bind_str)
+      if (ParameterType == SQL_BIGINT && stmt->dbc->ds.opt_DFLT_BIGINT_BIND_STR)
         ValueType= SQL_C_CHAR;
     }
     if (!SQL_SUCCEEDED(rc = stmt_SQLSetDescField(stmt, stmt->apd,
@@ -326,7 +314,7 @@ SQLRETURN SQL_API SQLDescribeParam( SQLHSTMT        hstmt,
     if (pfSqlType)
         *pfSqlType= SQL_VARCHAR;
     if (pcbColDef)
-        *pcbColDef= (stmt->dbc->ds->allow_big_results ? 24*1024*1024L : 255);
+        *pcbColDef= (stmt->dbc->ds.opt_BIG_PACKETS ? 24*1024*1024L : 255);
     if (pfNullable)
         *pfNullable= SQL_NULLABLE_UNKNOWN;
 

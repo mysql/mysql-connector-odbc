@@ -536,16 +536,16 @@ MySQLGetDiagField(SQLSMALLINT handle_type, SQLHANDLE handle, SQLSMALLINT record,
       return SQL_ERROR;
 
     if (handle_type == SQL_HANDLE_DESC)
-      ds= desc->stmt->dbc->ds;
+      ds= &desc->stmt->dbc->ds;
     else if (handle_type == SQL_HANDLE_STMT)
-      ds= stmt->dbc->ds;
+      ds= &stmt->dbc->ds;
     else if (handle_type == SQL_HANDLE_DBC)
-      ds= dbc->ds;
+      ds= &dbc->ds;
     else
-      *char_value= (SQLCHAR *)"";
+      *char_value= (SQLCHAR*)"";
 
     if (ds)
-      *char_value= (SQLCHAR *)ds->name8;
+      *char_value = ds->opt_DSN;
     return SQL_SUCCESS;
   }
 
@@ -571,16 +571,16 @@ MySQLGetDiagField(SQLSMALLINT handle_type, SQLHANDLE handle, SQLSMALLINT record,
     if (record <= 0)
       return SQL_ERROR;
     if (handle_type == SQL_HANDLE_DESC)
-      ds= desc->stmt->dbc->ds;
+      ds = &desc->stmt->dbc->ds;
     else if (handle_type == SQL_HANDLE_STMT)
-      ds= stmt->dbc->ds;
+      ds = &stmt->dbc->ds;
     else if (handle_type == SQL_HANDLE_DBC)
-      ds= dbc->ds;
+      ds = &dbc->ds;
     else
       *char_value= (SQLCHAR *)"";
 
     if (ds)
-      *char_value= (SQLCHAR *)ds->server8;
+      *char_value= ds->opt_SERVER;
 
     return SQL_SUCCESS;
   }

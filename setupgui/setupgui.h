@@ -116,20 +116,20 @@ void FillParameters(HWND hwnd, DataSource *params);
 
 #ifdef _WIN32
 
-void getStrFieldData(HWND hwnd, SQLWCHAR **param, int idc);
-void getStrFieldDataTab(SQLWCHAR **param, unsigned int framenum, int idc );
-void setStrFieldData(HWND hwnd, SQLWCHAR *param, int idc);
-void setStrFieldDataTab(SQLWCHAR *param, unsigned int framenum, int idc );
+SQLWCHAR * getStrFieldData(HWND hwnd, int idc);
+SQLWCHAR * getStrFieldDataTab(unsigned int framenum, int idc );
+void setStrFieldData(HWND hwnd, const SQLWCHAR *param, int idc);
+void setStrFieldDataTab(const SQLWCHAR *param, unsigned int framenum, int idc );
 
-void setComboFieldDataTab(SQLWCHAR *param, unsigned int framenum, int idc);
+void setComboFieldDataTab(const SQLWCHAR *param, unsigned int framenum, int idc);
 
 my_bool getBoolFieldData(HWND hwnd, int idc);
 my_bool getBoolFieldDataTab(unsigned int framenum, int idc);
 void setBoolFieldDataTab(unsigned int framenum, int idc, my_bool state);
 void setBoolFieldData(HWND hwnd, int idc, my_bool state);
 
-void getUnsignedFieldData(HWND hwnd, unsigned int *param, int idc );
-void getUnsignedFieldDataTab(unsigned int tab_num, unsigned int *param, int idc );
+unsigned int getUnsignedFieldData(HWND hwnd, int idc );
+unsigned int getUnsignedFieldDataTab(unsigned int tab_num, int idc );
 void setUnsignedFieldData(HWND hwnd, unsigned int param, int idc );
 void setUnsignedFieldDataTab(unsigned int framenum, const unsigned int param, int idc);
 
@@ -139,16 +139,28 @@ void SwitchTcpOrPipe(HWND hwnd, BOOL usePipe);
 void setControlEnabled(unsigned int framenum, int idc, my_bool state);
 
 #define GET_STRING(name) \
-  getStrFieldData(hwnd, &(params->name),IDC_EDIT_##name)
+  {                                                                \
+    SQLWCHAR *res = getStrFieldData(hwnd, IDC_EDIT_##name);        \
+    if (res && *res)                                               \
+      params->opt_##name = res;                                    \
+    else                                                           \
+      params->opt_##name.clear();                                  \
+  }
 
 #define GET_STRING_TAB(framenum, name) \
-  getStrFieldDataTab(&(params->name), framenum, IDC_EDIT_##name)
+  { \
+    SQLWCHAR *res = getStrFieldDataTab(framenum, IDC_EDIT_##name); \
+    if (res && *res) \
+      params->opt_##name = res; \
+    else \
+      params->opt_##name.clear(); \
+  }
 
 #define SET_STRING(name) \
-  setStrFieldData(hwnd, params->name, IDC_EDIT_##name)
+  setStrFieldData(hwnd, params->opt_##name, IDC_EDIT_##name)
 
 #define SET_STRING_TAB(framenum, name) \
-  setStrFieldDataTab(params->name, framenum, IDC_EDIT_##name)
+  setStrFieldDataTab(params->opt_##name, framenum, IDC_EDIT_##name)
 
 #define GET_COMBO(name) \
   GET_STRING(name)
@@ -160,16 +172,27 @@ void setControlEnabled(unsigned int framenum, int idc, my_bool state);
   SET_STRING(name)
 
 #define SET_COMBO_TAB(framenum, name) \
-  setComboFieldDataTab(params->name, framenum, IDC_EDIT_##name)
+  setComboFieldDataTab(params->opt_##name, framenum, IDC_EDIT_##name)
 
 #define SET_CSTRING(name) \
-    ComboBox_SetText(GetDlgItem(hwnd,IDC_EDIT_##name), params->name)
+    ComboBox_SetText(GetDlgItem(hwnd,IDC_EDIT_##name), params->opt_#name)
 
-#define GET_UNSIGNED(name)  getUnsignedFieldData(hwnd, &(params->name), IDC_EDIT_##name)
-#define GET_UNSIGNED_TAB(framenum, name)  getUnsignedFieldDataTab(framenum, &(params->name), IDC_EDIT_##name)
+#define GET_UNSIGNED(name) { auto v = getUnsignedFieldData(hwnd, IDC_EDIT_##name); \
+  if (v)                                                \
+      params->opt_##name = v;                           \
+    else                                                \
+      params->opt_##name.clear();                       \
+  }
+#define GET_UNSIGNED_TAB(framenum, name) { auto v = getUnsignedFieldDataTab(framenum, IDC_EDIT_##name); \
+  if (v)                                                \
+      params->opt_##name = v;                           \
+    else                                                \
+      params->opt_##name.clear();                       \
+  }
 
-#define SET_UNSIGNED(name)  setUnsignedFieldData(hwnd, params->name, IDC_EDIT_##name)
-#define SET_UNSIGNED_TAB(framenum, name)  setUnsignedFieldDataTab(framenum, params->name, IDC_EDIT_##name)
+
+#define SET_UNSIGNED(name) setUnsignedFieldData(hwnd, params->opt_##name, IDC_EDIT_##name)
+#define SET_UNSIGNED_TAB(framenum, name)  setUnsignedFieldDataTab(framenum, params->opt_##name, IDC_EDIT_##name)
 
 
 /* Definitions for BOOL inputs */
@@ -197,14 +220,14 @@ void setControlEnabled(unsigned int framenum, int idc, my_bool state);
 void setSensitive(gchar *widget_name, gboolean state);
 gboolean getBoolFieldData(gchar *widget_name);
 void setBoolFieldData(gchar *widget_name, gboolean checked);
-void getStrFieldData(gchar *widget_name, SQLWCHAR **param);
-void getComboFieldData(gchar *widget_name, SQLWCHAR **param);
-void setComboFieldData(gchar *widget_name, SQLWCHAR *param, SQLCHAR **param8);
+SQLWCHAR* getStrFieldData(gchar *widget_name);
+SQLWCHAR* getComboFieldData(gchar *widget_name);
+void setComboFieldData(gchar *widget_name, SQLCHAR *param);
 
 /* param8 is the output buffer in UTF8 for GTK */
-void setStrFieldData(gchar *widget_name, SQLWCHAR *param, SQLCHAR **param8);
+void setStrFieldData(gchar *widget_name, SQLCHAR *param);
 
-void getUnsignedFieldData(gchar *widget_name, unsigned int *param);
+unsigned int getUnsignedFieldData(gchar *widget_name);
 void setUnsignedFieldData(gchar *widget_name, unsigned int param);
 
 #define READ_BOOL(UNUSED_PARAM, name) \
@@ -220,56 +243,80 @@ void setUnsignedFieldData(gchar *widget_name, unsigned int param);
   SET_CHECKED(UNUSED_PARAM, name, state)
 
 #define GET_STRING(name) \
-  getStrFieldData(#name, &(params->name))
+  {                                                                \
+    SQLWCHAR *res = getStrFieldData(#name);                        \
+    if (res && *res)                                               \
+      params->opt_##name = res;                                    \
+    else                                                           \
+      params->opt_##name.clear();                                  \
+  }
 
 #define GET_STRING_TAB(UNUSED_PARAM, name) \
   GET_STRING(name)
 
 #define SET_STRING(name) \
-  setStrFieldData(#name, params->name, &(params->name ## 8))
+  setStrFieldData(#name, params->opt_##name)
 
 #define SET_STRING_TAB(UNUSED_PARAM, name) \
   SET_STRING(name)
 
 #define SET_COMBO(name) \
-  setComboFieldData(#name, params->name, &(params->name ## 8))
+  setComboFieldData(#name, params->opt_##name)
 
 #define SET_COMBO_TAB(UNUSED_PARAM, name) \
   SET_COMBO(name)
 
 #define GET_COMBO(name) \
-  getComboFieldData(#name, &(params->name))
+  {                                                                \
+    SQLWCHAR *res = getComboFieldData(#name);                      \
+    if (res && *res)                                               \
+      params->opt_##name = res;                                    \
+    else                                                           \
+      params->opt_##name.clear();                                  \
+  }
 
 #define GET_COMBO_TAB(UNUSED_PARAM, name) \
   GET_COMBO(name)
 
-#define GET_UNSIGNED(name) \
-  getUnsignedFieldData(#name, &(params->name))
+#define GET_UNSIGNED(name)                                \
+  {                                                       \
+    auto v = getUnsignedFieldData(#name);                 \
+    if (v)                                                \
+      params->opt_##name = v;                             \
+    else                                                  \
+      params->opt_##name.clear();                         \
+  }
 
 #define GET_UNSIGNED_TAB(UNUSED_PARAM, name) \
   GET_UNSIGNED(name)
 
 #define SET_UNSIGNED(name) \
-  setUnsignedFieldData(#name, params->name)
+  setUnsignedFieldData(#name, params->opt_##name)
 
 #define SET_UNSIGNED_TAB(UNUSED_PARAM, name) \
   SET_UNSIGNED(name)
 
 #define SET_SENSITIVE(name, state) \
-  setSensitive((gchar*) #name, (gboolean)state)
+  setSensitive((gchar*)#name, (gboolean)state)
 
 #endif
 
-#define GET_BOOL(hwnd, name) \
-    params->name= READ_BOOL(hwnd, name)
+#define GET_BOOL(hwnd, name)         \
+  if (READ_BOOL(framenum, name))     \
+    params->opt_##name = true;       \
+  else                               \
+    params->opt_##name.clear()
 
 #define GET_BOOL_TAB(framenum, name) \
-    params->name = READ_BOOL_TAB(framenum, name)
+  if (READ_BOOL_TAB(framenum, name)) \
+    params->opt_##name = true;       \
+  else                               \
+    params->opt_##name.clear()
 
 #define SET_BOOL(hwnd, name) \
-  SET_CHECKED(hwnd, name, params->name)
+  SET_CHECKED(hwnd, name, params->opt_##name)
 
 #define SET_BOOL_TAB(framenum, name) \
-  SET_CHECKED_TAB(framenum, name, params->name)
+  SET_CHECKED_TAB(framenum, name, params->opt_##name)
 
 #endif

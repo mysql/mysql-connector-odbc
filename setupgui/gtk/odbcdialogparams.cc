@@ -45,7 +45,7 @@
 #include <thread>
 #include <chrono>
 
-static DataSource* pParams= NULL;
+static DataSource *pParams = NULL;
 static gchar*      pCaption= NULL;
 static int         OkPressed= 0;
 
@@ -73,6 +73,8 @@ static GtkWidget  *details_note;
 static GtkBuilder *builder;
 
 void FillParameters(HWND hwnd, DataSource *params);
+
+static SQLWCHAR out_buf[1024];
 
 
 void
@@ -130,10 +132,10 @@ void
 on_use_tcp_ip_server_toggled(GtkButton *button, gpointer user_data)
 {
   SET_SENSITIVE(server, TRUE);
-  SET_SENSITIVE(port, TRUE);
-  SET_SENSITIVE(socket, FALSE);
-  SET_SENSITIVE(enable_dns_srv,TRUE);
-  SET_SENSITIVE(multi_host,TRUE);
+  SET_SENSITIVE(PORT, TRUE);
+  SET_SENSITIVE(SOCKET, FALSE);
+  SET_SENSITIVE(ENABLE_DNS_SRV,TRUE);
+  SET_SENSITIVE(MULTI_HOST,TRUE);
 }
 
 
@@ -141,24 +143,24 @@ void
 on_use_socket_file_toggled(GtkButton *button, gpointer user_data)
 {
   SET_SENSITIVE(server, FALSE);
-  SET_SENSITIVE(port, FALSE);
-  SET_SENSITIVE(socket, TRUE);
-  SET_SENSITIVE(enable_dns_srv,FALSE);
-  SET_SENSITIVE(multi_host,FALSE);
+  SET_SENSITIVE(PORT, FALSE);
+  SET_SENSITIVE(SOCKET, TRUE);
+  SET_SENSITIVE(ENABLE_DNS_SRV,FALSE);
+  SET_SENSITIVE(MULTI_HOST,FALSE);
 }
 
 void
 on_enable_DNS_SRV_toggled(GtkButton *button, gpointer user_data)
 {
   if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON(button)))
-    SET_SENSITIVE(port, FALSE);
+    SET_SENSITIVE(PORT, FALSE);
   else
-    SET_SENSITIVE(port, TRUE);
+    SET_SENSITIVE(PORT, TRUE);
 }
 
 void on_check_cursor_prefetch_toggled(GtkButton *button, gpointer user_data)
 {
-  SET_SENSITIVE(cursor_prefetch_number,
+  SET_SENSITIVE(PREFETCH,
                 getBoolFieldData("cursor_prefetch_active"));
 }
 
@@ -245,7 +247,7 @@ void on_database_popup (GtkComboBox *widget, gpointer user_data)
     gtk_combo_box_set_active (GTK_COMBO_BOX (widget), 0);
 
   FillParameters((HWND)NULL, pParams);
-  
+
   try
   {
     dbs = mygetdatabases((HWND)NULL, pParams);
@@ -285,8 +287,8 @@ void on_tab_press (GtkComboBox *widget, GdkEvent *event, gpointer user_data)
   }
   else
   {
-    next_widget= GTK_WIDGET (gtk_builder_get_object (builder, "initstmt"));
-    prev_widget= GTK_WIDGET (gtk_builder_get_object (builder, "allow_big_results"));;
+    next_widget= GTK_WIDGET (gtk_builder_get_object (builder, "INITSTMT"));
+    prev_widget= GTK_WIDGET (gtk_builder_get_object (builder, "BIG_PACKETS"));;
   }
 
   switch (key->keyval)
@@ -382,7 +384,7 @@ void on_charset_popup (GtkComboBox *widget, gpointer user_data)
   }
   catch(...)
   { }
-  
+
   store = gtk_list_store_new(1, G_TYPE_STRING);
   for(SQLWSTRING cswname : css)
   {
@@ -462,60 +464,49 @@ void setBoolFieldData(gchar *widget_name, gboolean checked)
 }
 
 
-void getStrFieldData(gchar *widget_name, SQLWCHAR **param)
+SQLWCHAR* getStrFieldData(gchar *widget_name)
 {
   int len= 0;
   GtkEntry *widget= GTK_ENTRY(gtk_builder_get_object (builder, widget_name));
   assert(widget);
 
-  /* free previously allocated memory */
-  if(*param)
-  {
-    x_free(*param);
-    *param= NULL;
-  }
 
   len= gtk_entry_get_text_length(widget);
+  out_buf[0] = 0;
 
   if(len>0)
   {
-    *param= (SQLWCHAR *) myodbc_malloc((len + 1) * sizeof (SQLWCHAR), MYF (0));
-    if(*param)
-    {
     const gchar *entry_text= gtk_entry_get_text(widget);
     /* copy the value for using in DataSource */
-    utf8_as_sqlwchar(*param, (len + 1) * sizeof (SQLWCHAR), (SQLCHAR*)entry_text,
+    utf8_as_sqlwchar(out_buf, (len + 1) * sizeof (SQLWCHAR), (SQLCHAR*)entry_text,
                        strlen((char*)entry_text));
-    }
   }
+  return out_buf;
 }
 
 
-void setStrFieldData(gchar *widget_name, SQLWCHAR *param, SQLCHAR **param8)
+void setStrFieldData(gchar *widget_name, SQLCHAR *param)
 {
   GtkEntry *widget= GTK_ENTRY(gtk_builder_get_object (builder, widget_name));
   assert(widget);
-  ds_get_utf8attr(param, param8);
-  if(param8 && *param8)
-    gtk_entry_set_text(widget, (gchar*)(*param8));
+  if(param && *param)
+    gtk_entry_set_text(widget, (gchar*)(param));
 }
 
 
-void setComboFieldData(gchar *widget_name, SQLWCHAR *param, SQLCHAR **param8)
+void setComboFieldData(gchar *widget_name, SQLCHAR *param)
 {
   GtkComboBox *widget= GTK_COMBO_BOX(gtk_builder_get_object (builder,
-                                                                  widget_name));
+                                                             widget_name));
 
   GtkEntry *entry= (GtkEntry*)gtk_bin_get_child(GTK_BIN(widget));
   assert(widget);
-  ds_get_utf8attr(param, param8);
-
-  if(param8 && *param8)
-    gtk_entry_set_text(entry, (gchar*)(*param8));
+  if(param && *param)
+    gtk_entry_set_text(entry, (gchar*)(param));
 }
 
 
-void getComboFieldData(gchar *widget_name, SQLWCHAR **param)
+SQLWCHAR *getComboFieldData(gchar *widget_name)
 {
   int len= 0;
   GtkEntry *entry;
@@ -525,26 +516,17 @@ void getComboFieldData(gchar *widget_name, SQLWCHAR **param)
   assert(widget);
   entry= (GtkEntry*)gtk_bin_get_child(GTK_BIN(widget));
 
-  /* free previously allocated memory */
-  if(*param)
-  {
-    x_free(*param);
-    *param= NULL;
-  }
-
   len= gtk_entry_get_text_length(entry);
+  out_buf[0] = 0;
 
   if(len>0)
   {
-    *param= (SQLWCHAR *) myodbc_malloc((len + 1) * sizeof (SQLWCHAR), MYF (0));
-    if(*param)
-    {
       const gchar *entry_text= gtk_entry_get_text(entry);
       /* copy the value for using in DataSource */
-      utf8_as_sqlwchar(*param, (len + 1) * sizeof (SQLWCHAR), (SQLCHAR*)entry_text,
+      utf8_as_sqlwchar(out_buf, (len + 1) * sizeof (SQLWCHAR), (SQLCHAR*)entry_text,
                          strlen((char*)entry_text));
-    }
   }
+  return out_buf;
 }
 
 
@@ -556,13 +538,13 @@ void setSensitive(gchar *widget_name, gboolean state)
 }
 
 
-void getUnsignedFieldData(gchar *widget_name, unsigned int *param)
+unsigned int getUnsignedFieldData(gchar *widget_name)
 {
   int len= 0;
   GtkSpinButton *widget= GTK_SPIN_BUTTON(gtk_builder_get_object (builder,
                                                                  widget_name));
   assert(widget);
-  *param = (unsigned int) gtk_spin_button_get_value_as_int(widget);
+  return (unsigned int) gtk_spin_button_get_value_as_int(widget);
 }
 
 
@@ -606,33 +588,28 @@ int ShowOdbcParamsDialog(DataSource* params, HWND ParentWnd, BOOL isPrompt)
      If prompting (with a DSN name), or not prompting (add/edit DSN),
      we translate the lib path to the actual driver name.
   */
-  if (params->name || !isPrompt)
+  if (params->opt_DSN || !isPrompt)
   {
-    Driver *driver= driver_new();
-    memcpy(driver->lib, params->driver,
-           (sqlwcharlen(params->driver) + 1) * sizeof(SQLWCHAR));
+    Driver driver;
+    if (params->opt_DRIVER)
+      driver.lib = params->opt_DRIVER;
 
-    if (driver_lookup_name(driver))
+    if (driver.lookup_name())
     {
       GtkWidget *msg_box;
 
-      ds_get_utf8attr(driver->lib, &driver->lib8);
-      ds_get_utf8attr(params->name, &params->name8);
-
       msg_box= gtk_message_dialog_new(NULL, GTK_DIALOG_MODAL, GTK_MESSAGE_ERROR, GTK_BUTTONS_CLOSE,
                                       "Failure to lookup driver entry at path '%s'('%s')",
-                                      driver->lib8, params->name8);
+                                      (const char*)driver.lib, params->opt_DSN);
 
       gtk_dialog_run (GTK_DIALOG (msg_box));
       gtk_widget_hide(msg_box);
       gtk_widget_destroy(msg_box);
 
-      driver_delete(driver);
       return 0;
     }
 
-    ds_set_strattr(&params->driver, driver->name);
-    driver_delete(driver);
+    params->opt_DRIVER = driver.name;
   }
 
   dummy= gtk_vbox_new(0,0);
@@ -701,7 +678,7 @@ int ShowOdbcParamsDialog(DataSource* params, HWND ParentWnd, BOOL isPrompt)
   g_signal_connect ((gpointer) dummy, "clicked",
                     G_CALLBACK (on_test_clicked), NULL);
 
-  dummy= GTK_WIDGET (gtk_builder_get_object (builder, "database"));
+  dummy= GTK_WIDGET (gtk_builder_get_object (builder, "DATABASE"));
 
 #if GTK_MAJOR_VERSION >= 3
   g_signal_connect ((gpointer) dummy, "set-focus-child",
@@ -715,7 +692,7 @@ int ShowOdbcParamsDialog(DataSource* params, HWND ParentWnd, BOOL isPrompt)
   g_signal_connect ((gpointer) dummy, "key-press-event",
                     G_CALLBACK (on_tab_press), NULL);
 
-  dummy= GTK_WIDGET (gtk_builder_get_object (builder, "charset"));
+  dummy= GTK_WIDGET (gtk_builder_get_object (builder, "CHARSET"));
 #if GTK_MAJOR_VERSION >= 3
   g_signal_connect ((gpointer) dummy, "set-focus-child",
                     G_CALLBACK (on_charset_popup), NULL);
@@ -735,42 +712,42 @@ int ShowOdbcParamsDialog(DataSource* params, HWND ParentWnd, BOOL isPrompt)
   g_signal_connect ((gpointer) dummy, "toggled",
                     G_CALLBACK (on_use_socket_file_toggled), NULL);
 
-  dummy= GTK_WIDGET (gtk_builder_get_object (builder, "enable_dns_srv"));
+  dummy= GTK_WIDGET (gtk_builder_get_object (builder, "ENABLE_DNS_SRV"));
   g_signal_connect ((gpointer) dummy, "toggled",
                     G_CALLBACK (on_enable_DNS_SRV_toggled), NULL);
 
-  dummy= GTK_WIDGET (gtk_builder_get_object (builder, "sslkey_button"));
-  entry= GTK_ENTRY (gtk_builder_get_object (builder, "sslkey"));
+  dummy= GTK_WIDGET (gtk_builder_get_object (builder, "SSL_KEY_button"));
+  entry= GTK_ENTRY (gtk_builder_get_object (builder, "SSL_KEY"));
   g_signal_connect ((gpointer) dummy, "clicked",
                     G_CALLBACK (on_file_button_clicked), entry);
 
-  dummy= GTK_WIDGET (gtk_builder_get_object (builder, "sslcert_button"));
-  entry= GTK_ENTRY (gtk_builder_get_object (builder, "sslcert"));
+  dummy= GTK_WIDGET (gtk_builder_get_object (builder, "SSL_CERT_button"));
+  entry= GTK_ENTRY (gtk_builder_get_object (builder, "SSL_CERT"));
   g_signal_connect ((gpointer) dummy, "clicked",
                     G_CALLBACK (on_file_button_clicked), entry);
 
-  dummy= GTK_WIDGET (gtk_builder_get_object (builder, "sslca_button"));
-  entry= GTK_ENTRY (gtk_builder_get_object (builder, "sslca"));
+  dummy= GTK_WIDGET (gtk_builder_get_object (builder, "SSL_CA_button"));
+  entry= GTK_ENTRY (gtk_builder_get_object (builder, "SSL_CA"));
   g_signal_connect ((gpointer) dummy, "clicked",
                     G_CALLBACK (on_file_button_clicked), entry);
 
-  dummy= GTK_WIDGET (gtk_builder_get_object (builder, "sslcapath_button"));
-  entry= GTK_ENTRY (gtk_builder_get_object (builder, "sslcapath"));
+  dummy= GTK_WIDGET (gtk_builder_get_object (builder, "SSL_CAPATH_button"));
+  entry= GTK_ENTRY (gtk_builder_get_object (builder, "SSL_CAPATH"));
   g_signal_connect ((gpointer) dummy, "clicked",
                     G_CALLBACK (on_folder_button_clicked), entry);
 
-  dummy= GTK_WIDGET (gtk_builder_get_object (builder, "rsakey_button"));
-  entry= GTK_ENTRY (gtk_builder_get_object (builder, "rsakey"));
+  dummy= GTK_WIDGET (gtk_builder_get_object (builder, "RSAKEY_button"));
+  entry= GTK_ENTRY (gtk_builder_get_object (builder, "RSAKEY"));
   g_signal_connect ((gpointer) dummy, "clicked",
                     G_CALLBACK (on_file_button_clicked), entry);
 
-  dummy= GTK_WIDGET (gtk_builder_get_object (builder, "ssl_crl_button"));
-  entry= GTK_ENTRY (gtk_builder_get_object (builder, "ssl_crl"));
+  dummy= GTK_WIDGET (gtk_builder_get_object (builder, "SSL_CRL_button"));
+  entry= GTK_ENTRY (gtk_builder_get_object (builder, "SSL_CRL"));
   g_signal_connect ((gpointer) dummy, "clicked",
                     G_CALLBACK (on_file_button_clicked), entry);
 
-  dummy= GTK_WIDGET (gtk_builder_get_object (builder, "ssl_crlpath_button"));
-  entry= GTK_ENTRY (gtk_builder_get_object (builder, "ssl_crlpath"));
+  dummy= GTK_WIDGET (gtk_builder_get_object (builder, "SSL_CRLPATH_button"));
+  entry= GTK_ENTRY (gtk_builder_get_object (builder, "SSL_CRLPATH"));
   g_signal_connect ((gpointer) dummy, "clicked",
                     G_CALLBACK (on_folder_button_clicked), entry);
 
@@ -779,17 +756,17 @@ int ShowOdbcParamsDialog(DataSource* params, HWND ParentWnd, BOOL isPrompt)
                     G_CALLBACK (on_check_cursor_prefetch_toggled), NULL);
 
   dummy= GTK_WIDGET (gtk_builder_get_object (builder, "plugindir_button"));
-  entry= GTK_ENTRY (gtk_builder_get_object (builder, "plugin_dir"));
+  entry= GTK_ENTRY (gtk_builder_get_object (builder, "PLUGIN_DIR"));
   g_signal_connect ((gpointer) dummy, "clicked",
                     G_CALLBACK (on_folder_button_clicked), entry);
 
-  dummy= GTK_WIDGET (gtk_builder_get_object (builder, "load_data_local_dir_button"));
-  entry= GTK_ENTRY (gtk_builder_get_object (builder, "load_data_local_dir"));
+  dummy= GTK_WIDGET (gtk_builder_get_object (builder, "LOAD_DATA_LOCAL_DIR_button"));
+  entry= GTK_ENTRY (gtk_builder_get_object (builder, "LOAD_DATA_LOCAL_DIR"));
   g_signal_connect ((gpointer) dummy, "clicked",
                     G_CALLBACK (on_folder_button_clicked), entry);
 
-  dummy= GTK_WIDGET (gtk_builder_get_object (builder, "oci_config_file_button"));
-  entry= GTK_ENTRY (gtk_builder_get_object (builder, "oci_config_file"));
+  dummy= GTK_WIDGET (gtk_builder_get_object (builder, "OCI_CONFIG_FILE_button"));
+  entry= GTK_ENTRY (gtk_builder_get_object (builder, "OCI_CONFIG_FILE"));
   g_signal_connect ((gpointer) dummy, "clicked",
                     G_CALLBACK (on_file_button_clicked), entry);
 
@@ -802,7 +779,7 @@ int ShowOdbcParamsDialog(DataSource* params, HWND ParentWnd, BOOL isPrompt)
     GtkTreeIter iter;
     GtkComboBox *ssl_mode_combo;
 
-    ssl_mode_combo = GTK_COMBO_BOX(gtk_builder_get_object(builder, "sslmode"));
+    ssl_mode_combo = GTK_COMBO_BOX(gtk_builder_get_object(builder, "SSL_MODE"));
     store = gtk_list_store_new(1, G_TYPE_STRING);
 
     gtk_list_store_append(store, &iter);

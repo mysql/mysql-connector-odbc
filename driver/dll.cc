@@ -34,8 +34,7 @@
 #include "driver.h"
 #include <locale.h>
 
-char *default_locale, *decimal_point, *thousands_sep;
-uint decimal_point_length,thousands_sep_length;
+std::string thousands_sep, decimal_point, default_locale;
 static int myodbc_inited=0;
 static int mysys_inited=0;
 
@@ -93,15 +92,13 @@ void myodbc_init(void)
     DECLARE_LOCALE_HANDLE
 
     init_getfunctions();
-    default_locale=myodbc_strdup(setlocale(LC_NUMERIC,NullS),MYF(0));
+    default_locale = setlocale(LC_NUMERIC,NullS);
 
     __LOCALE_SET("")
 
     tmp=localeconv();
-    decimal_point=myodbc_strdup(tmp->decimal_point,MYF(0));
-    decimal_point_length=strlen(decimal_point);
-    thousands_sep=myodbc_strdup(tmp->thousands_sep,MYF(0));
-    thousands_sep_length=strlen(thousands_sep);
+    decimal_point = tmp->decimal_point;
+    thousands_sep = tmp->thousands_sep;
 
     __LOCALE_RESTORE()
 
@@ -132,9 +129,6 @@ void myodbc_end()
 
   if (!myodbc_inited)
   {
-    x_free(decimal_point);
-    x_free(default_locale);
-    x_free(thousands_sep);
 
     /* my_thread_end_wait_time was added in 5.1.14 and 5.0.32 */
 #if !defined(NONTHREADSAFE) && \

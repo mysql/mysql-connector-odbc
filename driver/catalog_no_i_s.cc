@@ -48,17 +48,17 @@ std::string get_database_name(STMT *stmt,
                               bool try_reget)
 {
   std::string db;
-  if (!stmt->dbc->ds->no_catalog && catalog && catalog_len)
+  if (!stmt->dbc->ds.opt_NO_CATALOG && catalog && catalog_len)
   {
     // Catalog parameter can be used
     db = std::string((char*)catalog, catalog_len);
   }
-  else if(!stmt->dbc->ds->no_schema && schema && schema_len)
+  else if(!stmt->dbc->ds.opt_NO_SCHEMA && schema && schema_len)
   {
     // Schema parameter can be used
     db = std::string((char*)schema, schema_len);
   }
-  else if (!stmt->dbc->ds->no_catalog || !stmt->dbc->ds->no_schema)
+  else if (!stmt->dbc->ds.opt_NO_CATALOG || !stmt->dbc->ds.opt_NO_SCHEMA)
   {
     if (!try_reget)
       return db;
@@ -234,37 +234,6 @@ server_list_dbcolumns(STMT *stmt,
   }
 
   return result;
-}
-
-
-/****************************************************************************
-SQLTablePrivileges
-****************************************************************************
-*/
-/*
-  @type    : internal
-  @purpose : checks for the grantability
-*/
-static my_bool is_grantable(char *grant_list)
-{
-    char *grant=dupp_str(grant_list,SQL_NTS);;
-    if ( grant_list && grant_list[0] )
-    {
-        char seps[]   = ",";
-        char *token;
-        token = strtok( grant, seps );
-        while ( token != NULL )
-        {
-            if ( !strcmp(token,"Grant") )
-            {
-                x_free(grant);
-                return(1);
-            }
-            token = strtok( NULL, seps );
-        }
-    }
-    x_free(grant);
-    return(0);
 }
 
 
@@ -592,7 +561,7 @@ primary_keys_no_i_s(SQLHSTMT hstmt,
     }
 
     if (!stmt->m_row_storage.is_valid())
-      x_free(stmt->result_array);
+      stmt->result_array.reset();
 
     // We will use the ROW_STORAGE here
     stmt->m_row_storage.set_size(stmt->result->row_count,
@@ -810,7 +779,7 @@ procedure_columns_no_i_s(SQLHSTMT hstmt,
   }
 
   if (!stmt->m_row_storage.is_valid())
-    x_free(stmt->result_array);
+    stmt->result_array.reset();
 
   // We will use the ROW_STORAGE here
   stmt->m_row_storage.set_size(proc_list_res->row_count,
@@ -972,7 +941,6 @@ procedure_columns_no_i_s(SQLHSTMT hstmt,
             sizeof(SQLPROCEDURECOLUMNS_values),
             SQLPROCEDURECOLUMNS_fields,
             SQLPROCEDURECOLUMNS_FIELDS);
-        free_internal_result_buffers(stmt);
         mysql_free_result(proc_list_res);
       case EXCEPTION_TYPE::GENERAL:
         break;
@@ -1047,7 +1015,7 @@ special_columns_no_i_s(SQLHSTMT hstmt, SQLUSMALLINT fColType,
     }
 
     if (!stmt->m_row_storage.is_valid())
-      x_free(stmt->result_array);
+      stmt->result_array.reset();
 
     // We will use the ROW_STORAGE here
     stmt->m_row_storage.set_size(result->field_count,
@@ -1225,16 +1193,16 @@ statistics_no_i_s(SQLHSTMT hstmt,
     stmt->order=       SQLSTAT_order;
     stmt->order_count= array_elements(SQLSTAT_order);
     stmt->fix_fields=  fix_fields_copy;
-    stmt->array= (MYSQL_ROW) myodbc_memdup((char *)SQLSTAT_values,
-                                       sizeof(SQLSTAT_values),MYF(0));
+    stmt->array.set((char*)SQLSTAT_values, sizeof(SQLSTAT_values)/sizeof(char *));
+
     if (!stmt->array)
     {
       set_mem_error(stmt->dbc->mysql);
       return handle_connection_error(stmt);
     }
 
-    db_val = strmake_root(&stmt->alloc_root, db.c_str(), db.length());
-    CAT_SCHEMA_SET(stmt->array[0], stmt->array[1], db_val);
+    stmt->catalog_name = db;
+    CAT_SCHEMA_SET(stmt->array[0], stmt->array[1], (char*)stmt->catalog_name.c_str());
 
     if ( fUnique == SQL_INDEX_UNIQUE )
     {
@@ -1333,11 +1301,10 @@ tables_no_i_s(SQLHSTMT hstmt,
       {
         /* Return set of TableType qualifiers */
         rc = create_fake_resultset(stmt, (MYSQL_ROW)SQLTABLES_type_values,
-                                    sizeof(SQLTABLES_type_values),
-                                    sizeof(SQLTABLES_type_values) /
-                                    sizeof(SQLTABLES_type_values[0]),
-                                    SQLTABLES_fields, SQLTABLES_FIELDS,
-                                    true);
+                                   sizeof(SQLTABLES_type_values[0]),
+                                   array_elements(SQLTABLES_type_values),
+                                   SQLTABLES_fields, SQLTABLES_FIELDS,
+                                   true);
         return rc;
       }
 
@@ -1393,7 +1360,7 @@ tables_no_i_s(SQLHSTMT hstmt,
 
       /* Free if result data was not in row storage */
       if (!stmt->m_row_storage.is_valid())
-        x_free(stmt->result_array);
+        stmt->result_array.reset();
 
       auto &data = stmt->m_row_storage;
 
@@ -1439,7 +1406,6 @@ tables_no_i_s(SQLHSTMT hstmt,
 
           if (!stmt->result->row_count)
           {
-            free_internal_result_buffers(stmt);
             if (stmt->result)
             {
               mysql_free_result(stmt->result);

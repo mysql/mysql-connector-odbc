@@ -48,7 +48,7 @@ static SQLRETURN my_transact(SQLHDBC hdbc, SQLSMALLINT CompletionType)
   const char *query;
   uint	length;
 
-  if (dbc && dbc->ds && !dbc->ds->disable_transactions)
+  if (dbc && !dbc->ds.opt_NO_TRANSACTIONS)
   {
     switch(CompletionType) {
     case SQL_COMMIT:

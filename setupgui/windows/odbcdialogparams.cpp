@@ -51,6 +51,7 @@
 #include "odbcdialogparams.h"
 
 #include "stringutil.h"
+#include "driver.h"
 
 extern HINSTANCE ghInstance;
 
@@ -69,6 +70,7 @@ static BOOL        g_isPrompt;
    user changes value. Used to verify if we can reset that control's value.
    It won't work if for more than 1 field, but we have only one in visible future. */
 static long        controlWithDefValue= 0;
+static SQLWCHAR out_buf[1024];
 
 HelpButtonPressedCallbackType* gHelpButtonPressedCallback = NULL;
 
@@ -80,8 +82,8 @@ void SwitchTcpOrPipe(HWND hwnd, BOOL usePipe)
 {
   /* groups of fields to enable/disable*/
   const int switchedFields[SWITCHED_GROUPS][MAX_GROUP_COTROLS]=
-                                    {{IDC_EDIT_server, IDC_EDIT_port},
-                                     {IDC_EDIT_socket, 0}};
+                                    {{IDC_EDIT_SERVER, IDC_EDIT_PORT},
+                                     {IDC_EDIT_SOCKET, 0}};
 
   /* Default value for enabled empty field */
   const LPCWSTR defaultValues[SWITCHED_GROUPS][MAX_GROUP_COTROLS]=
@@ -180,33 +182,29 @@ static BOOL FormMain_OnNotify (HWND hwnd, WPARAM wParam, LPARAM lParam)
 }
 
 
-void getStrFieldData(HWND hwnd, SQLWCHAR **param, int idc)
+SQLWCHAR * getStrFieldData(HWND hwnd, int idc)
 {
-  x_free(*param);
-  *param= NULL;
-
   int len = Edit_GetTextLength(GetDlgItem(hwnd,idc));
-
-  if (len>0)
+  if (len > 0)
   {
-    *param= (SQLWCHAR *)myodbc_malloc((len + 1) * sizeof(SQLWCHAR), MYF(0));
-    if (*param)
-      Edit_GetText(GetDlgItem(hwnd,idc), *param, len+1);
+    Edit_GetText(GetDlgItem(hwnd, idc), out_buf, len + 1);
+    return out_buf;
   }
+  return nullptr;
 }
 
 
-void getStrFieldDataTab(SQLWCHAR **param, unsigned int framenum, int idc)
+SQLWCHAR * getStrFieldDataTab(unsigned int framenum, int idc)
 {
   assert(TabCtrl_1.hTabPages);
   HWND tab = TabCtrl_1.hTabPages[framenum-1];
 
   assert(tab);
 
-  getStrFieldData(tab, param, idc);
+  return getStrFieldData(tab, idc);
 }
 
-void setComboFieldDataTab(SQLWCHAR *param, unsigned int framenum, int idc)
+void setComboFieldDataTab(const SQLWCHAR *param, unsigned int framenum, int idc)
 {
   if ( TabCtrl_1.hTabPages[framenum-1])
   {
@@ -217,13 +215,13 @@ void setComboFieldDataTab(SQLWCHAR *param, unsigned int framenum, int idc)
 }
 
 
-void setStrFieldData(HWND hwnd, SQLWCHAR *param, int idc)
+void setStrFieldData(HWND hwnd, const SQLWCHAR *param, int idc)
 {
   Edit_SetText(GetDlgItem(hwnd, idc), param);
 }
 
 
-void setStrFieldDataTab(SQLWCHAR *param, unsigned int framenum, int idc)
+void setStrFieldDataTab(const SQLWCHAR *param, unsigned int framenum, int idc)
 {
   assert(TabCtrl_1.hTabPages);
   HWND tab = TabCtrl_1.hTabPages[framenum-1];
@@ -234,28 +232,24 @@ void setStrFieldDataTab(SQLWCHAR *param, unsigned int framenum, int idc)
 }
 
 
-void getUnsignedFieldDataTab(unsigned int framenum, unsigned int *param, int idc )
+unsigned int getUnsignedFieldDataTab(unsigned int framenum, int idc )
 {
-  getUnsignedFieldData(TabCtrl_1.hTabPages[framenum-1], param, idc);
+  return getUnsignedFieldData(TabCtrl_1.hTabPages[framenum-1], idc);
 }
 
 
-void getUnsignedFieldData(HWND hwnd, unsigned int *param, int idc)
+unsigned int getUnsignedFieldData(HWND hwnd, int idc)
 {
-  *param = 0U;
+  unsigned int param = 0U;
   int len = Edit_GetTextLength(GetDlgItem(hwnd,idc));
 
   if(len>0)
   {
-    SQLWCHAR *tmp1= (SQLWCHAR *)myodbc_malloc((len + 1) * sizeof(SQLWCHAR),
-                                         MYF(0));
-    if (tmp1)
-    {
-      Edit_GetText(GetDlgItem(hwnd,idc), tmp1, len+1);
-      *param = _wtol(tmp1);
-      x_free(tmp1);
-    }
+    std::unique_ptr<SQLWCHAR> buf(new SQLWCHAR[len + 1]);
+    Edit_GetText(GetDlgItem(hwnd,idc), buf.get(), len+1);
+    param = _wtol(buf.get());
   }
+  return param;
 }
 
 
@@ -403,7 +397,7 @@ void btnDetails_Click (HWND hwnd)
 
 
     HWND ssl_tab = TabCtrl_1.hTabPages[4];
-    HWND combo = GetDlgItem(ssl_tab, IDC_EDIT_sslmode);
+    HWND combo = GetDlgItem(ssl_tab, IDC_EDIT_SSL_MODE);
 
     ComboBox_ResetContent(combo);
 
@@ -585,7 +579,7 @@ void processDbCombobox(HWND hwnd, HWND hwndCtl, UINT codeNotify)
       for (SQLWSTRING dbname : dbs)
         ComboBox_AddString(hwndCtl, (SQLWCHAR *)dbname.c_str());
 
-      ComboBox_SetText(hwndCtl,pParams->database);
+      ComboBox_SetText(hwndCtl, pParams->opt_DATABASE);
 
       break;
     }
@@ -613,7 +607,7 @@ void processCharsetCombobox(HWND hwnd, HWND hwndCtl, UINT codeNotify)
       for (SQLWSTRING csname : csl)
         ComboBox_AddString(hwndCtl, (SQLWCHAR *)csname.c_str());
 
-      ComboBox_SetText(hwndCtl,pParams->charset);
+      ComboBox_SetText(hwndCtl, pParams->opt_CHARSET);
 
       break;
     }
@@ -640,34 +634,34 @@ void FormMain_OnCommand(HWND hwnd, int id, HWND hwndCtl, UINT codeNotify)
     case IDC_BUTTON_TEST:
       btnTest_Click(hwnd); break;
     case IDC_SSLKEYCHOOSER:
-      chooseFile(hwnd, IDC_EDIT_sslkey); break;
+      chooseFile(hwnd, IDC_EDIT_SSL_KEY); break;
     case IDC_SSLCERTCHOOSER:
-      chooseFile(hwnd, IDC_EDIT_sslcert); break;
+      chooseFile(hwnd, IDC_EDIT_SSL_CERT); break;
     case IDC_SSLCACHOOSER:
-      chooseFile(hwnd, IDC_EDIT_sslca); break;
+      chooseFile(hwnd, IDC_EDIT_SSL_CA); break;
     case IDC_SSLCAPATHCHOOSER:
-      choosePath(hwnd, IDC_EDIT_sslcapath); break;
+      choosePath(hwnd, IDC_EDIT_SSL_CAPATH); break;
     case IDC_RSAKEYCHOOSER:
-      chooseFile(hwnd, IDC_EDIT_rsakey); break;
+      chooseFile(hwnd, IDC_EDIT_RSAKEY); break;
     case IDC_SSLCRLCHOOSER:
-      chooseFile(hwnd, IDC_EDIT_ssl_crl); break;
+      chooseFile(hwnd, IDC_EDIT_SSL_CRL); break;
     case IDC_SSLCRLPATHCHOOSER:
-      choosePath(hwnd, IDC_EDIT_ssl_crlpath); break;
-    case IDC_CHOOSER_plugin_dir:
-      choosePath(hwnd, IDC_EDIT_plugin_dir); break;
-    case IDC_CHOOSER_load_data_local_dir:
-      choosePath(hwnd, IDC_EDIT_load_data_local_dir); break;
-    case IDC_CHOOSER_oci_config_file:
-      chooseFile(hwnd, IDC_EDIT_oci_config_file); break;
+      choosePath(hwnd, IDC_EDIT_SSL_CRLPATH); break;
+    case IDC_CHOOSER_PLUGIN_DIR:
+      choosePath(hwnd, IDC_EDIT_PLUGIN_DIR); break;
+    case IDC_CHOOSER_LOAD_DATA_LOCAL_DIR:
+      choosePath(hwnd, IDC_EDIT_LOAD_DATA_LOCAL_DIR); break;
+    case IDC_CHOOSER_OCI_CONFIG_FILE:
+      chooseFile(hwnd, IDC_EDIT_OCI_CONFIG_FILE); break;
     case IDC_RADIO_tcp:
-    case IDC_RADIO_pipe:
-      SwitchTcpOrPipe(hwnd, !!Button_GetCheck(GetDlgItem(hwnd, IDC_RADIO_pipe)));
+    case IDC_RADIO_NAMED_PIPE:
+      SwitchTcpOrPipe(hwnd, !!Button_GetCheck(GetDlgItem(hwnd, IDC_RADIO_NAMED_PIPE)));
       break;
     case IDC_CHECK_cursor_prefetch_active:
       {
         HWND cursorTab= TabCtrl_1.hTabPages[CURSORS_TAB-1];
         assert(cursorTab);
-        HWND prefetch= GetDlgItem(cursorTab, IDC_EDIT_cursor_prefetch_number);
+        HWND prefetch= GetDlgItem(cursorTab, IDC_EDIT_PREFETCH);
         assert(prefetch);
 
         EnableWindow(prefetch, !!Button_GetCheck(GetDlgItem(cursorTab,
@@ -676,15 +670,15 @@ void FormMain_OnCommand(HWND hwnd, int id, HWND hwndCtl, UINT codeNotify)
         if (Edit_GetTextLength(prefetch) == 0)
         {
           setUnsignedFieldData(cursorTab, default_cursor_prefetch,
-                              IDC_EDIT_cursor_prefetch_number);
+                              IDC_EDIT_PREFETCH);
         }
       }
       break;
-    case IDC_EDIT_name:
+    case IDC_EDIT_DSN:
     {
       if (codeNotify==EN_CHANGE)
       {
-        int len = Edit_GetTextLength(GetDlgItem(hwnd,IDC_EDIT_name));
+        int len = Edit_GetTextLength(GetDlgItem(hwnd,IDC_EDIT_DSN));
         Button_Enable(GetDlgItem(hwnd,IDOK), len > 0);
         Button_Enable(GetDlgItem(hwnd,IDC_BUTTON_TEST), len > 0);
         RedrawWindow(hwnd,NULL,NULL,RDW_INVALIDATE);
@@ -696,7 +690,7 @@ void FormMain_OnCommand(HWND hwnd, int id, HWND hwndCtl, UINT codeNotify)
       processDbCombobox(hwnd, hwndCtl, codeNotify);
     break;
 
-    case IDC_EDIT_charset:
+    case IDC_EDIT_CHARSET:
       processCharsetCombobox(hwnd, hwndCtl, codeNotify);
   }
 
@@ -827,15 +821,15 @@ BOOL FormMain_OnInitDialog(HWND hwnd, HWND hwndFocus, LPARAM lParam)
   /* Disable fields if in prompt mode */
   if (g_isPrompt)
   {
-    EnableWindow(GetDlgItem(hwnd, IDC_EDIT_name), FALSE);
-    EnableWindow(GetDlgItem(hwnd, IDC_EDIT_description), FALSE);
+    EnableWindow(GetDlgItem(hwnd, IDC_EDIT_DSN), FALSE);
+    EnableWindow(GetDlgItem(hwnd, IDC_EDIT_DESCRIPTION), FALSE);
   }
 
   /* if prompting without DSN, don't disable OK button */
   /* preserved here old logic + enabled OK if data source
      name is not NULL when not prompting. I don't know why it should be disabled
      when prompting and name is not NULL. */
-  if (g_isPrompt == (pParams->name==NULL))
+  if (g_isPrompt == (!pParams->opt_DSN))
   {
     Button_Enable(GetDlgItem(hwnd,IDOK), 1);
     Button_Enable(GetDlgItem(hwnd,IDC_BUTTON_TEST), 1);
@@ -887,23 +881,21 @@ int ShowOdbcParamsDialog(DataSource* params, HWND ParentWnd, BOOL isPrompt)
      If prompting (with a DSN name), or not prompting (add/edit DSN),
      we translate the lib path to the actual driver name.
   */
-  if (params->name || !isPrompt)
+  if (params->opt_DSN || !isPrompt)
   {
-    Driver *driver= driver_new();
-    params->driver && memcpy(driver->lib, params->driver,
-           (sqlwcharlen(params->driver) + 1) * sizeof(SQLWCHAR));
+    Driver driver;
+    if (params->opt_DRIVER)
+      driver.lib = params->opt_DRIVER;
     /* TODO Driver lookup is done in driver too, do we really need it there? */
-    if (!*driver->lib || driver_lookup_name(driver))
+    if (!driver.lib || driver.lookup_name())
     {
       wchar_t msg[256];
       swprintf(msg, 256, L"Failure to lookup driver entry at path '%ls'",
-               driver->lib);
+               (const SQLWCHAR*)driver.lib);
       MessageBox(ParentWnd, msg, L"Cannot find driver entry", MB_OK);
-      driver_delete(driver);
       return 0;
     }
-    ds_set_strattr(&params->driver, driver->name);
-    driver_delete(driver);
+    params->opt_DRIVER = driver.name;
   }
   DialogBox(ghInstance, MAKEINTRESOURCE(IDD_DIALOG1), ParentWnd,
             (DLGPROC)FormMain_DlgProc);

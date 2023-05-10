@@ -51,6 +51,8 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <iostream>
+#include <iomanip>
 
 const char usage[] =
 "+---                                                                   \n"
@@ -159,7 +161,7 @@ const char usage[] =
 #define ACTION_REMOVE 'r'
 #define ACTION_HELP 'h'
 
-#define OPT_NAME 'n'
+#define OPT_DSN 'n'
 #define OPT_ATTR 't'
 #define OPT_SCOPE 'c'
 
@@ -241,10 +243,10 @@ int list_driver_details(Driver *driver)
   int rc;
 
   /* lookup the driver */
-  if ((rc= driver_lookup(driver)) < 0)
+  if ((rc = driver->lookup()) < 0)
   {
     fprintf(stderr, "[ERROR] Driver not found '%s'\n",
-            ds_get_utf8attr(driver->name, &driver->name8));
+            (const char*)driver->name);
     return 1;
   }
   else if (rc > 0)
@@ -254,10 +256,9 @@ int list_driver_details(Driver *driver)
   }
 
   /* print driver details */
-  printf("FriendlyName: %s\n", ds_get_utf8attr(driver->name, &driver->name8));
-  printf("DRIVER      : %s\n", ds_get_utf8attr(driver->lib, &driver->lib8));
-  printf("SETUP       : %s\n", ds_get_utf8attr(driver->setup_lib,
-                                               &driver->setup_lib8));
+  printf("FriendlyName: %s\n", (const char *)driver->name);
+  printf("DRIVER      : %s\n", (const char *)driver->lib);
+  printf("SETUP       : %s\n", (const char *)driver->setup_lib);
 
   return 0;
 }
@@ -364,7 +365,7 @@ int add_driver(Driver *driver, const SQLWCHAR *attrs)
   SQLWCHAR prevpath[256];
 
   /* read driver attributes into object */
-  if (driver_from_kvpair_semicolon(driver, attrs))
+  if (driver->from_kvpair_semicolon(attrs))
   {
     fprintf(stderr,
             "[ERROR] Could not parse key-value pair attribute string\n");
@@ -372,7 +373,7 @@ int add_driver(Driver *driver, const SQLWCHAR *attrs)
   }
 
   /* convert to null-delimited for installer API */
-  if (driver_to_kvpair_null(driver, attrs_null, 4096))
+  if (driver->to_kvpair_null(attrs_null, 4096))
   {
     fprintf(stderr,
             "[ERROR] Could not create new key-value pair attribute string\n");
@@ -419,7 +420,7 @@ int handle_driver_action()
 {
   int rc= 0;
   UWORD config_mode= config_set(scope);
-  Driver *driver= driver_new();
+  Driver driver;
 
   /* check name is given if needed */
   switch (action)
@@ -435,21 +436,21 @@ int handle_driver_action()
   }
 
   /* set the driver name */
-  if (name)
-    sqlwcharncpy(driver->name, wname, ODBCDRIVER_STRLEN);
+  if (name && wname)
+    driver.name = wname;
 
   /* perform given action */
   switch (action)
   {
   case ACTION_LIST:
     if (name)
-      rc= list_driver_details(driver);
+      rc= list_driver_details(&driver);
     else
       rc= list_drivers();
     break;
   case ACTION_ADD:
     if (attrstr)
-      rc= add_driver(driver, wattrs);
+      rc= add_driver(&driver, wattrs);
     else
     {
       fprintf(stderr, "[ERROR] Attribute string missing to add driver\n");
@@ -457,12 +458,11 @@ int handle_driver_action()
     }
     break;
   case ACTION_REMOVE:
-    rc= remove_driver(driver);
+    rc= remove_driver(&driver);
     break;
   }
 
 end:
-  driver_delete(driver);
   config_set(config_mode);
   return rc;
 }
@@ -475,10 +475,10 @@ int list_datasource_details(DataSource *ds)
 {
   int rc;
 
-  if ((rc= ds_lookup(ds)) < 0)
+  if ((rc= ds->lookup()) < 0)
   {
     fprintf(stderr, "[ERROR] Data source not found '%s'\n",
-            ds_get_utf8attr(ds->name, &ds->name8));
+            (const char*)ds->opt_DSN);
     return 1;
   }
   else if (rc > 0)
@@ -487,84 +487,87 @@ int list_datasource_details(DataSource *ds)
     return 1;
   }
 
-  /* print the data source fields */
-                       printf("Name:                %s\n", ds_get_utf8attr(ds->name, &ds->name8));
-  if (ds->driver     ) printf("Driver:              %s\n", ds_get_utf8attr(ds->driver, &ds->driver8));
-  if (ds->description) printf("Description:         %s\n", ds_get_utf8attr(ds->description, &ds->description8));
-  if (ds->server     ) printf("Server:              %s\n", ds_get_utf8attr(ds->server, &ds->server8));
-  if (ds->uid        ) printf("Uid:                 %s\n", ds_get_utf8attr(ds->uid, &ds->uid8));
-  if (ds->pwd        ) printf("Pwd:                 %s\n", ds_get_utf8attr(ds->pwd, &ds->pwd8));
-#if MFA_ENABLED
-  if (ds->pwd1       ) printf("Pwd1:                %s\n", ds_get_utf8attr(ds->pwd1, &ds->pwd18));
-  if (ds->pwd2       ) printf("Pwd2:                %s\n", ds_get_utf8attr(ds->pwd2, &ds->pwd28));
-  if (ds->pwd3       ) printf("Pwd3:                %s\n", ds_get_utf8attr(ds->pwd3, &ds->pwd38));
-#endif
-  if (ds->database   ) printf("Database:            %s\n", ds_get_utf8attr(ds->database, &ds->database8));
-  if (ds->socket     ) printf("Socket:              %s\n", ds_get_utf8attr(ds->socket, &ds->socket8));
-  if (ds->initstmt   ) printf("Initial statement:   %s\n", ds_get_utf8attr(ds->initstmt, &ds->initstmt8));
-  if (ds->charset    ) printf("Character set:       %s\n", ds_get_utf8attr(ds->charset, &ds->charset8));
-  if (ds->sslkey     ) printf("SSL key:             %s\n", ds_get_utf8attr(ds->sslkey, &ds->sslkey8));
-  if (ds->sslcert    ) printf("SSL cert:            %s\n", ds_get_utf8attr(ds->sslcert, &ds->sslcert8));
-  if (ds->sslca      ) printf("SSL CA:              %s\n", ds_get_utf8attr(ds->sslca, &ds->sslca8));
-  if (ds->sslcapath  ) printf("SSL CA path:         %s\n", ds_get_utf8attr(ds->sslcapath, &ds->sslcapath8));
-  if (ds->sslcipher  ) printf("SSL cipher:          %s\n", ds_get_utf8attr(ds->sslcipher, &ds->sslcipher8));
-  if (ds->sslmode   ) printf("SSL Mode:             %s\n", ds_get_utf8attr(ds->sslmode, &ds->sslmode8));
-  if (ds->sslverify) printf("Verify SSL cert:      yes\n");
-  if (ds->rsakey)    printf("RSA public key:       %s\n", ds_get_utf8attr(ds->rsakey, &ds->rsakey8));
-  if (ds->tls_versions) printf("TLS Versions:        %s\n", ds_get_utf8attr(ds->tls_versions, &ds->tls_versions8));
-  if (ds->ssl_crl   ) printf("SSL CRL:             %s\n", ds_get_utf8attr(ds->ssl_crl, &ds->ssl_crl8));
-  if (ds->ssl_crlpath) printf("SSL CRL path:        %s\n", ds_get_utf8attr(ds->ssl_crlpath, &ds->ssl_crlpath8));
-  if (ds->port && ds->has_port) printf("Port:                %d\n", ds->port);
-  if (ds->plugin_dir  ) printf("Plugin directory:    %s\n", ds_get_utf8attr(ds->plugin_dir, &ds->plugin_dir8));
-  if (ds->default_auth) printf("Default Authentication Library: %s\n", ds_get_utf8attr(ds->default_auth, &ds->default_auth8));
-  if (ds->oci_config_file) printf("OCI Config File: %s\n", ds_get_utf8attr(ds->oci_config_file, &ds->oci_config_file8));
-  if (ds->oci_config_profile) printf("OCI Config Profile: %s\n", ds_get_utf8attr(ds->oci_config_profile, &ds->oci_config_profile8));
-  if (ds->authentication_kerberos_mode) printf("Kerberos Authentication Mode: %s\n",
-    ds_get_utf8attr(ds->authentication_kerberos_mode,
-    &ds->authentication_kerberos_mode8));
-  printf("Options:\n");
-  if (ds->return_matching_rows) printf("\tFOUND_ROWS\n");
-  if (ds->allow_big_results) printf("\tBIG_PACKETS\n");
-  if (ds->dont_prompt_upon_connect) printf("\tNO_PROMPT\n");
-  if (ds->dynamic_cursor) printf("\tDYNAMIC_CURSOR\n");
-  if (ds->user_manager_cursor) printf("\tNO_DEFAULT_CURSOR\n");
-  if (ds->dont_use_set_locale) printf("\tNO_LOCALE\n");
-  if (ds->pad_char_to_full_length) printf("\tPAD_SPACE\n");
-  if (ds->return_table_names_for_SqlDescribeCol) printf("\tFULL_COLUMN_NAMES\n");
-  if (ds->use_compressed_protocol) printf("\tCOMPRESSED_PROTO\n");
-  if (ds->ignore_space_after_function_names) printf("\tIGNORE_SPACE\n");
-  if (ds->force_use_of_named_pipes) printf("\tNAMED_PIPE\n");
-  if (ds->change_bigint_columns_to_int) printf("\tNO_BIGINT\n");
-  if (ds->no_catalog) printf("\tNO_CATALOG\n");
-  if (ds->no_schema) printf("\tNO_SCHEMA\n");
-  if (ds->read_options_from_mycnf) printf("\tUSE_MYCNF\n");
-  if (ds->safe) printf("\tSAFE\n");
-  if (ds->disable_transactions) printf("\tNO_TRANSACTIONS\n");
-  if (ds->save_queries) printf("\tLOG_QUERY\n");
-  if (ds->dont_cache_result) printf("\tNO_CACHE\n");
-  if (ds->force_use_of_forward_only_cursors) printf("\tFORWARD_CURSOR\n");
-  if (ds->auto_reconnect) printf("\tAUTO_RECONNECT\n");
-  if (ds->clientinteractive) printf("\tINTERACTIVE\n");
-  if (ds->auto_increment_null_search) printf("\tAUTO_IS_NULL\n");
-  if (ds->zero_date_to_min) printf("\tZERO_DATE_TO_MIN\n");
-  if (ds->min_date_to_zero) printf("\tMIN_DATE_TO_ZERO\n");
-  if (ds->allow_multiple_statements) printf("\tMULTI_STATEMENTS\n");
-  if (ds->limit_column_size) printf("\tCOLUMN_SIZE_S32\n");
-  if (ds->handle_binary_as_char) printf("\tNO_BINARY_RESULT\n");
-  if (ds->default_bigint_bind_str) printf("\tDFLT_BIGINT_BIND_STR\n");
-  if (ds->no_date_overflow) printf("\tNO_DATE_OVERFLOW\n");
-  if (ds->enable_local_infile) printf("\tENABLE_LOCAL_INFILE\n");
-  if (ds->no_tls_1_2) printf("\tNO_TLS_1_2\n");
-  if (ds->no_tls_1_3) printf("\tNO_TLS_1_3\n");
-  if (ds->no_ssps) printf("\tNO_SSPS\n");
-  if (ds->cursor_prefetch_number) printf("\tPREFETCH=%d\n", ds->cursor_prefetch_number);
-  if (ds->readtimeout) printf("\tREADTIMEOUT=%d\n", ds->readtimeout);
-  if (ds->writetimeout) printf("\tWRITETIMEOUT=%d\n", ds->writetimeout);
-  if (ds->can_handle_exp_pwd) printf("\tCAN_HANDLE_EXP_PWD\n");
-  if (ds->enable_cleartext_plugin) printf("\tENABLE_CLEARTEXT_PLUGIN\n");
-  if (ds->get_server_public_key) printf("\tGET_SERVER_PUBLIC_KEY\n");
-  if (ds->enable_dns_srv) printf("\tENABLE_DNS_SRV\n");
-  if (ds->multi_host) printf("\tMULTI_HOST\n");
+  typedef std::pair<std::string, optionBase*> option_param;
+  std::vector<option_param> params;
+
+  #define OPTION_ADD_TO_MAP(X) params.push_back(std::make_pair(#X, &ds->opt_##X));
+  FULL_OPTIONS_LIST(OPTION_ADD_TO_MAP)
+
+  #define OPTION_CUSTOM_OUTPUT(OPT, STR) { \
+    std::string keyname = #OPT; \
+    auto it = std::find_if( \
+        params.begin(), params.end(), \
+        [keyname](const option_param &op) { return op.first == keyname; }); \
+    if (it != params.end()) { it->first = STR; } \
+  }
+
+
+  OPTION_CUSTOM_OUTPUT(DSN, "Name");
+  OPTION_CUSTOM_OUTPUT(DRIVER, "Driver");
+  OPTION_CUSTOM_OUTPUT(UID, "Uid");
+  OPTION_CUSTOM_OUTPUT(DATABASE, "Database");
+  OPTION_CUSTOM_OUTPUT(DESCRIPTION, "Description");
+  OPTION_CUSTOM_OUTPUT(SERVER, "Server");
+  OPTION_CUSTOM_OUTPUT(SOCKET, "Socket");
+  OPTION_CUSTOM_OUTPUT(PORT, "Port");
+  OPTION_CUSTOM_OUTPUT(INITSTMT, "Initial Statement");
+  OPTION_CUSTOM_OUTPUT(CHARSET, "Character Set");
+  OPTION_CUSTOM_OUTPUT(SSL_KEY, "SSL Key");
+  OPTION_CUSTOM_OUTPUT(SSL_CERT, "SSL Cert");
+  OPTION_CUSTOM_OUTPUT(SSL_CA, "SSL CA");
+  OPTION_CUSTOM_OUTPUT(SSL_CAPATH, "SSL CA Path");
+  OPTION_CUSTOM_OUTPUT(SSL_CIPHER, "SSL Cipher");
+  OPTION_CUSTOM_OUTPUT(SSL_MODE, "SSL Mode");
+  OPTION_CUSTOM_OUTPUT(SSLVERIFY, "Verify SSL Cert");
+  OPTION_CUSTOM_OUTPUT(RSAKEY, "RSA Public Key");
+  OPTION_CUSTOM_OUTPUT(TLS_VERSIONS, "TLS Versions");
+  OPTION_CUSTOM_OUTPUT(SSL_CRL, "SSL CRL");
+  OPTION_CUSTOM_OUTPUT(SSL_CRLPATH, "SSL CRL Path");
+  OPTION_CUSTOM_OUTPUT(PLUGIN_DIR, "Plugin Directory");
+  OPTION_CUSTOM_OUTPUT(DEFAULT_AUTH, "Default Authentication Library");
+  OPTION_CUSTOM_OUTPUT(OCI_CONFIG_FILE, "OCI Config File");
+  OPTION_CUSTOM_OUTPUT(OCI_CONFIG_PROFILE, "OCI Config Profile");
+  OPTION_CUSTOM_OUTPUT(AUTHENTICATION_KERBEROS_MODE, "Kerberos Authentication Mode");
+
+  bool bool_mode = false;
+
+  for (const auto &v : params) {
+    if (!v.second->is_set() || v.second->is_default())
+      continue;
+
+    std::string out_str = v.first;
+
+    switch (v.second->get_type()) {
+      case optionBase::opt_type::STRING: {
+        out_str.append(":");
+        std::cout << std::setw(21) << std::left << out_str;
+
+        optionStr *str_opt = (optionStr *)v.second;
+        std::cout << (const char*)(*str_opt);
+        break;
+      }
+      case optionBase::opt_type::INT: {
+        out_str.append(":");
+        std::cout << std::setw(21) << std::left << out_str;
+
+        optionInt *int_opt = (optionInt *)v.second;
+        std::cout << (int)(*int_opt);
+        break;
+      }
+      case optionBase::opt_type::BOOL: {
+        if (!bool_mode) {
+          // On first go with bool options print this
+          std::cout << "Options:" << std::endl;
+          bool_mode = true;
+        }
+
+        std::cout << "        " << out_str;
+        optionBool *bool_opt = (optionBool *)v.second;
+        break;
+      }
+    }
+    std::cout << std::endl;
+  }
 
   return 0;
 }
@@ -638,7 +641,7 @@ int list_datasources()
 int add_datasource(DataSource *ds, const SQLWCHAR *attrs)
 {
   /* read datasource object from attributes */
-  if (ds_from_kvpair(ds, attrs, ';'))
+  if (ds->from_kvpair(attrs, ';'))
   {
     fprintf(stderr,
             "[ERROR] Could not parse key-value pair attribute string\n");
@@ -646,14 +649,14 @@ int add_datasource(DataSource *ds, const SQLWCHAR *attrs)
   }
 
   /* validate */
-  if (!ds->driver)
+  if (!ds->opt_DRIVER)
   {
     fprintf(stderr, "[ERROR] Driver must be specified for a data source\n");
     return 1;
   }
 
   /* Add it */
-  if (ds_add(ds))
+  if (ds->add())
   {
     print_installer_error();
     fprintf(stderr,
@@ -675,13 +678,13 @@ int remove_datasource(DataSource *ds)
      First check that it exists, because SQLRemoveDSNFromIni
      returns true, even if it doesn't.
    */
-  if (ds_exists(ds->name))
+  if (ds->exists())
   {
     fprintf(stderr, "[ERROR] Data source doesn't exist\n");
     return 1;
   }
 
-  if (SQLRemoveDSNFromIniW(ds->name) != TRUE)
+  if (SQLRemoveDSNFromIniW(ds->opt_DSN) != TRUE)
   {
     print_installer_error();
     return 1;
@@ -702,7 +705,7 @@ int handle_datasource_action()
 {
   int rc= 0;
   UWORD config_mode= config_set(scope);
-  DataSource *ds= ds_new();
+  DataSource ds;
 
   /* check name is given if needed */
   switch (action)
@@ -719,14 +722,14 @@ int handle_datasource_action()
 
   /* set name if given */
   if (name)
-    ds_set_strattr(&ds->name, wname);
+    ds.opt_DSN = wname;
 
   /* perform given action */
   switch (action)
   {
   case ACTION_LIST:
     if (name)
-      rc= list_datasource_details(ds);
+      rc= list_datasource_details(&ds);
     else
       rc= list_datasources();
     break;
@@ -744,16 +747,15 @@ int handle_datasource_action()
     }
     else
     {
-      rc= add_datasource(ds, wattrs);
+      rc= add_datasource(&ds, wattrs);
     }
     break;
   case ACTION_REMOVE:
-    rc= remove_datasource(ds);
+    rc= remove_datasource(&ds);
     break;
   }
 
 end:
-  ds_delete(ds);
   config_set(config_mode);
   return rc;
 }
@@ -823,7 +825,7 @@ int main(int argc, char **argv)
       }
       action= *arg;
       break;
-    case OPT_NAME:
+    case OPT_DSN:
       if (i + 1 == argc || *argv[i + 1] == '-')
       {
         fprintf(stderr, "[ERROR] Missing name\n");

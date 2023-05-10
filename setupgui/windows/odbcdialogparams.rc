@@ -100,24 +100,24 @@ FONT 8, "MS Shell Dlg", 400, 0, 0x1
 BEGIN
     GROUPBOX        "Connection Parameters",IDC_STATIC,18,53,348,148
     RTEXT           "Data Source &Name:",IDC_STATIC,23,68,67,8
-    EDITTEXT        IDC_EDIT_name,98,64,243,14,ES_AUTOHSCROLL
+    EDITTEXT        IDC_EDIT_DSN,98,64,243,14,ES_AUTOHSCROLL
     RTEXT           "D&escription:",IDC_STATIC,23,87,67,8
-    EDITTEXT        IDC_EDIT_description,98,83,243,14,ES_AUTOHSCROLL
+    EDITTEXT        IDC_EDIT_DESCRIPTION,98,83,243,14,ES_AUTOHSCROLL
     GROUPBOX        "",IDC_STATIC,31,105,59,26,NOT WS_VISIBLE
     CONTROL         "TCP/IP &Server:",IDC_RADIO_tcp,"Button",BS_AUTORADIOBUTTON | BS_RIGHT,32,105,60,13
-    CONTROL         "Named &Pipe:",IDC_RADIO_pipe,"Button",BS_AUTORADIOBUTTON | BS_RIGHT,32,122,60,13
+    CONTROL         "Named &Pipe:",IDC_RADIO_NAMED_PIPE,"Button",BS_AUTORADIOBUTTON | BS_RIGHT,32,122,60,13
     RTEXT           "Server",IDC_STATIC,97,104,0,0 // Invisible, needed for accessibility
-    EDITTEXT        IDC_EDIT_server,198,104,85,14,ES_AUTOHSCROLL
+    EDITTEXT        IDC_EDIT_SERVER,198,104,85,14,ES_AUTOHSCROLL
     RTEXT           "&Port:",IDC_STATIC,287,107,19,8
-    EDITTEXT        IDC_EDIT_port,312,104,28,14,ES_AUTOHSCROLL | ES_NUMBER
+    EDITTEXT        IDC_EDIT_PORT,312,104,28,14,ES_AUTOHSCROLL | ES_NUMBER
     RTEXT           "Named Pipe",IDC_STATIC,97,104,0,0 // Invisible, needed for accessibility
-    EDITTEXT        IDC_EDIT_socket,98,123,185,14,WS_DISABLED,ES_AUTOHSCROLL
+    EDITTEXT        IDC_EDIT_SOCKET,98,123,185,14,WS_DISABLED,ES_AUTOHSCROLL
     RTEXT           "&User:",IDC_STATIC,23,143,67,8
-    EDITTEXT        IDC_EDIT_uid,98,142,185,14,ES_AUTOHSCROLL
+    EDITTEXT        IDC_EDIT_UID,98,142,185,14,ES_AUTOHSCROLL
     RTEXT           "Pass&word:",IDC_STATIC,23,164,67,8
-    EDITTEXT        IDC_EDIT_pwd,98,161,185,14,ES_PASSWORD | ES_AUTOHSCROLL
+    EDITTEXT        IDC_EDIT_PWD,98,161,185,14,ES_PASSWORD | ES_AUTOHSCROLL
     RTEXT           "Data&base:",IDC_STATIC,23,182,67,8
-    COMBOBOX        IDC_EDIT_database,98,180,185,42,CBS_DROPDOWN | CBS_AUTOHSCROLL | CBS_SORT | WS_VSCROLL | WS_TABSTOP
+    COMBOBOX        IDC_EDIT_DATABASE,98,180,185,42,CBS_DROPDOWN | CBS_AUTOHSCROLL | CBS_SORT | WS_VSCROLL | WS_TABSTOP
     PUSHBUTTON      "&Test",IDC_BUTTON_TEST,299,179,41,14
     CONTROL         "",IDC_TAB1,"SysTabControl32",WS_TABSTOP,17,214,349,209 // Change the size of this to fit more controls
     PUSHBUTTON      "&Details >>",IDC_BUTTON_DETAILS,17,405,50,14
@@ -131,52 +131,52 @@ IDD_TAB1 DIALOGEX 0, 0, 209, 231
 STYLE DS_SETFONT | DS_FIXEDSYS | WS_CHILD
 FONT 8, "MS Shell Dlg", 400, 0, 0x1
 BEGIN
-    CONTROL         "&Allow big result sets",IDC_CHECK_allow_big_results,
+    CONTROL         "&Allow big result sets",IDC_CHECK_BIG_PACKETS,
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,12,79,10
-    CONTROL         "&Use compression",IDC_CHECK_use_compressed_protocol,
+    CONTROL         "&Use compression",IDC_CHECK_COMPRESSED_PROTO,
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,27,69,10
-    CONTROL         "&Enable automatic reconnect",IDC_CHECK_auto_reconnect,
+    CONTROL         "&Enable automatic reconnect",IDC_CHECK_AUTO_RECONNECT,
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,42,105,10
-    CONTROL         "&Don't prompt when connecting",IDC_CHECK_dont_prompt_upon_connect,
+    CONTROL         "&Don't prompt when connecting",IDC_CHECK_NO_PROMPT,
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,57,113,10
-    CONTROL         "All&ow multiple statements",IDC_CHECK_allow_multiple_statements,
+    CONTROL         "All&ow multiple statements",IDC_CHECK_MULTI_STATEMENTS,
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,72,97,10
     RTEXT           "&Character Set:",IDC_STATIC,12,102,67,8
-    COMBOBOX        IDC_EDIT_charset,90,102,197,8,CBS_DROPDOWN | CBS_AUTOHSCROLL | CBS_SORT | WS_VSCROLL | WS_TABSTOP
+    COMBOBOX        IDC_EDIT_CHARSET,90,102,197,8,CBS_DROPDOWN | CBS_AUTOHSCROLL | CBS_SORT | WS_VSCROLL | WS_TABSTOP
 
 // Second Column
-    CONTROL         "Can &Handle Expired Password",IDC_CHECK_can_handle_exp_pwd
+    CONTROL         "Can &Handle Expired Password",IDC_CHECK_CAN_HANDLE_EXP_PWD
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,175,12,113,10
-    CONTROL         "Get Server Public Key",IDC_CHECK_get_server_public_key
+    CONTROL         "Get Server Public Key",IDC_CHECK_GET_SERVER_PUBLIC_KEY
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,175,27,113,10
-    CONTROL         "Use DNS SRV records",IDC_CHECK_enable_dns_srv
+    CONTROL         "Use DNS SRV records",IDC_CHECK_ENABLE_DNS_SRV
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,175,42,113,10
-    CONTROL         "Multi Host",IDC_CHECK_multi_host
+    CONTROL         "Multi Host",IDC_CHECK_MULTI_HOST
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,175,57,113,10
-    CONTROL         "&Interactive Client",IDC_CHECK_clientinteractive,
+    CONTROL         "&Interactive Client",IDC_CHECK_CLIENT_INTERACTIVE,
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,175,72,113,10
     RTEXT           "I&nitial Statement:",IDC_STATIC,12,118,67,8
-    EDITTEXT        IDC_EDIT_initstmt,90,118,197,12,ES_AUTOHSCROLL
+    EDITTEXT        IDC_EDIT_INITSTMT,90,118,197,12,ES_AUTOHSCROLL
     RTEXT           "Plugin Directory:",IDC_STATIC,12,133,67,8
-    EDITTEXT        IDC_EDIT_plugin_dir,90,133,197,12,ES_AUTOHSCROLL
-    PUSHBUTTON      "...",IDC_CHOOSER_plugin_dir,292,133,12,12,BS_CENTER
+    EDITTEXT        IDC_EDIT_PLUGIN_DIR,90,133,197,12,ES_AUTOHSCROLL
+    PUSHBUTTON      "...",IDC_CHOOSER_PLUGIN_DIR,292,133,12,12,BS_CENTER
 END
 
 IDD_TAB2 DIALOGEX 0, 0, 509, 181
 STYLE DS_SETFONT | DS_FIXEDSYS | WS_CHILD
 FONT 8, "MS Shell Dlg", 400, 0, 0x1
 BEGIN
-    CONTROL         "Enab&le Cleartext Authentication",IDC_CHECK_enable_cleartext_plugin
+    CONTROL         "Enab&le Cleartext Authentication",IDC_CHECK_ENABLE_CLEARTEXT_PLUGIN
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,125,12,113,10
     RTEXT           "Authentication Library:", IDC_STATIC, 2, 29, 113, 8
-    EDITTEXT        IDC_EDIT_default_auth, 125, 27, 190, 12, ES_AUTOHSCROLL | WS_TABSTOP
+    EDITTEXT        IDC_EDIT_DEFAULT_AUTH, 125, 27, 190, 12, ES_AUTOHSCROLL | WS_TABSTOP
     RTEXT           "&Kerberos Authentication Mode:", IDC_STATIC, 2, 45, 113, 8
-    EDITTEXT        IDC_EDIT_authentication_kerberos_mode, 125, 43, 190, 12, ES_AUTOHSCROLL | WS_TABSTOP
+    EDITTEXT        IDC_EDIT_AUTHENTICATION_KERBEROS_MODE, 125, 43, 190, 12, ES_AUTOHSCROLL | WS_TABSTOP
     RTEXT           "OCI Config File:",IDC_STATIC,48,61,67,8
-    EDITTEXT        IDC_EDIT_oci_config_file,125,59,190,12,ES_AUTOHSCROLL
-    PUSHBUTTON      "...",IDC_CHOOSER_oci_config_file,318,59,12,12,BS_CENTER
+    EDITTEXT        IDC_EDIT_OCI_CONFIG_FILE,125,59,190,12,ES_AUTOHSCROLL
+    PUSHBUTTON      "...",IDC_CHOOSER_OCI_CONFIG_FILE,318,59,12,12,BS_CENTER
     RTEXT           "OCI Config Profile:",IDC_STATIC,46,77,67,8
-    EDITTEXT        IDC_EDIT_oci_config_profile,125,75,190,12,ES_AUTOHSCROLL
+    EDITTEXT        IDC_EDIT_OCI_CONFIG_PROFILE,125,75,190,12,ES_AUTOHSCROLL
 
 #if MFA_ENABLED
    RTEXT           "Password &2",IDC_STATIC,18,9,67,8
@@ -190,17 +190,17 @@ IDD_TAB3 DIALOGEX 0, 0, 209, 181
 STYLE DS_SETFONT | DS_FIXEDSYS | WS_CHILD
 FONT 8, "MS Shell Dlg", 400, 0, 0x1
 BEGIN
-    CONTROL         "&Treat BIGINT columns as INT columns",IDC_CHECK_change_bigint_columns_to_int,
+    CONTROL         "&Treat BIGINT columns as INT columns",IDC_CHECK_NO_BIGINT,
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,12,135,10
-    CONTROL         "&Always handle binary function results as character data",IDC_CHECK_handle_binary_as_char,
+    CONTROL         "&Always handle binary function results as character data",IDC_CHECK_NO_BINARY_RESULT,
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,27,194,10
-    CONTROL         "I&nclude table name in SQLDescribeCol()",IDC_CHECK_return_table_names_for_SqlDescribeCol,
+    CONTROL         "I&nclude table name in SQLDescribeCol()",IDC_CHECK_FULL_COLUMN_NAMES,
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,42,141,10
-    CONTROL         "&Disable catalog support",IDC_CHECK_no_catalog,
+    CONTROL         "&Disable catalog support",IDC_CHECK_NO_CATALOG,
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,57,91,10
-    CONTROL         "&Disable schema support",IDC_CHECK_no_schema,
+    CONTROL         "&Disable schema support",IDC_CHECK_NO_SCHEMA,
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,72,141,10
-    CONTROL         "&Limit column size to signed 32-bit range",IDC_CHECK_limit_column_size,
+    CONTROL         "&Limit column size to signed 32-bit range",IDC_CHECK_COLUMN_SIZE_S32,
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,87,141,10
 
 END
@@ -209,26 +209,26 @@ IDD_TAB4 DIALOGEX 0, 0, 209, 181
 STYLE DS_SETFONT | DS_FIXEDSYS | WS_CHILD
 FONT 8, "MS Shell Dlg", 400, 0, 0x1
 BEGIN
-    CONTROL         "&Enable dynamic cursors",IDC_CHECK_dynamic_cursor,
+    CONTROL         "&Enable dynamic cursors",IDC_CHECK_DYNAMIC_CURSOR,
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,2,91,10
-    CONTROL         "&Disable driver-provided cursor support",IDC_CHECK_user_manager_cursor,
+    CONTROL         "&Disable driver-provided cursor support",IDC_CHECK_NO_DEFAULT_CURSOR,
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,17,139,10
-    CONTROL         "D&on't cache results of forward-only cursors",IDC_CHECK_dont_cache_result,
+    CONTROL         "D&on't cache results of forward-only cursors",IDC_CHECK_NO_CACHE,
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,32,154,10
-    CONTROL         "&Force use of forward-only cursors",IDC_CHECK_force_use_of_forward_only_cursors,
+    CONTROL         "&Force use of forward-only cursors",IDC_CHECK_FORWARD_CURSOR,
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,47,125,10
     CONTROL         "&Prefetch from server by",IDC_CHECK_cursor_prefetch_active,
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,62,89,10
     LTEXT           "ro&ws at a time",IDC_STATIC,130,62,48,10
-    EDITTEXT        IDC_EDIT_cursor_prefetch_number,102,62,27,10,ES_AUTOHSCROLL | ES_NUMBER | WS_DISABLED
+    EDITTEXT        IDC_EDIT_PREFETCH,102,62,27,10,ES_AUTOHSCROLL | ES_NUMBER | WS_DISABLED
 
-    CONTROL         "&Return matched rows instead of affected rows",IDC_CHECK_return_matching_rows,
+    CONTROL         "&Return matched rows instead of affected rows",IDC_CHECK_FOUND_ROWS,
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,80,165,10
-    CONTROL         "E&nable SQL_AUTO_IS_NULL",IDC_CHECK_auto_increment_null_search,
+    CONTROL         "E&nable SQL_AUTO_IS_NULL",IDC_CHECK_AUTO_IS_NULL,
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,95,105,10
-    CONTROL         "P&ad CHAR to full length with space",IDC_CHECK_pad_char_to_full_length,
+    CONTROL         "P&ad CHAR to full length with space",IDC_CHECK_PAD_SPACE,
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,110,127,10
-    CONTROL         "Re&turn SQL_NULL_DATA for zero date",IDC_CHECK_zero_date_to_min,
+    CONTROL         "Re&turn SQL_NULL_DATA for zero date",IDC_CHECK_ZERO_DATE_TO_MIN,
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,125,138,10
 END
 
@@ -236,7 +236,7 @@ IDD_TAB5 DIALOGEX 0, 0, 209, 181
 STYLE DS_SETFONT | DS_FIXEDSYS | WS_CHILD
 FONT 8, "MS Shell Dlg", 400, 0, 0x1
 BEGIN
-    CONTROL         "&Log queries to %TEMP%\\myodbc.sql",IDC_CHECK_save_queries,
+    CONTROL         "&Log queries to %TEMP%\\myodbc.sql",IDC_CHECK_LOG_QUERY,
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,12,148,10
 END
 
@@ -245,19 +245,19 @@ STYLE DS_SETFONT | DS_FIXEDSYS | WS_CHILD
 FONT 8, "MS Shell Dlg", 400, 0, 0x1
 BEGIN
     RTEXT           "SSL &Key",IDC_STATIC,18,9,67,8
-    EDITTEXT        IDC_EDIT_sslkey,90,7,97,12,ES_AUTOHSCROLL | WS_GROUP
+    EDITTEXT        IDC_EDIT_SSL_KEY,90,7,97,12,ES_AUTOHSCROLL | WS_GROUP
     RTEXT           "SSL &Certificate",IDC_STATIC,6,25,78,11
-    EDITTEXT        IDC_EDIT_sslcert,90,23,97,12,ES_AUTOHSCROLL
+    EDITTEXT        IDC_EDIT_SSL_CERT,90,23,97,12,ES_AUTOHSCROLL
     RTEXT           "SSL C&A File",IDC_STATIC,6,41,79,8
-    EDITTEXT        IDC_EDIT_sslca,90,39,97,12,ES_AUTOHSCROLL
+    EDITTEXT        IDC_EDIT_SSL_CA,90,39,97,12,ES_AUTOHSCROLL
     RTEXT           "SSL CA &Path",IDC_STATIC,24,58,61,8
-    EDITTEXT        IDC_EDIT_sslcapath,90,55,97,12,ES_AUTOHSCROLL
+    EDITTEXT        IDC_EDIT_SSL_CAPATH,90,55,97,12,ES_AUTOHSCROLL
     RTEXT           "&SSL Cipher",IDC_STATIC,18,73,67,8
-    EDITTEXT        IDC_EDIT_sslcipher,90,71,97,12,ES_AUTOHSCROLL
+    EDITTEXT        IDC_EDIT_SSL_CIPHER,90,71,97,12,ES_AUTOHSCROLL
     RTEXT           "SSL &Mode", IDC_STATIC,18,88,67,8
-    COMBOBOX        IDC_EDIT_sslmode,90,86,97,8,CBS_DROPDOWN | CBS_AUTOHSCROLL | CBS_SORT | WS_VSCROLL | WS_TABSTOP
+    COMBOBOX        IDC_EDIT_SSL_MODE,90,86,97,8,CBS_DROPDOWN | CBS_AUTOHSCROLL | CBS_SORT | WS_VSCROLL | WS_TABSTOP
     RTEXT           "&RSA Public Key",IDC_STATIC,18,104,67,8
-    EDITTEXT        IDC_EDIT_rsakey,90,102,97,12,ES_AUTOHSCROLL
+    EDITTEXT        IDC_EDIT_RSAKEY,90,102,97,12,ES_AUTOHSCROLL
     PUSHBUTTON      "...",IDC_SSLKEYCHOOSER,192,7,12,12,BS_CENTER
     PUSHBUTTON      "...",IDC_SSLCERTCHOOSER,192,23,12,12,BS_CENTER
     PUSHBUTTON      "...",IDC_SSLCACHOOSER,192,39,12,12,BS_CENTER
@@ -265,14 +265,14 @@ BEGIN
     PUSHBUTTON      "...",IDC_RSAKEYCHOOSER,192,102,12,12,BS_CENTER
 
     RTEXT           "SSL CRL File",IDC_STATIC,6,121,79,8
-    EDITTEXT        IDC_EDIT_ssl_crl,90,119,97,12,ES_AUTOHSCROLL
+    EDITTEXT        IDC_EDIT_SSL_CRL,90,119,97,12,ES_AUTOHSCROLL
     RTEXT           "SSL CRL &Path",IDC_STATIC,24,138,61,8
-    EDITTEXT        IDC_EDIT_ssl_crlpath,90,135,97,12,ES_AUTOHSCROLL
+    EDITTEXT        IDC_EDIT_SSL_CRLPATH,90,135,97,12,ES_AUTOHSCROLL
     PUSHBUTTON      "...",IDC_SSLCRLCHOOSER,192,119,12,12,BS_CENTER
     PUSHBUTTON      "...",IDC_SSLCRLPATHCHOOSER,192,135,12,12,BS_CENTER
 
-    CONTROL         "Disable TLS Version 1.&2",IDC_CHECK_no_tls_1_2,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,90,151,87,10
-    CONTROL         "Disable TLS Version 1.&3",IDC_CHECK_no_tls_1_3,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,90,164,87,10
+    CONTROL         "Disable TLS Version 1.&2",IDC_CHECK_NO_TLS_1_2,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,90,151,87,10
+    CONTROL         "Disable TLS Version 1.&3",IDC_CHECK_NO_TLS_1_3,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,90,164,87,10
 
 END
 
@@ -281,32 +281,32 @@ IDD_TAB7 DIALOGEX 0, 0, 209, 181
 STYLE DS_SETFONT | DS_FIXEDSYS | WS_CHILD
 FONT 8, "MS Shell Dlg", 400, 0, 0x1
 BEGIN
-    CONTROL         "&Enable safe options (see documentation)",IDC_CHECK_safe,
+    CONTROL         "&Enable safe options (see documentation)",IDC_CHECK_SAFE,
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,12,147,10
-    CONTROL         "&Don't use setlocale()",IDC_CHECK_dont_use_set_locale,
+    CONTROL         "&Don't use setlocale()",IDC_CHECK_NO_LOCALE,
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,27,81,10
-    CONTROL         "&Ignore space after function names",IDC_CHECK_ignore_space_after_function_names,
+    CONTROL         "&Ignore space after function names",IDC_CHECK_IGNORE_SPACE,
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,42,127,10
-    CONTROL         "&Read options from my.cnf",IDC_CHECK_read_options_from_mycnf,
+    CONTROL         "&Read options from my.cnf",IDC_CHECK_USE_MYCNF,
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,57,99,10
-    CONTROL         "Di&sable transaction support",IDC_CHECK_disable_transactions,
+    CONTROL         "Di&sable transaction support",IDC_CHECK_NO_TRANSACTIONS,
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,72,103,10
-    CONTROL         "&Bind minimal date as zero date",IDC_CHECK_min_date_to_zero,
+    CONTROL         "&Bind minimal date as zero date",IDC_CHECK_MIN_DATE_TO_ZERO,
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,87,138,10
-    CONTROL         "&Prepare statements on the client",IDC_CHECK_no_ssps,
+    CONTROL         "&Prepare statements on the client",IDC_CHECK_NO_SSPS,
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,102,138,10
-    CONTROL         "Enable LOAD DATA LOCAL INFILE statements", IDC_CHECK_enable_local_infile,
+    CONTROL         "Enable LOAD DATA LOCAL INFILE statements", IDC_CHECK_ENABLE_LOCAL_INFILE,
                     "Button", BS_AUTOCHECKBOX | WS_TABSTOP, 12, 117, 170, 10
 
     RTEXT           "LOAD DATA LOCAL Directory:",IDC_STATIC,8,134,100,8
-    EDITTEXT        IDC_EDIT_load_data_local_dir,112,132,195,12,ES_AUTOHSCROLL
-    PUSHBUTTON      "...",IDC_CHOOSER_load_data_local_dir,312,132,12,12,BS_CENTER
+    EDITTEXT        IDC_EDIT_LOAD_DATA_LOCAL_DIR,112,132,195,12,ES_AUTOHSCROLL
+    PUSHBUTTON      "...",IDC_CHOOSER_LOAD_DATA_LOCAL_DIR,312,132,12,12,BS_CENTER
 
     // Second column
 
-    CONTROL         "Bi&nd BIGINT parameters as strings",IDC_CHECK_default_bigint_bind_str,
+    CONTROL         "Bi&nd BIGINT parameters as strings",IDC_CHECK_DFLT_BIGINT_BIND_STR,
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,175,12,138,10
-    CONTROL         "Disable Date Overflow error", IDC_CHECK_no_date_overflow,
+    CONTROL         "Disable Date Overflow error", IDC_CHECK_NO_DATE_OVERFLOW,
                     "Button", BS_AUTOCHECKBOX | WS_TABSTOP, 175, 27, 138, 10
 
 END

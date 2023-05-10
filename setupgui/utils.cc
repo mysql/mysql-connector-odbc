@@ -59,12 +59,12 @@ SQLRETURN Connect(SQLHDBC *hDbc, SQLHENV *hEnv, DataSource *params)
   SQLRETURN   nReturn;
   SQLWSTRING  string_connect_in;
 
-  assert(params->driver && *params->driver);
+  assert(params->opt_DRIVER);
 
   /* Blank out DSN name, otherwise it will pull the info from the registry */
-  ds_set_strattr(&params->name, NULL);
+  params->opt_DSN = nullptr;
 
-  ds_to_kvpair(params, string_connect_in, ';');
+  string_connect_in = params->to_kvpair(';');
 
   if (hDBC == SQL_NULL_HDBC)
   {

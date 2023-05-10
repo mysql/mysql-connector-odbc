@@ -222,7 +222,7 @@ DECLARE_TEST(t_bug5853)
 
   ok_stmt(hstmt, SQLSetCursorName(hstmt, (SQLCHAR *)"bug5853", SQL_NTS));
 
-  ok_sql(hstmt, "SELECT * FROM t_bug5853");
+  ok_sql(hstmt, "SELECT * FROM t_bug5853 ORDER BY id");
 
   while ((rc= SQLFetchScroll(hstmt, SQL_FETCH_NEXT, 0)) != SQL_NO_DATA_FOUND)
   {
@@ -247,7 +247,7 @@ DECLARE_TEST(t_bug5853)
 
   ok_stmt(hstmt, SQLFreeStmt(hstmt, SQL_CLOSE));
 
-  ok_sql(hstmt,"SELECT * FROM t_bug5853");
+  ok_sql(hstmt,"SELECT * FROM t_bug5853 ORDER BY id");
 
   ok_stmt(hstmt, SQLBindCol(hstmt, 2, SQL_C_CHAR, nData, sizeof(nData), &nLen));
 

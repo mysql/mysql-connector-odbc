@@ -48,7 +48,7 @@ BOOL Driver_Prompt(HWND hWnd, SQLWCHAR *instr, SQLUSMALLINT completion,
 BOOL Driver_Prompt(HWND hWnd, SQLWCHAR *instr, SQLUSMALLINT completion,
                    SQLWCHAR *outstr, SQLSMALLINT outmax, SQLSMALLINT *outlen)
 {
-  DataSource *ds= ds_new();
+  DataSource ds;
   BOOL rc= FALSE;
   SQLWSTRING out;
   size_t copy_len = 0;
@@ -59,15 +59,15 @@ BOOL Driver_Prompt(HWND hWnd, SQLWCHAR *instr, SQLUSMALLINT completion,
   */
   if (instr && *instr)
   {
-    if (ds_from_kvpair(ds, instr, (SQLWCHAR)';'))
+    if (ds.from_kvpair(instr, (SQLWCHAR)';'))
       goto exit;
   }
 
   /* Show the dialog and handle result */
-  if (ShowOdbcParamsDialog(ds, hWnd, TRUE) == 1)
+  if (ShowOdbcParamsDialog(&ds, hWnd, TRUE) == 1)
   {
     /* serialize to outstr */
-    ds_to_kvpair(ds, out, (SQLWCHAR)';');
+    out = ds.to_kvpair((SQLWCHAR)';');
     size_t len = out.length();
     if (outlen)
       *outlen = len;
@@ -96,7 +96,6 @@ BOOL Driver_Prompt(HWND hWnd, SQLWCHAR *instr, SQLUSMALLINT completion,
   }
 
 exit:
-  ds_delete(ds);
   return rc;
 }
 
@@ -109,10 +108,9 @@ exit:
 BOOL INSTAPI ConfigDSNW(HWND hWnd, WORD nRequest, LPCWSTR pszDriver,
                         LPCWSTR pszAttributes)
 {
-  DataSource *ds= ds_new();
+  DataSource ds;
   BOOL rc= TRUE;
-  Driver *driver= NULL;
-  SQLWCHAR *origdsn= NULL;
+  SQLWSTRING origdsn;
 
   if (pszAttributes && *pszAttributes)
   {
@@ -129,48 +127,47 @@ BOOL INSTAPI ConfigDSNW(HWND hWnd, WORD nRequest, LPCWSTR pszDriver,
       delim= 0;
 #endif
 
-    if (ds_from_kvpair(ds, pszAttributes, delim))
+    if (ds.from_kvpair(pszAttributes, delim))
     {
       SQLPostInstallerError(ODBC_ERROR_INVALID_KEYWORD_VALUE,
                             W_INVALID_ATTR_STR);
-      rc= FALSE;
-      goto exitConfigDSN;
+      return FALSE;
     }
-    if (ds_lookup(ds) && nRequest != ODBC_ADD_DSN)
+    if (ds.lookup() && nRequest != ODBC_ADD_DSN)
     {
       /* ds_lookup() will already set SQLInstallerError */
-      rc= FALSE;
-      goto exitConfigDSN;
+      return FALSE;
     }
-    origdsn= sqlwchardup(ds->name, SQL_NTS);
+    origdsn = (const SQLWCHAR*)ds.opt_DSN;
   }
 
   switch (nRequest)
   {
   case ODBC_ADD_DSN:
-    driver= driver_new();
-    memcpy(driver->name, pszDriver,
-           (sqlwcharlen(pszDriver) + 1) * sizeof(SQLWCHAR));
-    if (driver_lookup(driver))
     {
-      rc= FALSE;
-      break;
-    }
-    if (hWnd)
-    {
-      /*
-        hWnd means we will at least try to prompt, at which point
-        the driver lib will be replaced by the name
-      */
-      ds_set_strattr(&ds->driver, driver->lib);
-    }
-    else
-    {
-      /*
-        no hWnd is a likely a call from an app w/no prompting so
-        we put the driver name immediately
-      */
-      ds_set_strattr(&ds->driver, driver->name);
+      Driver driver;
+      driver.name = pszDriver;
+      if (driver.lookup())
+      {
+        rc= FALSE;
+        break;
+      }
+      if (hWnd)
+      {
+        /*
+          hWnd means we will at least try to prompt, at which point
+          the driver lib will be replaced by the name
+        */
+        ds.opt_DRIVER = driver.lib;
+      }
+      else
+      {
+        /*
+          no hWnd is a likely a call from an app w/no prompting so
+          we put the driver name immediately
+        */
+        ds.opt_DRIVER = driver.name;
+      }
     }
   case ODBC_CONFIG_DSN:
 
@@ -179,31 +176,25 @@ BOOL INSTAPI ConfigDSNW(HWND hWnd, WORD nRequest, LPCWSTR pszDriver,
       for windows, if hWnd is NULL, we try to add the dsn
       with what information was given
     */
-    if (!hWnd || ShowOdbcParamsDialog(ds, hWnd, FALSE) == 1)
+    if (!hWnd || ShowOdbcParamsDialog(&ds, hWnd, FALSE) == 1)
 #else
-    if (ShowOdbcParamsDialog(ds, hWnd, FALSE) == 1)
+    if (ShowOdbcParamsDialog(&ds, hWnd, FALSE) == 1)
 #endif
     {
       /* save datasource */
-      if (ds_add(ds))
+      if (ds.add())
         rc= FALSE;
       /* if the name is changed, remove the old dsn */
-      if (origdsn && memcmp(origdsn, ds->name,
-                            (sqlwcharlen(origdsn) + 1) * sizeof(SQLWCHAR)))
-        SQLRemoveDSNFromIni(origdsn);
+      if (!origdsn.empty() && origdsn != (const SQLWSTRING&)ds.opt_DSN)
+        SQLRemoveDSNFromIni(origdsn.c_str());
     }
     break;
   case ODBC_REMOVE_DSN:
-    if (SQLRemoveDSNFromIni(ds->name) != TRUE)
+    if (SQLRemoveDSNFromIni(ds.opt_DSN) != TRUE)
       rc= FALSE;
     break;
   }
 
-exitConfigDSN:
-  x_free(origdsn);
-  ds_delete(ds);
-  if (driver)
-    driver_delete(driver);
   return rc;
 }
 

@@ -285,6 +285,12 @@ SQLCHAR *sqlwchar_as_utf8_ext(const SQLWCHAR *str, SQLINTEGER *len,
   UTF8 *u8;
   int utf8len, dummy;
   SQLINTEGER i;
+  SQLINTEGER len_val = 0;
+
+  if (!len) {
+    len = &len_val;
+    *len = sqlwcharlen(str);
+  }
 
   if (!str || *len <= 0)
   {
@@ -724,14 +730,14 @@ SQLWCHAR *sqlwchardup(const SQLWCHAR *wstr, size_t charlen)
  * @return The integer result of the conversion or 0 if the
  *         string could not be parsed.
  */
-unsigned long sqlwchartoul(const SQLWCHAR *wstr, const SQLWCHAR **endptr){
+unsigned long sqlwchartoul(const SQLWCHAR *wstr){
   unsigned long res= 0;
   SQLWCHAR c;
 
   if (!wstr)
     return 0;
 
-  while (c= *wstr)
+  while (c = *wstr)
   {
     if (c < '0' || c > '9')
       break;
@@ -739,9 +745,6 @@ unsigned long sqlwchartoul(const SQLWCHAR *wstr, const SQLWCHAR **endptr){
     res+= c - '0';
     ++wstr;
   }
-
-  if (endptr)
-    *endptr= wstr;
 
   return res;
 }
@@ -1711,7 +1714,7 @@ bool myodbc_append_os_quoted_std(std::string &str, const char *append, ...) {
 /*
  * Escape curly brackets.
  */
-SQLWSTRING escape_brackets(const SQLWCHAR* val, bool add_start_end)
+SQLWSTRING escape_brackets(const SQLWSTRING &val, bool add_start_end)
 {
   SQLWSTRING src = val;
   if (!add_start_end &&

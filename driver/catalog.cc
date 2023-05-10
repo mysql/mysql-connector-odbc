@@ -150,7 +150,6 @@ create_fake_resultset(STMT *stmt, MYSQL_ROW rowval, size_t rowsize,
                       my_ulonglong rowcnt, MYSQL_FIELD *fields, uint fldcnt,
                       bool copy_rowval = true)
 {
-  free_internal_result_buffers(stmt);
   if (stmt->fake_result)
   {
     x_free(stmt->result);
@@ -163,23 +162,19 @@ create_fake_resultset(STMT *stmt, MYSQL_ROW rowval, size_t rowsize,
 
   /* Free if result data was not in row storage */
   if (!stmt->m_row_storage.is_valid())
-    x_free(stmt->result_array);
+    stmt->result_array.reset();
 
   stmt->result= (MYSQL_RES*) myodbc_malloc(sizeof(MYSQL_RES), MYF(MY_ZEROFILL));
-  if (copy_rowval)
-  {
-    stmt->result_array= (MYSQL_ROW)myodbc_memdup((char *)rowval, rowsize, MYF(0));
-  }
-
-  if (!(stmt->result && stmt->result_array))
-  {
-    x_free(stmt->result);
-    x_free(stmt->result_array);
-
+  if (!stmt->result) {
     set_mem_error(stmt->dbc->mysql);
     return handle_connection_error(stmt);
   }
-  stmt->fake_result= 1;
+  stmt->fake_result = 1;
+
+  if (copy_rowval)
+  {
+    stmt->result_array.set(rowval, rowsize);
+  }
 
   set_row_count(stmt, rowcnt);
 
@@ -606,10 +601,10 @@ int add_name_condition_pv_id(HSTMT hstmt, std::string &query, SQLCHAR * name,
   return an error if they were.
 */
 #define CHECK_CATALOG_SCHEMA(ST, CN, CL, SN, SL) \
-  if (ST->dbc->ds->no_catalog && CN && *CN && CL) \
+  if (ST->dbc->ds.opt_NO_CATALOG && CN && *CN && CL) \
     return ST->set_error("HY000", "Support for catalogs is disabled by " \
            "NO_CATALOG option, but non-empty catalog is specified.", 0); \
-  if (ST->dbc->ds->no_schema && SN && *SN && SL) \
+  if (ST->dbc->ds.opt_NO_SCHEMA && SN && *SN && SL) \
     return ST->set_error("HY000", "Support for schemas is disabled by " \
            "NO_SCHEMA option, but non-empty schema is specified.", 0); \
   if (CN && *CN && CL && SN && *SN && SL) \
@@ -760,7 +755,7 @@ columns_i_s(SQLHSTMT hstmt, SQLCHAR *catalog, unsigned long catalog_len,
   MYSQL_ROW mysql_row = nullptr;
   // Use statically allocated array of pointers for STMT result processing
   char *mysql_stmt_row[ccount];
-  bool no_ssps = stmt->dbc->ds->no_ssps;
+  bool no_ssps = stmt->dbc->ds.opt_NO_SSPS;
 
   std::string query;
   query.reserve(2048);
@@ -915,7 +910,7 @@ columns_i_s(SQLHSTMT hstmt, SQLCHAR *catalog, unsigned long catalog_len,
     return e.retcode;
   }
   if (!stmt->m_row_storage.is_valid())
-    x_free(stmt->result_array);
+    stmt->result_array.reset();
 
   bool is_access = false;
 #ifdef _WIN32
@@ -1074,7 +1069,7 @@ columns_i_s(SQLHSTMT hstmt, SQLCHAR *catalog, unsigned long catalog_len,
   }
 
   create_empty_fake_resultset(stmt, SQLCOLUMNS_values,
-                                     sizeof(SQLCOLUMNS_values),
+                                     SQLCOLUMNS_FIELDS,
                                      SQLCOLUMNS_fields,
                                      SQLCOLUMNS_FIELDS);
   return SQL_SUCCESS;
@@ -1222,7 +1217,7 @@ SQLRETURN list_table_priv_i_s(SQLHSTMT    hstmt,
   query.append(" ORDER BY TABLE_CAT, TABLE_SCHEM, TABLE_NAME, PRIVILEGE, GRANTEE");
 
   if( !SQL_SUCCEEDED(rc= MySQLPrepare(hstmt, (SQLCHAR *)query.c_str(),
-                          (SQLINTEGER)(query.length()), false, true, false)))
+                          (SQLINTEGER)(query.length()), true, false)))
     return rc;
 
   return my_SQLExecute(stmt);
@@ -1306,7 +1301,7 @@ static SQLRETURN list_column_priv_i_s(HSTMT       hstmt,
   query.append(" ORDER BY TABLE_CAT, TABLE_SCHEM, TABLE_NAME, COLUMN_NAME, PRIVILEGE");
 
   if( !SQL_SUCCEEDED(rc= MySQLPrepare(hstmt, (SQLCHAR *)query.c_str(), SQL_NTS,
-                                      false, true, false)))
+                                      true, false)))
     return rc;
 
   return my_SQLExecute(stmt);
@@ -1599,7 +1594,7 @@ SQLRETURN foreign_keys_i_s(SQLHSTMT hstmt,
 
   query.append(order_by);
   rc= MySQLPrepare(hstmt, (SQLCHAR *)query.c_str(), (SQLINTEGER)(query.length()),
-                   false, true, false);
+                   true, false);
 
   if (!SQL_SUCCEEDED(rc))
     return rc;
@@ -1751,7 +1746,7 @@ MySQLProcedures(SQLHSTMT hstmt,
                  " WHERE ROUTINE_SCHEMA = DATABASE()");
 
     rc= MySQLPrepare(hstmt, (SQLCHAR*)query.c_str(), SQL_NTS,
-                     false, true, false);
+                     true, false);
 
   if (!SQL_SUCCEEDED(rc))
     return rc;
