@@ -113,9 +113,6 @@ DBC::~DBC()
   if (env)
     env->remove_dbc(this);
 
-  if (ds)
-    ds_delete(ds);
-
   free_explicit_descriptors();
 }
 
@@ -307,40 +304,37 @@ int reset_connection(DBC *dbc)
 
 int wakeup_connection(DBC *dbc)
 {
-  DataSource *ds= dbc->ds;
+  DataSource &ds = dbc->ds;
 
 #if MFA_ENABLED
-  if(ds->pwd1 && ds->pwd1[0])
+  if(ds.opt_PWD1)
   {
-    ds_get_utf8attr(ds->pwd1, &ds->pwd18);
     int fator = 2;
     mysql_options4(dbc->mysql, MYSQL_OPT_USER_PASSWORD,
-                   &fator,
-                   ds->pwd18);
+                   &fator, (const char*)ds.opt_PWD1);
   }
 
-  if(ds->pwd2 && ds->pwd2[0])
+  if (ds.opt_PWD2)
   {
     ds_get_utf8attr(ds->pwd2, &ds->pwd28);
     int fator = 2;
     mysql_options4(dbc->mysql, MYSQL_OPT_USER_PASSWORD,
                    &fator,
-                   ds->pwd28);
+                   (const char *)ds.opt_PWD2);
   }
 
-  if(ds->pwd3 && ds->pwd3[0])
+  if (ds.opt_PWD3)
   {
     ds_get_utf8attr(ds->pwd3, &ds->pwd38);
     int fator = 3;
     mysql_options4(dbc->mysql, MYSQL_OPT_USER_PASSWORD,
                    &fator,
-                   ds->pwd38);
+                   (const char *)ds.opt_PWD3);
   }
 #endif
 
-  if (mysql_change_user(dbc->mysql, ds_get_utf8attr(ds->uid, &ds->uid8),
-                                     ds_get_utf8attr(ds->pwd, &ds->pwd8),
-                                     ds_get_utf8attr(ds->database, &ds->database8)))
+  if (mysql_change_user(dbc->mysql, ds.opt_UID,
+      ds.opt_PWD, ds.opt_DATABASE))
   {
     return 1;
   }
@@ -389,7 +383,7 @@ SQLRETURN SQL_API SQLFreeConnect(SQLHDBC hdbc)
  */
 void STMT::allocate_param_bind(uint elements)
 {
-  if (dbc->ds->no_ssps)
+  if (dbc->ds.opt_NO_SSPS)
     return;
 
   if (param_bind.capacity() < elements)
@@ -523,11 +517,9 @@ SQLRETURN SQL_API my_SQLFreeStmtExtended(SQLHSTMT hstmt, SQLUSMALLINT f_option,
     stmt->free_fake_result((bool)(f_extra & FREE_STMT_CLEAR_RESULT));
 
     x_free(stmt->fields);   // TODO: Looks like STMT::fields is not used anywhere
-    x_free(stmt->result_array);
     stmt->result= 0;
     stmt->fake_result= 0;
     stmt->fields= 0;
-    stmt->result_array= 0;
     stmt->free_lengths();
     stmt->current_values= 0;   /* For SQLGetData */
     stmt->fix_fields= 0;
@@ -540,8 +532,7 @@ SQLRETURN SQL_API my_SQLFreeStmtExtended(SQLHSTMT hstmt, SQLUSMALLINT f_option,
     if (f_option == FREE_STMT_RESET_BUFFERS)
     {
       free_result_bind(stmt);
-      x_free(stmt->array);
-      stmt->array= 0;
+      stmt->array.reset();
 
       return SQL_SUCCESS;
     }
@@ -564,8 +555,8 @@ SQLRETURN SQL_API my_SQLFreeStmtExtended(SQLHSTMT hstmt, SQLUSMALLINT f_option,
 
     if (f_extra & FREE_STMT_CLEAR_RESULT)
     {
-      x_free(stmt->array);
-      stmt->array= 0;
+      stmt->array.reset();
+
       ssps_close(stmt);
       if (stmt->ssps != NULL)
       {
@@ -574,8 +565,8 @@ SQLRETURN SQL_API my_SQLFreeStmtExtended(SQLHSTMT hstmt, SQLUSMALLINT f_option,
     }
 
     /* At this point, only FREE_STMT_RESET and SQL_DROP left out */
-    reset_parsed_query(&stmt->orig_query, NULL, NULL, NULL);
-    reset_parsed_query(&stmt->query, NULL, NULL, NULL);
+    stmt->orig_query.reset(NULL, NULL, NULL);
+    stmt->query.reset(NULL, NULL, NULL);
 
     stmt->param_count= 0;
 

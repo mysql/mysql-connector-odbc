@@ -118,12 +118,42 @@ typedef struct syntax_markers
 
 } MY_SYNTAX_MARKERS;
 
-typedef struct parsed_query
+struct tempBuf {
+  char *buf;
+  size_t buf_len;
+  size_t cur_pos;
+
+  tempBuf(size_t size = 16384);
+
+  tempBuf(const tempBuf &b);
+
+  tempBuf(const char *src, size_t len);
+
+  char *extend_buffer(char *to, size_t len);
+  char *extend_buffer(size_t len);
+
+  // Append data to the current buffer
+  char *add_to_buffer(const char *from, size_t len);
+
+  char *add_to_buffer(char *to, const char *from, size_t len);
+  void remove_trail_zeroes();
+  void reset();
+
+  operator bool();
+
+  void operator=(const tempBuf &b);
+
+  ~tempBuf();
+};
+
+
+struct MY_PARSED_QUERY
 {
-  CHARSET_INFO  *cs;        /* We need it for parsing                  */
-  char          *query;     /* Original query itself                   */
-  char          *query_end; /* query end                               */
-  char          *last_char; /* mainly for remove_braces                */
+  CHARSET_INFO  *cs;                   /* We need it for parsing                  */
+  tempBuf buf;
+  const char          *query = nullptr;      /* Original query itself                   */
+  const char          *query_end = nullptr;  /* query end                               */
+  const char          *last_char; /* mainly for remove_braces                */
   //unsigned int  begin;    /* offset 1st meaningful character - 1st token */
   std::vector<uint> token2;     /* positions of tokens            */
   std::vector<uint> param_pos;  /* positions of parameter markers */
@@ -131,12 +161,24 @@ typedef struct parsed_query
   QUERY_TYPE_ENUM query_type;
   const char *  is_batch;   /* Pointer to the begin of a 2nd query in a batch */
 
-} MY_PARSED_QUERY;
+  MY_PARSED_QUERY();
+  MY_PARSED_QUERY &operator=(const MY_PARSED_QUERY &src);
+  ~MY_PARSED_QUERY();
+
+  void reset(char *query, char *query_end, CHARSET_INFO *cs);
+  const char *get_token(uint index);
+  const char *get_param_pos(uint index);
+  bool returns_result();
+  bool preparable_on_server(const char *server_version);
+  const char *get_cursor_name();
+  size_t token_count();
+  bool is_select_statement();
+};
 
 
 typedef struct parser
 {
-  char              *pos;
+  const char        *pos;
   int               bytes_at_pos;
   int               ctype;
   const MY_STRING   *quote;  /* If quote was open - pointer to the quote char */
@@ -148,28 +190,12 @@ typedef struct parser
   const MY_SYNTAX_MARKERS *syntax;
 } MY_PARSER;
 
-MY_PARSED_QUERY * init_parsed_query(MY_PARSED_QUERY *pq);
-MY_PARSED_QUERY * reset_parsed_query(MY_PARSED_QUERY *pq, char * query,
-                                     char * query_end, CHARSET_INFO  *cs);
-void              delete_parsed_query(MY_PARSED_QUERY *pq);
-int               copy_parsed_query(MY_PARSED_QUERY *src,
-                                    MY_PARSED_QUERY *target);
-
 /* Those are taking pointer to MY_PARSED_QUERY as a parameter*/
 #define GET_QUERY(pq) (pq)->query
 #define GET_QUERY_END(pq) (pq)->query_end
 #define GET_QUERY_LENGTH(pq) (GET_QUERY_END(pq) - GET_QUERY(pq))
-#define TOKEN_COUNT(pq) (pq)->token2.size()
 #define PARAM_COUNT(pq) (pq).param_pos.size()
 #define IS_BATCH(pq) ((pq)->is_batch != NULL)
-
-char * get_token(MY_PARSED_QUERY *pq, uint index);
-char * get_param_pos(MY_PARSED_QUERY *pq, uint index);
-
-BOOL   returns_result       (MY_PARSED_QUERY *pq);
-BOOL   preparable_on_server (MY_PARSED_QUERY *pq, const char *server_version);
-
-char * get_cursor_name      (MY_PARSED_QUERY *pq);
 
 MY_PARSER * init_parser(MY_PARSER *parser, MY_PARSED_QUERY *pq);
 
@@ -189,7 +215,7 @@ const MY_STRING * is_quote(MY_PARSER *parser);
 BOOL              open_quote(MY_PARSER *parser, const MY_STRING * quote);
 BOOL              is_query_separator(MY_PARSER *parser);
 /* Installs position on the character next after closing quote */
-char *            find_closing_quote(MY_PARSER *parser);
+const char *            find_closing_quote(MY_PARSER *parser);
 BOOL              is_param_marker(MY_PARSER *parser);
 void              add_parameter(MY_PARSER *parser);
 void              step_char(MY_PARSER *parser);
@@ -215,7 +241,6 @@ const char *find_first_token(CHARSET_INFO *charset, const char * begin,
 const char *skip_leading_spaces(const char *str);
 
 int         is_set_names_statement  (const char *query);
-int         is_select_statement     (const MY_PARSED_QUERY *query);
 BOOL        is_drop_procedure       (const SQLCHAR * query);
 BOOL        is_drop_function        (const SQLCHAR * query);
 BOOL        is_create_procedure     (const SQLCHAR * query);

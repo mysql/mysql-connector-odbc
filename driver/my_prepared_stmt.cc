@@ -318,9 +318,7 @@ void free_result_bind(STMT *stmt)
 
     x_free(stmt->result_bind);
     stmt->result_bind= 0;
-
-    x_free(stmt->array);
-    stmt->array= 0;
+    stmt->array.reset();
   }
 }
 
@@ -571,8 +569,8 @@ static MYSQL_ROW fetch_varlength_columns(STMT *stmt, MYSQL_ROW values)
           stmt->result_bind[i].buffer_length < *stmt->result_bind[i].length)
       {
         /* TODO Realloc error proc */
-        stmt->array[i]= (char*)myodbc_realloc(stmt->array[i], *stmt->result_bind[i].length,
-          MYF(MY_ALLOW_ZERO_PTR));
+        stmt->array[i]= (char*)myodbc_realloc(stmt->array[i],
+          *stmt->result_bind[i].length);
 
         stmt->lengths[i]= *stmt->result_bind[i].length;
         stmt->result_bind[i].buffer_length = *stmt->result_bind[i].length;
@@ -656,7 +654,7 @@ void STMT::reset()
 
   // If data existed before invalidating the result array does not need freeing
   if (m_row_storage.invalidate())
-    result_array = nullptr;
+    result_array.reset();
 }
 
 void STMT::free_reset_out_params()
@@ -670,7 +668,7 @@ void STMT::free_reset_out_params()
   apd->free_paramdata();
   /* reset data-at-exec state */
   dae_type = 0;
-  scroller_reset(this);
+  scroller.reset();
 }
 
 void STMT::free_reset_params()
@@ -693,7 +691,6 @@ void STMT::free_fake_result(bool clear_all_results)
     {
       /* We seiously CLOSEing statement for preparing handle object for
          new query */
-      alloc_root.Clear();
       while (!next_result(this))
       {
         get_result_metadata(this, TRUE);
@@ -730,8 +727,6 @@ STMT::~STMT()
   }
 
   reset_setpos_apd();
-  delete_parsed_query(&query);
-  delete_parsed_query(&orig_query);
 
   LOCK_DBC(dbc);
   dbc->stmt_list.remove(this);
@@ -903,8 +898,7 @@ int STMT::ssps_bind_result()
     /*TODO care about memory allocation errors */
     result_bind=  (MYSQL_BIND*)myodbc_malloc(sizeof(MYSQL_BIND)*num_fields,
                                              MYF(MY_ZEROFILL));
-    array=        (MYSQL_ROW)myodbc_malloc(sizeof(char*)*num_fields,
-                                             MYF(MY_ZEROFILL));
+    array.set_size(sizeof(char*)*num_fields);
 
     for (i= 0; i < num_fields; ++i)
     {

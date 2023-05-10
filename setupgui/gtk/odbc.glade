@@ -179,7 +179,7 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkEntry" id="server">
+                      <object class="GtkEntry" id="SERVER">
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="invisible_char">●</property>
@@ -195,7 +195,7 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkEntry" id="uid">
+                      <object class="GtkEntry" id="UID">
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="invisible_char">●</property>
@@ -211,7 +211,7 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkEntry" id="pwd">
+                      <object class="GtkEntry" id="PWD">
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="visibility">False</property>
@@ -258,7 +258,7 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkSpinButton" id="port">
+                      <object class="GtkSpinButton" id="PORT">
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="primary_icon_activatable">False</property>
@@ -276,7 +276,7 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkEntry" id="name">
+                      <object class="GtkEntry" id="DSN">
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="tooltip_text" translatable="yes">Sets the name or location of a specific socket or Windows pipe to use when communicating with MySQL.</property>
@@ -291,7 +291,7 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkEntry" id="description">
+                      <object class="GtkEntry" id="DESCRIPTION">
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="tooltip_text" translatable="yes">Enter some text to help identify the connection.</property>
@@ -320,7 +320,7 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkEntry" id="socket">
+                      <object class="GtkEntry" id="SOCKET">
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="has_tooltip">True</property>
@@ -387,7 +387,7 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkComboBox" id="database">
+                      <object class="GtkComboBox" id="DATABASE">
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="events">GDK_BUTTON_MOTION_MASK | GDK_BUTTON_PRESS_MASK | GDK_STRUCTURE_MASK</property>
@@ -395,7 +395,7 @@
                         <property name="has_entry">True</property>
                         <property name="entry_text_column">0</property>
                         <child internal-child="entry">
-                          <object class="GtkEntry" id="database_entry">
+                          <object class="GtkEntry" id="DATABASE_entry">
                             <property name="can_focus">False</property>
                             <property name="editable">False</property>
                           </object>
@@ -443,7 +443,7 @@
                           <placeholder/>
                         </child>
                         <child>
-                          <object class="GtkCheckButton" id="allow_big_results">
+                          <object class="GtkCheckButton" id="BIG_PACKETS">
                             <property name="label" translatable="yes">Allow Big Results</property>
                             <property name="use_action_appearance">False</property>
                             <property name="visible">True</property>
@@ -458,7 +458,7 @@
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkCheckButton" id="use_compressed_protocol">
+                          <object class="GtkCheckButton" id="COMPRESSED_PROTO">
                             <property name="label" translatable="yes">Use Compression</property>
                             <property name="use_action_appearance">False</property>
                             <property name="visible">True</property>
@@ -473,7 +473,7 @@
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkCheckButton" id="auto_reconnect">
+                          <object class="GtkCheckButton" id="AUTO_RECONNECT">
                             <property name="label" translatable="yes">Enable Automatic Reconnect</property>
                             <property name="use_action_appearance">False</property>
                             <property name="visible">True</property>
@@ -489,7 +489,7 @@
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkCheckButton" id="dont_prompt_upon_connect">
+                          <object class="GtkCheckButton" id="NO_PROMPT">
                             <property name="label" translatable="yes">Don't Prompt Upon Connect</property>
                             <property name="use_action_appearance">False</property>
                             <property name="visible">True</property>
@@ -505,7 +505,7 @@
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkCheckButton" id="allow_multiple_statements">
+                          <object class="GtkCheckButton" id="MULTI_STATEMENTS">
                             <property name="label" translatable="yes">Allow Multiple Statements</property>
                             <property name="use_action_appearance">False</property>
                             <property name="visible">True</property>
@@ -520,7 +520,7 @@
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkCheckButton" id="clientinteractive">
+                          <object class="GtkCheckButton" id="CLIENT_INTERACTIVE">
                             <property name="label" translatable="yes">Interactive Client</property>
                             <property name="use_action_appearance">False</property>
                             <property name="visible">True</property>
@@ -531,7 +531,7 @@
                           </object>
                         </child>
                         <child>
-                          <object class="GtkCheckButton" id="can_handle_exp_pwd">
+                          <object class="GtkCheckButton" id="CAN_HANDLE_EXP_PWD">
                             <property name="label" translatable="yes">Can Handle Expired Password</property>
                             <property name="use_action_appearance">False</property>
                             <property name="visible">True</property>
@@ -546,7 +546,7 @@
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkCheckButton" id="enable_cleartext_plugin">
+                          <object class="GtkCheckButton" id="ENABLE_CLEARTEXT_PLUGIN">
                             <property name="label" translatable="yes">Enable Cleartext Plugin</property>
                             <property name="use_action_appearance">False</property>
                             <property name="visible">True</property>
@@ -563,7 +563,7 @@
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkCheckButton" id="multi_host">
+                          <object class="GtkCheckButton" id="MULTI_HOST">
                             <property name="label" translatable="yes">Multi Host</property>
                             <property name="use_action_appearance">True</property>
                             <property name="visible">True</property>
@@ -580,7 +580,7 @@
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkCheckButton" id="enable_dns_srv">
+                          <object class="GtkCheckButton" id="ENABLE_DNS_SRV">
                             <property name="label" translatable="yes">Use DNS SRV records</property>
                             <property name="use_action_appearance">True</property>
                             <property name="visible">True</property>
@@ -597,7 +597,7 @@
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkCheckButton" id="get_server_public_key">
+                          <object class="GtkCheckButton" id="GET_SERVER_PUBLIC_KEY">
                             <property name="label" translatable="yes">Get Server Public Key</property>
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
@@ -655,7 +655,7 @@
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkEntry" id="initstmt">
+                          <object class="GtkEntry" id="INITSTMT">
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="invisible_char">●</property>
@@ -705,7 +705,7 @@
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkEntry" id="default_auth">
+                          <object class="GtkEntry" id="DEFAULT_AUTH">
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                           </object>
@@ -722,7 +722,7 @@
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
                             <child>
-                              <object class="GtkEntry" id="plugin_dir">
+                              <object class="GtkEntry" id="PLUGIN_DIR">
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
                               </object>
@@ -779,7 +779,7 @@
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
                             <child>
-                              <object class="GtkEntry" id="oci_config_file">
+                              <object class="GtkEntry" id="OCI_CONFIG_FILE">
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
                               </object>
@@ -790,7 +790,7 @@
                               </packing>
                             </child>
                             <child>
-                              <object class="GtkButton" id="oci_config_file_button">
+                              <object class="GtkButton" id="OCI_CONFIG_FILE_button">
                                 <property name="label" translatable="yes">...</property>
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
@@ -813,7 +813,7 @@
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkComboBox" id="charset">
+                          <object class="GtkComboBox" id="CHARSET">
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="events">GDK_BUTTON_MOTION_MASK | GDK_BUTTON_PRESS_MASK | GDK_STRUCTURE_MASK</property>
@@ -821,7 +821,7 @@
                             <property name="has_entry">True</property>
                             <property name="entry_text_column">0</property>
                             <child internal-child="entry">
-                              <object class="GtkEntry" id="charset_entry">
+                              <object class="GtkEntry" id="CHARSET_entry">
                                 <property name="can_focus">False</property>
                               </object>
                             </child>
@@ -939,7 +939,7 @@
                     <property name="can_focus">False</property>
                     <property name="border_width">8</property>
                     <child>
-                      <object class="GtkCheckButton" id="change_bigint_columns_to_int">
+                      <object class="GtkCheckButton" id="NO_BIGINT">
                         <property name="label" translatable="yes">Treat BIGINT Columns as INT columns</property>
                         <property name="use_action_appearance">False</property>
                         <property name="visible">True</property>
@@ -958,7 +958,7 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkCheckButton" id="handle_binary_as_char">
+                      <object class="GtkCheckButton" id="NO_BINARY_RESULT">
                         <property name="label" translatable="yes">Always handle Binary Function Results as Character Data</property>
                         <property name="use_action_appearance">False</property>
                         <property name="visible">True</property>
@@ -974,7 +974,7 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkCheckButton" id="return_table_names_for_SqlDescribeCol">
+                      <object class="GtkCheckButton" id="FULL_COLUMN_NAMES">
                         <property name="label" translatable="yes">Return Table Names for SQLDescribeCol</property>
                         <property name="use_action_appearance">False</property>
                         <property name="visible">True</property>
@@ -993,7 +993,7 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkCheckButton" id="no_catalog">
+                      <object class="GtkCheckButton" id="NO_CATALOG">
                         <property name="label" translatable="yes">Disable Catalog Support</property>
                         <property name="use_action_appearance">False</property>
                         <property name="visible">True</property>
@@ -1012,7 +1012,7 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkCheckButton" id="no_schema">
+                      <object class="GtkCheckButton" id="NO_SCHEMA">
                         <property name="label" translatable="yes">Disable Schema Support</property>
                         <property name="use_action_appearance">False</property>
                         <property name="visible">True</property>
@@ -1031,7 +1031,7 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkCheckButton" id="limit_column_size">
+                      <object class="GtkCheckButton" id="COLUMN_SIZE_S32">
                         <property name="label" translatable="yes">Limit Column Size to Signed 32-bit Range</property>
                         <property name="use_action_appearance">False</property>
                         <property name="visible">True</property>
@@ -1074,7 +1074,7 @@
                         <property name="can_focus">False</property>
                         <property name="border_width">8</property>
                         <child>
-                          <object class="GtkCheckButton" id="dynamic_cursor">
+                          <object class="GtkCheckButton" id="DYNAMIC_CURSOR">
                             <property name="label" translatable="yes">Enable dynamic cursors</property>
                             <property name="use_action_appearance">False</property>
                             <property name="visible">True</property>
@@ -1093,7 +1093,7 @@
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkCheckButton" id="user_manager_cursor">
+                          <object class="GtkCheckButton" id="NO_DEFAULT_CURSOR">
                             <property name="label" translatable="yes">Disable driver-provided cursor support</property>
                             <property name="use_action_appearance">False</property>
                             <property name="visible">True</property>
@@ -1112,7 +1112,7 @@
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkCheckButton" id="dont_cache_result">
+                          <object class="GtkCheckButton" id="NO_CACHE">
                             <property name="label" translatable="yes">Don't cache results of forward-only cursors</property>
                             <property name="use_action_appearance">False</property>
                             <property name="visible">True</property>
@@ -1131,7 +1131,7 @@
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkCheckButton" id="force_use_of_forward_only_cursors">
+                          <object class="GtkCheckButton" id="FORWARD_CURSOR">
                             <property name="label" translatable="yes">Force use of forward-only cursors</property>
                             <property name="use_action_appearance">False</property>
                             <property name="visible">True</property>
@@ -1170,7 +1170,7 @@
                               </packing>
                             </child>
                             <child>
-                              <object class="GtkSpinButton" id="cursor_prefetch_number">
+                              <object class="GtkSpinButton" id="PREFETCH">
                                 <property name="visible">True</property>
                                 <property name="sensitive">False</property>
                                 <property name="can_focus">True</property>
@@ -1207,7 +1207,7 @@
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkCheckButton" id="return_matching_rows">
+                          <object class="GtkCheckButton" id="FOUND_ROWS">
                             <property name="label" translatable="yes">Return matching rows instead of affected rows</property>
                             <property name="use_action_appearance">False</property>
                             <property name="visible">True</property>
@@ -1226,7 +1226,7 @@
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkCheckButton" id="auto_increment_null_search">
+                          <object class="GtkCheckButton" id="AUTO_IS_NULL">
                             <property name="label" translatable="yes">Enable SQL__AUTO__IS__NULL</property>
                             <property name="use_action_appearance">False</property>
                             <property name="visible">True</property>
@@ -1244,7 +1244,7 @@
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkCheckButton" id="pad_char_to_full_length">
+                          <object class="GtkCheckButton" id="PAD_SPACE">
                             <property name="label" translatable="yes">Pad CHAR to full length with space</property>
                             <property name="use_action_appearance">False</property>
                             <property name="visible">True</property>
@@ -1263,7 +1263,7 @@
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkCheckButton" id="zero_date_to_min">
+                          <object class="GtkCheckButton" id="ZERO_DATE_TO_MIN">
                             <property name="label" translatable="yes">Return SQL__NULL__DATA for zero date</property>
                             <property name="use_action_appearance">False</property>
                             <property name="visible">True</property>
@@ -1312,7 +1312,7 @@
                     <property name="can_focus">False</property>
                     <property name="border_width">8</property>
                     <child>
-                      <object class="GtkCheckButton" id="save_queries">
+                      <object class="GtkCheckButton" id="LOG_QUERY">
                         <property name="label" translatable="yes">Log queries to /tmp/myodbc.sql</property>
                         <property name="use_action_appearance">False</property>
                         <property name="visible">True</property>
@@ -1379,7 +1379,7 @@
                       <placeholder/>
                     </child>
                     <child>
-                      <object class="GtkEntry" id="sslkey">
+                      <object class="GtkEntry" id="SSL_KEY">
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="invisible_char">•</property>
@@ -1392,7 +1392,7 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkEntry" id="sslcert">
+                      <object class="GtkEntry" id="SSL_CERT">
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="invisible_char">•</property>
@@ -1407,7 +1407,7 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkEntry" id="sslca">
+                      <object class="GtkEntry" id="SSL_CA">
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="invisible_char">•</property>
@@ -1422,7 +1422,7 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkButton" id="sslkey_button">
+                      <object class="GtkButton" id="SSL_KEY_button">
                         <property name="label" translatable="yes">...</property>
                         <property name="use_action_appearance">False</property>
                         <property name="visible">True</property>
@@ -1437,7 +1437,7 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkButton" id="sslcert_button">
+                      <object class="GtkButton" id="SSL_CERT_button">
                         <property name="label" translatable="yes">...</property>
                         <property name="use_action_appearance">False</property>
                         <property name="visible">True</property>
@@ -1454,7 +1454,7 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkButton" id="sslca_button">
+                      <object class="GtkButton" id="SSL_CA_button">
                         <property name="label" translatable="yes">...</property>
                         <property name="use_action_appearance">False</property>
                         <property name="visible">True</property>
@@ -1471,7 +1471,7 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkButton" id="sslcapath_button">
+                      <object class="GtkButton" id="SSL_CAPATH_button">
                         <property name="label" translatable="yes">...</property>
                         <property name="use_action_appearance">False</property>
                         <property name="visible">True</property>
@@ -1488,7 +1488,7 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkEntry" id="sslcipher">
+                      <object class="GtkEntry" id="SSL_CIPHER">
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="invisible_char">•</property>
@@ -1559,7 +1559,7 @@
                       </object>
                     </child>
                     <child>
-                      <object class="GtkEntry" id="sslcapath">
+                      <object class="GtkEntry" id="SSL_CAPATH">
                         <property name="width_request">250</property>
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
@@ -1575,7 +1575,7 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkLabel" id="label_sslmode">
+                      <object class="GtkLabel" id="label_SSL_MODE">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <property name="label" translatable="yes">SSL Mode</property>
@@ -1587,7 +1587,7 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkLabel" id="label_rsakey">
+                      <object class="GtkLabel" id="label_RSAKEY">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <property name="label" translatable="yes">RSA Public Key</property>
@@ -1599,7 +1599,7 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkEntry" id="rsakey">
+                      <object class="GtkEntry" id="RSAKEY">
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                       </object>
@@ -1611,7 +1611,7 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkButton" id="rsakey_button">
+                      <object class="GtkButton" id="RSAKEY_button">
                         <property name="label" translatable="yes">...</property>
                         <property name="use_action_appearance">False</property>
                         <property name="visible">True</property>
@@ -1628,7 +1628,7 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkComboBox" id="sslmode">
+                      <object class="GtkComboBox" id="SSL_MODE">
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="events">GDK_BUTTON_PRESS_MASK | GDK_STRUCTURE_MASK</property>
@@ -1636,7 +1636,7 @@
                         <property name="has_entry">True</property>
                         <property name="entry_text_column">0</property>
                         <child internal-child="entry">
-                          <object class="GtkEntry" id="sslmode_entry">
+                          <object class="GtkEntry" id="SSL_MODE_entry">
                             <property name="can_focus">False</property>
                             <property name="editable">False</property>
                           </object>
@@ -1650,7 +1650,7 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkCheckButton" id="no_tls_1_2">
+                      <object class="GtkCheckButton" id="NO_TLS_1_2">
                         <property name="label" translatable="yes">Disable TLS Version 1.2</property>
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
@@ -1666,7 +1666,7 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkCheckButton" id="no_tls_1_3">
+                      <object class="GtkCheckButton" id="NO_TLS_1_3">
                         <property name="label" translatable="yes">Disable TLS Version 1.3</property>
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
@@ -1731,7 +1731,7 @@
                           <placeholder/>
                         </child>
                         <child>
-                          <object class="GtkCheckButton" id="safe">
+                          <object class="GtkCheckButton" id="SAFE">
                             <property name="label" translatable="yes">Enable Safe Options (see documentation)</property>
                             <property name="use_action_appearance">False</property>
                             <property name="visible">True</property>
@@ -1745,7 +1745,7 @@
                           </object>
                         </child>
                         <child>
-                          <object class="GtkCheckButton" id="default_bigint_bind_str">
+                          <object class="GtkCheckButton" id="DFLT_BIGINT_BIND_STR">
                             <property name="label" translatable="yes">Bind BIGINT parameters as strings</property>
                             <property name="use_action_appearance">False</property>
                             <property name="visible">True</property>
@@ -1762,7 +1762,7 @@
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkCheckButton" id="no_date_overflow">
+                          <object class="GtkCheckButton" id="NO_DATE_OVERFLOW">
                             <property name="label" translatable="yes">Disable Date Overflow error</property>
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
@@ -1778,7 +1778,7 @@
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkCheckButton" id="dont_use_set_locale">
+                          <object class="GtkCheckButton" id="NO_LOCALE">
                             <property name="label" translatable="yes">Don't Use setlocale()</property>
                             <property name="use_action_appearance">False</property>
                             <property name="visible">True</property>
@@ -1796,7 +1796,7 @@
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkCheckButton" id="ignore_space_after_function_names">
+                          <object class="GtkCheckButton" id="IGNORE_SPACE">
                             <property name="label" translatable="yes">Ignore space after function names</property>
                             <property name="use_action_appearance">False</property>
                             <property name="visible">True</property>
@@ -1814,7 +1814,7 @@
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkCheckButton" id="read_options_from_mycnf">
+                          <object class="GtkCheckButton" id="USE_MYCNF">
                             <property name="label" translatable="yes">Read options from my.cnf</property>
                             <property name="use_action_appearance">False</property>
                             <property name="visible">True</property>
@@ -1832,7 +1832,7 @@
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkCheckButton" id="disable_transactions">
+                          <object class="GtkCheckButton" id="NO_TRANSACTIONS">
                             <property name="label" translatable="yes">Disable transaction support</property>
                             <property name="use_action_appearance">False</property>
                             <property name="visible">True</property>
@@ -1850,7 +1850,7 @@
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkCheckButton" id="min_date_to_zero">
+                          <object class="GtkCheckButton" id="MIN_DATE_TO_ZERO">
                             <property name="label" translatable="yes">Bind minimal date as zero date</property>
                             <property name="use_action_appearance">False</property>
                             <property name="visible">True</property>
@@ -1868,7 +1868,7 @@
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkCheckButton" id="no_ssps">
+                          <object class="GtkCheckButton" id="NO_SSPS">
                             <property name="label" translatable="yes">Prepare statements on the client</property>
                             <property name="use_action_appearance">False</property>
                             <property name="visible">True</property>
@@ -1885,7 +1885,7 @@
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkCheckButton" id="enable_local_infile">
+                          <object class="GtkCheckButton" id="ENABLE_LOCAL_INFILE">
                             <property name="label" translatable="yes">Enable LOAD DATA LOCAL INFILE statements</property>
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
@@ -1933,7 +1933,7 @@
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
                             <child>
-                              <object class="GtkEntry" id="load_data_local_dir">
+                              <object class="GtkEntry" id="LOAD_DATA_LOCAL_DIR">
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
                               </object>
@@ -1944,7 +1944,7 @@
                               </packing>
                             </child>
                             <child>
-                              <object class="GtkButton" id="load_data_local_dir_button">
+                              <object class="GtkButton" id="LOAD_DATA_LOCAL_DIR_button">
                                 <property name="label" translatable="yes">...</property>
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>

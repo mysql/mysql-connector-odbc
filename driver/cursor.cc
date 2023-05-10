@@ -114,13 +114,13 @@ static const char *find_used_table(STMT *stmt)
 */
 char *check_if_positioned_cursor_exists(STMT *pStmt, STMT **pStmtCursor)
 {
-  const char * cursorName= get_cursor_name(&pStmt->query);
+  const char * cursorName = pStmt->query.get_cursor_name();
 
   if (cursorName != NULL)
   {
 
     DBC  *dbc= (DBC *)pStmt->dbc;
-    char * wherePos= get_token(&pStmt->query, TOKEN_COUNT(&pStmt->query)- 4);
+    const char *wherePos = pStmt->query.get_token(pStmt->query.token_count() - 4);
 
     if (wherePos > GET_QUERY(&pStmt->query))
     {
@@ -876,7 +876,7 @@ SQLRETURN my_pos_update_std( STMT *             pStmtCursor,
     pStmtTemp = (STMT *)hStmtTemp;
 
     if (my_SQLPrepare(pStmtTemp, (SQLCHAR *)query.c_str(), query.size(),
-                      false, true, false) != SQL_SUCCESS)
+                      true, false) != SQL_SUCCESS)
     {
         my_SQLFreeStmt( pStmtTemp, SQL_DROP );
         return pStmt->set_error("HY000", "my_SQLPrepare() failed.", 0 );
@@ -905,7 +905,7 @@ SQLRETURN my_pos_update_std( STMT *             pStmtCursor,
         To check: do we really need that?
       */
       if (my_SQLPrepare(pStmt, (SQLCHAR *)query.c_str(), query.size(),
-                        false, true, false) != SQL_SUCCESS)
+                        true, false) != SQL_SUCCESS)
         return SQL_ERROR;
       pStmt->dae_type= DAE_NORMAL;
     }

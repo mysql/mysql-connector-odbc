@@ -35,10 +35,8 @@
 
 #include "../MYODBC_CONF.h"
 #include "../MYODBC_ODBC.h"
-
-#ifdef __cplusplus
-extern "C" {
-#endif
+#include <map>
+#include <vector>
 
 /* the different modes used when calling MYODBCSetupDataSourceConfig */
 #define CONFIG_ADD 1
@@ -49,150 +47,350 @@ extern "C" {
 UWORD config_get();
 UWORD config_set(UWORD mode);
 
-typedef struct {
-  SQLWCHAR *name;
-  SQLWCHAR *lib;
-  SQLWCHAR *setup_lib;
+#ifdef __cplusplus
+extern "C" {
+#endif
+// Some forward declarations to avoid including stringutil.h
+void sqlwcharfromul(SQLWCHAR *wstr, unsigned long v);
+unsigned long sqlwchartoul(const SQLWCHAR *wstr);
+#ifdef __cplusplus
+}
+#endif
 
-  SQLCHAR *name8;
-  SQLCHAR *lib8;
-  SQLCHAR *setup_lib8;
-} Driver;
+using SQLWSTRING = std::basic_string<SQLWCHAR, std::char_traits<SQLWCHAR>,
+                                     std::allocator<SQLWCHAR>>;
+
+#ifdef BOOL
+// Prevent error in enum opt_type
+#undef BOOL
+typedef int BOOL;
+#endif  // BOOL
+
+class optionBase {
+  public:
+  enum class opt_type { STRING, INT, BOOL };
+
+  protected:
+
+  // Flag that the value is set
+  bool m_is_set = false;
+
+  // Flag that the value is set to default.
+  // Used when writing options to INI. Default values are omitted.
+  bool m_is_default = false;
+  opt_type m_type;
+
+  const char *err_msg_not_set = "Option is used without being set";
+
+  public:
+
+  optionBase() {}
+  optionBase(opt_type t) : m_type(t) {}
+
+  bool is_set() { return m_is_set; }
+  bool is_default() { return m_is_default; }
+  opt_type get_type() { return m_type; }
+  virtual operator SQLWSTRING() const = 0;
+  virtual const optionBase &operator=(const SQLWSTRING &val) {
+    m_is_set = true;
+    m_is_default = false;
+    return *this;
+  };
+  virtual void clear() = 0;
+};
+
+template<typename T>
+class optionVal : public optionBase {
+  T m_val;
+
+  public:
+
+  constexpr optionVal() {
+     m_type = std::is_same<T, int>::value ? opt_type::INT : opt_type::BOOL;
+     m_val = (T)0;
+  }
+
+  virtual operator SQLWSTRING() const {
+    SQLWCHAR numbuf[64];
+    if (!m_is_set)
+      throw err_msg_not_set;
+
+    sqlwcharfromul(numbuf, (unsigned long)m_val);
+    return SQLWSTRING(numbuf);
+  }
+
+  virtual operator T() const {
+    if (m_is_set)
+      return m_val;
+    throw err_msg_not_set;
+  }
+
+  const optionBase &operator=(const T &val) {
+    m_val = val;
+    m_is_set = true;
+    m_is_default = false;
+    return *this;
+  }
+
+  virtual const optionBase &operator=(const SQLWSTRING &val) {
+    m_val = (T)sqlwchartoul(val.c_str());
+    return optionBase::operator=(val);
+  }
+
+  virtual void clear() {
+    m_is_set = false;
+    m_is_default = false;
+    m_val = (T)0;
+  }
+
+  void set_default(T val) {
+    m_val = val;
+    m_is_set = true;
+    m_is_default = true;
+  }
+
+};
+
+using optionBool = optionVal<bool>;
+using optionInt = optionVal<int>;
+
+class optionStr : public optionBase {
+
+  const char *err_msg_null = "Option value is nullptr";
+
+  SQLWSTRING m_wstr;
+  std::string m_str;
+  bool m_is_null = false;
+
+  void set(const SQLWSTRING &val, bool is_default);
+  void set(const std::string &val, bool is_default);
+
+  const SQLCHAR *get() const {
+    if (m_is_set)
+      return (const SQLCHAR *)(m_is_null ? nullptr : m_str.c_str());
+    throw err_msg_not_set;
+  }
+
+  const SQLWCHAR *getw() const {
+    if (m_is_set)
+      return (const SQLWCHAR *)(m_is_null ? nullptr : m_wstr.c_str());
+    throw err_msg_not_set;
+  }
+
+  virtual void set_null() {
+    m_is_set = true;
+    m_is_null = true;
+    m_is_default = false;
+    m_wstr.clear();
+    m_str.clear();
+  }
+
+ public:
+
+  optionStr() : optionBase(opt_type::STRING) { }
+
+  virtual void clear() {
+    m_is_set = false;
+    m_is_default = false;
+    m_is_null = false;
+    m_wstr.clear();
+    m_str.clear();
+  }
+
+  void set_default(nullptr_t) {
+    set_null();
+    m_is_default = true;
+  }
+
+  void set_default(const SQLWCHAR *val) {
+    if (val)
+      set(val, true);
+    else
+      set_default(nullptr);
+  }
+
+  void set_default(const SQLCHAR *val) {
+    if (val)
+      set((const char*)val, true);
+    else
+      set_default(nullptr);
+  }
+
+  virtual const optionBase& operator=(const SQLWSTRING &val);
+  const optionBase& operator=(const SQLWCHAR *val);
+
+  // Assigning nullptr is equivalent to clearing the option
+  const optionStr &operator=(nullptr_t) { set_null(); return *this; }
+  const optionStr &operator=(const std::string &val);
+  operator const SQLCHAR *() const { return get(); }
+  operator SQLCHAR *() const { return (SQLCHAR *)get(); }
+  operator const char *() const { return (const char*)get(); }
+  operator const SQLWCHAR *() const { return getw(); }
+
+  virtual operator bool() const { return (m_is_set && !m_is_null && !m_wstr.empty()); }
+  virtual operator SQLWSTRING() const {
+    if (m_is_null)
+      throw err_msg_null;
+    return m_wstr;
+  }
+  virtual operator const SQLWSTRING&() const {
+    if (m_is_null)
+      throw err_msg_null;
+    return m_wstr;
+  }
+  void set_remove_brackets(const SQLWCHAR *val_str, SQLINTEGER len);
+};
+
+#define DECLARE_OPTIONS(X) optionStr X;
+
+#define DRIVER_OPTIONS_LIST(X) \
+  X(name) X(lib) X(setup_lib)
+
+class Driver {
+
+  public:
+   DRIVER_OPTIONS_LIST(DECLARE_OPTIONS)
+
+  /*
+   * Lookup a driver given only the filename of the driver. This is used:
+   *
+   * 1. When prompting for additional DSN info upon connect when the
+   *    driver uses an external setup library.
+   *
+   * 2. When testing a connection when adding/editing a DSN.
+   */
+  int lookup_name();
+
+  /*
+   * Lookup a driver in the system. The driver name is read from the given
+   * object. If greater-than zero is returned, additional information
+   * can be obtained from SQLInstallerError(). A less-than zero return code
+   * indicates that the driver could not be found.
+   */
+  int lookup();
+
+  /*
+   * Read the semi-colon delimited key-value pairs the attributes
+   * necessary to popular the driver object.
+   */
+  int from_kvpair_semicolon(const SQLWCHAR *attrs);
+
+  /*
+   * Write the attributes of the driver object into key-value pairs
+   * separated by single NULL chars.
+   */
+  int to_kvpair_null(SQLWCHAR *attrs, size_t attrslen);
+  Driver();
+  ~Driver();
+};
 
 /* SQL_MAX_OPTION_STRING_LENGTH = 256, should be ok */
 #define ODBCDRIVER_STRLEN SQL_MAX_OPTION_STRING_LENGTH
 #define ODBCDATASOURCE_STRLEN SQL_MAX_OPTION_STRING_LENGTH
 
-Driver *driver_new();
-void driver_delete(Driver *driver);
-int driver_lookup_name(Driver *driver);
-int driver_lookup(Driver *driver);
-int driver_from_kvpair_semicolon(Driver *driver, const SQLWCHAR *attrs);
-int driver_to_kvpair_null(Driver *driver, SQLWCHAR *attrs, size_t attrslen);
-
-typedef struct {
-  SQLWCHAR *name;
-  SQLWCHAR *driver; /* driver filename */
-  SQLWCHAR *description;
-  SQLWCHAR *server;
-  SQLWCHAR *uid;
-  SQLWCHAR *pwd;
 #if MFA_ENABLED
-  SQLWCHAR *pwd1;
-  SQLWCHAR *pwd2;
-  SQLWCHAR *pwd3;
+#define MFA_OPTS(X) X(PWD1) X(PWD2) X(PWD3)
+#else
+#define MFA_OPTS(X)
 #endif
-  SQLWCHAR *database;
-  SQLWCHAR *socket;
-  SQLWCHAR *initstmt;
-  SQLWCHAR *charset;
-  SQLWCHAR *sslkey;
-  SQLWCHAR *sslcert;
-  SQLWCHAR *sslca;
-  SQLWCHAR *sslcapath;
-  SQLWCHAR *sslcipher;
-  SQLWCHAR *sslmode;
-  SQLWCHAR *rsakey;
-  SQLWCHAR *savefile;
-  SQLWCHAR *plugin_dir;
-  SQLWCHAR *default_auth;
-  SQLWCHAR *load_data_local_dir;
-  SQLWCHAR *oci_config_file;
-  SQLWCHAR* oci_config_profile;
-  SQLWCHAR *authentication_kerberos_mode;
-  SQLWCHAR *tls_versions;
-  SQLWCHAR *ssl_crl;
-  SQLWCHAR *ssl_crlpath;
 
-  bool has_port;
-  unsigned int port;
-  unsigned int readtimeout;
-  unsigned int writetimeout;
-  unsigned int clientinteractive;
+#define STR_OPTIONS_LIST(X)                                                \
+  X(DSN)                                                                   \
+  X(DRIVER) X(DESCRIPTION) X(SERVER) X(UID) X(PWD) MFA_OPTS(X) X(DATABASE) \
+      X(SOCKET) X(INITSTMT) X(CHARSET) X(SSL_KEY) X(SSL_CERT) X(SSL_CA)    \
+          X(SSL_CAPATH) X(SSL_CIPHER) X(SSL_MODE) X(RSAKEY) X(SAVEFILE)    \
+              X(PLUGIN_DIR) X(DEFAULT_AUTH) X(LOAD_DATA_LOCAL_DIR)         \
+                  X(OCI_CONFIG_FILE) X(OCI_CONFIG_PROFILE)                 \
+                      X(AUTHENTICATION_KERBEROS_MODE) X(TLS_VERSIONS)      \
+                           X(SSL_CRL) X(SSL_CRLPATH) X(SSLVERIFY)
 
-  SQLCHAR *name8;
-  SQLCHAR *driver8;
-  SQLCHAR *description8;
-  SQLCHAR *server8;
-  SQLCHAR *uid8;
-  SQLCHAR *pwd8;
+#define INT_OPTIONS_LIST(X)                                         \
+  X(PORT)                                                           \
+  X(READTIMEOUT) X(WRITETIMEOUT) X(CLIENT_INTERACTIVE)              \
+      X(PREFETCH)
+
+#define BOOL_OPTIONS_LIST(X)                                                   \
+  X(FOUND_ROWS)                                                                \
+  X(BIG_PACKETS) X(COMPRESSED_PROTO) X(NO_BIGINT) X(SAFE) X(AUTO_RECONNECT)    \
+      X(AUTO_IS_NULL) X(NO_BINARY_RESULT) X(CAN_HANDLE_EXP_PWD)                \
+          X(ENABLE_CLEARTEXT_PLUGIN) X(GET_SERVER_PUBLIC_KEY) X(NO_PROMPT)     \
+          X(DYNAMIC_CURSOR) X(NO_DEFAULT_CURSOR) X(NO_LOCALE) X(PAD_SPACE)     \
+              X(NO_CACHE) X(FULL_COLUMN_NAMES) X(IGNORE_SPACE) X(NAMED_PIPE)   \
+                  X(NO_CATALOG) X(NO_SCHEMA) X(USE_MYCNF) X(NO_TRANSACTIONS)   \
+                      X(FORWARD_CURSOR) X(MULTI_STATEMENTS) X(COLUMN_SIZE_S32) \
+                          X(MIN_DATE_TO_ZERO) X(ZERO_DATE_TO_MIN)              \
+                              X(DFLT_BIGINT_BIND_STR) X(LOG_QUERY) X(NO_SSPS)  \
+                                  X(NO_TLS_1_2) X(NO_TLS_1_3)                  \
+                                      X(NO_DATE_OVERFLOW)                      \
+                                          X(ENABLE_LOCAL_INFILE)               \
+                                              X(ENABLE_DNS_SRV) X(MULTI_HOST)
+
+#define FULL_OPTIONS_LIST(X) \
+  STR_OPTIONS_LIST(X) INT_OPTIONS_LIST(X) BOOL_OPTIONS_LIST(X)
+
+// List of options that are represented as bits in numeric OPTION value
+#define BIT_OPTIONS_LIST(X)                                                  \
+  X(FOUND_ROWS)                                                              \
+  X(BIG_PACKETS)                                                             \
+  X(NO_PROMPT)                                                               \
+  X(DYNAMIC_CURSOR) X(NO_DEFAULT_CURSOR) X(NO_LOCALE) X(PAD_SPACE)           \
+      X(FULL_COLUMN_NAMES) X(COMPRESSED_PROTO) X(IGNORE_SPACE) X(NAMED_PIPE) \
+          X(NO_BIGINT) X(NO_CATALOG) X(USE_MYCNF) X(SAFE) X(NO_TRANSACTIONS) \
+              X(LOG_QUERY) X(NO_CACHE) X(FORWARD_CURSOR) X(AUTO_RECONNECT)   \
+                  X(AUTO_IS_NULL) X(ZERO_DATE_TO_MIN) X(MIN_DATE_TO_ZERO)    \
+                      X(MULTI_STATEMENTS) X(COLUMN_SIZE_S32)                 \
+                          X(NO_BINARY_RESULT) X(DFLT_BIGINT_BIND_STR)
+
+
 #if MFA_ENABLED
-  SQLCHAR *pwd18;
-  SQLCHAR *pwd28;
-  SQLCHAR *pwd38;
+#define MFA_ALIASES(X) X(PWD1, PASSWORD1) X(PWD2, PASSWORD2) X(PWD3, PASSWORD3)
+#else
+#define MFA_ALIASES(X)
 #endif
-  SQLCHAR *database8;
-  SQLCHAR *socket8;
-  SQLCHAR *initstmt8;
-  SQLCHAR *charset8;
-  SQLCHAR *sslkey8;
-  SQLCHAR *sslcert8;
-  SQLCHAR *sslca8;
-  SQLCHAR *sslcapath8;
-  SQLCHAR *sslcipher8;
-  SQLCHAR *sslmode8;
-  SQLCHAR *rsakey8;
-  SQLCHAR *savefile8;
-  SQLCHAR *plugin_dir8;
-  SQLCHAR *default_auth8;
-  SQLCHAR *load_data_local_dir8;
-  SQLCHAR *oci_config_file8;
-  SQLCHAR* oci_config_profile8;
-  SQLCHAR *authentication_kerberos_mode8;
-  SQLCHAR *tls_versions8;
-  SQLCHAR* ssl_crl8;
-  SQLCHAR* ssl_crlpath8;
 
-  /*  */
-  BOOL return_matching_rows;
-  BOOL allow_big_results;
-  BOOL use_compressed_protocol;
-  BOOL change_bigint_columns_to_int;
-  BOOL safe;
-  BOOL auto_reconnect;
-  BOOL auto_increment_null_search;
-  BOOL handle_binary_as_char;
-  BOOL can_handle_exp_pwd;
-  BOOL enable_cleartext_plugin;
-  BOOL get_server_public_key;
-  /*  */
-  BOOL dont_prompt_upon_connect;
-  BOOL dynamic_cursor;
-  BOOL user_manager_cursor;
-  BOOL dont_use_set_locale;
-  BOOL pad_char_to_full_length;
-  BOOL dont_cache_result;
-  /*  */
-  BOOL return_table_names_for_SqlDescribeCol;
-  BOOL ignore_space_after_function_names;
-  BOOL force_use_of_named_pipes;
-  BOOL no_catalog;
-  BOOL no_schema;
-  BOOL read_options_from_mycnf;
-  BOOL disable_transactions;
-  BOOL force_use_of_forward_only_cursors;
-  BOOL allow_multiple_statements;
-  BOOL limit_column_size;
+// Pairs of option names that have to be treated as the same
+#define ALIAS_OPTIONS_LIST(X) \
+  X(UID, USER) X(PWD, PASSWORD) MFA_ALIASES(X) X(DATABASE, DB) \
+  X(SSL_KEY, SSLKEY) X(SSL_CERT, SSLCERT) X(SSL_CA, SSLCA) \
+  X(SSL_CAPATH, SSLCAPATH) X(SSL_CIPHER, SSLCIPHER) X(SSL_MODE, SSLMODE)
 
-  BOOL min_date_to_zero;
-  BOOL zero_date_to_min;
-  BOOL default_bigint_bind_str;
-  /* debug */
-  BOOL save_queries;
-  /* SSL */
-  unsigned int sslverify;
-  unsigned int cursor_prefetch_number;
-  BOOL no_ssps;
+// Options that are not directly written to DSN
+#define SKIP_OPTIONS_LIST(X) \
+  X(DRIVER) X(DSN)
 
-  BOOL no_tls_1_2;
-  BOOL no_tls_1_3;
+class DataSource {
+  private:
+    // Map containing options, the key is SQLWSTRING for easier search
+    std::map<SQLWSTRING, optionBase &> m_opt_map;
 
-  BOOL no_date_overflow;
-  BOOL enable_local_infile;
+    // List of option aliases, they will not be written in INI files
+    std::vector<SQLWSTRING> m_alias_list;
+  public:
 
-  BOOL enable_dns_srv;
-  BOOL multi_host;
-} DataSource;
+#define DECLARE_STR_OPT(X) optionStr opt_##X;
+  STR_OPTIONS_LIST(DECLARE_STR_OPT);
+
+#define DECLARE_INT_OPT(X) optionInt opt_##X;
+  INT_OPTIONS_LIST(DECLARE_INT_OPT);
+
+#define DECLARE_BOOL_OPT(X) optionBool opt_##X;
+  BOOL_OPTIONS_LIST(DECLARE_BOOL_OPT);
+
+  DataSource();
+
+  SQLWSTRING to_kvpair(SQLWCHAR delim);
+
+  void clear();
+  int add();
+  bool write_opt(const SQLWCHAR *name, const SQLWCHAR *val);
+  bool exists();
+  void set_numeric_options(unsigned long options);
+  void set_val(SQLWCHAR *name, SQLWCHAR *val);
+  optionBase *get_opt(SQLWCHAR *name);
+  unsigned long get_numeric_options();
+  int lookup();
+  int from_kvpair(const SQLWCHAR *str, SQLWCHAR delim);
+};
 
 /* perhaps that is a good idea to have const ds object with defaults */
 extern const unsigned int default_cursor_prefetch;
@@ -208,18 +406,8 @@ typedef struct{
 
 #define TYPE_MAP_SIZE 32
 
-DataSource *ds_new();
-void ds_delete(DataSource *ds);
-int ds_set_strattr(SQLWCHAR **attr, const SQLWCHAR *val);
 int ds_set_strnattr(SQLWCHAR **attr, const SQLWCHAR *val, size_t charcount);
-int ds_lookup(DataSource *ds);
-int ds_from_kvpair(DataSource *ds, const SQLWCHAR *attrs, SQLWCHAR delim);
-int ds_add(DataSource *ds);
-int ds_exists(SQLWCHAR *name);
 char *ds_get_utf8attr(SQLWCHAR *attrw, SQLCHAR **attr8);
-int ds_setattr_from_utf8(SQLWCHAR **attr, SQLCHAR *val8);
-void ds_set_options(DataSource *ds, ulong options);
-ulong ds_get_options(DataSource *ds);
 
 extern const SQLWCHAR W_DRIVER_PARAM[];
 extern const SQLWCHAR W_DRIVER_NAME[];
@@ -272,12 +460,6 @@ extern const SQLWCHAR W_INVALID_ATTR_STR[];
 
 #define LPASTE(X) L ## X
 #define LSTR(X) LPASTE(X)
-
-#ifdef __cplusplus
-}
-#endif
-typedef std::basic_string<SQLWCHAR, std::char_traits<SQLWCHAR>, std::allocator<SQLWCHAR>> SQLWSTRING;
-int ds_to_kvpair(DataSource *ds, SQLWSTRING &attrs, SQLWCHAR delim);
 
 #endif /* _INSTALLER_H */
 

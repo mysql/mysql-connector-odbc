@@ -94,18 +94,10 @@ extern "C"
 
 
 #define my_sys_init my_init
-#define x_free(A) { void *tmp= (A); if (tmp) my_free((char *) tmp); }
-#define myodbc_malloc(A,B) my_malloc(PSI_NOT_INSTRUMENTED,A,B)
-
-#define myodbc_realloc(A,B,C) my_realloc(PSI_NOT_INSTRUMENTED,A,B,C)
-#define myodbc_memdup(A,B,C) my_memdup(PSI_NOT_INSTRUMENTED,A,B,C)
-#define myodbc_strdup(A,B) my_strdup(PSI_NOT_INSTRUMENTED,A,B)
-
+#define x_free(A) { void *tmp= (A); if (tmp) free((char *) tmp); }
+#define myodbc_malloc(A, B) (B == MY_ZEROFILL ? calloc(A, 1) : malloc(A))
+#define myodbc_realloc(A, B) realloc(A, B)
 #define myodbc_snprintf snprintf
-
-  static inline void *alloc_root(MEM_ROOT *root, size_t length) {
-    return root->Alloc(length);
-  }
 
 
 /* Get rid of defines from my_config.h that conflict with our myconf.h */

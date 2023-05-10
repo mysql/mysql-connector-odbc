@@ -58,8 +58,8 @@ SQLWSTRING mytest(HWND hwnd, DataSource *params)
     when clicking the Test button
   */
   myodbc::HENV henv;
-  SQLWCHAR *preservedSavefile= params->savefile;
-  params->savefile= 0;
+  SQLWSTRING preservedSavefile = (const SQLWSTRING&)params->opt_SAVEFILE;
+  params->opt_SAVEFILE.clear();
 
   try
   {
@@ -77,7 +77,7 @@ SQLWSTRING mytest(HWND hwnd, DataSource *params)
   }
 
   /* Restore savefile parameter */
-  params->savefile= preservedSavefile;
+  params->opt_SAVEFILE = preservedSavefile;
   return msg;
 }
 
@@ -94,8 +94,8 @@ std::vector<SQLWSTRING> mygetdatabases(HWND hwnd, DataSource* params)
   SQLRETURN   ret;
   SQLWCHAR    catalog[MYODBC_DB_NAME_MAX];
   SQLLEN      n_catalog;
-  SQLWCHAR    *preserved_database = params->database;
-  BOOL        preserved_no_catalog = params->no_catalog;
+  SQLWSTRING  preserved_database = (const SQLWSTRING&)params->opt_DATABASE;
+  bool        preserved_no_catalog = params->opt_NO_CATALOG;
   std::vector<SQLWSTRING> result;
   result.reserve(20);
 
@@ -103,18 +103,17 @@ std::vector<SQLWSTRING> mygetdatabases(HWND hwnd, DataSource* params)
     In case of file data source we do not want it to be created
     when clicking the Test button
   */
-  SQLWCHAR *preserved_savefile= params->savefile;
-  params->savefile = NULL;
-
-  params->database = NULL;
-  params->no_catalog = FALSE;
+  SQLWSTRING preserved_savefile = (const SQLWSTRING&)params->opt_SAVEFILE;
+  params->opt_SAVEFILE.clear();
+  params->opt_DATABASE.clear();
+  params->opt_NO_CATALOG.clear();
 
   myodbc::HENV henv;
   myodbc::HDBC hdbc(henv, params);
 
-  params->savefile = preserved_savefile;
-  params->database = preserved_database;
-  params->no_catalog = preserved_no_catalog;
+  params->opt_SAVEFILE = preserved_savefile;
+  params->opt_DATABASE = preserved_database;
+  params->opt_NO_CATALOG = preserved_no_catalog;
 
   myodbc::HSTMT hstmt(hdbc);
 
@@ -149,8 +148,8 @@ std::vector<SQLWSTRING> mygetcharsets(HWND hwnd, DataSource* params)
   SQLRETURN   ret;
   SQLWCHAR    charset[MYODBC_DB_NAME_MAX];
   SQLLEN      n_charset;
-  SQLWCHAR    *preserved_database= params->database;
-  BOOL        preserved_no_catalog= params->no_catalog;
+  SQLWSTRING preserved_database = (const SQLWSTRING &)params->opt_DATABASE;
+  bool        preserved_no_catalog= params->opt_NO_CATALOG;
   SQLWCHAR tmpbuf[1024];
   std::vector<SQLWSTRING> csl;
   csl.reserve(20);
@@ -159,18 +158,17 @@ std::vector<SQLWSTRING> mygetcharsets(HWND hwnd, DataSource* params)
     In case of file data source we do not want it to be created
     when clicking the Test button
   */
-  SQLWCHAR *preserved_savefile= params->savefile;
-  params->savefile= NULL;
-
-  params->database= NULL;
-  params->no_catalog= FALSE;
+  SQLWSTRING preserved_savefile = (const SQLWSTRING &)params->opt_SAVEFILE;
+  params->opt_SAVEFILE.clear();
+  params->opt_DATABASE.clear();
+  params->opt_NO_CATALOG.clear();
 
   myodbc::HENV henv;
   myodbc::HDBC hdbc(henv, params);
 
-  params->savefile = preserved_savefile;
-  params->database = preserved_database;
-  params->no_catalog = preserved_no_catalog;
+  params->opt_SAVEFILE = preserved_savefile;
+  params->opt_DATABASE = preserved_database;
+  params->opt_NO_CATALOG = preserved_no_catalog;
 
   myodbc::HSTMT hstmt(hdbc);
 
@@ -211,18 +209,21 @@ std::vector<SQLWSTRING> mygetcharsets(HWND hwnd, DataSource* params)
 /* Init DataSource from the main dialog controls */
 void syncData(HWND hwnd, DataSource *params)
 {
-  GET_STRING(name);
-  GET_STRING(description);
-  GET_STRING(server);
-  GET_STRING(socket);
-  GET_UNSIGNED(port);
-  GET_STRING(uid);
-  GET_STRING(pwd);
-  GET_COMBO(database);
+  GET_STRING(DSN);
+  GET_STRING(DESCRIPTION);
+  GET_STRING(SERVER);
+  GET_STRING(SOCKET);
+  GET_UNSIGNED(PORT);
+  GET_STRING(UID);
+  GET_STRING(PWD);
+  GET_COMBO(DATABASE);
 
 #ifdef _WIN32
   /* use this flag exclusively for Windows */
-  params->force_use_of_named_pipes = READ_BOOL(hwnd, IDC_RADIO_pipe);
+  if (READ_BOOL(hwnd, IDC_RADIO_NAMED_PIPE))
+    params->opt_NAMED_PIPE = true;
+  else
+    params->opt_NAMED_PIPE.clear();
 #endif
 }
 
@@ -230,134 +231,136 @@ void syncData(HWND hwnd, DataSource *params)
 /* Set the main dialog controls using DataSource */
 void syncForm(HWND hwnd, DataSource *params)
 {
-  SET_STRING(name);
-  SET_STRING(description);
-  SET_STRING(server);
-  SET_UNSIGNED(port);
-  SET_STRING(uid);
-  SET_STRING(pwd);
-  SET_STRING(socket);
-  SET_COMBO(database);
+  SET_STRING(DSN);
+  SET_STRING(DESCRIPTION);
+  SET_STRING(SERVER);
+  SET_UNSIGNED(PORT);
+  SET_STRING(UID);
+  SET_STRING(PWD);
+  SET_STRING(SOCKET);
+  SET_COMBO(DATABASE);
 
 #ifdef _WIN32
-  if (params->force_use_of_named_pipes)
+  if (params->opt_NAMED_PIPE)
   {
-    SET_RADIO(hwnd, IDC_RADIO_pipe, TRUE);
+    SET_RADIO(hwnd, IDC_RADIO_NAMED_PIPE, TRUE);
   }
   else
   {
     SET_RADIO(hwnd, IDC_RADIO_tcp, TRUE);
   }
-  SwitchTcpOrPipe(hwnd, params->force_use_of_named_pipes);
+  SwitchTcpOrPipe(hwnd, params->opt_NAMED_PIPE);
 #else
-  if (params->socket)
+  if (params->opt_SOCKET)
   {
     /* this flag means the socket file in Linux */
     SET_CHECKED(__UNUSED, use_socket_file, TRUE);
-    SET_SENSITIVE(server, FALSE);
-    SET_SENSITIVE(socket, TRUE);
+    SET_SENSITIVE(SERVER, FALSE);
+    SET_SENSITIVE(SOCKET, TRUE);
   }
   else
   {
     SET_CHECKED(__UNUSED, use_tcp_ip_server, TRUE);
-    SET_SENSITIVE(server, TRUE);
-    SET_SENSITIVE(socket, FALSE);
+    SET_SENSITIVE(SERVER, TRUE);
+    SET_SENSITIVE(SOCKET, FALSE);
   }
 #endif
 }
 
+#undef CLIENT_INTERACTIVE
 /*
  Sets the DataSource fields from the dialog inputs
 */
 void syncTabsData(HWND hwnd, DataSource *params)
 {  /* 1 - Connection */
-  GET_BOOL_TAB(CONNECTION_TAB, allow_big_results);
-  GET_BOOL_TAB(CONNECTION_TAB, use_compressed_protocol);
-  GET_BOOL_TAB(CONNECTION_TAB, dont_prompt_upon_connect);
-  GET_BOOL_TAB(CONNECTION_TAB, auto_reconnect);
-  GET_BOOL_TAB(CONNECTION_TAB, allow_multiple_statements);
-  GET_BOOL_TAB(CONNECTION_TAB, clientinteractive);
-  GET_BOOL_TAB(CONNECTION_TAB, can_handle_exp_pwd);
-  GET_BOOL_TAB(CONNECTION_TAB, get_server_public_key);
-  GET_BOOL_TAB(CONNECTION_TAB, enable_dns_srv);
+  GET_BOOL_TAB(CONNECTION_TAB, BIG_PACKETS);
+  GET_BOOL_TAB(CONNECTION_TAB, COMPRESSED_PROTO);
+  GET_BOOL_TAB(CONNECTION_TAB, NO_PROMPT);
+  GET_BOOL_TAB(CONNECTION_TAB, AUTO_RECONNECT);
+  GET_BOOL_TAB(CONNECTION_TAB, MULTI_STATEMENTS);
+  GET_BOOL_TAB(CONNECTION_TAB, CLIENT_INTERACTIVE);
+  GET_BOOL_TAB(CONNECTION_TAB, CAN_HANDLE_EXP_PWD);
+  GET_BOOL_TAB(CONNECTION_TAB, GET_SERVER_PUBLIC_KEY);
+  GET_BOOL_TAB(CONNECTION_TAB, ENABLE_DNS_SRV);
 
-  params->has_port = !params->enable_dns_srv;
+  if (params->opt_ENABLE_DNS_SRV)
+    params->opt_PORT.clear();
 
-  GET_BOOL_TAB(CONNECTION_TAB, multi_host);
+  GET_BOOL_TAB(CONNECTION_TAB, MULTI_HOST);
 
-  GET_COMBO_TAB(CONNECTION_TAB, charset);
-  GET_STRING_TAB(CONNECTION_TAB, initstmt);
-  GET_STRING_TAB(CONNECTION_TAB, plugin_dir);
+  GET_COMBO_TAB(CONNECTION_TAB, CHARSET);
+  GET_STRING_TAB(CONNECTION_TAB, INITSTMT);
+  GET_STRING_TAB(CONNECTION_TAB, PLUGIN_DIR);
 
   /* 2 - Authentication */
-  GET_BOOL_TAB(AUTH_TAB, enable_cleartext_plugin);
+  GET_BOOL_TAB(AUTH_TAB, ENABLE_CLEARTEXT_PLUGIN);
 #ifdef _WIN32
-  GET_STRING_TAB(AUTH_TAB, authentication_kerberos_mode);
+  GET_STRING_TAB(AUTH_TAB, AUTHENTICATION_KERBEROS_MODE);
 #endif
-  GET_STRING_TAB(AUTH_TAB, default_auth);
+  GET_STRING_TAB(AUTH_TAB, DEFAULT_AUTH);
 #if MFA_ENABLED
   GET_STRING_TAB(AUTH_TAB, pwd2);
   GET_STRING_TAB(AUTH_TAB, pwd3);
 #endif
-  GET_STRING_TAB(AUTH_TAB, oci_config_file);
-  GET_STRING_TAB(AUTH_TAB, oci_config_profile);
+  GET_STRING_TAB(AUTH_TAB, OCI_CONFIG_FILE);
+  GET_STRING_TAB(AUTH_TAB, OCI_CONFIG_PROFILE);
 
   /* 3 - Metadata*/
-  GET_BOOL_TAB(METADATA_TAB, change_bigint_columns_to_int);
-  GET_BOOL_TAB(METADATA_TAB, handle_binary_as_char);
-  GET_BOOL_TAB(METADATA_TAB, return_table_names_for_SqlDescribeCol);
-  GET_BOOL_TAB(METADATA_TAB, no_catalog);
-  GET_BOOL_TAB(METADATA_TAB, no_schema);
-  GET_BOOL_TAB(METADATA_TAB, limit_column_size);
+  GET_BOOL_TAB(METADATA_TAB, NO_BIGINT);
+  GET_BOOL_TAB(METADATA_TAB, NO_BINARY_RESULT);
+  GET_BOOL_TAB(METADATA_TAB, FULL_COLUMN_NAMES);
+  GET_BOOL_TAB(METADATA_TAB, NO_CATALOG);
+  GET_BOOL_TAB(METADATA_TAB, NO_SCHEMA);
+  GET_BOOL_TAB(METADATA_TAB, COLUMN_SIZE_S32);
 
   /* 4 - Cursors/Results */
-  GET_BOOL_TAB(CURSORS_TAB, return_matching_rows);
-  GET_BOOL_TAB(CURSORS_TAB, auto_increment_null_search);
-  GET_BOOL_TAB(CURSORS_TAB, dynamic_cursor);
-  GET_BOOL_TAB(CURSORS_TAB, user_manager_cursor);
-  GET_BOOL_TAB(CURSORS_TAB, pad_char_to_full_length);
-  GET_BOOL_TAB(CURSORS_TAB, dont_cache_result);
-  GET_BOOL_TAB(CURSORS_TAB, force_use_of_forward_only_cursors);
-  GET_BOOL_TAB(CURSORS_TAB, zero_date_to_min);
+  GET_BOOL_TAB(CURSORS_TAB, FOUND_ROWS);
+  GET_BOOL_TAB(CURSORS_TAB, AUTO_IS_NULL);
+  GET_BOOL_TAB(CURSORS_TAB, DYNAMIC_CURSOR);
+  GET_BOOL_TAB(CURSORS_TAB, NO_DEFAULT_CURSOR);
+  GET_BOOL_TAB(CURSORS_TAB, PAD_SPACE);
+  GET_BOOL_TAB(CURSORS_TAB, NO_CACHE);
+  GET_BOOL_TAB(CURSORS_TAB, FORWARD_CURSOR);
+  GET_BOOL_TAB(CURSORS_TAB, ZERO_DATE_TO_MIN);
 
   if (READ_BOOL_TAB(CURSORS_TAB, cursor_prefetch_active))
   {
-    GET_UNSIGNED_TAB(CURSORS_TAB, cursor_prefetch_number);
+    GET_UNSIGNED_TAB(CURSORS_TAB, PREFETCH);
   }
   else
   {
-    params->cursor_prefetch_number= 0;
+    params->opt_PREFETCH = 0;
   }
   /* 5 - debug*/
-  GET_BOOL_TAB(DEBUG_TAB,save_queries);
+  GET_BOOL_TAB(DEBUG_TAB,LOG_QUERY);
 
   /* 6 - ssl related */
-  GET_STRING_TAB(SSL_TAB, sslkey);
-  GET_STRING_TAB(SSL_TAB, sslcert);
-  GET_STRING_TAB(SSL_TAB, sslca);
-  GET_STRING_TAB(SSL_TAB, sslcapath);
-  GET_STRING_TAB(SSL_TAB, sslcipher);
-  GET_COMBO_TAB(SSL_TAB, sslmode);
+  GET_STRING_TAB(SSL_TAB, SSL_KEY);
+  GET_STRING_TAB(SSL_TAB, SSL_CERT);
+  GET_STRING_TAB(SSL_TAB, SSL_CA);
+  GET_STRING_TAB(SSL_TAB, SSL_CAPATH);
+  GET_STRING_TAB(SSL_TAB, SSL_CIPHER);
+  GET_COMBO_TAB(SSL_TAB, SSL_MODE);
 
-  GET_STRING_TAB(SSL_TAB, rsakey);
-  GET_BOOL_TAB(SSL_TAB, no_tls_1_2);
-  GET_BOOL_TAB(SSL_TAB, no_tls_1_3);
-  GET_STRING_TAB(SSL_TAB, tls_versions);
-  GET_STRING_TAB(SSL_TAB, ssl_crl);
-  GET_STRING_TAB(SSL_TAB, ssl_crlpath);
+  GET_STRING_TAB(SSL_TAB, RSAKEY);
+  GET_BOOL_TAB(SSL_TAB, NO_TLS_1_2);
+  GET_BOOL_TAB(SSL_TAB, NO_TLS_1_3);
+  GET_STRING_TAB(SSL_TAB, TLS_VERSIONS);
+  GET_STRING_TAB(SSL_TAB, SSL_CRL);
+  GET_STRING_TAB(SSL_TAB, SSL_CRLPATH);
 
   /* 7 - Misc*/
-  GET_BOOL_TAB(MISC_TAB, safe);
-  GET_BOOL_TAB(MISC_TAB, dont_use_set_locale);
-  GET_BOOL_TAB(MISC_TAB, ignore_space_after_function_names);
-  GET_BOOL_TAB(MISC_TAB, read_options_from_mycnf);
-  GET_BOOL_TAB(MISC_TAB, disable_transactions);
-  GET_BOOL_TAB(MISC_TAB, min_date_to_zero);
-  GET_BOOL_TAB(MISC_TAB, no_ssps);
-  GET_BOOL_TAB(MISC_TAB, default_bigint_bind_str);
-  GET_BOOL_TAB(MISC_TAB, no_date_overflow);
-  GET_BOOL_TAB(MISC_TAB, enable_local_infile);
-  GET_STRING_TAB(MISC_TAB, load_data_local_dir);
+  GET_BOOL_TAB(MISC_TAB, SAFE);
+  GET_BOOL_TAB(MISC_TAB, NO_LOCALE);
+  GET_BOOL_TAB(MISC_TAB, IGNORE_SPACE);
+  GET_BOOL_TAB(MISC_TAB, USE_MYCNF);
+  GET_BOOL_TAB(MISC_TAB, NO_TRANSACTIONS);
+  GET_BOOL_TAB(MISC_TAB, MIN_DATE_TO_ZERO);
+  GET_BOOL_TAB(MISC_TAB, NO_SSPS);
+  GET_BOOL_TAB(MISC_TAB, DFLT_BIGINT_BIND_STR);
+  GET_BOOL_TAB(MISC_TAB, NO_DATE_OVERFLOW);
+  GET_BOOL_TAB(MISC_TAB, ENABLE_LOCAL_INFILE);
+  GET_STRING_TAB(MISC_TAB, LOAD_DATA_LOCAL_DIR);
 }
 
 /*
@@ -366,120 +369,120 @@ void syncTabsData(HWND hwnd, DataSource *params)
 void syncTabs(HWND hwnd, DataSource *params)
 {
   /* 1 - Connection */
-  SET_BOOL_TAB(CONNECTION_TAB, allow_big_results);
-  SET_BOOL_TAB(CONNECTION_TAB, use_compressed_protocol);
-  SET_BOOL_TAB(CONNECTION_TAB, dont_prompt_upon_connect);
-  SET_BOOL_TAB(CONNECTION_TAB, auto_reconnect);
-  SET_BOOL_TAB(CONNECTION_TAB, enable_dns_srv);
-  SET_BOOL_TAB(CONNECTION_TAB, allow_multiple_statements);
-  SET_BOOL_TAB(CONNECTION_TAB, clientinteractive);
-  SET_BOOL_TAB(CONNECTION_TAB, can_handle_exp_pwd);
-  SET_BOOL_TAB(CONNECTION_TAB, get_server_public_key);
-  SET_BOOL_TAB(CONNECTION_TAB, enable_dns_srv);
-  SET_BOOL_TAB(CONNECTION_TAB, multi_host);
+  SET_BOOL_TAB(CONNECTION_TAB, BIG_PACKETS);
+  SET_BOOL_TAB(CONNECTION_TAB, COMPRESSED_PROTO);
+  SET_BOOL_TAB(CONNECTION_TAB, NO_PROMPT);
+  SET_BOOL_TAB(CONNECTION_TAB, AUTO_RECONNECT);
+  SET_BOOL_TAB(CONNECTION_TAB, ENABLE_DNS_SRV);
+  SET_BOOL_TAB(CONNECTION_TAB, MULTI_STATEMENTS);
+  SET_BOOL_TAB(CONNECTION_TAB, CLIENT_INTERACTIVE);
+  SET_BOOL_TAB(CONNECTION_TAB, CAN_HANDLE_EXP_PWD);
+  SET_BOOL_TAB(CONNECTION_TAB, GET_SERVER_PUBLIC_KEY);
+  SET_BOOL_TAB(CONNECTION_TAB, ENABLE_DNS_SRV);
+  SET_BOOL_TAB(CONNECTION_TAB, MULTI_HOST);
 
 #ifdef _WIN32
   if ( getTabCtrlTabPages(CONNECTION_TAB-1))
 #endif
   {
-    SET_COMBO_TAB(CONNECTION_TAB, charset);
-    SET_STRING_TAB(CONNECTION_TAB, initstmt);
-    SET_STRING_TAB(CONNECTION_TAB, plugin_dir);
+    SET_COMBO_TAB(CONNECTION_TAB, CHARSET);
+    SET_STRING_TAB(CONNECTION_TAB, INITSTMT);
+    SET_STRING_TAB(CONNECTION_TAB, PLUGIN_DIR);
   }
 
   /* 2 - Authentication */
-  SET_BOOL_TAB(AUTH_TAB, enable_cleartext_plugin);
+  SET_BOOL_TAB(AUTH_TAB, ENABLE_CLEARTEXT_PLUGIN);
 #ifdef _WIN32
-  SET_STRING_TAB(AUTH_TAB, authentication_kerberos_mode);
+  SET_STRING_TAB(AUTH_TAB, AUTHENTICATION_KERBEROS_MODE);
 #endif
-  SET_STRING_TAB(AUTH_TAB, default_auth);
+  SET_STRING_TAB(AUTH_TAB, DEFAULT_AUTH);
 #if MFA_ENABLED
-  SET_STRING_TAB(AUTH_TAB, pwd2);
-  SET_STRING_TAB(AUTH_TAB, pwd3);
+  SET_STRING_TAB(AUTH_TAB, PWD2);
+  SET_STRING_TAB(AUTH_TAB, PWD3);
 #endif
-  SET_STRING_TAB(AUTH_TAB, oci_config_file);
-  SET_STRING_TAB(AUTH_TAB, oci_config_profile);
+  SET_STRING_TAB(AUTH_TAB, OCI_CONFIG_FILE);
+  SET_STRING_TAB(AUTH_TAB, OCI_CONFIG_PROFILE);
 
   /* 3 - Metadata*/
-  SET_BOOL_TAB(METADATA_TAB, change_bigint_columns_to_int);
-  SET_BOOL_TAB(METADATA_TAB, handle_binary_as_char);
-  SET_BOOL_TAB(METADATA_TAB, return_table_names_for_SqlDescribeCol);
-  SET_BOOL_TAB(METADATA_TAB, no_catalog);
-  SET_BOOL_TAB(METADATA_TAB, no_schema);
-  SET_BOOL_TAB(METADATA_TAB, limit_column_size);
+  SET_BOOL_TAB(METADATA_TAB, NO_BIGINT);
+  SET_BOOL_TAB(METADATA_TAB, NO_BINARY_RESULT);
+  SET_BOOL_TAB(METADATA_TAB, FULL_COLUMN_NAMES);
+  SET_BOOL_TAB(METADATA_TAB, NO_CATALOG);
+  SET_BOOL_TAB(METADATA_TAB, NO_SCHEMA);
+  SET_BOOL_TAB(METADATA_TAB, COLUMN_SIZE_S32);
 
   /* 4 - Cursors/Results */
-  SET_BOOL_TAB(CURSORS_TAB, return_matching_rows);
-  SET_BOOL_TAB(CURSORS_TAB, auto_increment_null_search);
-  SET_BOOL_TAB(CURSORS_TAB, dynamic_cursor);
-  SET_BOOL_TAB(CURSORS_TAB, user_manager_cursor);
-  SET_BOOL_TAB(CURSORS_TAB, pad_char_to_full_length);
-  SET_BOOL_TAB(CURSORS_TAB, dont_cache_result);
-  SET_BOOL_TAB(CURSORS_TAB, force_use_of_forward_only_cursors);
-  SET_BOOL_TAB(CURSORS_TAB, zero_date_to_min);
+  SET_BOOL_TAB(CURSORS_TAB, FOUND_ROWS);
+  SET_BOOL_TAB(CURSORS_TAB, AUTO_IS_NULL);
+  SET_BOOL_TAB(CURSORS_TAB, DYNAMIC_CURSOR);
+  SET_BOOL_TAB(CURSORS_TAB, NO_DEFAULT_CURSOR);
+  SET_BOOL_TAB(CURSORS_TAB, PAD_SPACE);
+  SET_BOOL_TAB(CURSORS_TAB, NO_CACHE);
+  SET_BOOL_TAB(CURSORS_TAB, FORWARD_CURSOR);
+  SET_BOOL_TAB(CURSORS_TAB, ZERO_DATE_TO_MIN);
 
-  if(params->cursor_prefetch_number > 0)
+  if(params->opt_PREFETCH > 0)
   {
 #ifdef _WIN32
-    SET_ENABLED(CURSORS_TAB, IDC_EDIT_cursor_prefetch_number, TRUE);
+    SET_ENABLED(CURSORS_TAB, IDC_EDIT_PREFETCH, TRUE);
 #endif
     SET_CHECKED_TAB(CURSORS_TAB, cursor_prefetch_active, TRUE);
-    SET_UNSIGNED_TAB(CURSORS_TAB, cursor_prefetch_number);
+    SET_UNSIGNED_TAB(CURSORS_TAB, PREFETCH);
   }
 
   /* 5 - debug*/
-  SET_BOOL_TAB(DEBUG_TAB,save_queries);
+  SET_BOOL_TAB(DEBUG_TAB,LOG_QUERY);
 
   /* 6 - ssl related */
 #ifdef _WIN32
   if ( getTabCtrlTabPages(SSL_TAB-1) )
 #endif
   {
-    if(params->sslkey)
-      SET_STRING_TAB(SSL_TAB, sslkey);
+    if(params->opt_SSL_KEY)
+      SET_STRING_TAB(SSL_TAB, SSL_KEY);
 
-    if(params->sslcert)
-      SET_STRING_TAB(SSL_TAB, sslcert);
+    if (params->opt_SSL_CERT)
+      SET_STRING_TAB(SSL_TAB, SSL_CERT);
 
-    if(params->sslca)
-      SET_STRING_TAB(SSL_TAB, sslca);
+    if (params->opt_SSL_CA)
+      SET_STRING_TAB(SSL_TAB, SSL_CA);
 
-    if(params->sslcapath)
-      SET_STRING_TAB(SSL_TAB, sslcapath);
+    if (params->opt_SSL_CAPATH)
+      SET_STRING_TAB(SSL_TAB, SSL_CAPATH);
 
-    if(params->sslcipher)
-      SET_STRING_TAB(SSL_TAB, sslcipher);
+    if (params->opt_SSL_CIPHER)
+      SET_STRING_TAB(SSL_TAB, SSL_CIPHER);
 
-    if (params->sslmode)
-      SET_COMBO_TAB(SSL_TAB, sslmode);
+    if (params->opt_SSL_MODE)
+      SET_COMBO_TAB(SSL_TAB, SSL_MODE);
 
-    if(params->rsakey)
-      SET_STRING_TAB(SSL_TAB, rsakey);
+    if (params->opt_RSAKEY)
+      SET_STRING_TAB(SSL_TAB, RSAKEY);
 
-    if (params->ssl_crl)
-      SET_STRING_TAB(SSL_TAB, ssl_crl);
+    if (params->opt_SSL_CRL)
+      SET_STRING_TAB(SSL_TAB, SSL_CRL);
 
-    if (params->ssl_crlpath)
-      SET_STRING_TAB(SSL_TAB, ssl_crlpath);
+    if (params->opt_SSL_CRLPATH)
+      SET_STRING_TAB(SSL_TAB, SSL_CRLPATH);
 
-    SET_BOOL_TAB(SSL_TAB, no_tls_1_2);
-    SET_BOOL_TAB(SSL_TAB, no_tls_1_3);
+    SET_BOOL_TAB(SSL_TAB, NO_TLS_1_2);
+    SET_BOOL_TAB(SSL_TAB, NO_TLS_1_3);
 
-    SET_STRING_TAB(SSL_TAB, tls_versions);
+    SET_STRING_TAB(SSL_TAB, TLS_VERSIONS);
   }
 
   /* 7 - Misc*/
-  SET_BOOL_TAB(MISC_TAB, safe);
-  SET_BOOL_TAB(MISC_TAB, dont_use_set_locale);
-  SET_BOOL_TAB(MISC_TAB, ignore_space_after_function_names);
-  SET_BOOL_TAB(MISC_TAB, read_options_from_mycnf);
-  SET_BOOL_TAB(MISC_TAB, disable_transactions);
-  SET_BOOL_TAB(MISC_TAB, min_date_to_zero);
-  SET_BOOL_TAB(MISC_TAB, no_ssps);
-  SET_BOOL_TAB(MISC_TAB, default_bigint_bind_str);
-  SET_BOOL_TAB(MISC_TAB, no_date_overflow);
-  SET_BOOL_TAB(MISC_TAB, enable_local_infile);
-  SET_STRING_TAB(MISC_TAB, load_data_local_dir);
+  SET_BOOL_TAB(MISC_TAB, SAFE);
+  SET_BOOL_TAB(MISC_TAB, NO_LOCALE);
+  SET_BOOL_TAB(MISC_TAB, IGNORE_SPACE);
+  SET_BOOL_TAB(MISC_TAB, USE_MYCNF);
+  SET_BOOL_TAB(MISC_TAB, NO_TRANSACTIONS);
+  SET_BOOL_TAB(MISC_TAB, MIN_DATE_TO_ZERO);
+  SET_BOOL_TAB(MISC_TAB, NO_SSPS);
+  SET_BOOL_TAB(MISC_TAB, DFLT_BIGINT_BIND_STR);
+  SET_BOOL_TAB(MISC_TAB, NO_DATE_OVERFLOW);
+  SET_BOOL_TAB(MISC_TAB, ENABLE_LOCAL_INFILE);
+  SET_STRING_TAB(MISC_TAB, LOAD_DATA_LOCAL_DIR);
 }
 
 void FillParameters(HWND hwnd, DataSource *params)

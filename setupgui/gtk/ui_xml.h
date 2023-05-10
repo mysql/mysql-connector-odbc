@@ -178,7 +178,7 @@ static char *ui_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" \
                       "</packing>\n" \
                     "</child>\n" \
                     "<child>\n" \
-                      "<object class=\"GtkEntry\" id=\"server\">\n" \
+                      "<object class=\"GtkEntry\" id=\"SERVER\">\n" \
                         "<property name=\"visible\">True</property>\n" \
                         "<property name=\"can_focus\">True</property>\n" \
                         "<property name=\"invisible_char\">●</property>\n" \
@@ -194,7 +194,7 @@ static char *ui_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" \
                       "</packing>\n" \
                     "</child>\n" \
                     "<child>\n" \
-                      "<object class=\"GtkEntry\" id=\"uid\">\n" \
+                      "<object class=\"GtkEntry\" id=\"UID\">\n" \
                         "<property name=\"visible\">True</property>\n" \
                         "<property name=\"can_focus\">True</property>\n" \
                         "<property name=\"invisible_char\">●</property>\n" \
@@ -210,7 +210,7 @@ static char *ui_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" \
                       "</packing>\n" \
                     "</child>\n" \
                     "<child>\n" \
-                      "<object class=\"GtkEntry\" id=\"pwd\">\n" \
+                      "<object class=\"GtkEntry\" id=\"PWD\">\n" \
                         "<property name=\"visible\">True</property>\n" \
                         "<property name=\"can_focus\">True</property>\n" \
                         "<property name=\"visibility\">False</property>\n" \
@@ -257,7 +257,7 @@ static char *ui_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" \
                       "</packing>\n" \
                     "</child>\n" \
                     "<child>\n" \
-                      "<object class=\"GtkSpinButton\" id=\"port\">\n" \
+                      "<object class=\"GtkSpinButton\" id=\"PORT\">\n" \
                         "<property name=\"visible\">True</property>\n" \
                         "<property name=\"can_focus\">True</property>\n" \
                         "<property name=\"primary_icon_activatable\">False</property>\n" \
@@ -275,7 +275,7 @@ static char *ui_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" \
                       "</packing>\n" \
                     "</child>\n" \
                     "<child>\n" \
-                      "<object class=\"GtkEntry\" id=\"name\">\n" \
+                      "<object class=\"GtkEntry\" id=\"DSN\">\n" \
                         "<property name=\"visible\">True</property>\n" \
                         "<property name=\"can_focus\">True</property>\n" \
                         "<property name=\"tooltip_text\" translatable=\"yes\">Sets the name or location of a specific socket or Windows pipe to use when communicating with MySQL.</property>\n" \
@@ -290,7 +290,7 @@ static char *ui_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" \
                       "</packing>\n" \
                     "</child>\n" \
                     "<child>\n" \
-                      "<object class=\"GtkEntry\" id=\"description\">\n" \
+                      "<object class=\"GtkEntry\" id=\"DESCRIPTION\">\n" \
                         "<property name=\"visible\">True</property>\n" \
                         "<property name=\"can_focus\">True</property>\n" \
                         "<property name=\"tooltip_text\" translatable=\"yes\">Enter some text to help identify the connection.</property>\n" \
@@ -319,7 +319,7 @@ static char *ui_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" \
                       "</packing>\n" \
                     "</child>\n" \
                     "<child>\n" \
-                      "<object class=\"GtkEntry\" id=\"socket\">\n" \
+                      "<object class=\"GtkEntry\" id=\"SOCKET\">\n" \
                         "<property name=\"visible\">True</property>\n" \
                         "<property name=\"can_focus\">True</property>\n" \
                         "<property name=\"has_tooltip\">True</property>\n" \
@@ -386,14 +386,14 @@ static char *ui_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" \
                       "</packing>\n" \
                     "</child>\n" \
                     "<child>\n" \
-                      "<object class=\"GtkComboBoxText\" id=\"database\">\n" \
+                      "<object class=\"GtkComboBoxText\" id=\"DATABASE\">\n" \
                         "<property name=\"visible\">True</property>\n" \
                         "<property name=\"can_focus\">True</property>\n" \
                         "<property name=\"events\">GDK_BUTTON_MOTION_MASK | GDK_BUTTON_PRESS_MASK | GDK_FOCUS_CHANGE_MASK | GDK_STRUCTURE_MASK</property>\n" \
                         "<property name=\"button_sensitivity\">on</property>\n" \
                         "<property name=\"has_entry\">True</property>\n" \
                         "<child internal-child=\"entry\">\n" \
-                          "<object class=\"GtkEntry\" id=\"database_entry\">\n" \
+                          "<object class=\"GtkEntry\" id=\"DATABASE_entry\">\n" \
                             "<property name=\"can_focus\">True</property>\n" \
                           "</object>\n" \
                         "</child>\n" \
@@ -440,7 +440,7 @@ static char *ui_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" \
                           "<placeholder/>\n" \
                         "</child>\n" \
                         "<child>\n" \
-                          "<object class=\"GtkCheckButton\" id=\"allow_big_results\">\n" \
+                          "<object class=\"GtkCheckButton\" id=\"BIG_PACKETS\">\n" \
                             "<property name=\"label\" translatable=\"yes\">Allow Big Results</property>\n" \
                             "<property name=\"use_action_appearance\">False</property>\n" \
                             "<property name=\"visible\">True</property>\n" \
@@ -455,7 +455,7 @@ static char *ui_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" \
                           "</packing>\n" \
                         "</child>\n" \
                         "<child>\n" \
-                          "<object class=\"GtkCheckButton\" id=\"use_compressed_protocol\">\n" \
+                          "<object class=\"GtkCheckButton\" id=\"COMPRESSED_PROTO\">\n" \
                             "<property name=\"label\" translatable=\"yes\">Use Compression</property>\n" \
                             "<property name=\"use_action_appearance\">False</property>\n" \
                             "<property name=\"visible\">True</property>\n" \
@@ -470,7 +470,7 @@ static char *ui_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" \
                           "</packing>\n" \
                         "</child>\n" \
                         "<child>\n" \
-                          "<object class=\"GtkCheckButton\" id=\"auto_reconnect\">\n" \
+                          "<object class=\"GtkCheckButton\" id=\"AUTO_RECONNECT\">\n" \
                             "<property name=\"label\" translatable=\"yes\">Enable Automatic Reconnect</property>\n" \
                             "<property name=\"use_action_appearance\">False</property>\n" \
                             "<property name=\"visible\">True</property>\n" \
@@ -486,7 +486,7 @@ static char *ui_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" \
                           "</packing>\n" \
                         "</child>\n" \
                         "<child>\n" \
-                          "<object class=\"GtkCheckButton\" id=\"dont_prompt_upon_connect\">\n" \
+                          "<object class=\"GtkCheckButton\" id=\"NO_PROMPT\">\n" \
                             "<property name=\"label\" translatable=\"yes\">Don't Prompt Upon Connect</property>\n" \
                             "<property name=\"use_action_appearance\">False</property>\n" \
                             "<property name=\"visible\">True</property>\n" \
@@ -502,7 +502,7 @@ static char *ui_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" \
                           "</packing>\n" \
                         "</child>\n" \
                         "<child>\n" \
-                          "<object class=\"GtkCheckButton\" id=\"allow_multiple_statements\">\n" \
+                          "<object class=\"GtkCheckButton\" id=\"MULTI_STATEMENTS\">\n" \
                             "<property name=\"label\" translatable=\"yes\">Allow Multiple Statements</property>\n" \
                             "<property name=\"use_action_appearance\">False</property>\n" \
                             "<property name=\"visible\">True</property>\n" \
@@ -517,7 +517,7 @@ static char *ui_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" \
                           "</packing>\n" \
                         "</child>\n" \
                         "<child>\n" \
-                          "<object class=\"GtkCheckButton\" id=\"clientinteractive\">\n" \
+                          "<object class=\"GtkCheckButton\" id=\"CLIENT_INTERACTIVE\">\n" \
                             "<property name=\"label\" translatable=\"yes\">Interactive Client</property>\n" \
                             "<property name=\"use_action_appearance\">False</property>\n" \
                             "<property name=\"visible\">True</property>\n" \
@@ -528,7 +528,7 @@ static char *ui_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" \
                           "</object>\n" \
                         "</child>\n" \
                         "<child>\n" \
-                          "<object class=\"GtkCheckButton\" id=\"can_handle_exp_pwd\">\n" \
+                          "<object class=\"GtkCheckButton\" id=\"CAN_HANDLE_EXP_PWD\">\n" \
                             "<property name=\"label\" translatable=\"yes\">Can Handle Expired Password</property>\n" \
                             "<property name=\"use_action_appearance\">False</property>\n" \
                             "<property name=\"visible\">True</property>\n" \
@@ -543,7 +543,7 @@ static char *ui_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" \
                           "</packing>\n" \
                         "</child>\n" \
                         "<child>\n" \
-                          "<object class=\"GtkCheckButton\" id=\"multi_host\">\n" \
+                          "<object class=\"GtkCheckButton\" id=\"MULTI_HOST\">\n" \
                             "<property name=\"label\" translatable=\"yes\">Multi Host</property>\n" \
                             "<property name=\"use_action_appearance\">True</property>\n" \
                             "<property name=\"visible\">True</property>\n" \
@@ -560,7 +560,7 @@ static char *ui_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" \
                           "</packing>\n" \
                         "</child>\n" \
                         "<child>\n" \
-                          "<object class=\"GtkCheckButton\" id=\"enable_dns_srv\">\n" \
+                          "<object class=\"GtkCheckButton\" id=\"ENABLE_DNS_SRV\">\n" \
                             "<property name=\"label\" translatable=\"yes\">Use DNS SRV records</property>\n" \
                             "<property name=\"use_action_appearance\">True</property>\n" \
                             "<property name=\"visible\">True</property>\n" \
@@ -577,7 +577,7 @@ static char *ui_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" \
                           "</packing>\n" \
                         "</child>\n" \
                         "<child>\n" \
-                          "<object class=\"GtkCheckButton\" id=\"get_server_public_key\">\n" \
+                          "<object class=\"GtkCheckButton\" id=\"GET_SERVER_PUBLIC_KEY\">\n" \
                             "<property name=\"label\" translatable=\"yes\">Get Server Public Key</property>\n" \
                             "<property name=\"visible\">True</property>\n" \
                             "<property name=\"can_focus\">True</property>\n" \
@@ -638,7 +638,7 @@ static char *ui_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" \
                           "</packing>\n" \
                         "</child>\n" \
                         "<child>\n" \
-                          "<object class=\"GtkEntry\" id=\"initstmt\">\n" \
+                          "<object class=\"GtkEntry\" id=\"INITSTMT\">\n" \
                             "<property name=\"visible\">True</property>\n" \
                             "<property name=\"can_focus\">True</property>\n" \
                             "<property name=\"invisible_char\">●</property>\n" \
@@ -675,7 +675,7 @@ static char *ui_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" \
                             "<property name=\"visible\">True</property>\n" \
                             "<property name=\"can_focus\">False</property>\n" \
                             "<child>\n" \
-                              "<object class=\"GtkEntry\" id=\"plugin_dir\">\n" \
+                              "<object class=\"GtkEntry\" id=\"PLUGIN_DIR\">\n" \
                                 "<property name=\"visible\">True</property>\n" \
                                 "<property name=\"can_focus\">True</property>\n" \
                               "</object>\n" \
@@ -707,14 +707,14 @@ static char *ui_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" \
                           "</packing>\n" \
                         "</child>\n" \
                         "<child>\n" \
-                          "<object class=\"GtkComboBoxText\" id=\"charset\">\n" \
+                          "<object class=\"GtkComboBoxText\" id=\"CHARSET\">\n" \
                             "<property name=\"visible\">True</property>\n" \
                             "<property name=\"can_focus\">True</property>\n" \
                             "<property name=\"events\">GDK_BUTTON_MOTION_MASK | GDK_BUTTON_PRESS_MASK | GDK_FOCUS_CHANGE_MASK | GDK_STRUCTURE_MASK</property>\n" \
                             "<property name=\"button_sensitivity\">on</property>\n" \
                             "<property name=\"has_entry\">True</property>\n" \
                             "<child internal-child=\"entry\">\n" \
-                              "<object class=\"GtkEntry\" id=\"charset_entry\">\n" \
+                              "<object class=\"GtkEntry\" id=\"CHARSET_entry\">\n" \
                                 "<property name=\"can_focus\">True</property>\n" \
                               "</object>\n" \
                             "</child>\n" \
@@ -758,7 +758,7 @@ static char *ui_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" \
                         "<property name=\"column_spacing\">8</property>\n" \
                         "<property name=\"row_spacing\">5</property>\n" \
                         "<child>\n" \
-                          "<object class=\"GtkCheckButton\" id=\"enable_cleartext_plugin\">\n" \
+                          "<object class=\"GtkCheckButton\" id=\"ENABLE_CLEARTEXT_PLUGIN\">\n" \
                             "<property name=\"label\" translatable=\"yes\">Enable Cleartext Authentication</property>\n" \
                             "<property name=\"use_action_appearance\">False</property>\n" \
                             "<property name=\"visible\">True</property>\n" \
@@ -785,7 +785,7 @@ static char *ui_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" \
                           "</packing>\n" \
                         "</child>\n" \
                         "<child>\n" \
-                          "<object class=\"GtkEntry\" id=\"default_auth\">\n" \
+                          "<object class=\"GtkEntry\" id=\"DEFAULT_AUTH\">\n" \
                             "<property name=\"visible\">True</property>\n" \
                             "<property name=\"can_focus\">True</property>\n" \
                           "</object>\n" \
@@ -802,7 +802,7 @@ static char *ui_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" \
                             "<property name=\"visible\">True</property>\n" \
                             "<property name=\"can_focus\">False</property>\n" \
                             "<child>\n" \
-                              "<object class=\"GtkEntry\" id=\"oci_config_file\">\n" \
+                              "<object class=\"GtkEntry\" id=\"OCI_CONFIG_FILE\">\n" \
                                 "<property name=\"visible\">True</property>\n" \
                                 "<property name=\"can_focus\">True</property>\n" \
                               "</object>\n" \
@@ -813,7 +813,7 @@ static char *ui_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" \
                               "</packing>\n" \
                             "</child>\n" \
                             "<child>\n" \
-                              "<object class=\"GtkButton\" id=\"oci_config_file_button\">\n" \
+                              "<object class=\"GtkButton\" id=\"OCI_CONFIG_FILE_button\">\n" \
                                 "<property name=\"label\" translatable=\"yes\">...</property>\n" \
                                 "<property name=\"visible\">True</property>\n" \
                                 "<property name=\"can_focus\">True</property>\n" \
@@ -863,7 +863,7 @@ static char *ui_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" \
                           "</packing>\n" \
                         "</child>\n" \
                         "<child>\n" \
-                          "<object class=\"GtkEntry\" id=\"oci_config_profile\">\n" \
+                          "<object class=\"GtkEntry\" id=\"OCI_CONFIG_PROFILE\">\n" \
                             "<property name=\"visible\">True</property>\n" \
                             "<property name=\"can_focus\">True</property>\n" \
                           "</object>\n" \
@@ -904,7 +904,7 @@ static char *ui_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" \
                     "<property name=\"can_focus\">False</property>\n" \
                     "<property name=\"border_width\">8</property>\n" \
                     "<child>\n" \
-                      "<object class=\"GtkCheckButton\" id=\"change_bigint_columns_to_int\">\n" \
+                      "<object class=\"GtkCheckButton\" id=\"NO_BIGINT\">\n" \
                         "<property name=\"label\" translatable=\"yes\">Treat BIGINT Columns as INT columns</property>\n" \
                         "<property name=\"use_action_appearance\">False</property>\n" \
                         "<property name=\"visible\">True</property>\n" \
@@ -923,7 +923,7 @@ static char *ui_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" \
                       "</packing>\n" \
                     "</child>\n" \
                     "<child>\n" \
-                      "<object class=\"GtkCheckButton\" id=\"handle_binary_as_char\">\n" \
+                      "<object class=\"GtkCheckButton\" id=\"NO_BINARY_RESULT\">\n" \
                         "<property name=\"label\" translatable=\"yes\">Always handle Binary Function Results as Character Data</property>\n" \
                         "<property name=\"use_action_appearance\">False</property>\n" \
                         "<property name=\"visible\">True</property>\n" \
@@ -939,7 +939,7 @@ static char *ui_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" \
                       "</packing>\n" \
                     "</child>\n" \
                     "<child>\n" \
-                      "<object class=\"GtkCheckButton\" id=\"return_table_names_for_SqlDescribeCol\">\n" \
+                      "<object class=\"GtkCheckButton\" id=\"FULL_COLUMN_NAMES\">\n" \
                         "<property name=\"label\" translatable=\"yes\">Return Table Names for SQLDescribeCol</property>\n" \
                         "<property name=\"use_action_appearance\">False</property>\n" \
                         "<property name=\"visible\">True</property>\n" \
@@ -958,7 +958,7 @@ static char *ui_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" \
                       "</packing>\n" \
                     "</child>\n" \
                     "<child>\n" \
-                      "<object class=\"GtkCheckButton\" id=\"no_catalog\">\n" \
+                      "<object class=\"GtkCheckButton\" id=\"NO_CATALOG\">\n" \
                         "<property name=\"label\" translatable=\"yes\">Disable Catalog Support</property>\n" \
                         "<property name=\"use_action_appearance\">False</property>\n" \
                         "<property name=\"visible\">True</property>\n" \
@@ -977,7 +977,7 @@ static char *ui_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" \
                       "</packing>\n" \
                     "</child>\n" \
                     "<child>\n" \
-                      "<object class=\"GtkCheckButton\" id=\"no_schema\">\n" \
+                      "<object class=\"GtkCheckButton\" id=\"NO_SCHEMA\">\n" \
                         "<property name=\"label\" translatable=\"yes\">Disable Schema Support</property>\n" \
                         "<property name=\"use_action_appearance\">False</property>\n" \
                         "<property name=\"visible\">True</property>\n" \
@@ -996,7 +996,7 @@ static char *ui_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" \
                       "</packing>\n" \
                     "</child>\n" \
                     "<child>\n" \
-                      "<object class=\"GtkCheckButton\" id=\"limit_column_size\">\n" \
+                      "<object class=\"GtkCheckButton\" id=\"COLUMN_SIZE_S32\">\n" \
                         "<property name=\"label\" translatable=\"yes\">Limit Column Size to Signed 32-bit Range</property>\n" \
                         "<property name=\"use_action_appearance\">False</property>\n" \
                         "<property name=\"visible\">True</property>\n" \
@@ -1039,7 +1039,7 @@ static char *ui_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" \
                         "<property name=\"can_focus\">False</property>\n" \
                         "<property name=\"border_width\">8</property>\n" \
                         "<child>\n" \
-                          "<object class=\"GtkCheckButton\" id=\"dynamic_cursor\">\n" \
+                          "<object class=\"GtkCheckButton\" id=\"DYNAMIC_CURSOR\">\n" \
                             "<property name=\"label\" translatable=\"yes\">Enable dynamic cursors</property>\n" \
                             "<property name=\"use_action_appearance\">False</property>\n" \
                             "<property name=\"visible\">True</property>\n" \
@@ -1058,7 +1058,7 @@ static char *ui_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" \
                           "</packing>\n" \
                         "</child>\n" \
                         "<child>\n" \
-                          "<object class=\"GtkCheckButton\" id=\"user_manager_cursor\">\n" \
+                          "<object class=\"GtkCheckButton\" id=\"NO_DEFAULT_CURSOR\">\n" \
                             "<property name=\"label\" translatable=\"yes\">Disable driver-provided cursor support</property>\n" \
                             "<property name=\"use_action_appearance\">False</property>\n" \
                             "<property name=\"visible\">True</property>\n" \
@@ -1077,7 +1077,7 @@ static char *ui_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" \
                           "</packing>\n" \
                         "</child>\n" \
                         "<child>\n" \
-                          "<object class=\"GtkCheckButton\" id=\"dont_cache_result\">\n" \
+                          "<object class=\"GtkCheckButton\" id=\"NO_CACHE\">\n" \
                             "<property name=\"label\" translatable=\"yes\">Don't cache results of forward-only cursors</property>\n" \
                             "<property name=\"use_action_appearance\">False</property>\n" \
                             "<property name=\"visible\">True</property>\n" \
@@ -1096,7 +1096,7 @@ static char *ui_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" \
                           "</packing>\n" \
                         "</child>\n" \
                         "<child>\n" \
-                          "<object class=\"GtkCheckButton\" id=\"force_use_of_forward_only_cursors\">\n" \
+                          "<object class=\"GtkCheckButton\" id=\"FORWARD_CURSOR\">\n" \
                             "<property name=\"label\" translatable=\"yes\">Force use of forward-only cursors</property>\n" \
                             "<property name=\"use_action_appearance\">False</property>\n" \
                             "<property name=\"visible\">True</property>\n" \
@@ -1135,7 +1135,7 @@ static char *ui_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" \
                               "</packing>\n" \
                             "</child>\n" \
                             "<child>\n" \
-                              "<object class=\"GtkSpinButton\" id=\"cursor_prefetch_number\">\n" \
+                              "<object class=\"GtkSpinButton\" id=\"PREFETCH\">\n" \
                                 "<property name=\"visible\">True</property>\n" \
                                 "<property name=\"sensitive\">False</property>\n" \
                                 "<property name=\"can_focus\">True</property>\n" \
@@ -1172,7 +1172,7 @@ static char *ui_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" \
                           "</packing>\n" \
                         "</child>\n" \
                         "<child>\n" \
-                          "<object class=\"GtkCheckButton\" id=\"return_matching_rows\">\n" \
+                          "<object class=\"GtkCheckButton\" id=\"FOUND_ROWS\">\n" \
                             "<property name=\"label\" translatable=\"yes\">Return matching rows instead of affected rows</property>\n" \
                             "<property name=\"use_action_appearance\">False</property>\n" \
                             "<property name=\"visible\">True</property>\n" \
@@ -1191,7 +1191,7 @@ static char *ui_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" \
                           "</packing>\n" \
                         "</child>\n" \
                         "<child>\n" \
-                          "<object class=\"GtkCheckButton\" id=\"auto_increment_null_search\">\n" \
+                          "<object class=\"GtkCheckButton\" id=\"AUTO_IS_NULL\">\n" \
                             "<property name=\"label\" translatable=\"yes\">Enable SQL__AUTO__IS__NULL</property>\n" \
                             "<property name=\"use_action_appearance\">False</property>\n" \
                             "<property name=\"visible\">True</property>\n" \
@@ -1209,7 +1209,7 @@ static char *ui_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" \
                           "</packing>\n" \
                         "</child>\n" \
                         "<child>\n" \
-                          "<object class=\"GtkCheckButton\" id=\"pad_char_to_full_length\">\n" \
+                          "<object class=\"GtkCheckButton\" id=\"PAD_SPACE\">\n" \
                             "<property name=\"label\" translatable=\"yes\">Pad CHAR to full length with space</property>\n" \
                             "<property name=\"use_action_appearance\">False</property>\n" \
                             "<property name=\"visible\">True</property>\n" \
@@ -1228,7 +1228,7 @@ static char *ui_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" \
                           "</packing>\n" \
                         "</child>\n" \
                         "<child>\n" \
-                          "<object class=\"GtkCheckButton\" id=\"zero_date_to_min\">\n" \
+                          "<object class=\"GtkCheckButton\" id=\"ZERO_DATE_TO_MIN\">\n" \
                             "<property name=\"label\" translatable=\"yes\">Return SQL__NULL__DATA for zero date</property>\n" \
                             "<property name=\"use_action_appearance\">False</property>\n" \
                             "<property name=\"visible\">True</property>\n" \
@@ -1277,7 +1277,7 @@ static char *ui_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" \
                     "<property name=\"can_focus\">False</property>\n" \
                     "<property name=\"border_width\">8</property>\n" \
                     "<child>\n" \
-                      "<object class=\"GtkCheckButton\" id=\"save_queries\">\n" \
+                      "<object class=\"GtkCheckButton\" id=\"LOG_QUERY\">\n" \
                         "<property name=\"label\" translatable=\"yes\">Log queries to /tmp/myodbc.sql</property>\n" \
                         "<property name=\"use_action_appearance\">False</property>\n" \
                         "<property name=\"visible\">True</property>\n" \
@@ -1332,7 +1332,7 @@ static char *ui_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" \
                       "<placeholder/>\n" \
                     "</child>\n" \
                     "<child>\n" \
-                      "<object class=\"GtkEntry\" id=\"sslkey\">\n" \
+                      "<object class=\"GtkEntry\" id=\"SSL_KEY\">\n" \
                         "<property name=\"visible\">True</property>\n" \
                         "<property name=\"can_focus\">True</property>\n" \
                         "<property name=\"invisible_char\">•</property>\n" \
@@ -1345,7 +1345,7 @@ static char *ui_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" \
                       "</packing>\n" \
                     "</child>\n" \
                     "<child>\n" \
-                      "<object class=\"GtkEntry\" id=\"sslcert\">\n" \
+                      "<object class=\"GtkEntry\" id=\"SSL_CERT\">\n" \
                         "<property name=\"visible\">True</property>\n" \
                         "<property name=\"can_focus\">True</property>\n" \
                         "<property name=\"invisible_char\">•</property>\n" \
@@ -1360,7 +1360,7 @@ static char *ui_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" \
                       "</packing>\n" \
                     "</child>\n" \
                     "<child>\n" \
-                      "<object class=\"GtkEntry\" id=\"sslca\">\n" \
+                      "<object class=\"GtkEntry\" id=\"SSL_CA\">\n" \
                         "<property name=\"visible\">True</property>\n" \
                         "<property name=\"can_focus\">True</property>\n" \
                         "<property name=\"invisible_char\">•</property>\n" \
@@ -1375,7 +1375,7 @@ static char *ui_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" \
                       "</packing>\n" \
                     "</child>\n" \
                     "<child>\n" \
-                      "<object class=\"GtkButton\" id=\"sslkey_button\">\n" \
+                      "<object class=\"GtkButton\" id=\"SSL_KEY_button\">\n" \
                         "<property name=\"label\" translatable=\"yes\">...</property>\n" \
                         "<property name=\"use_action_appearance\">False</property>\n" \
                         "<property name=\"visible\">True</property>\n" \
@@ -1390,7 +1390,7 @@ static char *ui_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" \
                       "</packing>\n" \
                     "</child>\n" \
                     "<child>\n" \
-                      "<object class=\"GtkButton\" id=\"sslcert_button\">\n" \
+                      "<object class=\"GtkButton\" id=\"SSL_CERT_button\">\n" \
                         "<property name=\"label\" translatable=\"yes\">...</property>\n" \
                         "<property name=\"use_action_appearance\">False</property>\n" \
                         "<property name=\"visible\">True</property>\n" \
@@ -1407,7 +1407,7 @@ static char *ui_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" \
                       "</packing>\n" \
                     "</child>\n" \
                     "<child>\n" \
-                      "<object class=\"GtkButton\" id=\"sslca_button\">\n" \
+                      "<object class=\"GtkButton\" id=\"SSL_CA_button\">\n" \
                         "<property name=\"label\" translatable=\"yes\">...</property>\n" \
                         "<property name=\"use_action_appearance\">False</property>\n" \
                         "<property name=\"visible\">True</property>\n" \
@@ -1424,7 +1424,7 @@ static char *ui_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" \
                       "</packing>\n" \
                     "</child>\n" \
                     "<child>\n" \
-                      "<object class=\"GtkButton\" id=\"sslcapath_button\">\n" \
+                      "<object class=\"GtkButton\" id=\"SSL_CAPATH_button\">\n" \
                         "<property name=\"label\" translatable=\"yes\">...</property>\n" \
                         "<property name=\"use_action_appearance\">False</property>\n" \
                         "<property name=\"visible\">True</property>\n" \
@@ -1441,7 +1441,7 @@ static char *ui_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" \
                       "</packing>\n" \
                     "</child>\n" \
                     "<child>\n" \
-                      "<object class=\"GtkEntry\" id=\"sslcipher\">\n" \
+                      "<object class=\"GtkEntry\" id=\"SSL_CIPHER\">\n" \
                         "<property name=\"visible\">True</property>\n" \
                         "<property name=\"can_focus\">True</property>\n" \
                         "<property name=\"invisible_char\">•</property>\n" \
@@ -1512,7 +1512,7 @@ static char *ui_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" \
                       "</object>\n" \
                     "</child>\n" \
                     "<child>\n" \
-                      "<object class=\"GtkEntry\" id=\"sslcapath\">\n" \
+                      "<object class=\"GtkEntry\" id=\"SSL_CAPATH\">\n" \
                         "<property name=\"width_request\">250</property>\n" \
                         "<property name=\"visible\">True</property>\n" \
                         "<property name=\"can_focus\">True</property>\n" \
@@ -1528,7 +1528,7 @@ static char *ui_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" \
                       "</packing>\n" \
                     "</child>\n" \
                     "<child>\n" \
-                      "<object class=\"GtkLabel\" id=\"label_sslmode\">\n" \
+                      "<object class=\"GtkLabel\" id=\"label_SSL_MODE\">\n" \
                         "<property name=\"visible\">True</property>\n" \
                         "<property name=\"can_focus\">False</property>\n" \
                         "<property name=\"label\" translatable=\"yes\">SSL Mode</property>\n" \
@@ -1540,7 +1540,7 @@ static char *ui_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" \
                       "</packing>\n" \
                     "</child>\n" \
                     "<child>\n" \
-                      "<object class=\"GtkLabel\" id=\"label_rsakey\">\n" \
+                      "<object class=\"GtkLabel\" id=\"label_RSAKEY\">\n" \
                         "<property name=\"visible\">True</property>\n" \
                         "<property name=\"can_focus\">False</property>\n" \
                         "<property name=\"label\" translatable=\"yes\">RSA Public Key</property>\n" \
@@ -1552,7 +1552,7 @@ static char *ui_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" \
                       "</packing>\n" \
                     "</child>\n" \
                     "<child>\n" \
-                      "<object class=\"GtkEntry\" id=\"rsakey\">\n" \
+                      "<object class=\"GtkEntry\" id=\"RSAKEY\">\n" \
                         "<property name=\"visible\">True</property>\n" \
                         "<property name=\"can_focus\">True</property>\n" \
                       "</object>\n" \
@@ -1564,7 +1564,7 @@ static char *ui_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" \
                       "</packing>\n" \
                     "</child>\n" \
                     "<child>\n" \
-                      "<object class=\"GtkButton\" id=\"rsakey_button\">\n" \
+                      "<object class=\"GtkButton\" id=\"RSAKEY_button\">\n" \
                         "<property name=\"label\" translatable=\"yes\">...</property>\n" \
                         "<property name=\"use_action_appearance\">False</property>\n" \
                         "<property name=\"visible\">True</property>\n" \
@@ -1581,7 +1581,7 @@ static char *ui_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" \
                       "</packing>\n" \
                     "</child>\n" \
                     "<child>\n" \
-                      "<object class=\"GtkComboBox\" id=\"sslmode\">\n" \
+                      "<object class=\"GtkComboBox\" id=\"SSL_MODE\">\n" \
                         "<property name=\"visible\">True</property>\n" \
                         "<property name=\"can_focus\">True</property>\n" \
                         "<property name=\"events\">GDK_BUTTON_PRESS_MASK | GDK_STRUCTURE_MASK</property>\n" \
@@ -1589,7 +1589,7 @@ static char *ui_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" \
                         "<property name=\"has_entry\">True</property>\n" \
                         "<property name=\"entry_text_column\">0</property>\n" \
                         "<child internal-child=\"entry\">\n" \
-                          "<object class=\"GtkEntry\" id=\"sslmode_entry\">\n" \
+                          "<object class=\"GtkEntry\" id=\"SSL_MODE_entry\">\n" \
                             "<property name=\"can_focus\">False</property>\n" \
                             "<property name=\"editable\">False</property>\n" \
                           "</object>\n" \
@@ -1603,7 +1603,7 @@ static char *ui_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" \
                       "</packing>\n" \
                     "</child>\n" \
                     "<child>\n" \
-                      "<object class=\"GtkLabel\" id=\"label_tls_versions\">\n" \
+                      "<object class=\"GtkLabel\" id=\"label_TLS_VERSIONS\">\n" \
                         "<property name=\"visible\">True</property>\n" \
                         "<property name=\"can_focus\">False</property>\n" \
                         "<property name=\"label\" translatable=\"yes\">TLS Versions</property>\n" \
@@ -1615,7 +1615,7 @@ static char *ui_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" \
                       "</packing>\n" \
                     "</child>\n" \
                     "<child>\n" \
-                      "<object class=\"GtkEntry\" id=\"tls_versions\">\n" \
+                      "<object class=\"GtkEntry\" id=\"TLS_VERSIONS\">\n" \
                         "<property name=\"visible\">True</property>\n" \
                         "<property name=\"can_focus\">True</property>\n" \
                       "</object>\n" \
@@ -1627,7 +1627,7 @@ static char *ui_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" \
                       "</packing>\n" \
                     "</child>\n" \
                     "<child>\n" \
-                      "<object class=\"GtkLabel\" id=\"label_ssl_crl\">\n" \
+                      "<object class=\"GtkLabel\" id=\"label_SSL_CRL\">\n" \
                         "<property name=\"visible\">True</property>\n" \
                         "<property name=\"can_focus\">False</property>\n" \
                         "<property name=\"label\" translatable=\"yes\">SSL CRL</property>\n" \
@@ -1639,7 +1639,7 @@ static char *ui_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" \
                       "</packing>\n" \
                     "</child>\n" \
                     "<child>\n" \
-                      "<object class=\"GtkEntry\" id=\"ssl_crl\">\n" \
+                      "<object class=\"GtkEntry\" id=\"SSL_CRL\">\n" \
                         "<property name=\"visible\">True</property>\n" \
                         "<property name=\"can_focus\">True</property>\n" \
                       "</object>\n" \
@@ -1651,7 +1651,7 @@ static char *ui_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" \
                       "</packing>\n" \
                     "</child>\n" \
                     "<child>\n" \
-                      "<object class=\"GtkButton\" id=\"ssl_crl_button\">\n" \
+                      "<object class=\"GtkButton\" id=\"SSL_CRL_button\">\n" \
                         "<property name=\"label\" translatable=\"yes\">...</property>\n" \
                         "<property name=\"use_action_appearance\">False</property>\n" \
                         "<property name=\"visible\">True</property>\n" \
@@ -1668,7 +1668,7 @@ static char *ui_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" \
                       "</packing>\n" \
                     "</child>\n" \
                     "<child>\n" \
-                      "<object class=\"GtkLabel\" id=\"label_ssl_crlpath\">\n" \
+                      "<object class=\"GtkLabel\" id=\"label_SSL_CRLPATH\">\n" \
                         "<property name=\"visible\">True</property>\n" \
                         "<property name=\"can_focus\">False</property>\n" \
                         "<property name=\"label\" translatable=\"yes\">SSL CRL Path</property>\n" \
@@ -1680,7 +1680,7 @@ static char *ui_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" \
                       "</packing>\n" \
                     "</child>\n" \
                     "<child>\n" \
-                      "<object class=\"GtkEntry\" id=\"ssl_crlpath\">\n" \
+                      "<object class=\"GtkEntry\" id=\"SSL_CRLPATH\">\n" \
                         "<property name=\"visible\">True</property>\n" \
                         "<property name=\"can_focus\">True</property>\n" \
                       "</object>\n" \
@@ -1692,7 +1692,7 @@ static char *ui_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" \
                       "</packing>\n" \
                     "</child>\n" \
                     "<child>\n" \
-                      "<object class=\"GtkButton\" id=\"ssl_crlpath_button\">\n" \
+                      "<object class=\"GtkButton\" id=\"SSL_CRLPATH_button\">\n" \
                         "<property name=\"label\" translatable=\"yes\">...</property>\n" \
                         "<property name=\"use_action_appearance\">False</property>\n" \
                         "<property name=\"visible\">True</property>\n" \
@@ -1709,7 +1709,7 @@ static char *ui_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" \
                       "</packing>\n" \
                     "</child>\n" \
                     "<child>\n" \
-                      "<object class=\"GtkCheckButton\" id=\"no_tls_1_2\">\n" \
+                      "<object class=\"GtkCheckButton\" id=\"NO_TLS_1_2\">\n" \
                         "<property name=\"label\" translatable=\"yes\">Disable TLS Version 1.2</property>\n" \
                         "<property name=\"visible\">True</property>\n" \
                         "<property name=\"can_focus\">True</property>\n" \
@@ -1777,7 +1777,7 @@ static char *ui_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" \
                       "<placeholder/>\n" \
                     "</child>\n" \
                     "<child>\n" \
-                      "<object class=\"GtkCheckButton\" id=\"no_tls_1_3\">\n" \
+                      "<object class=\"GtkCheckButton\" id=\"NO_TLS_1_3\">\n" \
                         "<property name=\"label\" translatable=\"yes\">Disable TLS Version 1.3</property>\n" \
                         "<property name=\"visible\">True</property>\n" \
                         "<property name=\"can_focus\">True</property>\n" \
@@ -1839,7 +1839,7 @@ static char *ui_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" \
                           "<placeholder/>\n" \
                         "</child>\n" \
                         "<child>\n" \
-                          "<object class=\"GtkCheckButton\" id=\"safe\">\n" \
+                          "<object class=\"GtkCheckButton\" id=\"SAFE\">\n" \
                             "<property name=\"label\" translatable=\"yes\">Enable Safe Options (see documentation)</property>\n" \
                             "<property name=\"use_action_appearance\">False</property>\n" \
                             "<property name=\"visible\">True</property>\n" \
@@ -1853,7 +1853,7 @@ static char *ui_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" \
                           "</object>\n" \
                         "</child>\n" \
                         "<child>\n" \
-                          "<object class=\"GtkCheckButton\" id=\"default_bigint_bind_str\">\n" \
+                          "<object class=\"GtkCheckButton\" id=\"DFLT_BIGINT_BIND_STR\">\n" \
                             "<property name=\"label\" translatable=\"yes\">Bind BIGINT parameters as strings</property>\n" \
                             "<property name=\"use_action_appearance\">False</property>\n" \
                             "<property name=\"visible\">True</property>\n" \
@@ -1870,7 +1870,7 @@ static char *ui_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" \
                           "</packing>\n" \
                         "</child>\n" \
                         "<child>\n" \
-                          "<object class=\"GtkCheckButton\" id=\"no_date_overflow\">\n" \
+                          "<object class=\"GtkCheckButton\" id=\"NO_DATE_OVERFLOW\">\n" \
                             "<property name=\"label\" translatable=\"yes\">Disable Date Overflow error</property>\n" \
                             "<property name=\"visible\">True</property>\n" \
                             "<property name=\"can_focus\">True</property>\n" \
@@ -1886,7 +1886,7 @@ static char *ui_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" \
                           "</packing>\n" \
                         "</child>\n" \
                         "<child>\n" \
-                          "<object class=\"GtkCheckButton\" id=\"dont_use_set_locale\">\n" \
+                          "<object class=\"GtkCheckButton\" id=\"NO_LOCALE\">\n" \
                             "<property name=\"label\" translatable=\"yes\">Don't Use setlocale()</property>\n" \
                             "<property name=\"use_action_appearance\">False</property>\n" \
                             "<property name=\"visible\">True</property>\n" \
@@ -1904,7 +1904,7 @@ static char *ui_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" \
                           "</packing>\n" \
                         "</child>\n" \
                         "<child>\n" \
-                          "<object class=\"GtkCheckButton\" id=\"ignore_space_after_function_names\">\n" \
+                          "<object class=\"GtkCheckButton\" id=\"IGNORE_SPACE\">\n" \
                             "<property name=\"label\" translatable=\"yes\">Ignore space after function names</property>\n" \
                             "<property name=\"use_action_appearance\">False</property>\n" \
                             "<property name=\"visible\">True</property>\n" \
@@ -1922,7 +1922,7 @@ static char *ui_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" \
                           "</packing>\n" \
                         "</child>\n" \
                         "<child>\n" \
-                          "<object class=\"GtkCheckButton\" id=\"read_options_from_mycnf\">\n" \
+                          "<object class=\"GtkCheckButton\" id=\"USE_MYCNF\">\n" \
                             "<property name=\"label\" translatable=\"yes\">Read options from my.cnf</property>\n" \
                             "<property name=\"use_action_appearance\">False</property>\n" \
                             "<property name=\"visible\">True</property>\n" \
@@ -1940,7 +1940,7 @@ static char *ui_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" \
                           "</packing>\n" \
                         "</child>\n" \
                         "<child>\n" \
-                          "<object class=\"GtkCheckButton\" id=\"disable_transactions\">\n" \
+                          "<object class=\"GtkCheckButton\" id=\"NO_TRANSACTIONS\">\n" \
                             "<property name=\"label\" translatable=\"yes\">Disable transaction support</property>\n" \
                             "<property name=\"use_action_appearance\">False</property>\n" \
                             "<property name=\"visible\">True</property>\n" \
@@ -1958,7 +1958,7 @@ static char *ui_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" \
                           "</packing>\n" \
                         "</child>\n" \
                         "<child>\n" \
-                          "<object class=\"GtkCheckButton\" id=\"min_date_to_zero\">\n" \
+                          "<object class=\"GtkCheckButton\" id=\"MIN_DATE_TO_ZERO\">\n" \
                             "<property name=\"label\" translatable=\"yes\">Bind minimal date as zero date</property>\n" \
                             "<property name=\"use_action_appearance\">False</property>\n" \
                             "<property name=\"visible\">True</property>\n" \
@@ -1976,7 +1976,7 @@ static char *ui_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" \
                           "</packing>\n" \
                         "</child>\n" \
                         "<child>\n" \
-                          "<object class=\"GtkCheckButton\" id=\"no_ssps\">\n" \
+                          "<object class=\"GtkCheckButton\" id=\"NO_SSPS\">\n" \
                             "<property name=\"label\" translatable=\"yes\">Prepare statements on the client</property>\n" \
                             "<property name=\"use_action_appearance\">False</property>\n" \
                             "<property name=\"visible\">True</property>\n" \
@@ -1993,7 +1993,7 @@ static char *ui_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" \
                           "</packing>\n" \
                         "</child>\n" \
                         "<child>\n" \
-                          "<object class=\"GtkCheckButton\" id=\"enable_local_infile\">\n" \
+                          "<object class=\"GtkCheckButton\" id=\"ENABLE_LOCAL_INFILE\">\n" \
                             "<property name=\"label\" translatable=\"yes\">Enable LOAD DATA LOCAL INFILE statements</property>\n" \
                             "<property name=\"visible\">True</property>\n" \
                             "<property name=\"can_focus\">True</property>\n" \
@@ -2041,7 +2041,7 @@ static char *ui_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" \
                             "<property name=\"visible\">True</property>\n" \
                             "<property name=\"can_focus\">False</property>\n" \
                             "<child>\n" \
-                              "<object class=\"GtkEntry\" id=\"load_data_local_dir\">\n" \
+                              "<object class=\"GtkEntry\" id=\"LOAD_DATA_LOCAL_DIR\">\n" \
                                 "<property name=\"visible\">True</property>\n" \
                                 "<property name=\"can_focus\">True</property>\n" \
                               "</object>\n" \
@@ -2052,7 +2052,7 @@ static char *ui_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" \
                               "</packing>\n" \
                             "</child>\n" \
                             "<child>\n" \
-                              "<object class=\"GtkButton\" id=\"load_data_local_dir_button\">\n" \
+                              "<object class=\"GtkButton\" id=\"LOAD_DATA_LOCAL_DIR_button\">\n" \
                                 "<property name=\"label\" translatable=\"yes\">...</property>\n" \
                                 "<property name=\"visible\">True</property>\n" \
                                 "<property name=\"can_focus\">True</property>\n" \

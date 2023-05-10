@@ -341,7 +341,7 @@ sql_get_bookmark_data(STMT *stmt, SQLSMALLINT fCType, uint column_number,
 char *fix_padding(STMT *stmt, SQLSMALLINT fCType, char *value, std::string &out_str,
               SQLLEN cbValueMax, ulong &data_len, DESCREC *irrec)
 {
-    if (stmt->dbc->ds->pad_char_to_full_length &&
+    if (stmt->dbc->ds.opt_PAD_SPACE &&
          (irrec->type == SQL_CHAR || irrec->type == SQL_WCHAR) &&
          (fCType == SQL_C_CHAR || fCType == SQL_C_WCHAR || fCType == SQL_C_BINARY)
        )
@@ -668,7 +668,7 @@ sql_get_data(STMT *stmt, SQLSMALLINT fCType, uint column_number,
         }
 
         if (!str_to_date((SQL_DATE_STRUCT *)rgbValue, tmp, length,
-                          stmt->dbc->ds->zero_date_to_min))
+                          stmt->dbc->ds.opt_ZERO_DATE_TO_MIN))
         {
           *pcbValue= sizeof(SQL_DATE_STRUCT);
         }
@@ -731,7 +731,7 @@ sql_get_data(STMT *stmt, SQLSMALLINT fCType, uint column_number,
         SQL_TIMESTAMP_STRUCT ts;
 
         switch (str_to_ts(&ts, get_string(stmt, column_number, value, &length,
-                          as_string), SQL_NTS, stmt->dbc->ds->zero_date_to_min,
+                          as_string), SQL_NTS, stmt->dbc->ds.opt_ZERO_DATE_TO_MIN,
                           TRUE))
         {
         case SQLTS_BAD_DATE:
@@ -856,7 +856,7 @@ sql_get_data(STMT *stmt, SQLSMALLINT fCType, uint column_number,
       else
       {
         switch (str_to_ts((SQL_TIMESTAMP_STRUCT *)rgbValue, tmp, SQL_NTS,
-                      stmt->dbc->ds->zero_date_to_min, TRUE))
+                      stmt->dbc->ds.opt_ZERO_DATE_TO_MIN, TRUE))
         {
         case SQLTS_BAD_DATE:
           return stmt->set_error("22018", "Data value is not a valid date/time(stamp) value", 0);
@@ -1114,7 +1114,7 @@ MySQLDescribeCol(SQLHSTMT hstmt, SQLUSMALLINT column,
   if (nullable)
     *nullable= irrec->nullable;
 
-  if (stmt->dbc->ds->return_table_names_for_SqlDescribeCol && irrec->table_name)
+  if (stmt->dbc->ds.opt_FULL_COLUMN_NAMES && irrec->table_name)
   {
     char *tmp= (char*)myodbc_malloc(strlen((char *)irrec->name) +
                          strlen((char *)irrec->table_name) + 2,
@@ -2275,7 +2275,7 @@ SQLRETURN SQL_API my_SQLExtendedFetch( SQLHSTMT             hstmt,
 
     if ( stmt->stmt_options.cursor_type == SQL_CURSOR_FORWARD_ONLY )
     {
-      if ( fFetchType != SQL_FETCH_NEXT && !stmt->dbc->ds->safe )
+      if ( fFetchType != SQL_FETCH_NEXT && !stmt->dbc->ds.opt_SAFE )
         return  stmt->set_error(MYERR_S1106,
                           "Wrong fetchtype with FORWARD ONLY cursor", 0);
     }

@@ -158,9 +158,9 @@ DECLARE_TEST(t_1piecewrite2)
     }
     blobbuf[i] = '\0';
     l = 1;
-    rc = SQLBindParameter(hstmt,SQL_PARAM_INPUT,1, SQL_C_LONG, SQL_INTEGER, 0, 0, &l,0, NULL);
+    rc = SQLBindParameter(hstmt, 1, SQL_PARAM_INPUT, SQL_C_LONG, SQL_INTEGER, 0, 0, &l, 0, NULL);
     mystmt(hstmt,rc);
-    rc = SQLBindParameter(hstmt,SQL_PARAM_INPUT, 2, SQL_C_CHAR, SQL_LONGVARCHAR, 0, 0, blobbuf,cbValue, NULL);
+    rc = SQLBindParameter(hstmt, 1, SQL_PARAM_INPUT, SQL_C_CHAR, SQL_LONGVARCHAR, 0, 0, blobbuf,cbValue, NULL);
     mystmt(hstmt,rc);
     ok_sql(hstmt, "INSERT INTO TBLOB VALUES (1,?)");
     mystmt(hstmt,rc);

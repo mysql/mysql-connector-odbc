@@ -76,7 +76,6 @@ my_bool free_current_result(STMT *stmt)
       free_result_bind(stmt);
       res= mysql_stmt_free_result(stmt->ssps);
     }
-    free_internal_result_buffers(stmt);
     /* We need to always free stmt->result because SSPS keep metadata there */
     stmt_result_free(stmt);
     stmt->result= NULL;
@@ -107,7 +106,6 @@ MYSQL_RES * stmt_get_result(STMT *stmt, BOOL force_use)
    we need to use/store each resultset of multiple resultsets */
 MYSQL_RES * get_result_metadata(STMT *stmt, BOOL force_use)
 {
-  free_internal_result_buffers(stmt);
   /* just a precaution, mysql_free_result checks for NULL anywat */
   mysql_free_result(stmt->result);
 
@@ -415,11 +413,11 @@ SQLRETURN prepare(STMT *stmt, char * query, SQLINTEGER query_length,
   /* TODO: I guess we always have to have query length here */
   if (query_length <= 0)
   {
-    query_length= strlen(query);
+    query_length = query ? strlen(query) : 0;
   }
 
-  reset_parsed_query(&stmt->query, query, query + query_length,
-                     stmt->dbc->cxn_charset_info);
+  stmt->query.reset(query, query + query_length,
+                    stmt->dbc->cxn_charset_info);
   /* Tokenising string, detecting and storing parameters placeholders, removing {}
      So far the only possible error is memory allocation. Thus setting it here.
      If that changes we will need to make "parse" to set error and return rc */
@@ -432,16 +430,16 @@ SQLRETURN prepare(STMT *stmt, char * query, SQLINTEGER query_length,
   stmt->param_count= PARAM_COUNT(stmt->query);
   /* Trusting our parsing we are not using prepared statments unsless there are
      actually parameter markers in it */
-  if (!stmt->dbc->ds->no_ssps && (PARAM_COUNT(stmt->query) || force_prepare)
-    && !IS_BATCH(&stmt->query)
-    && preparable_on_server(&stmt->query, stmt->dbc->mysql->server_version))
+  if (!stmt->dbc->ds.opt_NO_SSPS && (PARAM_COUNT(stmt->query) || force_prepare)
+    && !IS_BATCH(&stmt->query) &&
+      stmt->query.preparable_on_server(stmt->dbc->mysql->server_version))
   {
     MYLOG_QUERY(stmt, "Using prepared statement");
     ssps_init(stmt);
 
     /* If the query is in the form of "WHERE CURRENT OF" - we do not need to prepare
        it at the moment */
-    if (!get_cursor_name(&stmt->query))
+    if (!stmt->query.get_cursor_name())
     {
      LOCK_DBC(stmt->dbc);
 
@@ -463,7 +461,6 @@ SQLRETURN prepare(STMT *stmt, char * query, SQLINTEGER query_length,
 
       stmt->param_count= mysql_stmt_param_count(stmt->ssps);
 
-      free_internal_result_buffers(stmt);
       /* make sure we free the result from the previous time */
       if (stmt->result)
       {
@@ -533,12 +530,6 @@ SQLRETURN send_long_data (STMT *stmt, unsigned int param_num, DESCREC * aprec, c
 
 
 /*------------------- Scrolled cursor related stuff -------------------*/
-void scroller_reset(STMT *stmt)
-{
-  x_free(stmt->scroller.query);
-  stmt->scroller.next_offset= 0;
-  stmt->scroller.query= stmt->scroller.offset_pos= NULL;
-}
 
 /* @param[in]     selected  - prefetch value in datatsource selected by user
    @param[in]     app_fetchs- how many rows app fetchs at a time,
@@ -578,16 +569,16 @@ unsigned int calc_prefetch_number(unsigned int selected, SQLULEN app_fetchs,
 
 BOOL scroller_exists(STMT * stmt)
 {
-  return stmt->scroller.offset_pos != NULL;
+  return stmt->scroller.offset_pos > stmt->scroller.query;
 }
 
 /* Initialization of a scroller */
-void scroller_create(STMT * stmt, char *query, SQLULEN query_len)
+void scroller_create(STMT * stmt, const char *query, SQLULEN query_len)
 {
   /* MAX32_BUFF_SIZE includes place for terminating null, which we do not need
      and will use for comma */
-  const size_t len2add= 7/*" LIMIT "*/ + MAX64_BUFF_SIZE/*offset*/ /*- 1*/ + MAX32_BUFF_SIZE;
-  MY_LIMIT_CLAUSE limit= find_position4limit(stmt->dbc->ansi_charset_info,
+  const size_t len2add = 7/*" LIMIT "*/ + MAX64_BUFF_SIZE/*offset*/ /*- 1*/ + MAX32_BUFF_SIZE;
+  MY_LIMIT_CLAUSE limit = find_position4limit(stmt->dbc->ansi_charset_info,
                                             query, query + query_len);
 
   stmt->scroller.start_offset= limit.offset;
@@ -609,18 +600,18 @@ void scroller_create(STMT * stmt, char *query, SQLULEN query_len)
   stmt->scroller.next_offset= myodbc_max(limit.offset, 0);
 
   stmt->scroller.query_len= query_len + len2add;
-  stmt->scroller.query= (char*)myodbc_malloc((size_t)stmt->scroller.query_len + 1,
-                                          MYF(MY_ZEROFILL));
+  stmt->scroller.extend_buf((size_t)stmt->scroller.query_len + 1);
   memset(stmt->scroller.query, ' ', (size_t)stmt->scroller.query_len);
   memcpy(stmt->scroller.query, query, limit.begin - query);
 
   /* Forgive me - now limit.begin points to beginning of limit in scroller's
      copy of the query */
-  limit.begin= stmt->scroller.query + (limit.begin - query);
-  strncpy(limit.begin, " LIMIT ", 7);
+  char *limptr = stmt->scroller.query + (limit.begin - query);
+  limit.begin = limptr;
+  strncpy(limptr, " LIMIT ", 7);
 
-  /* That is  where we will update offset */
-  stmt->scroller.offset_pos= limit.begin + 7;
+  /* That is where we will update offset */
+  stmt->scroller.offset_pos = limptr + 7;
 
   /* putting row count in place. normally should not change or only once */
   myodbc_snprintf(stmt->scroller.offset_pos + MAX64_BUFF_SIZE - 1, MAX32_BUFF_SIZE + 1,
@@ -685,9 +676,9 @@ SQLRETURN scroller_prefetch(STMT * stmt)
 
 
 
-BOOL scrollable(STMT * stmt, char * query, char * query_end)
+bool scrollable(STMT * stmt, const char * query, const char * query_end)
 {
-  if (!is_select_statement(&stmt->query))
+  if (!stmt->query.is_select_statement())
   {
     return FALSE;
   }
