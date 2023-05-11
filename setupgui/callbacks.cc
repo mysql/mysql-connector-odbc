@@ -283,7 +283,7 @@ void syncTabsData(HWND hwnd, DataSource *params)
   GET_BOOL_TAB(CONNECTION_TAB, GET_SERVER_PUBLIC_KEY);
   GET_BOOL_TAB(CONNECTION_TAB, ENABLE_DNS_SRV);
 
-  if (params->opt_ENABLE_DNS_SRV)
+  if (params->opt_ENABLE_DNS_SRV.is_set() && params->opt_ENABLE_DNS_SRV)
     params->opt_PORT.clear();
 
   GET_BOOL_TAB(CONNECTION_TAB, MULTI_HOST);
