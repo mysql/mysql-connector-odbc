@@ -922,24 +922,20 @@ DataSource::DataSource() {
     m_alias_list.push_back(W_##Y);
 
   ALIAS_OPTIONS_LIST(ADD_ALIAS_TO_MAP);
+  reset();
+}
 
-  #define SET_DEFAULT_STR_OPTION(X) opt_##X.set_default(nullptr);
+void DataSource::reset() {
+#define SET_DEFAULT_STR_OPTION(X) opt_##X.set_default(nullptr);
   STR_OPTIONS_LIST(SET_DEFAULT_STR_OPTION);
 
-  #define SET_DEFAULT_INT_OPTION(X) opt_##X.set_default(0);
+#define SET_DEFAULT_INT_OPTION(X) opt_##X.set_default(0);
   INT_OPTIONS_LIST(SET_DEFAULT_INT_OPTION);
 
-  #define SET_DEFAULT_BOOL_OPTION(X) opt_##X.set_default(false);
+#define SET_DEFAULT_BOOL_OPTION(X) opt_##X.set_default(false);
   BOOL_OPTIONS_LIST(SET_DEFAULT_BOOL_OPTION);
 
   opt_PORT.set_default(3306);
-  opt_NO_SCHEMA = 1;
-}
-
-void DataSource::clear() {
-#define CLEAR_OPTION(X) opt_##X.clear();
-  FULL_OPTIONS_LIST(CLEAR_OPTION);
-
   opt_NO_SCHEMA = 1;
 }
 
@@ -947,12 +943,12 @@ SQLWSTRING DataSource::to_kvpair(SQLWCHAR delim) {
   SQLWCHAR numbuf[21];
   SQLWSTRING attrs;
 
-  bool name_is_set = m_opt_map.find(W_DSN)->second.is_set();
+  bool name_is_set = !m_opt_map.find(W_DSN)->second.is_default();
   for (const auto &[k, v] : m_opt_map)
   {
     // Skip the option, which wasn't set.
     // Skip DRIVER if DSN (NAME) was set.
-    if (!v.is_set() ||
+    if (!v.is_set() || v.is_default() ||
         (name_is_set && !sqlwcharcasecmp(W_DRIVER, k.c_str()))
     )
       continue;

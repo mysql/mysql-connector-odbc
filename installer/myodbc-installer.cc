@@ -256,9 +256,14 @@ int list_driver_details(Driver *driver)
   }
 
   /* print driver details */
-  printf("FriendlyName: %s\n", (const char *)driver->name);
-  printf("DRIVER      : %s\n", (const char *)driver->lib);
-  printf("SETUP       : %s\n", (const char *)driver->setup_lib);
+  if (driver->name)
+    printf("FriendlyName: %s\n", (const char *)driver->name);
+
+  if (driver->lib)
+    printf("DRIVER      : %s\n", (const char *)driver->lib);
+
+  if (driver->setup_lib)
+    printf("SETUP       : %s\n", (const char *)driver->setup_lib);
 
   return 0;
 }

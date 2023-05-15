@@ -58,8 +58,8 @@ SQLWSTRING mytest(HWND hwnd, DataSource *params)
     when clicking the Test button
   */
   myodbc::HENV henv;
-  SQLWSTRING preservedSavefile = (const SQLWSTRING&)params->opt_SAVEFILE;
-  params->opt_SAVEFILE.clear();
+  auto preservedSavefile = params->opt_SAVEFILE;
+  params->opt_SAVEFILE.set_default(nullptr);
 
   try
   {
@@ -94,8 +94,8 @@ std::vector<SQLWSTRING> mygetdatabases(HWND hwnd, DataSource* params)
   SQLRETURN   ret;
   SQLWCHAR    catalog[MYODBC_DB_NAME_MAX];
   SQLLEN      n_catalog;
-  SQLWSTRING  preserved_database = (const SQLWSTRING&)params->opt_DATABASE;
-  bool        preserved_no_catalog = params->opt_NO_CATALOG;
+  auto   preserved_database = params->opt_DATABASE;
+  auto   preserved_no_catalog = params->opt_NO_CATALOG;
   std::vector<SQLWSTRING> result;
   result.reserve(20);
 
@@ -103,10 +103,11 @@ std::vector<SQLWSTRING> mygetdatabases(HWND hwnd, DataSource* params)
     In case of file data source we do not want it to be created
     when clicking the Test button
   */
-  SQLWSTRING preserved_savefile = (const SQLWSTRING&)params->opt_SAVEFILE;
-  params->opt_SAVEFILE.clear();
-  params->opt_DATABASE.clear();
-  params->opt_NO_CATALOG.clear();
+  auto preserved_savefile = params->opt_SAVEFILE;
+
+  params->opt_SAVEFILE.set_default(nullptr);
+  params->opt_DATABASE.set_default(nullptr);
+  params->opt_NO_CATALOG.set_default(false);
 
   myodbc::HENV henv;
   myodbc::HDBC hdbc(henv, params);
@@ -146,10 +147,10 @@ std::vector<SQLWSTRING> mygetdatabases(HWND hwnd, DataSource* params)
 std::vector<SQLWSTRING> mygetcharsets(HWND hwnd, DataSource* params)
 {
   SQLRETURN   ret;
-  SQLWCHAR    charset[MYODBC_DB_NAME_MAX];
-  SQLLEN      n_charset;
-  SQLWSTRING preserved_database = (const SQLWSTRING &)params->opt_DATABASE;
-  bool        preserved_no_catalog= params->opt_NO_CATALOG;
+  SQLWCHAR    charset[MYODBC_DB_NAME_MAX] = { 0 };
+  SQLLEN      n_charset = 0;
+  auto        preserved_database = params->opt_DATABASE;
+  auto        preserved_no_catalog= params->opt_NO_CATALOG;
   SQLWCHAR tmpbuf[1024];
   std::vector<SQLWSTRING> csl;
   csl.reserve(20);
@@ -158,10 +159,10 @@ std::vector<SQLWSTRING> mygetcharsets(HWND hwnd, DataSource* params)
     In case of file data source we do not want it to be created
     when clicking the Test button
   */
-  SQLWSTRING preserved_savefile = (const SQLWSTRING &)params->opt_SAVEFILE;
-  params->opt_SAVEFILE.clear();
-  params->opt_DATABASE.clear();
-  params->opt_NO_CATALOG.clear();
+  auto preserved_savefile = params->opt_SAVEFILE;
+  params->opt_SAVEFILE.set_default(nullptr);
+  params->opt_DATABASE.set_default(nullptr);
+  params->opt_NO_CATALOG.set_default(false);
 
   myodbc::HENV henv;
   myodbc::HDBC hdbc(henv, params);
@@ -223,7 +224,7 @@ void syncData(HWND hwnd, DataSource *params)
   if (READ_BOOL(hwnd, IDC_RADIO_NAMED_PIPE))
     params->opt_NAMED_PIPE = true;
   else
-    params->opt_NAMED_PIPE.clear();
+    params->opt_NAMED_PIPE.set_default(false);
 #endif
 }
 
@@ -284,7 +285,7 @@ void syncTabsData(HWND hwnd, DataSource *params)
   GET_BOOL_TAB(CONNECTION_TAB, ENABLE_DNS_SRV);
 
   if (params->opt_ENABLE_DNS_SRV.is_set() && params->opt_ENABLE_DNS_SRV)
-    params->opt_PORT.clear();
+    params->opt_PORT.set_default(3306);
 
   GET_BOOL_TAB(CONNECTION_TAB, MULTI_HOST);
 
