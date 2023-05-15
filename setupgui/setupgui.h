@@ -144,7 +144,7 @@ void setControlEnabled(unsigned int framenum, int idc, my_bool state);
     if (res && *res)                                               \
       params->opt_##name = res;                                    \
     else                                                           \
-      params->opt_##name.clear();                                  \
+      params->opt_##name.set_default(nullptr);                    \
   }
 
 #define GET_STRING_TAB(framenum, name) \
@@ -153,7 +153,7 @@ void setControlEnabled(unsigned int framenum, int idc, my_bool state);
     if (res && *res) \
       params->opt_##name = res; \
     else \
-      params->opt_##name.clear(); \
+      params->opt_##name.set_default(nullptr); \
   }
 
 #define SET_STRING(name) \
@@ -181,13 +181,13 @@ void setControlEnabled(unsigned int framenum, int idc, my_bool state);
   if (v)                                                \
       params->opt_##name = v;                           \
     else                                                \
-      params->opt_##name.clear();                       \
+      params->opt_##name.set_default(0);                       \
   }
 #define GET_UNSIGNED_TAB(framenum, name) { auto v = getUnsignedFieldDataTab(framenum, IDC_EDIT_##name); \
   if (v)                                                \
       params->opt_##name = v;                           \
     else                                                \
-      params->opt_##name.clear();                       \
+      params->opt_##name.set_default(0);         \
   }
 
 
@@ -248,7 +248,7 @@ void setUnsignedFieldData(gchar *widget_name, unsigned int param);
     if (res && *res)                                               \
       params->opt_##name = res;                                    \
     else                                                           \
-      params->opt_##name.clear();                                  \
+      params->opt_##name.set_default(nullptr);                     \
   }
 
 #define GET_STRING_TAB(UNUSED_PARAM, name) \
@@ -272,7 +272,7 @@ void setUnsignedFieldData(gchar *widget_name, unsigned int param);
     if (res && *res)                                               \
       params->opt_##name = res;                                    \
     else                                                           \
-      params->opt_##name.clear();                                  \
+      params->opt_##name.set_default(nullptr);                     \
   }
 
 #define GET_COMBO_TAB(UNUSED_PARAM, name) \
@@ -284,7 +284,7 @@ void setUnsignedFieldData(gchar *widget_name, unsigned int param);
     if (v)                                                \
       params->opt_##name = v;                             \
     else                                                  \
-      params->opt_##name.clear();                         \
+      params->opt_##name.set_default(0);           \
   }
 
 #define GET_UNSIGNED_TAB(UNUSED_PARAM, name) \
@@ -305,13 +305,13 @@ void setUnsignedFieldData(gchar *widget_name, unsigned int param);
   if (READ_BOOL(framenum, name))     \
     params->opt_##name = true;       \
   else                               \
-    params->opt_##name.clear()
+    params->opt_##name.set_default(false)
 
 #define GET_BOOL_TAB(framenum, name) \
   if (READ_BOOL_TAB(framenum, name)) \
     params->opt_##name = true;       \
   else                               \
-    params->opt_##name.clear()
+    params->opt_##name.set_default(false)
 
 #define SET_BOOL(hwnd, name) \
   SET_CHECKED(hwnd, name, params->opt_##name)
