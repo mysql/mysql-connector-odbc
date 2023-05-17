@@ -387,7 +387,7 @@ do { \
 
   auto get_rand_name = []()
   {
-    srand(time(NULL)); // use current time as seed for random generator
+    srand((unsigned int)time(NULL)); // use current time as seed for random generator
     int random_variable = rand();
     static const char hexdigit[17] = "0123456789abcdef";
     char buf[17];
@@ -534,7 +534,6 @@ DECLARE_TEST(t_wl14362)
   std::string opts("ENABLE_DNS_SRV=1;SERVER=");
   opts.append((char*)mydns_srv);
   std::map<int, int> con_map;
-  char buf[1024];
 
   for (int i = 0; i < con_num; ++i)
   {
@@ -808,11 +807,11 @@ DECLARE_TEST(t_wl14490)
 
   std::string query = "GRANT ALL ON ";
   query.append((char *)mydb).append(".").append("t_wl14490a to ").append(user);
-  ok_stmt(hstmt, SQLExecDirect(hstmt, (SQLCHAR*)query.c_str(), query.length()));
+  ok_stmt(hstmt, SQLExecDirect(hstmt, (SQLCHAR*)query.c_str(), (SQLINTEGER)query.length()));
 
   query = "GRANT INSERT (a), SELECT (a), REFERENCES (a), UPDATE (a) ON ";
   query.append((char *)mydb).append(".").append("t_wl14490a to ").append(user);
-  ok_stmt(hstmt, SQLExecDirect(hstmt, (SQLCHAR*)query.c_str(), query.length()));
+  ok_stmt(hstmt, SQLExecDirect(hstmt, (SQLCHAR*)query.c_str(), (SQLINTEGER)query.length()));
 
   ok_sql(hstmt, "DROP PROCEDURE IF EXISTS procwl14490");
   ok_sql(hstmt, "CREATE PROCEDURE procwl14490(IN p1 INT, IN p2 INT) begin end;");
@@ -929,7 +928,7 @@ DECLARE_TEST(t_wl15114)
   std::string str_cipher;
   is(SQL_SUCCESS == get_status_var(hstmt1, "Ssl_cipher", str_cipher));
 
-  srand(time(0));
+  srand((unsigned int)time(0));
   std::string new_str_ciphers[2];
   int idx = 0;
 

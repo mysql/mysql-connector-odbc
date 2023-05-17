@@ -138,7 +138,7 @@ DECLARE_TEST(t_bug32763378)
     SQLINTEGER  native_error = 0;
     SQLSMALLINT length = 0;
     ok_stmt(hstmt, SQLGetDiagRec(SQL_HANDLE_STMT, hstmt, 1, sqlstate, &native_error,
-                     buff, buff.size - 1, &length));
+                     buff, (SQLSMALLINT)buff.size - 1, &length));
     std::cout << "Expected error message: " << buff.get_str() << std::endl;
   }
   ENDCATCH;

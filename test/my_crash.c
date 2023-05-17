@@ -246,7 +246,7 @@ DECLARE_TEST(t_bug17587913)
 {
   SQLHDBC hdbc1;
   SQLCHAR str[1024]={0};
-  SQLLEN len= 0;
+  SQLINTEGER len = 0;
   SQLCHAR *DatabaseName = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"\
                           "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"\
                           "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"\
@@ -267,7 +267,7 @@ DECLARE_TEST(t_bug17587913)
   get_connection(&hdbc1, NULL, NULL, NULL, DatabaseName, NULL);
 
   ok_con(hdbc1, SQLSetConnectAttr(hdbc1, SQL_ATTR_CURRENT_CATALOG,
-                                  DatabaseName, strlen(DatabaseName)));
+                                  DatabaseName, (SQLINTEGER)strlen(DatabaseName)));
 
   /* Expecting error here */
   SQLGetConnectAttr(hdbc1, SQL_ATTR_CURRENT_CATALOG, str, 100, &len);
@@ -355,8 +355,6 @@ DECLARE_TEST(t_bug17854697)
                       "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"\
                       "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
   SQLCHAR buf[1024]= {0};
-
-  int len= strlen(any_name);
 
   /* lets check all catalog functions */
   expect_stmt(hstmt, SQLColumnPrivileges(hstmt, any_name, SQL_NTS, NULL, 0,
@@ -1034,7 +1032,6 @@ DECLARE_TEST(t_bug32813838)
     SQLCHAR name[16];
   } rows[25];
   size_t row_size= (sizeof(rows) / 25);
-  SQLINTEGER out_id, out_x;
   SQLULEN bind_offset= 20 * row_size;
   SQLHANDLE ipd = NULL;
   SQLHANDLE apd = NULL;

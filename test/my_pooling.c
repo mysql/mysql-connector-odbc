@@ -52,7 +52,9 @@ DECLARE_TEST(t_reset_connection)
   }
 
   ok_env(henv1, SQLAllocHandle(SQL_HANDLE_DBC, henv, &hdbc1));
-  ok_con(hdbc1, SQLConnect(hdbc1, mydsn, strlen(mydsn), myuid, strlen(myuid), mypwd, strlen(mypwd)));
+  ok_con(hdbc1, SQLConnect(hdbc1, mydsn, (SQLSMALLINT)strlen(mydsn),
+                           myuid, (SQLSMALLINT)strlen(myuid),
+                           mypwd, (SQLSMALLINT)strlen(mypwd)));
 
   ok_con(hdbc1, SQLAllocHandle(SQL_HANDLE_STMT, hdbc1, &hstmt1));
 
@@ -64,7 +66,8 @@ DECLARE_TEST(t_reset_connection)
   ok_stmt(hstmt1, SQLFreeStmt(hstmt1, SQL_DROP));
 
   ok_con(hdbc1, SQLSetConnectAttr(hdbc1, SQL_ATTR_CURRENT_CATALOG,
-                                  "t_reset_connection", strlen("t_reset_connection")));
+                                  "t_reset_connection",
+                                  (SQLINTEGER)strlen("t_reset_connection")));
   ok_con(hdbc1, SQLGetConnectAttr(hdbc1, SQL_ATTR_CURRENT_CATALOG,
                                   dbase, sizeof(dbase), &len));
 
@@ -80,7 +83,9 @@ DECLARE_TEST(t_reset_connection)
   ok_env(henv1, SQLAllocHandle(SQL_HANDLE_DBC, henv, &hdbc1));
 
   /* Here the connection is supposed to be taken from the pool */
-  ok_con(hdbc1, SQLConnect(hdbc1, mydsn, strlen(mydsn), myuid, strlen(myuid), mypwd, strlen(mypwd)));
+  ok_con(hdbc1, SQLConnect(hdbc1, mydsn, (SQLSMALLINT)strlen(mydsn),
+                           myuid, (SQLSMALLINT)strlen(myuid),
+                           mypwd, (SQLSMALLINT)strlen(mypwd)));
 
   ok_con(hdbc1, SQLGetConnectAttr(hdbc1, SQL_ATTR_CURRENT_CATALOG,
                                   dbase, sizeof(dbase), &len));

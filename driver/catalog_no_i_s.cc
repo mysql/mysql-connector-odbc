@@ -43,20 +43,22 @@
   options.
 */
 std::string get_database_name(STMT *stmt,
-                              SQLCHAR *catalog, SQLSMALLINT catalog_len,
-                              SQLCHAR *schema, SQLSMALLINT schema_len,
+                              SQLCHAR *catalog, SQLINTEGER catalog_len,
+                              SQLCHAR *schema, SQLINTEGER schema_len,
                               bool try_reget)
 {
   std::string db;
   if (!stmt->dbc->ds.opt_NO_CATALOG && catalog && catalog_len)
   {
     // Catalog parameter can be used
-    db = std::string((char*)catalog, catalog_len);
+    db = (catalog_len != SQL_NTS ? std::string((char *)catalog, catalog_len) :
+      std::string((char *)catalog));
   }
   else if(!stmt->dbc->ds.opt_NO_SCHEMA && schema && schema_len)
   {
     // Schema parameter can be used
-    db = std::string((char*)schema, schema_len);
+    db = (schema_len != SQL_NTS ? std::string((char*)schema, schema_len) :
+      std::string((char *)schema));
   }
   else if (!stmt->dbc->ds.opt_NO_CATALOG || !stmt->dbc->ds.opt_NO_SCHEMA)
   {
@@ -285,7 +287,7 @@ static MYSQL_RES *table_privs_raw_data( STMT *      stmt,
 #define MY_MAX_TABPRIV_COUNT 21
 #define MY_MAX_COLPRIV_COUNT 3
 
-char *SQLTABLES_priv_values[]=
+const char *SQLTABLES_priv_values[]=
 {
     NULL,"",NULL,NULL,NULL,NULL,NULL
 };
@@ -301,7 +303,7 @@ MYSQL_FIELD SQLTABLES_priv_fields[]=
   MYODBC_FIELD_NAME("IS_GRANTABLE", 0),
 };
 
-const uint SQLTABLES_PRIV_FIELDS= array_elements(SQLTABLES_priv_values);
+const uint SQLTABLES_PRIV_FIELDS = (uint)array_elements(SQLTABLES_priv_values);
 
 
 /*
@@ -381,7 +383,7 @@ MYSQL_FIELD SQLCOLUMNS_priv_fields[]=
 };
 
 
-const uint SQLCOLUMNS_PRIV_FIELDS= array_elements(SQLCOLUMNS_priv_values);
+const uint SQLCOLUMNS_PRIV_FIELDS = (uint)array_elements(SQLCOLUMNS_priv_values);
 
 
 /**
@@ -404,7 +406,6 @@ MYSQL_RES *server_show_create_table(STMT        *stmt,
                                     SQLSMALLINT  table_length)
 {
   MYSQL *mysql= stmt->dbc->mysql;
-	char tmpbuff[1024];
   std::string query;
   size_t cnt = 0;
 
@@ -460,7 +461,7 @@ MYSQL_FIELD SQLFORE_KEYS_fields[]=
   MYODBC_FIELD_SHORT("DEFERRABILITY", 0),
 };
 
-const uint SQLFORE_KEYS_FIELDS= array_elements(SQLFORE_KEYS_fields);
+const uint SQLFORE_KEYS_FIELDS = (uint)array_elements(SQLFORE_KEYS_fields);
 
 /* Multiple array of Struct to store and sort SQLForeignKeys field */
 typedef struct SQL_FOREIGN_KEY_FIELD
@@ -523,7 +524,7 @@ MYSQL_FIELD SQLPRIM_KEYS_fields[]=
   MYODBC_FIELD_STRING("PK_NAME", 128, 0),
 };
 
-const uint SQLPRIM_KEYS_FIELDS= array_elements(SQLPRIM_KEYS_fields);
+const uint SQLPRIM_KEYS_FIELDS = (uint)array_elements(SQLPRIM_KEYS_fields);
 
 const long SQLPRIM_LENGTHS[]= {0, 0, 1, 5, 4, -7};
 
@@ -553,7 +554,8 @@ primary_keys_no_i_s(SQLHSTMT hstmt,
 
     auto db = get_database_name(stmt, catalog, catalog_len,
                                 schema, schema_len);
-    if (!(stmt->result= server_list_dbkeys(stmt, (SQLCHAR*)db.c_str(), db.length(),
+    if (!(stmt->result= server_list_dbkeys(stmt, (SQLCHAR*)db.c_str(),
+                                           (SQLSMALLINT)db.length(),
                                            table, table_len)))
     {
       SQLRETURN rc= handle_connection_error(stmt);
@@ -650,8 +652,8 @@ MYSQL_FIELD SQLPROCEDURECOLUMNS_fields[]=
   MYODBC_FIELD_STRING("IS_NULLABLE",       3,        0),
 };
 
-const uint SQLPROCEDURECOLUMNS_FIELDS=
-             array_elements(SQLPROCEDURECOLUMNS_fields);
+const uint SQLPROCEDURECOLUMNS_FIELDS =
+    (uint)array_elements(SQLPROCEDURECOLUMNS_fields);
 
 
 /*
@@ -759,7 +761,7 @@ procedure_columns_no_i_s(SQLHSTMT hstmt,
   MYSQL_ROW row;
   MYSQL_RES *proc_list_res;
   int params_num= 0, return_params_num= 0;
-  unsigned int i, j, total_params_num= 0;
+  unsigned int total_params_num = 0;
   std::string db;
 
   assert(stmt);
@@ -771,7 +773,7 @@ procedure_columns_no_i_s(SQLHSTMT hstmt,
                             schema, schema_len, false);
 
   if (!(proc_list_res= server_list_proc_params(stmt,
-      (SQLCHAR*)db.c_str(), db.length(), proc, proc_len,
+      (SQLCHAR*)db.c_str(), (SQLSMALLINT)db.length(), proc, proc_len,
       column, column_len)))
   {
     nReturn= stmt->set_error(MYERR_S1000);
@@ -812,20 +814,12 @@ procedure_columns_no_i_s(SQLHSTMT hstmt,
       unsigned int flags= 0;
       SQLCHAR param_name[NAME_LEN]= "\0";
       SQLCHAR param_dbtype[1024]= "\0";
-      SQLCHAR param_type[4]= "\0";
-      SQLCHAR param_sql_type[6]= "\0";
       SQLCHAR param_size_buf[21]= "\0";
       SQLCHAR param_buffer_len[21]= "\0";
-      SQLCHAR param_decimal[6]= "\0";
-      SQLCHAR param_desc_type[6]= "\0";
-      SQLCHAR param_pos[6]= "\0";
 
       SQLTypeMap *type_map;
       SQLSMALLINT dec;
       SQLULEN param_size= 0;
-      /* temp variables for debugging */
-      SQLUINTEGER dec_int= 0;
-      SQLINTEGER sql_type_int= 0;
 
       token= proc_get_param_type(token, (int)strlen(token), &ptype);
       token= proc_get_param_name(token, (int)strlen(token), (char*)param_name);
@@ -973,7 +967,8 @@ char *SQLSPECIALCOLUMNS_values[]= {
     0,NULL,0,NULL,0,0,0,0
 };
 
-const uint SQLSPECIALCOLUMNS_FIELDS= array_elements(SQLSPECIALCOLUMNS_fields);
+const uint SQLSPECIALCOLUMNS_FIELDS =
+    (uint)array_elements(SQLSPECIALCOLUMNS_fields);
 
 
 /*
@@ -1007,7 +1002,8 @@ special_columns_no_i_s(SQLHSTMT hstmt, SQLUSMALLINT fColType,
     db = get_database_name(stmt, catalog, catalog_len, schema, schema_len,
                            false);
 
-    stmt->result= server_list_dbcolumns(stmt, (SQLCHAR*)db.c_str(), db.length(),
+    stmt->result= server_list_dbcolumns(stmt, (SQLCHAR*)db.c_str(),
+                                        (SQLSMALLINT)db.length(),
                                         szTableName, cbTableName, NULL, 0);
     if (!(result= stmt->result))
     {
@@ -1151,7 +1147,7 @@ MYSQL_FIELD SQLSTAT_fields[]=
   MYODBC_FIELD_STRING("FILTER_CONDITION", 10, 0),
 };
 
-const uint SQLSTAT_FIELDS= array_elements(SQLSTAT_fields);
+const uint SQLSTAT_FIELDS = (uint)array_elements(SQLSTAT_fields);
 
 /*
   @purpose : retrieves a list of statistics about a single table and the
@@ -1182,7 +1178,8 @@ statistics_no_i_s(SQLHSTMT hstmt,
 
     db = get_database_name(stmt, catalog, catalog_len, schema, schema_len, false);
 
-    stmt->result= server_list_dbkeys(stmt, (SQLCHAR*)db.c_str(), db.length(),
+    stmt->result= server_list_dbkeys(stmt, (SQLCHAR*)db.c_str(),
+                                     (SQLSMALLINT)db.length(),
                                      table, table_len);
     if (!stmt->result)
     {
@@ -1191,7 +1188,7 @@ statistics_no_i_s(SQLHSTMT hstmt,
     }
     my_int2str(SQL_INDEX_OTHER,SS_type,10,0);
     stmt->order=       SQLSTAT_order;
-    stmt->order_count= array_elements(SQLSTAT_order);
+    stmt->order_count = (uint)array_elements(SQLSTAT_order);
     stmt->fix_fields=  fix_fields_copy;
     stmt->array.set((char*)SQLSTAT_values, sizeof(SQLSTAT_values)/sizeof(char *));
 
@@ -1243,11 +1240,10 @@ SQLTables
 */
 
 uint SQLTABLES_qualifier_order[]= {0};
-char *SQLTABLES_values[]= {"","",NULL,"TABLE","MySQL table"};
-char *SQLTABLES_qualifier_values[]= {"",NULL,NULL,NULL,NULL};
-char *SQLTABLES_owner_values[]= {NULL,"",NULL,NULL,NULL};
-char *SQLTABLES_type_values[3][5]=
-{
+const char *SQLTABLES_values[] = {"","",NULL,"TABLE","MySQL table"};
+const char *SQLTABLES_qualifier_values[] = {"",NULL,NULL,NULL,NULL};
+const char *SQLTABLES_owner_values[] = {NULL,"",NULL,NULL,NULL};
+const char *SQLTABLES_type_values[3][5] = {
     {NULL,NULL,NULL,"TABLE",NULL},
     {NULL,NULL,NULL,"SYSTEM TABLE",NULL},
     {NULL,NULL,NULL,"VIEW",NULL},
@@ -1266,7 +1262,7 @@ MYSQL_FIELD SQLTABLES_fields[]=
 };
 
 
-const uint SQLTABLES_FIELDS= array_elements(SQLTABLES_values);
+const uint SQLTABLES_FIELDS = (uint)array_elements(SQLTABLES_values);
 
 SQLRETURN
 tables_no_i_s(SQLHSTMT hstmt,
@@ -1329,7 +1325,7 @@ tables_no_i_s(SQLHSTMT hstmt,
                !table_len && table &&
                !type_len && type)
       {
-        rc = create_fake_resultset(stmt, SQLTABLES_owner_values,
+        rc = create_fake_resultset(stmt, (MYSQL_ROW)SQLTABLES_owner_values,
                                    sizeof(SQLTABLES_owner_values),
                                    1, SQLTABLES_fields, SQLTABLES_FIELDS,
                                    true);
@@ -1378,7 +1374,8 @@ tables_no_i_s(SQLHSTMT hstmt,
           std::string db = db_row ? db_row[3] :
                                     get_database_name(stmt, catalog, catalog_len,
                                                       schema, schema_len, false);
-          stmt->result = table_status(stmt, (SQLCHAR*)db.c_str(), db.length(),
+          stmt->result = table_status(stmt, (SQLCHAR*)db.c_str(),
+                                      (SQLSMALLINT)db.length(),
                                       table, table_len, TRUE,
                                       user_tables, views);
         }
@@ -1474,7 +1471,7 @@ tables_no_i_s(SQLHSTMT hstmt,
       switch(ex.m_type)
       {
         case EXCEPTION_TYPE::EMPTY_SET:
-          return create_empty_fake_resultset(stmt, SQLTABLES_values,
+          return create_empty_fake_resultset(stmt, (MYSQL_ROW)SQLTABLES_values,
                                              sizeof(SQLTABLES_values),
                                              SQLTABLES_fields,
                                              SQLTABLES_FIELDS);

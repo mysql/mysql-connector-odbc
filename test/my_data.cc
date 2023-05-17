@@ -441,7 +441,7 @@ int check_sqlgetdata_buf(SQLHSTMT hstmt, std::string &src_str)
     row_data[i].reset(new T[row_data_len]);
     T* data_ptr = row_data[i].get();
 
-    is(cb_buf[i] >= buf_size * char_size);
+    is((size_t)cb_buf[i] >= buf_size * char_size);
     size_t row_data_offset = buf_size;
 
     memcpy(data_ptr, buf[i], buf_size * char_size);

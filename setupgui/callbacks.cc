@@ -68,12 +68,17 @@ SQLWSTRING mytest(HWND hwnd, DataSource *params)
   }
   catch(MYERROR &e)
   {
-    auto s = L"Connection failed with the following error:\n" +
-      std::wstring_convert<std::codecvt_utf8<wchar_t>>().from_bytes(e.message) +
-      L"[" + std::wstring_convert<std::codecvt_utf8<wchar_t>>().from_bytes(e.sqlstate) +
-      L"]";
-    auto *w = s.c_str();
-    msg = _W(w);
+    // Use the ability of optionStr to convert MBchar -> Wchar
+    optionStr e_msg;
+    e_msg = e.message;
+    optionStr e_sqlstate;
+    e_sqlstate = e.sqlstate;
+
+    msg = _W(L"Connection failed with the following error:\n");
+    msg.append((const SQLWSTRING &)e_msg);
+    msg.append(_W(L"["));
+    msg.append((const SQLWSTRING &)e_sqlstate);
+    msg.append(_W(L"]"));
   }
 
   /* Restore savefile parameter */

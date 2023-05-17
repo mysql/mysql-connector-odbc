@@ -378,7 +378,6 @@ DECLARE_TEST(t_catalog)
 {
   SQLRETURN rc;
   SQLCHAR      name[MYSQL_NAME_LEN+1];
-  SQLUSMALLINT i;
   SQLSMALLINT  ncols, len;
 
   SQLCHAR colnames[19][20]= {
@@ -397,12 +396,12 @@ DECLARE_TEST(t_catalog)
 
   ok_sql(hstmt,"create table t_catalog(abc tinyint, bcdefghijklmno char(4), uifield int unsigned not null)");
 
-  for (int i = 0; i < 2; ++i)
+  for (int j = 0; j < 2; ++j)
   {
     int idx = 0;
     DECLARE_BASIC_HANDLES(henv1, hdbc1, hstmt1);
     alloc_basic_handles_with_opt(&henv1, &hdbc1, &hstmt1,
-      NULL, NULL, NULL, NULL, conn_opt[i]);
+      NULL, NULL, NULL, NULL, conn_opt[j]);
 
     ok_stmt(hstmt1, SQLColumns(hstmt1, NULL, 0, NULL, 0,
                               (SQLCHAR *)"t_catalog", 9, NULL, 0));
@@ -424,7 +423,7 @@ DECLARE_TEST(t_catalog)
     rc = SQLNumResultCols(hstmt1,&ncols);
     mystmt(hstmt1,rc);
 
-    for (i= 1; i <= (SQLUINTEGER) ncols; i++)
+    for (int i = 1; i <= (int)ncols; i++)
     {
         rc = SQLDescribeCol(hstmt1, i, name, MYSQL_NAME_LEN+1, &len, NULL, NULL, NULL, NULL);
         mystmt(hstmt1,rc);
@@ -1639,6 +1638,7 @@ DECLARE_TEST(t_bug39957)
 
 BEGIN_TESTS
   ADD_TEST(t_columns)
+  ADD_TEST(t_catalog)
   ADD_TEST(t_sqlprocedures)
   ADD_TEST(my_columns_null)
   ADD_TEST(my_drop_table)

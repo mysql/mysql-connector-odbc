@@ -950,7 +950,7 @@ MYSQL_FIELD SQL_GET_TYPE_INFO_fields[] =
   MYODBC_FIELD_SHORT("INTERVAL_PRECISION", 0),
 };
 
-const uint SQL_GET_TYPE_INFO_FIELDS = array_elements(SQL_GET_TYPE_INFO_fields);
+const uint SQL_GET_TYPE_INFO_FIELDS = (uint)array_elements(SQL_GET_TYPE_INFO_fields);
 #define MYSQL_DATA_TYPES 61
 
 char sql_searchable[6], sql_unsearchable[6], sql_nullable[6], sql_no_nulls[6],

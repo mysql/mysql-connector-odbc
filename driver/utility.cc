@@ -384,14 +384,14 @@ copy_binary_result(STMT *stmt,
   /* Apply max length to source data, if one was specified. */
   if (stmt->stmt_options.max_length &&
       src_bytes > stmt->stmt_options.max_length)
-    src_bytes= stmt->stmt_options.max_length;
+    src_bytes = (unsigned long)stmt->stmt_options.max_length;
 
   /* Initialize the source offset */
   if (!stmt->getdata.source)
     stmt->getdata.source= src;
   else
   {
-    src_bytes-= stmt->getdata.source - src;
+    src_bytes -= (unsigned long)(stmt->getdata.source - src);
     src= stmt->getdata.source;
 
     /* If we've already retrieved everything, return SQL_NO_DATA_FOUND */
@@ -504,7 +504,7 @@ copy_ansi_result(STMT *stmt,
   /* Apply max length to source data, if one was specified. */
   if (stmt->stmt_options.max_length &&
       src_bytes > stmt->stmt_options.max_length)
-    src_bytes= stmt->stmt_options.max_length;
+    src_bytes = (unsigned long)stmt->stmt_options.max_length;
   src_end= src + src_bytes;
 
   /* Initialize the source offset */
@@ -524,7 +524,7 @@ copy_ansi_result(STMT *stmt,
   */
   if (stmt->getdata.latest_bytes)
   {
-    int new_bytes= myodbc_min(stmt->getdata.latest_bytes -
+    int new_bytes = (int)myodbc_min(stmt->getdata.latest_bytes -
                               stmt->getdata.latest_used,
                               result_end - result);
     if (stmt->stmt_options.retrieve_data)
@@ -629,7 +629,7 @@ convert_to_out:
                                            stmt->getdata.latest +
                                            sizeof(stmt->getdata.latest));
 
-      stmt->getdata.latest_used= myodbc_min(stmt->getdata.latest_bytes,
+      stmt->getdata.latest_used = (int)myodbc_min(stmt->getdata.latest_bytes,
                                             result_end - result);
       memcpy(result, stmt->getdata.latest, stmt->getdata.latest_used);
       result+= stmt->getdata.latest_used;
@@ -741,7 +741,7 @@ copy_wchar_result(STMT *stmt,
   /* Apply max length to source data, if one was specified. */
   if (stmt->stmt_options.max_length &&
       (ulong)src_bytes > stmt->stmt_options.max_length)
-    src_bytes= stmt->stmt_options.max_length;
+    src_bytes = (long)stmt->stmt_options.max_length;
   src_end= src + src_bytes;
 
   /* Initialize the source data */
@@ -780,7 +780,6 @@ copy_wchar_result(STMT *stmt,
     auto wc_mb = utf16_charset_info->cset->wc_mb;
     my_wc_t wc = 0;
     UTF16 ubuf[5] = {0, 0, 0, 0, 0};
-    SQLWCHAR dummy[2]; /* If SQLWCHAR is UTF-16, we may need two chars. */
     int to_cnvres;
 
     int cnvres= (*mb_wc)(from_cs, &wc, (uchar *)src, (uchar *)src_end);
@@ -820,7 +819,7 @@ convert_to_out:
         result++;
       }
 
-      used_chars += wchars_written;
+      used_chars += (ulong)wchars_written;
 
       if (wchars_written > 1)
       {
@@ -925,7 +924,7 @@ SQLRETURN copy_binhex_result(STMT *stmt,
   /** @todo padding of BINARY */
   T *dst = (T*) rgbValue;
   ulong length;
-  ulong max_length = stmt->stmt_options.max_length;
+  ulong max_length = (ulong)stmt->stmt_options.max_length;
   ulong *offset = &stmt->getdata.src_offset;
   T NEAR _dig_vec[] = {
     '0', '1', '2', '3', '4', '5', '6', '7',
@@ -1012,7 +1011,7 @@ SQLRETURN do_copy_bit_result(STMT *stmt,
   /* Apply max length to source data, if one was specified. */
   if (stmt->stmt_options.max_length &&
       src_bytes > stmt->stmt_options.max_length)
-    src_bytes= stmt->stmt_options.max_length;
+    src_bytes = (unsigned long)stmt->stmt_options.max_length;
 
   /* Initialize the source offset */
   if (!stmt->getdata.source)
@@ -1021,7 +1020,7 @@ SQLRETURN do_copy_bit_result(STMT *stmt,
   }
   else
   {
-    src_bytes-= stmt->getdata.source - src;
+    src_bytes -= (unsigned long)(stmt->getdata.source - src);
     src= stmt->getdata.source;
 
     /* If we've already retrieved everything, return SQL_NO_DATA_FOUND */
@@ -1462,7 +1461,7 @@ SQLULEN get_column_size_from_str(STMT *stmt, const char *size_str)
 {
   SQLULEN length = size_str ?
     (SQLULEN)std::strtoll(size_str, nullptr, 10) : 0;
-  return cap_length(stmt, length);
+  return cap_length(stmt, (unsigned long)length);
 }
 
 
@@ -1482,7 +1481,7 @@ SQLULEN get_column_size(STMT *stmt, MYSQL_FIELD *field)
   if (field->max_length > field->length)
     length= field->max_length;
 
-  length= cap_length(stmt, length);
+  length= cap_length(stmt, (unsigned long)length);
 
   switch (field->type) {
   case MYSQL_TYPE_TINY:
@@ -2169,7 +2168,7 @@ int str_to_ts(SQL_TIMESTAMP_STRUCT *ts, const char *str, int len, int zeroToMin,
     /* SQL_NTS is (naturally) negative and is caught as well */
     if (len < 0)
     {
-      len= strlen(str);
+      len = (int)strlen(str);
     }
 
     /* We don't wan to change value in the out parameter directly
@@ -3580,14 +3579,14 @@ SQLUINTEGER proc_get_param_size(SQLCHAR *ptype, int len, int sql_type_index, SQL
   {
     /* these type sizes need to be parsed */
     case MYSQL_TYPE_DECIMAL:
-      param_size= proc_parse_sizes(start_pos, end_pos - start_pos, dec);
+      param_size = proc_parse_sizes(start_pos, (int)(end_pos - start_pos), dec);
       if(!param_size)
         param_size= 10; /* by default */
       break;
 
     case MYSQL_TYPE_YEAR:
       *dec= 0;
-      param_size= proc_parse_sizes(start_pos, end_pos - start_pos, dec);
+      param_size= proc_parse_sizes(start_pos, (int)(end_pos - start_pos), dec);
       if(!param_size)
         param_size= 4; /* by default */
       break;
@@ -3597,15 +3596,15 @@ SQLUINTEGER proc_get_param_size(SQLCHAR *ptype, int len, int sql_type_index, SQL
     case MYSQL_TYPE_STRING:
       if (!myodbc_strcasecmp((const char*)(SQL_TYPE_MAP_values[sql_type_index].type_name), "set"))
       {
-        param_size= proc_parse_enum_set(start_pos, end_pos - start_pos, FALSE);
+        param_size = proc_parse_enum_set(start_pos, (int)(end_pos - start_pos), FALSE);
       }
       else if (!myodbc_strcasecmp((const char*)(SQL_TYPE_MAP_values[sql_type_index].type_name), "enum"))
       {
-        param_size= proc_parse_enum_set(start_pos, end_pos - start_pos, TRUE);
+        param_size = proc_parse_enum_set(start_pos, (int)(end_pos - start_pos), TRUE);
       }
       else /* just normal character type */
       {
-        param_size= proc_parse_sizes(start_pos, end_pos - start_pos, dec);
+        param_size = proc_parse_sizes(start_pos, (int)(end_pos - start_pos), dec);
         if (param_size == 0 &&
             SQL_TYPE_MAP_values[sql_type_index].sql_type == SQL_BINARY)
            param_size= 1;
@@ -3613,7 +3612,7 @@ SQLUINTEGER proc_get_param_size(SQLCHAR *ptype, int len, int sql_type_index, SQL
 
       break;
     case MYSQL_TYPE_BIT:
-      param_size= proc_parse_sizes(start_pos, end_pos - start_pos, dec);
+      param_size = proc_parse_sizes(start_pos, (int)(end_pos - start_pos), dec);
 
       /* fall through*/
     case MYSQL_TYPE_DATETIME:
@@ -3652,7 +3651,7 @@ SQLLEN proc_get_param_col_len(STMT *stmt, int sql_type_index, SQLULEN col_size,
     (SQL_TYPE_MAP_values[sql_type_index].mysql_type == MYSQL_TYPE_DECIMAL ?
     1 + (flags & UNSIGNED_FLAG ? 0 : 1) : 0); /* add 1for sign, if needed, and 1 for decimal point */
 
-  temp_fld.max_length= col_size;
+  temp_fld.max_length = (unsigned long)col_size;
   temp_fld.decimals= decimal_digits;
   temp_fld.flags= flags;
   temp_fld.charsetnr= stmt->dbc->ansi_charset_info->number;
@@ -3689,7 +3688,7 @@ SQLLEN proc_get_param_octet_len(STMT *stmt, int sql_type_index, SQLULEN col_size
     (SQL_TYPE_MAP_values[sql_type_index].mysql_type == MYSQL_TYPE_DECIMAL ?
     1 + (flags & UNSIGNED_FLAG ? 0 : 1) : 0); /* add 1for sign, if needed, and 1 for decimal point */
 
-  temp_fld.max_length= col_size;
+  temp_fld.max_length = (unsigned long)col_size;
   temp_fld.decimals= decimal_digits;
   temp_fld.flags= flags;
   temp_fld.charsetnr= stmt->dbc->ansi_charset_info->number;
@@ -3718,7 +3717,7 @@ char *proc_param_tokenize(char *str, int *params_num)
 {
   BOOL bracket_open= 0;
   char *str_begin= str, quote_symbol='\0';
-  int len= strlen(str);
+  int len = (int)strlen(str);
 
   *params_num= 0;
 
@@ -3778,7 +3777,7 @@ char *proc_param_tokenize(char *str, int *params_num)
 */
 char *proc_param_next_token(char *str, char *str_end)
 {
-  int end_token= strlen(str);
+  size_t end_token = strlen(str);
 
   /* return the next string after \0 byte */
   if (str + end_token + 1 < str_end)
@@ -3818,11 +3817,11 @@ get_fractional_part(const char * str, int len, BOOL dont_use_set_locale,
                     SQLUINTEGER * fraction)
 {
   const char *decptr= NULL, *end;
-  int decpoint_len= 1;
+  size_t decpoint_len= 1;
 
   if (len < 0)
   {
-    len= strlen(str);
+    len = (int)strlen(str);
   }
 
   end= str + len;
@@ -4133,7 +4132,7 @@ const char* check_row_locking(CHARSET_INFO* cs, const char * query, const char *
   for (i = 0; i < index_max; ++i)
   {
     token = mystr_get_prev_token(cs, &before_token, query);
-    if (myodbc_casecmp(token, check[i], strlen(check[i])))
+    if (myodbc_casecmp(token, check[i], (uint)strlen(check[i])))
       return NULL;
   }
   return token;
@@ -4261,7 +4260,7 @@ int get_session_variable(STMT *stmt, const char *var, char *result)
     {
       strcpy(result, row[1]);
       mysql_free_result(res);
-      return strlen(result);
+      return (int)strlen(result);
     }
 
     mysql_free_result(res);

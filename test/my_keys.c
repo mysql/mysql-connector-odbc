@@ -424,7 +424,7 @@ void t_strstr()
     type = strstr((const char *)string,(const char *)str);
     while (type++)
     {
-        int len = type - string;
+        int len = (int)(type - string);
         printMessage("\n Found '%s' at position '%d[%s]", str, len, type);
         type = strstr(type,str);
     }
@@ -440,7 +440,6 @@ void t_strstr()
 DECLARE_TEST(t_bug16920750)
 {
   SQLCHAR buff[255];
-  SQLLEN len;
 
   ok_sql(hstmt, "DROP SCHEMA IF EXISTS fk_test");
   ok_sql(hstmt, "CREATE SCHEMA fk_test");

@@ -83,7 +83,7 @@ void TabControl_GetClientRect(HWND hwnd,RECT* prc)
 	// prc.left = left, prc.top = top, prc.right = width, and prc.bottom = height
 
 	RECT rtab_0;
-	LONG lStyle= GetWindowLongPtr(hwnd,GWL_STYLE);
+	LONG lStyle = (LONG)GetWindowLongPtr(hwnd,GWL_STYLE);
 
 	// Calculate the tab control's display area
 	GetWindowRect(hwnd, prc);

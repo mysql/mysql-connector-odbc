@@ -84,41 +84,22 @@ typedef unsigned char * DYNAMIC_ELEMENT;
 typedef char * DYNAMIC_ELEMENT;
 #endif
 
-#if MYSQL_VERSION_ID >= 50100
 /* Same us MYODBC_FIELD_STRING(name, NAME_LEN, flags) */
 # define MYODBC_FIELD_NAME(name, flags) \
-  {(name), (name), NullS, NullS, NullS, NullS, NullS, NAME_LEN, 0, 0, 0, 0, 0, 0, \
+  {(char*)(name), (char*)(name), NullS, NullS, NullS, NullS, NullS, NAME_LEN, 0, 0, 0, 0, 0, 0, \
     0, 0, (flags), 0, UTF8_CHARSET_NUMBER, MYSQL_TYPE_VAR_STRING, NULL}
 # define MYODBC_FIELD_STRING(name, len, flags) \
-  {(name), (name), NullS, NullS, NullS, NullS, NullS, (len*SYSTEM_CHARSET_MBMAXLEN), 0, 0, 0, 0, 0, 0, \
+  {(char*)(name), (char*)(name), NullS, NullS, NullS, NullS, NullS, (len*SYSTEM_CHARSET_MBMAXLEN), 0, 0, 0, 0, 0, 0, \
     0, 0, (flags), 0, UTF8_CHARSET_NUMBER, MYSQL_TYPE_VAR_STRING, NULL}
 # define MYODBC_FIELD_SHORT(name, flags) \
-  {(name), (name), NullS, NullS, NullS, NullS, NullS, 5, 5, 0, 0, 0, 0, 0, 0, \
+  {(char*)(name), (char*)(name), NullS, NullS, NullS, NullS, NullS, 5, 5, 0, 0, 0, 0, 0, 0, \
     0, (flags), 0, 0, MYSQL_TYPE_SHORT, NULL}
 # define MYODBC_FIELD_LONG(name, flags) \
-  {(name), (name), NullS, NullS, NullS, NullS, NullS, 11, 11, 0, 0, 0, 0, 0, \
+  {(char*)(name), (char*)(name), NullS, NullS, NullS, NullS, NullS, 11, 11, 0, 0, 0, 0, 0, \
     0, 0, (flags), 0, 0, MYSQL_TYPE_LONG, NULL}
 # define MYODBC_FIELD_LONGLONG(name, flags) \
-  {(name), (name), NullS, NullS, NullS, NullS, NullS, 20, 20, 0, 0, 0, 0, 0, \
+  {(char*)(name), (char*)(name), NullS, NullS, NullS, NullS, NullS, 20, 20, 0, 0, 0, 0, 0, \
     0, 0, (flags), 0, 0, MYSQL_TYPE_LONGLONG, NULL}
-#elif MYSQL_VERSION_ID >= 40100
-# define MYODBC_FIELD_NAME(name, flags) \
-{(name), (name), NullS, NullS, NullS, NullS, NullS, NAME_LEN*3, 0, 0, 0, 0, 0, 0, \
-  0, 0, (flags), 0, UTF8_CHARSET_NUMBER, MYSQL_TYPE_VAR_STRING, NULL}
-/* we use 3 here as SYSTEM_CHARSET_MBMAXLEN is not defined in v5.0 mysql_com.h */
-# define MYODBC_FIELD_STRING(name, len, flags) \
-  {(name), (name), NullS, NullS, NullS, NullS, NullS, (len) * 3, 0, 0, 0, 0, \
-    0, 0, 0, 0, (flags), 0, UTF8_CHARSET_NUMBER, MYSQL_TYPE_VAR_STRING}
-# define MYODBC_FIELD_SHORT(name, flags) \
-  {(name), (name), NullS, NullS, NullS, NullS, NullS, 5, 5, 0, 0, 0, 0, 0, 0, \
-    0, (flags), 0, 0, MYSQL_TYPE_SHORT}
-# define MYODBC_FIELD_LONG(name, flags) \
-  {(name), (name), NullS, NullS, NullS, NullS, NullS, 11, 11, 0, 0, 0, 0, 0, \
-    0, 0, (flags), 0, 0, MYSQL_TYPE_LONG}
-# define MYODBC_FIELD_LONGLONG(name, flags) \
-  {(name), (name), NullS, NullS, NullS, NullS, NullS, 20, 20, 0, 0, 0, 0, 0, \
-    0, 0, (flags), 0, 0, MYSQL_TYPE_LONGLONG }
-#endif
 
 /*
   Utility function prototypes that share among files

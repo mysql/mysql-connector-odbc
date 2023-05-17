@@ -707,7 +707,6 @@ DECLARE_TEST(t_bug32171)
 */
 DECLARE_TEST(t_bug91904)
 {
-  SQLUINTEGER pk;
   SQLCHAR char_true[4] = {'z','z','z','z'};
   SQLLEN char_true_length;
   SQLCHAR text[4] = {'z','z','z','z'};
@@ -1369,9 +1368,6 @@ DECLARE_TEST(t_bug32135124)
 */
 DECLARE_TEST(t_bug32537000)
 {
-  SQLSMALLINT name_length, data_type, decimal_digits, nullable;
-  SQLCHAR column_name[SQL_MAX_COLUMN_NAME_LEN];
-  SQLULEN column_size;
   SQLCHAR buf[80]= {0};
   SQLLEN buflen= 0;
   SQLINTEGER rowcnt= 3;

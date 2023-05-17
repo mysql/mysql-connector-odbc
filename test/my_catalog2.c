@@ -299,7 +299,6 @@ DECLARE_TEST(t_bug50195)
   int         i;
   SQLCHAR     priv[12];
   SQLLEN      len;
-  SQLCHAR     buffer[MAX_NAME_LEN];
 
   /*
     The patch for this issue can only work with Information_Schema.
@@ -1081,7 +1080,7 @@ DECLARE_TEST(t_sqlcolumns_after_select)
     ok_stmt(hstmt1, SQLFreeStmt(hstmt1, SQL_CLOSE));
     ok_stmt(hstmt1, SQLColumns(hstmt1, NULL, 0, NULL, 0,
                             (SQLCHAR *)"b14338051",
-                            strlen("b14338051"), NULL, 0));
+                            (SQLSMALLINT)strlen("b14338051"), NULL, 0));
 
     is_num(myresult(hstmt1), 2);
     ok_stmt(hstmt1, SQLFreeStmt(hstmt1, SQL_CLOSE));

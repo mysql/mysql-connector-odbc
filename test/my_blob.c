@@ -118,7 +118,7 @@ DECLARE_TEST(t_blob)
     {
         rc = SQLGetData(hstmt, 2, SQL_C_BINARY, blobbuf, blobbuf_size, &cbValue);
         myassert(cbValue > 0);
-        blob_read += (cbValue < blobbuf_size ? cbValue : blobbuf_size);
+        blob_read += (SQLINTEGER)(cbValue < blobbuf_size ? cbValue : blobbuf_size);
     } while (rc == SQL_SUCCESS_WITH_INFO);
     myassert(rc == SQL_SUCCESS);
     myassert(blob_read == blob_size);

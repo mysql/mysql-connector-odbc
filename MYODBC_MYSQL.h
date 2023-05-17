@@ -108,6 +108,31 @@ extern "C"
 # undef PACKAGE
 #endif
 
+#ifdef HAVE_LIBCRYPT
+#undef HAVE_LIBCRYPT
+#endif
+
+#ifdef PACKAGE_BUGREPORT
+#undef PACKAGE_BUGREPORT
+#endif
+
+#ifdef PACKAGE_NAME
+#undef PACKAGE_NAME
+#endif
+
+#ifdef PACKAGE_STRING
+#undef PACKAGE_STRING
+#endif
+
+#ifdef PACKAGE_TARNAME
+#undef PACKAGE_TARNAME
+#endif
+
+#ifdef PACKAGE_VERSION
+#undef PACKAGE_VERSION
+#endif
+
+
 /*
   It doesn't matter to us what SIZEOF_LONG means to MySQL's headers, but its
   value matters a great deal to unixODBC, which calculates it differently.

@@ -115,7 +115,7 @@ SQLWCHAR *sqlchar_as_sqlwchar(CHARSET_INFO *charset_info, SQLCHAR *str,
 
   if (str && *len == SQL_NTS)
   {
-    *len= strlen((char *)str);
+    *len = (SQLINTEGER)strlen((char *)str);
   }
   if (!str || *len == 0)
   {
@@ -136,7 +136,7 @@ SQLWCHAR *sqlchar_as_sqlwchar(CHARSET_INFO *charset_info, SQLCHAR *str,
       return NULL;
     }
 
-    *len= copy_and_convert((char *)u8, u8_max, utf8_charset_info,
+    *len= copy_and_convert((char *)u8, (uint32)u8_max, utf8_charset_info,
                            (char *)str, *len, charset_info,
                            &used_bytes, &used_chars, errors);
     str= u8;
@@ -218,7 +218,7 @@ SQLCHAR *sqlwchar_as_sqlchar(CHARSET_INFO *charset_info, SQLWCHAR *str,
     return sqlwchar_as_utf8(str, len);
 
   if (*len == SQL_NTS)
-    *len= sqlwcharlen(str);
+    *len = (SQLINTEGER)sqlwcharlen(str);
   if (!str || *len == 0)
   {
     *len= 0;
@@ -289,7 +289,7 @@ SQLCHAR *sqlwchar_as_utf8_ext(const SQLWCHAR *str, SQLINTEGER *len,
 
   if (!len) {
     len = &len_val;
-    *len = sqlwcharlen(str);
+    *len = (SQLINTEGER)sqlwcharlen(str);
   }
 
   if (!str || *len <= 0)
@@ -384,7 +384,7 @@ SQLCHAR *sqlwchar_as_utf8(const SQLWCHAR *str, SQLINTEGER *len)
 
   if (*len == SQL_NTS)
   {
-    *len= sqlwcharlen(str);
+    *len = (SQLINTEGER)sqlwcharlen(str);
   }
 
   if (!str || *len <= 0)
@@ -450,7 +450,7 @@ SQLSMALLINT utf8_as_sqlwchar(SQLWCHAR *out, SQLINTEGER out_max, SQLCHAR *in,
 
   if (pos)
     *pos= 0;
-  return pos - out;
+  return (SQLSMALLINT)(pos - out);
 }
 
 
@@ -474,7 +474,7 @@ SQLCHAR *sqlchar_as_sqlchar(CHARSET_INFO *from_charset,
   SQLCHAR *conv;
 
   if (*len == SQL_NTS)
-    *len= strlen((char *)str);
+    *len = (SQLINTEGER)strlen((char *)str);
 
   bytes= (*len / from_charset->mbminlen * to_charset->mbmaxlen);
   conv= (SQLCHAR *)myodbc_malloc(bytes + 1, MYF(0));
@@ -520,7 +520,7 @@ SQLINTEGER sqlwchar_as_sqlchar_buf(CHARSET_INFO *charset_info,
   *errors= 0;
 
   if (len == SQL_NTS)
-    len= sqlwcharlen(str);
+    len = (SQLINTEGER)sqlwcharlen(str);
   if (!str || len == 0)
     return 0;
 
@@ -712,9 +712,9 @@ size_t sqlwcharlen(const SQLWCHAR *wstr)
  *
  * @return A pointer to a new string.
  */
-SQLWCHAR *sqlwchardup(const SQLWCHAR *wstr, size_t charlen)
+SQLWCHAR *sqlwchardup(const SQLWCHAR *wstr, SQLINTEGER charlen)
 {
-  size_t chars= charlen == SQL_NTS ? sqlwcharlen(wstr) : charlen;
+  size_t chars = (charlen == SQL_NTS ? sqlwcharlen(wstr) : charlen);
   SQLWCHAR *res= (SQLWCHAR *)myodbc_malloc((chars + 1) * sizeof(SQLWCHAR), MYF(0));
   if (!res)
     return NULL;
@@ -737,7 +737,7 @@ unsigned long sqlwchartoul(const SQLWCHAR *wstr){
   if (!wstr)
     return 0;
 
-  while (c = *wstr)
+  while ((c = *wstr))
   {
     if (c < '0' || c > '9')
       break;
@@ -808,7 +808,7 @@ SQLWCHAR *sqlwcharncpy(SQLWCHAR *dest, const SQLWCHAR *src, size_t n)
 char * myodbc_strlwr(char *target, size_t len)
 {
   unsigned char *c= (unsigned char *)target;
-  if (-1 == len)
+  if ((size_t)-1 == len)
     len= (int)strlen(target);
 
   while (len-- > 0)
@@ -1687,7 +1687,6 @@ bool myodbc_append_os_quoted_std(std::string &str, const char *append, ...) {
   const char *quote_str = "\'";
   const uint quote_len = 1;
 #endif /* _WIN32 */
-  bool ret = true;
   va_list dirty_text;
   str.reserve(str.length() + 128);
   str.append(quote_str, quote_len); /* Leading quote */

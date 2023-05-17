@@ -58,12 +58,12 @@ enum myodbcProcColumns {mypcPROCEDURE_CAT= 0, mypcPROCEDURE_SCHEM,  mypcPROCEDUR
 
 static char SC_type[10],SC_typename[20],SC_precision[10],SC_length[10],SC_scale[10],
 SC_nullable[10], SC_coldef[10], SC_sqltype[10],SC_octlen[10],
-SC_pos[10],SC_isnull[10];
+SC_isnull[10];
 
 static char *SQLCOLUMNS_values[]= {
-    "","",NullS,NullS,SC_type,SC_typename,
+    (char*)"",(char*)"",NullS,NullS,SC_type,SC_typename,
     SC_precision,
-    SC_length,SC_scale,"10",SC_nullable,"MySQL column",
+    SC_length,SC_scale,(char*)"10",SC_nullable,(char*)"MySQL column",
     SC_coldef,SC_sqltype,NullS,SC_octlen,NullS,SC_isnull
 };
 
@@ -89,7 +89,7 @@ static MYSQL_FIELD SQLCOLUMNS_fields[]=
   MYODBC_FIELD_STRING("IS_NULLABLE", 3, 0),
 };
 
-const uint SQLCOLUMNS_FIELDS= array_elements(SQLCOLUMNS_values);
+const uint SQLCOLUMNS_FIELDS= (uint)array_elements(SQLCOLUMNS_values);
 
 /* Some common(for i_s/no_i_s) helper functions */
 const char *my_next_token(const char *prev_token,
@@ -112,8 +112,8 @@ create_fake_resultset(STMT *stmt, MYSQL_ROW rowval, size_t rowsize,
 MYSQL_RES *db_status(STMT *stmt, std::string &db);
 
 std::string get_database_name(STMT *stmt,
-                              SQLCHAR *catalog, SQLSMALLINT catalog_len,
-                              SQLCHAR *schema, SQLSMALLINT schema_len,
+                              SQLCHAR *catalog, SQLINTEGER catalog_len,
+                              SQLCHAR *schema, SQLINTEGER schema_len,
                               bool try_reget = true);
 
 

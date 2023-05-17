@@ -413,7 +413,7 @@ SQLRETURN prepare(STMT *stmt, char * query, SQLINTEGER query_length,
   /* TODO: I guess we always have to have query length here */
   if (query_length <= 0)
   {
-    query_length = query ? strlen(query) : 0;
+    query_length = query ? (SQLINTEGER)strlen(query) : 0;
   }
 
   stmt->query.reset(query, query + query_length,
@@ -427,7 +427,7 @@ SQLRETURN prepare(STMT *stmt, char * query, SQLINTEGER query_length,
   }
 
   ssps_close(stmt);
-  stmt->param_count= PARAM_COUNT(stmt->query);
+  stmt->param_count = (uint)PARAM_COUNT(stmt->query);
   /* Trusting our parsing we are not using prepared statments unsless there are
      actually parameter markers in it */
   if (!stmt->dbc->ds.opt_NO_SSPS && (PARAM_COUNT(stmt->query) || force_prepare)
@@ -550,18 +550,18 @@ unsigned int calc_prefetch_number(unsigned int selected, SQLULEN app_fetchs,
   {
     if (app_fetchs > selected)
     {
-      result= app_fetchs;
+      result = (unsigned int)app_fetchs;
     }
 
     if (selected % app_fetchs > 0)
     {
-      result= app_fetchs * (selected/app_fetchs + 1);
+      result = (unsigned int)(app_fetchs * (selected/app_fetchs + 1));
     }
   }
 
   if (max_rows > 0 && max_rows < result)
   {
-    return max_rows;
+    return (unsigned int)max_rows;
   }
 
   return result;

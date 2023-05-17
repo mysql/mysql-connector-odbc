@@ -569,12 +569,12 @@ void processDbCombobox(HWND hwnd, HWND hwndCtl, UINT codeNotify)
       {
         dbs = mygetdatabases(hwnd, pParams);
       }
-      catch (MYERROR &e) {
+      catch (MYERROR&) {
       }
 
       ComboBox_ResetContent(hwndCtl);
 
-      adjustDropdownHeight(hwndCtl, dbs.size());
+      adjustDropdownHeight(hwndCtl, (unsigned int)dbs.size());
 
       for (SQLWSTRING dbname : dbs)
         ComboBox_AddString(hwndCtl, (SQLWCHAR *)dbname.c_str());
@@ -602,7 +602,7 @@ void processCharsetCombobox(HWND hwnd, HWND hwndCtl, UINT codeNotify)
 
       ComboBox_ResetContent(hwndCtl);
 
-      adjustDropdownHeight(hwndCtl, csl.size());
+      adjustDropdownHeight(hwndCtl, (unsigned int)csl.size());
 
       for (SQLWSTRING csname : csl)
         ComboBox_AddString(hwndCtl, (SQLWCHAR *)csname.c_str());
