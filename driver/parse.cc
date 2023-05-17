@@ -258,11 +258,11 @@ const char *MY_PARSED_QUERY::get_cursor_name() {
   size_t tcount = token_count();
   if (tcount > 4)
   {
-    if (case_compare(this, get_token(tcount - 4), &where_) &&
-        case_compare(this, get_token(tcount - 3), &current) &&
-        case_compare(this, get_token(tcount - 2), &of))
+    if (case_compare(this, get_token((uint)tcount - 4), &where_) &&
+        case_compare(this, get_token((uint)tcount - 3), &current) &&
+        case_compare(this, get_token((uint)tcount - 2), &of))
     {
-      return get_token(tcount - 1);
+      return get_token((uint)tcount - 1);
     }
   }
 
@@ -338,7 +338,7 @@ const char * find_token(CHARSET_INFO *charset, const char * begin,
   /* we will not check 1st token in the string - no need at the moment */
   while ((token= mystr_get_prev_token(charset,&before, begin)) != begin)
   {
-    if (!myodbc_casecmp(token, target, strlen(target)))
+    if (!myodbc_casecmp(token, target, (uint)strlen(target)))
     {
       return token;
     }
@@ -355,7 +355,7 @@ const char * find_first_token(CHARSET_INFO *charset, const char * begin,
 
   while ((token= mystr_get_next_token(charset, &begin, end)) != end)
   {
-    if (!myodbc_casecmp(token, target, strlen(target)))
+    if (!myodbc_casecmp(token, target, (uint)strlen(target)))
     {
       return token;
     }
@@ -914,7 +914,7 @@ BOOL remove_braces(MY_PARSER *parser)
       if (parser->query->token_count())
       {
         if (parser->query->last_char ==
-            parser->query->get_token(parser->query->token_count() - 1))
+            parser->query->get_token((uint)parser->query->token_count() - 1))
         {
           parser->query->token2.pop_back();
         }

@@ -89,7 +89,7 @@ BOOL ssps_get_out_params(STMT *stmt)
   if (is_call_procedure(&stmt->query))
   {
     MYSQL_ROW values= NULL;
-    DESCREC   *iprec, *aprec, *irrec;
+    DESCREC   *iprec, *aprec;
     uint      counter= 0;
     int       i, out_params;
 
@@ -104,7 +104,7 @@ BOOL ssps_get_out_params(STMT *stmt)
       {
         values = stmt->fetch_row();
       }
-      catch(MYERROR &e)
+      catch(MYERROR&)
       {
         return FALSE;
       }
@@ -192,8 +192,8 @@ BOOL ssps_get_out_params(STMT *stmt)
                                            stmt->apd->bind_type,
                                            sizeof(SQLLEN), 0);
 
-              default_size= bind_length(aprec->concise_type,
-                                        aprec->octet_length);
+              default_size = bind_length(aprec->concise_type,
+                                        (ulong)aprec->octet_length);
               target= (char*)ptr_offset_adjust(aprec->data_ptr, stmt->apd->bind_offset_ptr,
                                     stmt->apd->bind_type, default_size, 0);
 
@@ -303,10 +303,10 @@ void free_result_bind(STMT *stmt)
 {
   if (stmt->result_bind != NULL)
   {
-    int i, field_cnt = stmt->field_count();
+    auto field_cnt = stmt->field_count();
 
     /* buffer was allocated for each column */
-    for (i= 0; i < field_cnt; i++)
+    for (size_t i = 0; i < field_cnt; i++)
     {
       x_free(stmt->result_bind[i].buffer);
 
@@ -540,7 +540,7 @@ allocate_buffer_for_field(const MYSQL_FIELD * const field, BOOL outparams)
 
 static MYSQL_ROW fetch_varlength_columns(STMT *stmt, MYSQL_ROW values)
 {
-  const unsigned int  num_fields = stmt->field_count();
+  const size_t num_fields = stmt->field_count();
   unsigned int i;
   uint desc_index= ~0L, stream_column= ~0L;
 
@@ -785,7 +785,7 @@ long STMT::compute_cur_row(unsigned fFetchType, SQLLEN irow)
     cur_row = 0L;
     break;
   case SQL_FETCH_LAST:
-    cur_row = max_row - ard->array_size;
+    cur_row = max_row - (long)ard->array_size;
     break;
   case SQL_FETCH_ABSOLUTE:
     if (irow < 0)
@@ -800,14 +800,14 @@ long STMT::compute_cur_row(unsigned fFetchType, SQLLEN irow)
         cur_row = 0;     /* Return from beginning */
       }
       else
-        cur_row = max_row + irow;     /* Ok if max_row <= -irow */
+        cur_row = max_row + (long)irow;     /* Ok if max_row <= -irow */
     }
     else
       cur_row = (long)irow - 1;
     break;
 
   case SQL_FETCH_RELATIVE:
-    cur_row = current_row + irow;
+    cur_row = current_row + (long)irow;
     if (current_row > 0 && cur_row < 0 &&
       (long)-irow <= (long)ard->array_size)
     {
@@ -817,8 +817,8 @@ long STMT::compute_cur_row(unsigned fFetchType, SQLLEN irow)
 
   case SQL_FETCH_BOOKMARK:
   {
-    cur_row = irow;
-    if (cur_row < 0 && (long)-irow <= (long)ard->array_size)
+    cur_row = (long)irow;
+    if (cur_row < 0 && (-(long)irow) <= (long)ard->array_size)
     {
       cur_row = 0;
     }
@@ -871,14 +871,14 @@ long STMT::compute_cur_row(unsigned fFetchType, SQLLEN irow)
     else
       data_seek(this, cur_row);
   }
-  current_row = cur_row;
+  current_row = (long)cur_row;
   return current_row;
 
 }
 
 int STMT::ssps_bind_result()
 {
-  const unsigned int num_fields = field_count();
+  const size_t num_fields = field_count();
   unsigned int        i;
 
   if (num_fields == 0)
@@ -1026,7 +1026,7 @@ SQLRETURN STMT::bind_query_attrs(bool use_ssps)
 */
 BOOL ssps_buffers_need_extending(STMT *stmt)
 {
-  const unsigned int  num_fields = stmt->field_count();
+  const size_t num_fields = stmt->field_count();
   unsigned int i;
 
   for (i= 0; i < num_fields; ++i)
@@ -1128,7 +1128,7 @@ char * ssps_get_string(STMT *stmt, ulong column_number, char *value, ulong *leng
           ssps_get_int64<long long>(stmt, column_number, value, *length));
       }
 
-      *length= strlen(buffer);
+      *length = (ulong)strlen(buffer);
       return buffer;
     }
     case MYSQL_TYPE_FLOAT:
@@ -1138,7 +1138,7 @@ char * ssps_get_string(STMT *stmt, ulong column_number, char *value, ulong *leng
       myodbc_d2str(ssps_get_double(stmt, column_number, value, *length),
         buffer, 49);
 
-      *length= strlen(buffer);
+      *length = (ulong)strlen(buffer);
       return buffer;
     }
 

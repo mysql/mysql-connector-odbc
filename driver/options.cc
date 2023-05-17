@@ -325,7 +325,7 @@ MySQLSetConnectAttr(SQLHDBC hdbc, SQLINTEGER Attribute,
     case SQL_ATTR_CURRENT_CATALOG:
       {
         char ldb[NAME_LEN+1], *db;
-        int cat_len= StringLengthPtr == SQL_NTS ?
+        size_t cat_len= StringLengthPtr == SQL_NTS ?
                      strlen((char *)ValuePtr) : StringLengthPtr;
 
         LOCK_DBC(dbc);
@@ -403,7 +403,7 @@ MySQLSetConnectAttr(SQLHDBC hdbc, SQLINTEGER Attribute,
                   level);
           if (SQL_SUCCEEDED(rc = dbc->execute_query(buff, SQL_NTS, TRUE)))
           {
-            dbc->txn_isolation= (size_t)ValuePtr;
+            dbc->txn_isolation = (int)((size_t)ValuePtr);
           }
 
           return rc;
@@ -842,12 +842,12 @@ MySQLGetStmtAttr(SQLHSTMT hstmt, SQLINTEGER Attribute, SQLPOINTER ValuePtr,
             break;
 
         case SQL_ATTR_PARAMSET_SIZE:
-            *(SQLUINTEGER *)ValuePtr= stmt->apd->array_size;
+            *(SQLUINTEGER *)ValuePtr = (SQLUINTEGER)stmt->apd->array_size;
             break;
 
         case SQL_ATTR_ROW_ARRAY_SIZE:
         case SQL_ROWSET_SIZE:
-            *(SQLUINTEGER *)ValuePtr= stmt->ard->array_size;
+            *(SQLUINTEGER *)ValuePtr = (SQLUINTEGER)stmt->ard->array_size;
             break;
 
         case SQL_ATTR_ROW_BIND_OFFSET_PTR:

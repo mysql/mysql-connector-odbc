@@ -970,7 +970,7 @@ DECLARE_TEST(t_varbookmark)
 {
   SQLLEN len= 0;
   SQLCHAR abookmark[20];
-  SQLINTEGER outlen;
+  SQLLEN outlen;
   SQLUSMALLINT rowStatus[11];
   SQLUINTEGER numRowsFetched;
   SQLINTEGER nData[11];

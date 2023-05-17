@@ -86,13 +86,12 @@ SQLColAttributeImpl(SQLHSTMT hstmt, SQLUSMALLINT column,
   STMT *stmt= (STMT *)hstmt;
   SQLCHAR *value= NULL;
   SQLINTEGER len= SQL_NTS;
-  uint errors;
   SQLRETURN rc= MySQLColAttribute(hstmt, column, field, &value, num_attr);
 
   if (value)
   {
     SQLCHAR *old_value= value;
-    len= strlen((char *)value);
+    len = (SQLINTEGER)strlen((char *)value);
 
     /* We set the error only when the result is intented to be returned */
     if ((char_attr || num_attr) && len > char_attr_max - 1)
@@ -202,7 +201,6 @@ SQLDescribeCol(SQLHSTMT hstmt, SQLUSMALLINT column,
   SQLCHAR *value= NULL;
   SQLINTEGER len= SQL_NTS;
   SQLSMALLINT free_value= 0;
-  uint errors;
 
   SQLRETURN rc;
 
@@ -220,7 +218,7 @@ SQLDescribeCol(SQLHSTMT hstmt, SQLUSMALLINT column,
   if (value)
   {
     SQLCHAR *old_value= value;
-    len= strlen((char *)value);
+    len = (SQLINTEGER)strlen((char *)value);
 
     /* We set the error only when the result is intented to be returned */
     if (name && len > name_max - 1)
@@ -255,7 +253,7 @@ SQLDriverConnect(SQLHDBC hdbc, SQLHWND hwnd, SQLCHAR *in, SQLSMALLINT in_len,
   CHECK_HANDLE(hdbc);
 
   if (in_len == SQL_NTS)
-    in_len= strlen((char *)in);
+    in_len = (SQLSMALLINT)strlen((char *)in);
   if (!out_len)
     out_len= &dummy_out;
 
@@ -405,10 +403,7 @@ SQLGetConnectAttrImpl(SQLHDBC hdbc, SQLINTEGER attribute, SQLPOINTER value,
 
   if (char_value)
   {
-    SQLINTEGER len= SQL_NTS;
-    uint errors;
-
-    len= strlen((char *)char_value);
+    SQLINTEGER len = (SQLINTEGER)strlen((char *)char_value);
 
     /*
       This check is inside the statement, which does not
@@ -447,8 +442,6 @@ SQLGetCursorName(SQLHSTMT hstmt, SQLCHAR *cursor, SQLSMALLINT cursor_max,
 {
   STMT *stmt= (STMT *)hstmt;
   SQLCHAR *name;
-  SQLINTEGER len;
-  uint errors;
 
   LOCK_STMT(stmt);
   CLEAR_STMT_ERROR(stmt);
@@ -457,7 +450,7 @@ SQLGetCursorName(SQLHSTMT hstmt, SQLCHAR *cursor, SQLSMALLINT cursor_max,
     return stmt->set_error(MYERR_S1090, NULL, 0);
 
   name= MySQLGetCursorName(hstmt);
-  len= strlen((char *)name);
+  SQLINTEGER len = (SQLINTEGER)strlen((char *)name);
 
   if (cursor && cursor_max > 1)
     strmake((char *)cursor, (char *)name, cursor_max - 1);
@@ -481,7 +474,6 @@ SQLGetDiagField(SQLSMALLINT handle_type, SQLHANDLE handle,
 {
   DBC *dbc;
   SQLCHAR *value= NULL;
-  SQLINTEGER len= SQL_NTS;
 
   SQLRETURN rc= SQL_SUCCESS;
 
@@ -507,8 +499,7 @@ SQLGetDiagField(SQLSMALLINT handle_type, SQLHANDLE handle,
 
   if (value)
   {
-    uint errors;
-    len= strlen((char *)value);
+    size_t len = strlen((char *)value);
 
     /* We set the error only when the result is intented to be returned */
     if (info && len > info_max - 1)
@@ -519,7 +510,6 @@ SQLGetDiagField(SQLSMALLINT handle_type, SQLHANDLE handle,
 
     if (info && info_max > 1)
       strmake((char *)info, (char *)value, info_max - 1);
-
   }
 
   return rc;
@@ -548,8 +538,6 @@ SQLGetDiagRecImpl(SQLSMALLINT handle_type, SQLHANDLE handle,
   SQLRETURN rc;
   DBC *dbc;
   SQLCHAR *msg_value= NULL, *sqlstate_value= NULL;
-  SQLINTEGER len= SQL_NTS;
-  uint errors;
 
   if (handle == NULL)
   {
@@ -584,7 +572,7 @@ SQLGetDiagRecImpl(SQLSMALLINT handle_type, SQLHANDLE handle,
 
   if (msg_value)
   {
-    len= strlen((char *)msg_value);
+    size_t len= strlen((char *)msg_value);
 
     /*
       We set the error only when the result is intented to be returned
@@ -616,18 +604,14 @@ SQLGetInfo(SQLHDBC hdbc, SQLUSMALLINT type, SQLPOINTER value,
 {
   DBC *dbc= (DBC *)hdbc;
   SQLCHAR *char_value= NULL;
-  SQLINTEGER len= SQL_NTS;
-  uint errors;
-
-  SQLRETURN rc;
 
   CHECK_HANDLE(hdbc);
 
-  rc= MySQLGetInfo(hdbc, type, &char_value, value, value_len);
+  SQLRETURN rc = MySQLGetInfo(hdbc, type, &char_value, value, value_len);
 
   if (char_value)
   {
-    len= strlen((char *)char_value);
+    size_t len = strlen((char *)char_value);
 
     /*
       MSSQL implementation does not return the truncation warning if the
@@ -641,7 +625,6 @@ SQLGetInfo(SQLHDBC hdbc, SQLUSMALLINT type, SQLPOINTER value,
 
     if (value_len)
       *value_len= (SQLSMALLINT)len;
-
   }
 
   return rc;
@@ -678,7 +661,7 @@ SQLNativeSql(SQLHDBC hdbc, SQLCHAR *in, SQLINTEGER in_len,
 
   if (in_len == SQL_NTS)
   {
-    in_len= strlen((char *)in);
+    in_len = (SQLINTEGER)strlen((char *)in);
   }
 
   if (out_len)

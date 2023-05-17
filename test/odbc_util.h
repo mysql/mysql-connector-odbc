@@ -287,7 +287,7 @@ int describe_col(SQLHSTMT hstmt, int col, bool print_data = true,
   SQLULEN ulen_data = 0;
 
   SQLCHAR* col_name2 = col_name ? col_name : name;
-  SQLSMALLINT col_buf_len2 = col_buf_len ? col_buf_len : name.size;
+  SQLSMALLINT col_buf_len2 = col_buf_len ? col_buf_len : (SQLSMALLINT)name.size;
   SQLSMALLINT *name_len2 = name_len ? name_len : &num_buf[0];
   SQLSMALLINT *data_type2 = data_type ? data_type : &num_buf[1];
   SQLULEN *col_size2 = col_size ? col_size : &ulen_data;
@@ -811,7 +811,7 @@ void select_one_str(SQLHSTMT hstmt, const char* query, xbuf &buf,
 {
   sql(hstmt, query);
   is(SQLFetch(hstmt) == SQL_SUCCESS);
-  my_fetch_str(hstmt, buf, icol, true, buf.size);
+  my_fetch_str(hstmt, buf, icol, true, (int)buf.size);
   is(SQLFetch(hstmt) == SQL_NO_DATA);
   ok_stmt(hstmt, SQLFreeStmt(hstmt, SQL_CLOSE));
 }
@@ -833,8 +833,8 @@ struct temp_user
 
     name = "temp_user_" + username.substr(0, pos);
 
-    // Note: Host part in quotes because, e.g. in OCI there are host names like 
-    // `foo-172-20-0-2-1c1be116-ff67...` which would lead to SQL syntax error 
+    // Note: Host part in quotes because, e.g. in OCI there are host names like
+    // `foo-172-20-0-2-1c1be116-ff67...` which would lead to SQL syntax error
     // if not quotted.
 
     username = "`" + name + "`@`" + username.substr(pos+1) + "`";

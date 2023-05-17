@@ -369,7 +369,7 @@ struct DESCREC{
 
     void add_param_data(const char *chunk, unsigned long length);
 
-    SQLINTEGER val_length()
+    size_t val_length()
     {
       // Return the current position, not the buffer length
       return tempbuf.cur_pos;
@@ -732,9 +732,7 @@ struct GETDATA{
 
   GETDATA() : column(0), source(NULL), latest_bytes(0),
               latest_used(0), src_offset(0), dst_bytes(0), dst_offset(0)
-  {
-    memchr(latest, 0, sizeof(latest));
-  }
+  {}
 };
 
 struct ODBC_RESULTSET
@@ -779,10 +777,7 @@ struct xstring : public std::string
 
   xstring(char* s) : m_is_null(s == nullptr),
                   Base(s == nullptr ? "" : std::forward<char*>(s))
-  {
-    if (m_is_null)
-      m_is_null = true;
-  }
+  {}
 
   template <class T>
   xstring(T &&s) : Base(std::forward<T>(s))
@@ -889,7 +884,7 @@ struct ROW_STORAGE
     {
       auto &data = m_data[m_cur_row * m_cnum + i];
       *(bind[i].is_null) = data.is_null();
-      *(bind[i].length) = data.is_null() ? -1 : data.length();
+      *(bind[i].length) = (unsigned long)(data.is_null() ? -1 : data.length());
       if (!data.is_null())
       {
         size_t copy_zero = bind[i].buffer_length > *(bind[i].length) ? 1 : 0;

@@ -846,7 +846,7 @@ SQLRETURN DBC::connect(DataSource *dsrc)
     while(!hosts.empty() && !connected)
     {
       std::uniform_int_distribution<int> distribution(
-            0, hosts.size() - 1); // define the range of random numbers
+            0, (int)hosts.size() - 1); // define the range of random numbers
 
       int pos = distribution(generator);
       auto el = hosts.begin();
@@ -1283,7 +1283,7 @@ SQLRETURN SQL_API MySQLDriverConnect(SQLHDBC hdbc, SQLHWND hwnd,
 */
 #endif
 
-    if (!(hModule= LoadLibrary(driver.setup_lib)));
+    if (!(hModule= LoadLibrary(driver.setup_lib)))
     {
       char sz[1024];
       sprintf(sz, "Could not load the setup library '%s'.",
@@ -1403,7 +1403,7 @@ connected:
       https://learn.microsoft.com/en-us/sql/odbc/reference/syntax/sqldriverconnect-function?view=sql-server-ver16
     */
     if (pcbConnStrOut)
-      *pcbConnStrOut = inlen;
+      *pcbConnStrOut = (SQLSMALLINT)inlen;
   }
 
   /* return SQL_SUCCESS_WITH_INFO if truncated output string */
@@ -1468,7 +1468,7 @@ void DBC::execute_prep_stmt(MYSQL_STMT *pstmt, std::string &query,
   MYSQL_BIND *param_bind, MYSQL_BIND *result_bind)
 {
   if (
-    mysql_stmt_prepare(pstmt, query.c_str(), query.length()) ||
+    mysql_stmt_prepare(pstmt, query.c_str(), (unsigned long)query.length()) ||
     (param_bind && mysql_stmt_bind_param(pstmt, param_bind)) ||
     mysql_stmt_execute(pstmt) ||
     (result_bind && mysql_stmt_bind_result(pstmt, result_bind))
@@ -1506,7 +1506,7 @@ SQLRETURN DBC::execute_query(const char* query,
   }
 
   if (check_if_server_is_alive(this) ||
-    mysql_real_query(mysql, query, query_length))
+    mysql_real_query(mysql, query, (unsigned long)query_length))
   {
     result = set_error(MYERR_S1000, mysql_error(mysql),
       mysql_errno(mysql));

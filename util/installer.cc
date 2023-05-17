@@ -63,8 +63,8 @@ MySQLGetPrivateProfileStringW(const MyODBC_LPCWSTR lpszSection, const MyODBC_LPC
    functions. These macros reduce the clutter a little bit.
 */
 #if USE_IODBC
-# define SAVE_MODE() UWORD config_mode= config_get()
-# define RESTORE_MODE() config_set(config_mode)
+# define SAVE_MODE() UWORD config_mode= config_get();
+# define RESTORE_MODE() config_set(config_mode);
 #else
 # define SAVE_MODE()
 # define RESTORE_MODE()
@@ -341,7 +341,7 @@ UWORD config_set(UWORD mode)
 void optionStr::set(const SQLWSTRING& val, bool is_default = false) {
   SQLCHAR out[1024];
   m_wstr = val;
-  SQLINTEGER len = val.length();
+  SQLINTEGER len = (SQLINTEGER)val.length();
   char *converted = (char *)sqlwchar_as_utf8_ext(val.c_str(), &len, out, sizeof(out), nullptr);
   m_str = std::string(converted, len);
   m_is_set = true;
@@ -351,7 +351,7 @@ void optionStr::set(const SQLWSTRING& val, bool is_default = false) {
 
 void optionStr::set(const std::string &val, bool is_default = false) {
   m_str = val;
-  SQLINTEGER len = val.length();
+  SQLINTEGER len = (SQLINTEGER)val.length();
   SQLWCHAR *converted = sqlchar_as_sqlwchar(default_charset_info, (SQLCHAR*)val.c_str(), &len, nullptr);
   m_wstr = SQLWSTRING(converted, len);
   m_is_set = true;
@@ -461,19 +461,19 @@ int Driver::lookup_name()
   SQLWCHAR *pdrv= drivers;
   SQLWCHAR driverinfo[1024];
   int len;
-  WORD slen; /* WORD needed for windows */
-  SAVE_MODE();
+  SAVE_MODE()
 
   /* get list of drivers */
 #ifdef _WIN32
-  if (!SQLGetInstalledDriversW(pdrv, 16383, &slen) || !(len= slen))
+  WORD slen; /* WORD needed for windows */
+  if (!SQLGetInstalledDriversW(pdrv, 16383, &slen) || !(len = slen))
 #else
   if (!(len = SQLGetPrivateProfileStringW(NULL, NULL, W_EMPTY, pdrv, 16383,
                                           W_ODBCINST_INI)))
 #endif
     return -1;
 
-  RESTORE_MODE();
+  RESTORE_MODE()
 
   /* check the lib of each driver for one that matches the given lib name */
   while (len > 0)
@@ -481,7 +481,7 @@ int Driver::lookup_name()
     if (SQLGetPrivateProfileStringW(pdrv, W_DRIVER, W_EMPTY, driverinfo,
                                     1023, W_ODBCINST_INI))
     {
-      RESTORE_MODE();
+      RESTORE_MODE()
 
 #ifdef _WIN32
       if (!Win64CompareLibs(driverinfo, (const SQLWCHAR*)lib))
@@ -496,9 +496,9 @@ int Driver::lookup_name()
       }
     }
 
-    RESTORE_MODE();
+    RESTORE_MODE()
 
-    len -= sqlwcharlen(pdrv) + 1;
+    len -= (int)sqlwcharlen(pdrv) + 1;
     pdrv += sqlwcharlen(pdrv) + 1;
   }
 
@@ -511,7 +511,7 @@ int Driver::lookup()
   SQLWCHAR buf[4096];
   SQLWCHAR *entries= buf;
   SQLWCHAR dest[ODBCDRIVER_STRLEN];
-  SAVE_MODE();
+  SAVE_MODE()
 
   /* if only the filename is given, we must get the driver's name */
   if (!name.is_set() && lib.is_set())
@@ -529,7 +529,7 @@ int Driver::lookup()
     return -1;
   }
 
-  RESTORE_MODE();
+  RESTORE_MODE()
 
   /* read the needed driver attributes */
   while (*entries)
@@ -540,7 +540,7 @@ int Driver::lookup()
                                     dest, ODBCDRIVER_STRLEN,
                                     W_ODBCINST_INI) < 0)
     {
-      RESTORE_MODE();
+      RESTORE_MODE()
       return 1;
     }
     if (!sqlwcharcasecmp(W_DRIVER, entries))
@@ -551,7 +551,7 @@ int Driver::lookup()
     }
 
 
-    RESTORE_MODE();
+    RESTORE_MODE()
 
     entries += sqlwcharlen(entries) + 1;
   }
@@ -691,7 +691,7 @@ void optionStr::set_remove_brackets(const SQLWCHAR *val_char,
   m_wstr = out;
   // Re-use existing buffer, just as another type
   SQLCHAR *c_out = reinterpret_cast<SQLCHAR *>(out);
-  len = val_str.length();
+  len = (SQLINTEGER)val_str.length();
   char *result = (char *)sqlwchar_as_utf8_ext(m_wstr.c_str(), &len,
     c_out, sizeof(out), nullptr);
   m_str = std::string(result, len);
@@ -714,13 +714,10 @@ int DataSource::lookup()
 #define DS_BUF_LEN 8192
   SQLWCHAR buf[DS_BUF_LEN];
   SQLWCHAR *entries= buf;
-  SQLWCHAR **dest;
   SQLWCHAR val[256];
-  int size, used;
+  int size;
   int rc= 0;
   UWORD config_mode= config_get();
-  unsigned int *intdest;
-  BOOL *booldest;
   /* No need for SAVE_MODE() because we always call config_get() above. */
 
   memset(buf, 0xff, sizeof(buf));
@@ -733,7 +730,7 @@ int DataSource::lookup()
     goto end;
   }
 
-  RESTORE_MODE();
+  RESTORE_MODE()
 
 #ifdef _WIN32
   /*
@@ -762,7 +759,7 @@ int DataSource::lookup()
   }
 #endif
 
-  for (used= 0;
+  for (size_t used = 0;
        used < DS_BUF_LEN && entries[0];
        used += sqlwcharlen(entries) + 1,
        entries += sqlwcharlen(entries) + 1)
@@ -782,7 +779,7 @@ int DataSource::lookup()
       set_val(entries, val);
     }
 
-    RESTORE_MODE();
+    RESTORE_MODE()
   }
 
 end:
@@ -815,7 +812,7 @@ int DataSource::from_kvpair(const SQLWCHAR *str, SQLWCHAR delim)
   const SQLWCHAR *split;
   const SQLWCHAR *end;
   SQLWCHAR attribute[1000];
-  int len;
+  size_t len;
 
   while (*str)
   {
@@ -891,10 +888,10 @@ int DataSource::from_kvpair(const SQLWCHAR *str, SQLWCHAR delim)
         if (opt->get_type() == optionBase::opt_type::STRING) {
           optionStr *str_opt = dynamic_cast<optionStr*>(opt);
           if (*split == '{' && *end == '}') {
-            str_opt->set_remove_brackets(split + 1, end - split - 1);
+            str_opt->set_remove_brackets(split + 1, (SQLINTEGER)(end - split - 1));
             ++end;
           } else {
-            str_opt->set_remove_brackets(split, end - split);
+            str_opt->set_remove_brackets(split, (SQLINTEGER)(end - split));
           }
         } else {
           *opt = split;
@@ -940,12 +937,13 @@ void DataSource::reset() {
 }
 
 SQLWSTRING DataSource::to_kvpair(SQLWCHAR delim) {
-  SQLWCHAR numbuf[21];
   SQLWSTRING attrs;
 
   bool name_is_set = !m_opt_map.find(W_DSN)->second.is_default();
-  for (const auto &[k, v] : m_opt_map)
+  for (const auto &el : m_opt_map)
   {
+    auto &k = el.first;
+    auto &v = el.second;
     // Skip the option, which wasn't set.
     // Skip DRIVER if DSN (NAME) was set.
     if (!v.is_set() || v.is_default() ||
@@ -977,11 +975,11 @@ bool DataSource::write_opt(const SQLWCHAR *name, const SQLWCHAR *val) {
   if (name && *name)
   {
     int rc;
-    SAVE_MODE();
+    SAVE_MODE()
     rc = SQLWritePrivateProfileStringW(opt_DSN,
       name, val, W_ODBC_INI);
     if (rc)
-      RESTORE_MODE();
+      RESTORE_MODE()
     return !rc;
   }
 
@@ -998,12 +996,12 @@ int DataSource::add() {
   Driver driver;
 
   int rc = 1;
-  SAVE_MODE();
+  SAVE_MODE()
 
   /* Validate data source name */
   if (!SQLValidDSNW(opt_DSN)) return rc;
 
-  RESTORE_MODE();
+  RESTORE_MODE()
 
   /* remove if exists, FYI SQLRemoveDSNFromIni returns true
    * even if the dsn isnt found, false only if there is a failure */
@@ -1021,7 +1019,7 @@ int DataSource::add() {
       return rc;
   }
 
-  RESTORE_MODE();
+  RESTORE_MODE()
 
   driver.name = this->opt_DRIVER;
 
@@ -1036,7 +1034,7 @@ int DataSource::add() {
     return rc;
   }
 
-  RESTORE_MODE();
+  RESTORE_MODE()
 
 #ifdef _WIN32
   /* Windows driver manager allows writing lib into the DRIVER parameter */
@@ -1056,7 +1054,9 @@ int DataSource::add() {
 #define SKIP_COND(X) || k == W_##X
 
 
-  for (const auto &[k, v] : m_opt_map) {
+  for (const auto &el : m_opt_map) {
+    auto &k = el.first;
+    auto &v = el.second;
     // Skip non-set options, default values and aliases
     if (!v.is_set() SKIP_OPTIONS_LIST(SKIP_COND) ||
         v.is_default() ||
@@ -1085,13 +1085,13 @@ int DataSource::add() {
 bool DataSource::exists()
 {
   SQLWCHAR buf[100];
-  SAVE_MODE();
+  SAVE_MODE()
 
   /* get entries and check if data source exists */
   if (SQLGetPrivateProfileStringW(opt_DSN, NULL, W_EMPTY, buf, 100, W_ODBC_INI))
     return 0;
 
-  RESTORE_MODE();
+  RESTORE_MODE()
 
   return 1;
 }

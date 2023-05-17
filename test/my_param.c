@@ -2070,9 +2070,6 @@ DECLARE_TEST(t_bug28175772)
   char sql_select[100] = { 0 };
   SQLLEN iSize = SQL_NTS, iSize1 = SQL_NTS;
   char blobValue[200] = { 0 }, binValue[200] = { 0 }, expcValue[200] = { 0 };
-  SQLCHAR       SqlState[6], Msg[SQL_MAX_MESSAGE_LENGTH];
-  SQLINTEGER    NativeError;
-  SQLSMALLINT   i, MsgLen;
 
   // connection strings
   strcpy(blobValue, "test data");
@@ -2124,10 +2121,8 @@ DECLARE_TEST(t_sp_return)
   char sql_select[100] = { 0 };
   SQLLEN iSize = SQL_NTS, iSize1 = SQL_NTS;
   char val1[200] = { 0 }, val2[200] = { 0 };
-  SQLCHAR       SqlState[6], Msg[SQL_MAX_MESSAGE_LENGTH];
-  SQLINTEGER    NativeError;
   SQLLEN len = 0;
-  SQLSMALLINT   i, MsgLen;
+  SQLSMALLINT   i;
   char strVal[255];
 
 
