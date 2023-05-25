@@ -57,7 +57,7 @@ WHILE(${DRIVER_INDEX} LESS ${DRIVERS_COUNT})
   SET(DRIVER_SRCS
     catalog.cc catalog_no_i_s.cc connect.cc cursor.cc desc.cc dll.cc error.cc execute.cc
     handle.cc info.cc driver.cc options.cc parse.cc prepare.cc results.cc transact.cc
-    my_prepared_stmt.cc my_stmt.cc utility.cc)
+    my_prepared_stmt.cc my_stmt.cc utility.cc telemetry.cc)
 
   IF(UNICODE)
     SET(DRIVER_SRCS ${DRIVER_SRCS} unicode.cc)
@@ -74,7 +74,7 @@ WHILE(${DRIVER_INDEX} LESS ${DRIVERS_COUNT})
     CONFIGURE_FILE(${CMAKE_SOURCE_DIR}/driver/driver.def.cmake ${CMAKE_SOURCE_DIR}/driver/driver${CONNECTOR_DRIVER_TYPE_SHORT}.def @ONLY)
     CONFIGURE_FILE(${CMAKE_SOURCE_DIR}/driver/driver.rc.cmake ${CMAKE_SOURCE_DIR}/driver/driver${CONNECTOR_DRIVER_TYPE_SHORT}.rc @ONLY)
     SET(DRIVER_SRCS ${DRIVER_SRCS} driver${CONNECTOR_DRIVER_TYPE_SHORT}.def driver${CONNECTOR_DRIVER_TYPE_SHORT}.rc catalog.h driver.h
-                                   error.h myutil.h parse.h ../MYODBC_MYSQL.h ../MYODBC_CONF.h ../MYODBC_ODBC.h)
+                                   error.h myutil.h parse.h telemetry.h ../MYODBC_MYSQL.h ../MYODBC_CONF.h ../MYODBC_ODBC.h)
   ENDIF(WIN32)
 
   # Note: We build driver as a MODULE, because this is what it really is
@@ -149,7 +149,7 @@ WHILE(${DRIVER_INDEX} LESS ${DRIVERS_COUNT})
     SET(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} ${ODBC_DRIVER_LINK_FLAGS}")
     TARGET_LINK_LIBRARIES(${DRIVER_NAME}
                           ${MYSQL_CLIENT_LIBS} ${CMAKE_THREAD_LIBS_INIT} m)
-    TARGET_LINK_LIBRARIES(${DRIVER_NAME} myodbc-util)
+    TARGET_LINK_LIBRARIES(${DRIVER_NAME} myodbc-util otel_api)
 
     IF(NOT ${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD")
       TARGET_LINK_LIBRARIES(${DRIVER_NAME} resolv)

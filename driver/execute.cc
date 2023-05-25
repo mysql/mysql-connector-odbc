@@ -394,26 +394,24 @@ unsigned long add2param_value(MYSQL_BIND *bind, unsigned long pos,
   return pos + length;
 }
 
-
-static
-BOOL bind_param(MYSQL_BIND *bind, const char *value, unsigned long length,
+bool bind_param(MYSQL_BIND *bind, const char *value, unsigned long length,
                 enum enum_field_types buffer_type)
 {
   if (bind->buffer == (void*)value)
   {
-    return FALSE;
+    return false;
   }
 
   if (allocate_param_buffer(bind, length))
   {
-    return TRUE;
+    return true;
   }
 
   memcpy(bind->buffer, value, length);
   bind->buffer_type= buffer_type;
   bind->length_value= length;
 
-  return FALSE;
+  return false;
 }
 
 /* TRUE - on memory allocation error */

@@ -35,6 +35,7 @@
 #include "installer.h"
 #include "stringutil.h"
 
+#include <opentelemetry/trace/provider.h>
 #include <map>
 #include <vector>
 #include <sstream>
@@ -761,6 +762,27 @@ SQLRETURN DBC::connect(DataSource *dsrc)
 
   }
 
+  if (dsrc->opt_OPENTELEMETRY)
+  {
+    if (!myodbc_strcasecmp(ODBC_OTEL_DISABLED, dsrc->opt_OPENTELEMETRY))
+      otel_mode = OTEL_DISABLED;
+    if (!myodbc_strcasecmp(ODBC_SSL_MODE_PREFERRED, dsrc->opt_OPENTELEMETRY))
+      otel_mode = OTEL_PREFERRED;
+    if (!myodbc_strcasecmp(ODBC_SSL_MODE_REQUIRED, dsrc->opt_OPENTELEMETRY))
+      otel_mode = OTEL_REQUIRED;
+  }
+
+  if (!MyODBC_Telemetry::otel_libs_loaded() && otel_mode == OTEL_REQUIRED)
+  {
+    return set_error("HY000", "OPT_OPENTELEMETRY is set to OTEL_REQUIRED, "
+      "but OpenTelemetry libraries are not loaded", 0);
+  }
+
+  if (MyODBC_Telemetry::otel_libs_loaded() && otel_mode != OTEL_DISABLED)
+  {
+    telemetry.reset(new MyODBC_Telemetry("connection"));
+  }
+
   auto do_connect = [this,&dsrc,&flags](
                     const char *host,
                     unsigned int port
@@ -1076,7 +1098,10 @@ SQLRETURN SQL_API MySQLConnect(SQLHDBC   hdbc,
   ds.lookup();
 
   rc= dbc->connect(&ds);
-
+  if (!SQL_SUCCEEDED(rc)) {
+    dbc->telemetry->set_status(MyODBC_Telemetry::Status::ERROR, dbc->error.message);
+    dbc->telemetry.reset();
+  }
   return rc;
 #endif
 }
@@ -1187,6 +1212,12 @@ SQLRETURN SQL_API MySQLDriverConnect(SQLHDBC hdbc, SQLHWND hwnd,
   case SQL_DRIVER_COMPLETE:
   case SQL_DRIVER_COMPLETE_REQUIRED:
     rc = dbc->connect(&ds);
+
+    if (!SQL_SUCCEEDED(rc)) {
+      dbc->telemetry->set_status(MyODBC_Telemetry::Status::ERROR, dbc->error.message);
+      dbc->telemetry.reset();
+    }
+
     if (rc == SQL_SUCCESS || rc == SQL_SUCCESS_WITH_INFO)
       goto connected;
     bPrompt= TRUE;
@@ -1353,8 +1384,11 @@ SQLRETURN SQL_API MySQLDriverConnect(SQLHDBC hdbc, SQLHWND hwnd,
   }
 
   rc = dbc->connect(&ds);
+
   if (rc != SQL_SUCCESS && rc != SQL_SUCCESS_WITH_INFO)
   {
+    dbc->telemetry->set_status(MyODBC_Telemetry::Status::ERROR, dbc->error.message);
+    dbc->telemetry.reset();
     goto error;
   }
 

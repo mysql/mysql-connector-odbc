@@ -230,6 +230,8 @@ static SQLWCHAR W_SSL_CRL[] =
 { 'S', 'S', 'L', '-', 'C', 'R', 'L', 0 };
 static SQLWCHAR W_SSL_CRLPATH[] =
 { 'S', 'S', 'L', '-', 'C', 'R', 'L', 'P', 'A', 'T', 'H', 0};
+static SQLWCHAR W_OPENTELEMETRY[] =
+{ 'O', 'P', 'E', 'N', 'T', 'E', 'L', 'E', 'M', 'E', 'T', 'R', 'Y', 0};
 
 /* DS_PARAM */
 /* externally used strings */
@@ -240,40 +242,6 @@ const SQLWCHAR W_DRIVER_NAME[]= {'M', 'y', 'S', 'Q', 'L', ' ',
 const SQLWCHAR W_INVALID_ATTR_STR[]= {'I', 'n', 'v', 'a', 'l', 'i', 'd', ' ',
                                       'a', 't', 't', 'r', 'i', 'b', 'u', 't', 'e', ' ',
                                       's', 't', 'r', 'i', 'n', 'g', 0};
-
-/* List of all DSN params, used when serializing to string */
-static const
-SQLWCHAR *dsnparams[]= {W_DSN, W_DRIVER, W_DESCRIPTION, W_SERVER,
-                        W_UID, W_PWD,
-#if MFA_ENABLED
-                        W_PWD1, W_PWD2, W_PWD3,
-#endif
-                        W_DATABASE, W_SOCKET, W_INITSTMT,
-                        W_PORT, W_OPTION, W_CHARSET, W_SSLKEY, W_SSL_KEY,
-                        W_SSLCERT, W_SSLCERT, W_SSLCA, W_SSL_CA,
-                        W_SSLCAPATH,W_SSL_CAPATH, W_SSLCIPHER, W_SSL_CIPHER,
-                        W_SSLVERIFY, W_READTIMEOUT, W_WRITETIMEOUT,
-                        W_FOUND_ROWS, W_BIG_PACKETS, W_NO_PROMPT,
-                        W_DYNAMIC_CURSOR, W_NO_DEFAULT_CURSOR,
-                        W_NO_LOCALE, W_PAD_SPACE, W_FULL_COLUMN_NAMES,
-                        W_COMPRESSED_PROTO, W_IGNORE_SPACE, W_NAMED_PIPE,
-                        W_NO_BIGINT, W_NO_CATALOG, W_USE_MYCNF, W_SAFE,
-                        W_NO_TRANSACTIONS, W_LOG_QUERY, W_NO_CACHE,
-                        W_FORWARD_CURSOR, W_AUTO_RECONNECT, W_AUTO_IS_NULL,
-                        W_ZERO_DATE_TO_MIN, W_MIN_DATE_TO_ZERO,
-                        W_MULTI_STATEMENTS, W_COLUMN_SIZE_S32,
-                        W_NO_BINARY_RESULT, W_DFLT_BIGINT_BIND_STR,
-                        W_CLIENT_INTERACTIVE, W_PREFETCH, W_NO_SSPS,
-                        W_CAN_HANDLE_EXP_PWD, W_ENABLE_CLEARTEXT_PLUGIN,
-                        W_GET_SERVER_PUBLIC_KEY, W_ENABLE_DNS_SRV, W_MULTI_HOST,
-                        W_SAVEFILE, W_RSAKEY, W_PLUGIN_DIR, W_DEFAULT_AUTH,
-                        W_NO_TLS_1_2, W_NO_TLS_1_3,
-                        W_SSLMODE, W_NO_DATE_OVERFLOW, W_LOAD_DATA_LOCAL_DIR,
-                        W_OCI_CONFIG_FILE, W_OCI_CONFIG_PROFILE, W_AUTHENTICATION_KERBEROS_MODE,
-                        W_TLS_VERSIONS, W_SSL_CRL, W_SSL_CRLPATH};
-static const
-int dsnparamcnt= sizeof(dsnparams) / sizeof(SQLWCHAR *);
-/* DS_PARAM */
 
 const unsigned int default_cursor_prefetch= 100;
 

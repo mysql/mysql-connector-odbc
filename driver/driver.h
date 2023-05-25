@@ -37,6 +37,7 @@
 #include "../MYODBC_MYSQL.h"
 #include "../MYODBC_CONF.h"
 #include "../MYODBC_ODBC.h"
+#include "telemetry.h"
 #include "installer.h"
 
 /* Disable _attribute__ on non-gcc compilers. */
@@ -560,9 +561,14 @@ struct	ENV
   {}
 };
 
+enum OTEL_MODE
+{
+  OTEL_DISABLED = 0,
+  OTEL_PREFERRED,
+  OTEL_REQUIRED
+};
 
 /* Connection handler */
-
 struct DBC
 {
   ENV           *env;
@@ -599,6 +605,8 @@ struct DBC
   // Connection have been put to the pool
   int           need_to_wakeup = 0;
   fido_callback_func fido_callback = nullptr;
+  OTEL_MODE     otel_mode = OTEL_PREFERRED;
+  std::unique_ptr<MyODBC_Telemetry> telemetry;
 
   DBC(ENV *p_env);
   void free_explicit_descriptors();
@@ -697,7 +705,6 @@ enum OUT_PARAM_STATE
   OPS_PREFETCHED,
   OPS_STREAMS_PENDING
 };
-
 
 #define CAT_SCHEMA_SET_FULL(STMT, C, S, V, CZ, SZ, CL, SL) { \
   bool cat_is_set = false; \
@@ -1039,6 +1046,7 @@ struct STMT
   DESC *imp_apd;
 
   std::recursive_mutex lock;
+  std::unique_ptr<MyODBC_Telemetry> telemetry;
 
   int ssps_bind_result();
 

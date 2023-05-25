@@ -508,6 +508,9 @@ setup_ssl_libs()
 
 INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR})
 
+ADD_LIBRARY(otel_api INTERFACE)
+TARGET_INCLUDE_DIRECTORIES(otel_api INTERFACE "${CMAKE_SOURCE_DIR}/extra/otel/opentelemetry-cpp-1.8.3/api/include")  
+
 ADD_SUBDIRECTORY(util)
 ADD_SUBDIRECTORY(driver)
 

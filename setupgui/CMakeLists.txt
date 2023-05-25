@@ -97,7 +97,7 @@ add_compile_options(${PLATFORM_CFLAGS})
 
 add_library(myodbc8S MODULE ${SETUP_SRCS})
 
-target_link_libraries(myodbc8S ${ODBCLIB} ${ODBCINSTLIB})
+target_link_libraries(myodbc8S ${ODBCLIB} ${ODBCINSTLIB} otel_api)
 
 # Note: When using GTK+, these libraries will be linked to -gtk modules.
 
@@ -171,6 +171,7 @@ if(use_gtk)
 
     target_link_libraries(${${gtk}_target} PRIVATE
        ${${gtk}_LIBS} myodbc-util ${ODBCLIB} ${MYSQL_CLIENT_LIBS} ${PLATFORM_LIBS}
+       otel_api
     )
 
     target_include_directories(${${gtk}_target} PRIVATE ${${gtk}_INCLUDE_DIRS})

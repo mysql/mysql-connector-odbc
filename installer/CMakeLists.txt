@@ -36,6 +36,7 @@ IF(DL_INCLUDES)
 ENDIF(DL_INCLUDES)
 
 ADD_EXECUTABLE(myodbc-installer myodbc-installer.cc)
+TARGET_LINK_LIBRARIES(myodbc-installer otel_api)
 
 IF(WIN32)
   IF(CMAKE_BUILD_TYPE STREQUAL "Debug")
