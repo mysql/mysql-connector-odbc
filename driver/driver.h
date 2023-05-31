@@ -604,8 +604,11 @@ struct DBC
   // Connection have been put to the pool
   int           need_to_wakeup = 0;
   fido_callback_func fido_callback = nullptr;
+
+#ifdef TELEMETRY
   OTEL_MODE     otel_mode = OTEL_PREFERRED;
   telemetry::Span_ptr span;
+#endif
 
   DBC(ENV *p_env);
   void free_explicit_descriptors();
@@ -1045,7 +1048,9 @@ struct STMT
   DESC *imp_apd;
 
   std::recursive_mutex lock;
+#ifdef TELEMETRY
   telemetry::Span_ptr span;
+#endif
 
   int ssps_bind_result();
 

@@ -31,13 +31,10 @@
 
 #ifndef _MYSQL_TELEMETRY_H_
 #define _MYSQL_TELEMETRY_H_
+#ifdef TELEMETRY
 
-#include <iostream>
-#include <opentelemetry/trace/provider.h>
-#include <VersionInfo.h>
 #include <string>
-#include <vector>
-#include <optional>
+#include <opentelemetry/trace/provider.h>
 
 
 class STMT;
@@ -59,6 +56,17 @@ namespace telemetry
 
 } /* namespace telemetry */
 
+#define TELEMETRY_SPAN_START(MODE, OBJ) \
+  if (MODE != OTEL_DISABLED) { span = telemetry::mk_span((OBJ)); }
+#define TELEMETRY_SET_ERROR(RC,SPAN,MSG) \
+  if(!SQL_SUCCEEDED((RC))) telemetry::set_error((SPAN),(MSG))
+
+#else
+
+#define TELEMETRY_SPAN_START(MODE, OBJ)
+#define TELEMETRY_SET_ERROR(RC,SPAN,MSG)
+
+#endif /*TELEMETRY*/
 #endif /*_MYSQL_URI_H_*/
 /*
  * Local variables:

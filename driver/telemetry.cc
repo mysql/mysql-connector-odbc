@@ -30,7 +30,10 @@
 
 #include "telemetry.h"
 #include <iostream>
+#include <vector>
 #include <optional>
+
+#include <VersionInfo.h>
 #include "driver.h"
 
 namespace telemetry

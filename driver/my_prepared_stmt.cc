@@ -1013,10 +1013,7 @@ SQLRETURN STMT::bind_query_attrs(bool use_ssps)
     ++num;
   }
 
-  if (dbc->otel_mode != OTEL_DISABLED)
-  {
-    span = telemetry::mk_span(this);
-  }
+  TELEMETRY_SPAN_START(dbc->otel_mode, this)
 
   MYSQL_BIND *bind = query_attr_bind.data();
   const char** names = (const char**)query_attr_names.data();
