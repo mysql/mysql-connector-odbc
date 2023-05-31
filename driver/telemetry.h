@@ -37,92 +37,27 @@
 #include <VersionInfo.h>
 #include <string>
 #include <vector>
+#include <optional>
 
-namespace nostd      = opentelemetry::nostd;
-namespace trace      = opentelemetry::trace;
 
-typedef opentelemetry::nostd::shared_ptr<trace::TracerProvider> otel_provider;
-typedef opentelemetry::nostd::shared_ptr<trace::Tracer> otel_tracer;
-typedef opentelemetry::nostd::shared_ptr<trace::Span> otel_span;
-typedef opentelemetry::nostd::shared_ptr<trace::Scope> otel_scope;
+class STMT;
+class DBC;
 
-bool check_process_otel_libs();
-
-class MyODBC_Telemetry
+namespace telemetry
 {
-private:
-  otel_provider provider;
-  otel_tracer tracer;
-  otel_span span;
-  std::unique_ptr<trace::Scope> scope;
-  std::string m_trace_id, m_span_id;
+  namespace nostd      = opentelemetry::nostd;
+  namespace trace      = opentelemetry::trace;
 
-public:
+  using Span_ptr = nostd::shared_ptr<trace::Span>;
 
-enum class Status
-{
-  UNSET, OK, ERROR
-};
+  Span_ptr mk_span(STMT*);
+  Span_ptr mk_span(DBC*);
 
+  // Set error status for the given span and clear the pointer.
 
-MyODBC_Telemetry(const std::string span_name, trace::Span *linked_span = nullptr,
-  bool set_active = false) :
-    provider(trace::Provider::GetTracerProvider()),
-    tracer(provider.get()->GetTracer("MySQL Connector/ODBC "MYODBC_STRDRIVERTYPE, MYODBC_CONN_ATTR_VER))
-{
-  trace_api::StartSpanOptions opts{{}, {}, trace::SpanContext::GetInvalid(), trace::SpanKind::kClient};
-  
-  if (linked_span)
-  {
-    auto link_ctx = linked_span->GetContext();
-    span = tracer.get()->StartSpan(span_name, {}, {{link_ctx, {}}}, opts);
-  }
-  else
-    span = tracer.get()->StartSpan(span_name, opts);
-    
-  if (set_active)
-    scope.reset(new trace::Scope(span));
+  void set_error(Span_ptr&, std::string);
 
-  char buf[trace::TraceId::kSize * 2];
-  trace::SpanContext ctx = span->GetContext();
-  ctx.trace_id().ToLowerBase16(buf);
-  m_trace_id = std::string{buf, trace::TraceId::kSize * 2};
-  ctx.span_id().ToLowerBase16({buf, trace::SpanId::kSize * 2});
-  m_span_id = std::string{buf, trace::SpanId::kSize * 2};
-  span->SetAttribute("db.system", "mysql");
-}
-
-static bool otel_libs_loaded() { return check_process_otel_libs(); }
-
-void  set_attribute(const std::string& name, const std::string& val)
-{
-  span->SetAttribute(name, val);
-}
-
-void  set_status(Status status, const std::string& descr)
-{
-  trace::StatusCode otel_code = trace::StatusCode::kUnset;
-  switch (status)
-  {
-    case Status::ERROR:
-      otel_code = trace::StatusCode::kError;
-      break;
-    case Status::OK:
-      otel_code = trace::StatusCode::kOk;
-      break;
-    default:
-      otel_code = trace::StatusCode::kUnset;
-      break;
-  }
-
-  span->SetStatus(otel_code, descr);
-}
-
-trace::Span& get_span() { return *span.get(); }
-const std::string& get_trace_id() { return m_trace_id; }
-const std::string& get_span_id() { return m_span_id; }
-
-};
+} /* namespace telemetry */
 
 #endif /*_MYSQL_URI_H_*/
 /*

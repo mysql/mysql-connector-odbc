@@ -31,8 +31,53 @@
 #include "telemetry.h"
 #include <iostream>
 #include <optional>
-#include "driver.h"
 
+#if defined(WIN32)
+#include <Psapi.h>
+static const std::string otel_lib_name = "opentelemetry_common.dll";
+#else
+#include <link.h>
+#include <iostream>
+#include <dlfcn.h>
+static const std::string otel_lib_name = "libopentelemetry_common.so";
+#endif
+
+
+static int otel_libs_found = -1;
+
+bool check_process_otel_libs()
+{
+  if (otel_libs_found > -1)
+    return otel_libs_found > 0;
+    
+  otel_libs_found = 0;
+
+#if defined(WIN32)
+#else
+  dl_iterate_phdr(
+    [](struct dl_phdr_info* info, size_t size, void* data) {
+      if (otel_libs_found)
+        return 0;
+        
+      if (info->dlpi_name)
+      {
+        std::string s = info->dlpi_name;
+        size_t pos = s.find_last_of('/');
+
+        if (pos == std::string::npos)
+          return 0;
+
+        if (s.find_last_of(otel_lib_name, pos) != std::string::npos)
+          otel_libs_found = 1;
+      }
+
+      return 0;
+    } , nullptr);
+#endif
+  return otel_libs_found > 0;
+}
+
+#if 0
 namespace telemetry
 {
   Span_ptr mk_span(
@@ -48,7 +93,7 @@ namespace telemetry
     opts.kind = trace::SpanKind::kClient;
 
     auto span
-    = link ? tracer->StartSpan(name, {}, {{*link, {}}},  opts)
+    = link ? tracer->StartSpan(name, {}, {{*link, {}}},  opts) 
            : tracer->StartSpan(name, opts);
 
     span->SetAttribute("db.system", "mysql");
@@ -56,19 +101,18 @@ namespace telemetry
   }
 
 
-  Span_ptr mk_span(DBC *conn)
+  Span_ptr mk_span(MySQL_Connection *conn)
   {
     return mk_span("connection");
   }
 
 
- Span_ptr mk_span(STMT *stmt)
+ Span_ptr mk_span(MySQL_Statement *stmt)
  {
-    Span_ptr conn_span = stmt->dbc->span;
+    Span_ptr conn_span = stmt->get_conn_span();
     auto span = mk_span("SQL statement", conn_span->GetContext());
 
-    // TODO: check the attributes "traceparent"
-    //if (!stmt->attrbind.attribNameExists("traceparent"))
+    if (!stmt->attrbind.attribNameExists("traceparent"))
     {
       char buf[trace::TraceId::kSize * 2];
       auto ctx = span->GetContext();
@@ -79,22 +123,12 @@ namespace telemetry
       ctx.span_id().ToLowerBase16({buf, trace::SpanId::kSize * 2});
       std::string span_id{buf, trace::SpanId::kSize * 2};
 
-      std::string span_info = "00-" + trace_id + "-" + span_id + "-00";
-      stmt->add_query_attr("traceparent", span_info);
+      stmt->attrbind.setQueryAttrString(
+        "traceparent", "00-" + trace_id + "-" + span_id + "-00"
+      );
     }
 
     return span;
  }
-
-  void set_error(Span_ptr& span, std::string msg)
-  {
-    if (!span)
-      return;
-
-    span->SetStatus(trace::StatusCode::kError, msg);
-    // TODO: explain why...
-    Span_ptr sink;
-    span.swap(sink);
-  }
-
 }
+#endif

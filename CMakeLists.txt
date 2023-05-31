@@ -206,12 +206,7 @@ endif()
 
 endmacro()
 
-# With new mysys headers, windows needs c++17, and other platforms c++14.
-if(WIN32)
-  enable_cxx17()
-else()
-  enable_cxx14()
-endif()
+enable_cxx17()
 
 if(APPLE)
   set(CMAKE_MACOSX_RPATH ON)

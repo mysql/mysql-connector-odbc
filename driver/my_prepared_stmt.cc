@@ -944,6 +944,14 @@ int STMT::ssps_bind_result()
 bool bind_param(MYSQL_BIND *bind, const char *value, unsigned long length,
                 enum enum_field_types buffer_type);
 
+void STMT::add_query_attr(const char *name, std::string &val)
+{
+  query_attr_names.emplace_back(name);
+  query_attr_bind.emplace_back(MYSQL_BIND{});
+  MYSQL_BIND *bind = &query_attr_bind.back();
+  bind_param(bind, val.c_str(), val.length(), MYSQL_TYPE_STRING);
+}
+
 SQLRETURN STMT::bind_query_attrs(bool use_ssps)
 {
   if (use_ssps)
@@ -955,16 +963,11 @@ SQLRETURN STMT::bind_query_attrs(bool use_ssps)
   }
 
   uint rcount = (uint)apd->rcount();
-  if (rcount == param_count)
+  if (rcount < param_count)
   {
-    // Nothing to do
-    return SQL_SUCCESS;
-  }
-  else if (rcount < param_count)
-  {
-    set_error( MYERR_07001,
+    set_error(MYERR_07001,
               "The number of parameter markers is larger "
-              "than he number of parameters provided",0);
+              "than he number of parameters provided", 0);
     return SQL_ERROR;
   }
   else if (!dbc->has_query_attrs)
@@ -1010,25 +1013,9 @@ SQLRETURN STMT::bind_query_attrs(bool use_ssps)
     ++num;
   }
 
-  if (!MyODBC_Telemetry::otel_libs_loaded() && dbc->otel_mode == OTEL_REQUIRED)
+  if (dbc->otel_mode != OTEL_DISABLED)
   {
-    return set_error("HY000", "OPT_OPENTELEMETRY is set to OTEL_REQUIRED, "
-      "but OpenTelemetry libraries are not loaded", 0);
-  }
-
-  // TODO: Check "traceparent" attribute if it exists
-  if (MyODBC_Telemetry::otel_libs_loaded() && dbc->otel_mode != OTEL_DISABLED)
-  {
-    telemetry.reset(new MyODBC_Telemetry("SQL statement",
-      &(dbc->telemetry->get_span())));
-    auto span_id = telemetry->get_span_id();
-    auto trace_id = telemetry->get_trace_id();
-    std::string span_info = "00-" + trace_id + "-" + span_id + "-00";
-
-    query_attr_names.emplace_back(const_cast<char*>("traceparent"));
-    query_attr_bind.emplace_back(MYSQL_BIND{});
-    MYSQL_BIND *span_bind = &query_attr_bind.back();
-    bind_param(span_bind, span_info.c_str(), span_info.length(), MYSQL_TYPE_STRING);
+    span = telemetry::mk_span(this);
   }
 
   MYSQL_BIND *bind = query_attr_bind.data();
