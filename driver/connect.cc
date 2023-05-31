@@ -762,14 +762,21 @@ SQLRETURN DBC::connect(DataSource *dsrc)
 
   }
 
-  if (dsrc->opt_OPENTELEMETRY)
+  // Handle OPENTELEMETRY option.
+  
+  otel_mode = OTEL_PREFERRED;
+
+  while (dsrc->opt_OPENTELEMETRY)
   {
-    if (!myodbc_strcasecmp(ODBC_OTEL_DISABLED, dsrc->opt_OPENTELEMETRY))
-      otel_mode = OTEL_DISABLED;
-    if (!myodbc_strcasecmp(ODBC_SSL_MODE_PREFERRED, dsrc->opt_OPENTELEMETRY))
-      otel_mode = OTEL_PREFERRED;
-    if (!myodbc_strcasecmp(ODBC_SSL_MODE_REQUIRED, dsrc->opt_OPENTELEMETRY))
-      otel_mode = OTEL_REQUIRED;
+#define SET_OTEL_MODE(X) \
+    if (!myodbc_strcasecmp(#X, dsrc->opt_OPENTELEMETRY)) \
+    { otel_mode = OTEL_ ## X; break; }
+
+    ODBC_OTEL_MODE(SET_OTEL_MODE)
+
+    return set_error("HY000", 
+      "OPENTELEMETRY option can be set only to DISABLED or PREFERRED"
+    , 0);
   }
 
   if (otel_mode != OTEL_DISABLED)

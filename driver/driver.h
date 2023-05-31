@@ -564,8 +564,7 @@ struct	ENV
 enum OTEL_MODE
 {
   OTEL_DISABLED = 0,
-  OTEL_PREFERRED,
-  OTEL_REQUIRED
+  OTEL_PREFERRED
 };
 
 /* Connection handler */
