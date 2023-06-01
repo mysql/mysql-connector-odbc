@@ -33,7 +33,7 @@
 
 #include "driver.h"
 #include "errmsg.h"
-
+#include <algorithm>
 
 /* {{{ my_l_to_a() -I- */
 static char * my_l_to_a(char * buf, size_t buf_size, long long a)
@@ -950,6 +950,15 @@ void STMT::add_query_attr(const char *name, std::string &val)
   query_attr_bind.emplace_back(MYSQL_BIND{});
   MYSQL_BIND *bind = &query_attr_bind.back();
   bind_param(bind, val.c_str(), val.length(), MYSQL_TYPE_STRING);
+}
+
+bool STMT::query_attr_exists(const char *name)
+{
+  if (query_attr_names.size() == 0)
+    return false;
+
+  return std::find(query_attr_names.begin(), query_attr_names.end(), name) != 
+    query_attr_names.end();
 }
 
 SQLRETURN STMT::bind_query_attrs(bool use_ssps)

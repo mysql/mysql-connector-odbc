@@ -1093,7 +1093,7 @@ struct STMT
   SQLRETURN set_error(myodbc_errid errid);
 
   void add_query_attr(const char *name, std::string &val);
-
+  bool query_attr_exists(const char *name);
   /*
     Error message and errno is taken from dbc->mysql
   */

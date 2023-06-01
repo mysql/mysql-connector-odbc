@@ -70,8 +70,12 @@ namespace telemetry
     Span_ptr conn_span = stmt->dbc->span;
     auto span = mk_span("SQL statement", conn_span->GetContext());
 
-    // TODO: check the attributes "traceparent"
-    //if (!stmt->attrbind.attribNameExists("traceparent"))
+    // Set "traceparent" query attribute to forward otel context
+    // to the server unless user has already set his own "traceparent".
+
+    static const char *attr_name = "traceparent";
+
+    if (!stmt->query_attr_exists(attr_name))
     {
       char buf[trace::TraceId::kSize * 2];
       auto ctx = span->GetContext();
@@ -83,7 +87,7 @@ namespace telemetry
       std::string span_id{buf, trace::SpanId::kSize * 2};
 
       std::string span_info = "00-" + trace_id + "-" + span_id + "-00";
-      stmt->add_query_attr("traceparent", span_info);
+      stmt->add_query_attr(attr_name, span_info);
     }
 
     return span;
