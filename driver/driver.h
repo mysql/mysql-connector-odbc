@@ -605,8 +605,8 @@ struct DBC
   int           need_to_wakeup = 0;
   fido_callback_func fido_callback = nullptr;
 
-#ifdef TELEMETRY
   OTEL_MODE     otel_mode = OTEL_PREFERRED;
+#ifdef TELEMETRY
   telemetry::Span_ptr span;
 #endif
 
