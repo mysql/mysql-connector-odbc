@@ -34,14 +34,12 @@
 
 #include <iostream>
 #include <vector>
-#include <optional>
 
 
 namespace telemetry
 {
   Span_ptr mk_span(
-    std::string name,
-    std::optional<trace::SpanContext> link = {}
+    std::string name, trace::SpanContext *link = nullptr
   )
   {
     auto tracer = trace::Provider::GetTracerProvider()->GetTracer(
@@ -59,6 +57,11 @@ namespace telemetry
     return span;
   }
 
+  Span_ptr mk_span(std::string name, trace::SpanContext link)
+  {
+    return mk_span(name, &link);
+  }
+
 
   Span_ptr mk_span(DBC *conn)
   {
@@ -68,8 +71,8 @@ namespace telemetry
 
  Span_ptr mk_span(STMT *stmt)
  {
-    Span_ptr conn_span = stmt->dbc->span;
-    auto span = mk_span("SQL statement", conn_span->GetContext());
+    assert(stmt->dbc->span);
+    auto span = mk_span("SQL statement", stmt->dbc->span->GetContext());
 
     // Set "traceparent" query attribute to forward otel context
     // to the server unless user has already set his own "traceparent".

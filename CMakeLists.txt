@@ -188,7 +188,7 @@ endmacro()
 
 macro(enable_cxx17)
 
-if((CMAKE_VERSION VERSION_LESS 3.1) OR (CMAKE_CXX_COMPILER_ID MATCHES "SunPro"))
+if((CMAKE_VERSION VERSION_LESS 3.8) OR (CMAKE_CXX_COMPILER_ID MATCHES "SunPro"))
 
   # Note: cmake does not know how to enable C++17 for SunPro compiler
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")
@@ -206,7 +206,13 @@ endif()
 
 endmacro()
 
-enable_cxx17()
+# With new mysys headers, windows needs c++17, and other platforms c++14.
+if(WIN32)
+  enable_cxx17()
+else()
+  enable_cxx14()
+endif()
+
 
 if(APPLE)
   set(CMAKE_MACOSX_RPATH ON)
