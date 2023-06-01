@@ -29,12 +29,13 @@
  */
 
 #include "telemetry.h"
+#include <VersionInfo.h>
+#include "driver.h"
+
 #include <iostream>
 #include <vector>
 #include <optional>
 
-#include <VersionInfo.h>
-#include "driver.h"
 
 namespace telemetry
 {
@@ -44,7 +45,7 @@ namespace telemetry
   )
   {
     auto tracer = trace::Provider::GetTracerProvider()->GetTracer(
-      "MySQL Connector/ODBC "MYODBC_STRDRIVERTYPE, MYODBC_CONN_ATTR_VER
+      "MySQL Connector/ODBC " MYODBC_STRDRIVERTYPE, MYODBC_CONN_ATTR_VER
     );
   
     trace::StartSpanOptions opts;
