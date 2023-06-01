@@ -957,8 +957,13 @@ bool STMT::query_attr_exists(const char *name)
   if (query_attr_names.size() == 0)
     return false;
 
-  return std::find(query_attr_names.begin(), query_attr_names.end(), name) != 
-    query_attr_names.end();
+  size_t len = strlen(name);
+  for (auto c : query_attr_names)
+  {
+    if (strncmp(name, c, len) == 0)
+      return true;
+  }
+  return false;
 }
 
 SQLRETURN STMT::bind_query_attrs(bool use_ssps)
