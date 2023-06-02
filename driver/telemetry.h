@@ -51,8 +51,10 @@ namespace telemetry
   Span_ptr mk_span(DBC*);
 
   // Set error status for the given span and clear the pointer.
-
   void set_error(Span_ptr&, std::string);
+
+  // End span on request.
+  void end_span(Span_ptr&);
 
 } /* namespace telemetry */
 

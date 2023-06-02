@@ -97,15 +97,21 @@ namespace telemetry
     return span;
  }
 
+  void end_span(Span_ptr& span)
+  {
+    if (!span)
+      return;
+
+    Span_ptr sink;
+    span.swap(sink);
+  }
+
   void set_error(Span_ptr& span, std::string msg)
   {
     if (!span)
       return;
 
     span->SetStatus(trace::StatusCode::kError, msg);
-    // TODO: explain why...
-    Span_ptr sink;
-    span.swap(sink);
+    end_span(span);
   }
-
 }
