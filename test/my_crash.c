@@ -196,6 +196,7 @@ DECLARE_TEST(t_bug70642)
     ok_stmt(hstmt, SQLFreeStmt(hstmt, SQL_CLOSE));
   }
 
+  ok_stmt(hstmt, SQLFreeStmt(hstmt, SQL_RESET_PARAMS));
   ok_sql(hstmt, "DROP PROCEDURE IF EXISTS t_bug70642");
 
   return OK;
@@ -331,6 +332,7 @@ DECLARE_TEST(t_bug17857204)
   }
 
   ok_stmt(hstmt, SQLFreeStmt(hstmt, SQL_CLOSE));
+  ok_stmt(hstmt, SQLFreeStmt(hstmt, SQL_RESET_PARAMS));
 
   ok_sql(hstmt, "DROP TABLE bug17857204");
 
@@ -622,6 +624,7 @@ DECLARE_TEST(t_bug18325878)
   }
 
   ok_stmt(hstmt, SQLExecute(hstmt));
+  ok_stmt(hstmt, SQLFreeStmt(hstmt, SQL_RESET_PARAMS));
   ok_sql(hstmt, "SELECT * FROM t_bug18325878");
 
   while (SQLFetch(hstmt) == SQL_SUCCESS)
@@ -952,6 +955,7 @@ DECLARE_TEST(t_setpos_update_no_ssps)
   ok_stmt(hstmt1, SQLSetPos(hstmt1, 1, SQL_UPDATE, SQL_LOCK_NO_CHANGE));
 
   ok_stmt(hstmt1, SQLFreeStmt(hstmt1, SQL_CLOSE));
+  ok_stmt(hstmt1, SQLFreeStmt(hstmt1, SQL_RESET_PARAMS));
   free_basic_handles(&henv1, &hdbc1, &hstmt1);
 
   ok_sql(hstmt, "drop table if exists t_setpos_update_no_ssps");

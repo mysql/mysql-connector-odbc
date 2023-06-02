@@ -983,6 +983,8 @@ SQLProceduresW(SQLHSTMT hstmt,
 
   rc= MySQLProcedures(hstmt, catalog8, catalog_len, schema8, schema_len,
                       proc8, proc_len);
+  // Remove parameters
+  ((STMT *)hstmt)->free_reset_params();
 
   x_free(catalog8);
   x_free(schema8);

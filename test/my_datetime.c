@@ -720,6 +720,7 @@ DECLARE_TEST(t_bug15773)
 
   ok_stmt(hstmt, SQLFreeStmt(hstmt, SQL_UNBIND));
   ok_stmt(hstmt, SQLFreeStmt(hstmt, SQL_CLOSE));
+  ok_stmt(hstmt, SQLFreeStmt(hstmt, SQL_RESET_PARAMS));
 
   ok_sql(hstmt, "DROP TABLE IF EXISTS t_bug15773");
   return OK;
@@ -1208,6 +1209,7 @@ DECLARE_TEST(t_b13975271)
     ok_stmt(hstmt, SQLExecute(hstmt));
 
     ok_stmt(hstmt, SQLFreeStmt(hstmt,SQL_CLOSE));
+    ok_stmt(hstmt, SQLFreeStmt(hstmt, SQL_RESET_PARAMS));
 
     /* now fetch and verify the results .. */
     ok_sql(hstmt, "SELECT * FROM t_b13975271");
@@ -1267,6 +1269,7 @@ DECLARE_TEST(t_17613161)
   ok_stmt(hstmt, SQLExecute(hstmt));
 
   ok_stmt(hstmt, SQLFreeStmt(hstmt,SQL_CLOSE));
+  ok_stmt(hstmt, SQLFreeStmt(hstmt, SQL_RESET_PARAMS));
 
   ok_sql(hstmt,"SELECT * FROM t_17613161");
 
