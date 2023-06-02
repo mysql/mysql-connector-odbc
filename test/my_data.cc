@@ -101,6 +101,7 @@ DECLARE_TEST(my_json)
 
   ok_stmt(hstmt2, SQLFreeStmt(hstmt2, SQL_CLOSE));
 
+  odbc::stmt_reset(hstmt2);
   ok_sql(hstmt2, "DROP TABLE t_bug_json");
   free_basic_handles(&henv2, &hdbc2, &hstmt2);
   return OK;
@@ -544,6 +545,7 @@ DECLARE_TEST(t_bug33401384_JSON_param)
 
     odbc::stmt_execute(hstmt);
     odbc::stmt_close(hstmt);
+    odbc::stmt_reset(hstmt);
 
     odbc::sql(hstmt, "SELECT value FROM tab_bug33401384");
     ok_stmt(hstmt, SQLFetch(hstmt));
@@ -768,7 +770,7 @@ DECLARE_TEST(t_bug33353465_json_utf8mb4) {
         strlen(insert_val), nullptr));
     }
     odbc::stmt_execute(hstmt);
-
+    odbc::stmt_reset(hstmt);
     // Check the JSON and TEXT data inserted in the table.
     // Both should be identical.
     odbc::sql(hstmt, "SELECT * FROM " + tab.table_name);
@@ -818,6 +820,7 @@ DECLARE_TEST(t_bug_34350417_performance) {
 
     odbc::stmt_execute(hstmt);
     odbc::stmt_close(hstmt);
+    odbc::stmt_reset(hstmt);
 
     odbc::sql(hstmt, "SELECT * FROM " + tab.table_name);
     while (SQL_SUCCESS == SQLFetch(hstmt)) {
@@ -898,6 +901,7 @@ DECLARE_TEST(t_utf8mb4_param) {
                                      SQL_WCHAR, 0, 0, param, 6 * 2, nullptr));
 
     odbc::stmt_execute(hstmt1);
+    odbc::stmt_reset(hstmt1);
 
     // @Currency should use `collation_connection` collation
     // which is case sensitive and therefore 0 rows should be returned

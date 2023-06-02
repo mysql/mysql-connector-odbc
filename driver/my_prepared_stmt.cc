@@ -954,12 +954,15 @@ void STMT::add_query_attr(const char *name, std::string &val)
 
 bool STMT::query_attr_exists(const char *name)
 {
-  if (query_attr_names.size() == 0)
+  if (query_attr_names.size() == 0 || name == nullptr)
     return false;
 
   size_t len = strlen(name);
   for (auto c : query_attr_names)
   {
+    if (c == nullptr)
+      continue;
+      
     if (strncmp(name, c, len) == 0)
       return true;
   }

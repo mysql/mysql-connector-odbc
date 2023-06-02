@@ -489,6 +489,7 @@ DECLARE_TEST(t_max_rows)
   myassert( 3 == myrowcount(hstmt));
 
   SQLFreeStmt(hstmt,SQL_CLOSE);
+  ok_stmt(hstmt, SQLFreeStmt(hstmt, SQL_RESET_PARAMS));
 
   rc = SQLSetStmtAttr(hstmt,SQL_ATTR_MAX_ROWS,(SQLPOINTER)0,0);
   mystmt(hstmt,rc);
