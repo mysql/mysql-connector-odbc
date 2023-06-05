@@ -31,44 +31,125 @@
 
 #ifndef _MYSQL_TELEMETRY_H_
 #define _MYSQL_TELEMETRY_H_
-#ifdef TELEMETRY
 
+#include <installer.h>  // ODBC_OTEL_MODE() macro
+
+#ifdef TELEMETRY
 #include <string>
 #include <opentelemetry/trace/provider.h>
-
+#endif
 
 class STMT;
 class DBC;
 
+#define OTEL_ENUM_CONSTANT(N,V)  OTEL_##N = V,
+
+enum OTEL_MODE
+{
+  ODBC_OTEL_MODE(OTEL_ENUM_CONSTANT)
+};
+
+
 namespace telemetry
 {
-  namespace nostd      = opentelemetry::nostd;
-  namespace trace      = opentelemetry::trace;
+    /*
+      Note: If TELEMETRY flag is not enabled then defines phony classes
+      Telemetry_base<X> and Telemetry<X> that do nothing (and should
+      be optimized out by the compiler).
+    */
 
-  using Span_ptr = nostd::shared_ptr<trace::Span>;
+#ifndef TELEMETRY
 
-  Span_ptr mk_span(STMT*);
-  Span_ptr mk_span(DBC*);
-
-  // Set error status for the given span and clear the pointer.
-  void set_error(Span_ptr&, std::string);
-
-  // End span on request.
-  void end_span(Span_ptr&);
-
-} /* namespace telemetry */
-
-#define TELEMETRY_SPAN_START(MODE, OBJ) \
-  if (MODE != OTEL_DISABLED) { span = telemetry::mk_span((OBJ)); }
-#define TELEMETRY_SET_ERROR(RC,SPAN,MSG) \
-  if(!SQL_SUCCEEDED((RC))) telemetry::set_error((SPAN),(MSG))
+    template<class>
+    struct Telemetry_base
+    {};
 
 #else
 
-#define TELEMETRY_SPAN_START(MODE, OBJ)
-#define TELEMETRY_SET_ERROR(RC,SPAN,MSG)
+    namespace nostd      = opentelemetry::nostd;
+    namespace trace      = opentelemetry::trace;
 
-#endif /*TELEMETRY*/
+    using Span_ptr = nostd::shared_ptr<trace::Span>;
+
+    template<class Obj> 
+    struct Telemetry_base
+    {
+      bool disabled(Obj*) const;
+    protected:
+      Span_ptr mk_span(Obj*);
+    };
+
+    template<>
+    struct Telemetry_base<DBC>
+    {
+      using Obj = DBC;
+
+      bool disabled(Obj *) const
+      {
+        return OTEL_MODE::OTEL_DISABLED == mode;
+      }
+
+      enum OTEL_MODE mode = OTEL_MODE::OTEL_PREFERRED;
+      void set_mode(OTEL_MODE m)
+      {
+        mode = m;
+      }
+
+    protected:
+
+      Span_ptr mk_span(Obj*);
+    };
+
+#endif
+
+    template<class Obj> 
+    struct Telemetry
+     : public Telemetry_base<Obj>
+    {
+#ifndef TELEMETRY
+
+      static void span_start(Obj*) {}
+      static void span_end(Obj*) {}
+      static void set_error(Obj*, std::string) {}
+
+#else
+      using Base = Telemetry_base<Obj>;
+
+      Span_ptr span;
+
+      void span_start(Obj *obj)
+      {
+        if (Base::disabled(obj))
+          return;
+        span = Base::mk_span(obj);  
+      }
+
+      
+      void span_end(Obj *obj)
+      {
+        if (!span)
+          return;
+        span->End();
+        // Destroy span just in case
+        Span_ptr sink;
+        span.swap(sink);
+      }
+
+
+      void set_error(Obj *obj, std::string msg)
+      {
+        if (Base::disabled(obj))
+          return;
+        span->SetStatus(trace::StatusCode::kError, msg);
+        // TODO: explain why...
+        Span_ptr sink;
+        span.swap(sink);       
+      }
+#endif
+    };
+
+} /* namespace telemetry */
+
 #endif /*_MYSQL_URI_H_*/
 /*
  * Local variables:

@@ -63,23 +63,34 @@ namespace telemetry
   }
 
 
-  Span_ptr mk_span(DBC *conn)
+  Span_ptr 
+  Telemetry_base<DBC>::mk_span(DBC *conn)
   {
-    return mk_span("connection");
+    return telemetry::mk_span("connection");
+  }
+
+  template<>
+  bool 
+  Telemetry_base<STMT>::disabled(STMT *stmt) const
+  {
+    return stmt->conn_telemetry().disabled(stmt->dbc);
   }
 
 
- Span_ptr mk_span(STMT *stmt)
- {
-    assert(stmt->dbc->span);
-    auto span = mk_span("SQL statement", stmt->dbc->span->GetContext());
+  /*
+    Creating statement span: we link it to the connection span and we also
+    set "traceparent" attribute unless user already set it.
+  */
+ 
+  template<>
+  Span_ptr 
+  Telemetry_base<STMT>::mk_span(STMT *stmt)
+  {
+    auto span = telemetry::mk_span("SQL statement",
+      stmt->conn_telemetry().span->GetContext()
+    );
 
-    // Set "traceparent" query attribute to forward otel context
-    // to the server unless user has already set his own "traceparent".
-
-    static const char *attr_name = "traceparent";
-
-    if (!stmt->query_attr_exists(attr_name))
+    if (!stmt->query_attr_exists("traceparent"))
     {
       char buf[trace::TraceId::kSize * 2];
       auto ctx = span->GetContext();
@@ -90,28 +101,12 @@ namespace telemetry
       ctx.span_id().ToLowerBase16({buf, trace::SpanId::kSize * 2});
       std::string span_id{buf, trace::SpanId::kSize * 2};
 
-      std::string span_info = "00-" + trace_id + "-" + span_id + "-00";
-      stmt->add_query_attr(attr_name, span_info);
+      stmt->add_query_attr(
+        "traceparent", "00-" + trace_id + "-" + span_id + "-00"
+      );
     }
 
     return span;
- }
-
-  void end_span(Span_ptr& span)
-  {
-    if (!span)
-      return;
-
-    Span_ptr sink;
-    span.swap(sink);
   }
 
-  void set_error(Span_ptr& span, std::string msg)
-  {
-    if (!span)
-      return;
-
-    span->SetStatus(trace::StatusCode::kError, msg);
-    end_span(span);
-  }
 }

@@ -37,6 +37,7 @@
 #include "../MYODBC_ODBC.h"
 #include <map>
 #include <vector>
+#include <string>
 
 /* the different modes used when calling MYODBCSetupDataSourceConfig */
 #define CONFIG_ADD 1
@@ -448,7 +449,8 @@ extern const SQLWCHAR W_INVALID_ATTR_STR[];
 // Possible values of OPENTELEMETRY option.
 
 #define ODBC_OTEL_MODE(X) \
-  X(DISABLED) X(PREFERRED)
+  X(DISABLED,0) \
+  X(PREFERRED,1)
 
 
 #define LPASTE(X) L ## X

@@ -944,7 +944,7 @@ int STMT::ssps_bind_result()
 bool bind_param(MYSQL_BIND *bind, const char *value, unsigned long length,
                 enum enum_field_types buffer_type);
 
-void STMT::add_query_attr(const char *name, std::string &val)
+void STMT::add_query_attr(const char *name, std::string val)
 {
   query_attr_names.emplace_back(name);
   query_attr_bind.emplace_back(MYSQL_BIND{});
@@ -1030,7 +1030,7 @@ SQLRETURN STMT::bind_query_attrs(bool use_ssps)
     ++num;
   }
 
-  TELEMETRY_SPAN_START(dbc->otel_mode, this)
+  telemetry.span_start(this);
 
   MYSQL_BIND *bind = query_attr_bind.data();
   const char** names = (const char**)query_attr_names.data();

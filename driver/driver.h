@@ -561,11 +561,6 @@ struct	ENV
   {}
 };
 
-enum OTEL_MODE
-{
-  OTEL_DISABLED = 0,
-  OTEL_PREFERRED
-};
 
 /* Connection handler */
 struct DBC
@@ -605,10 +600,7 @@ struct DBC
   int           need_to_wakeup = 0;
   fido_callback_func fido_callback = nullptr;
 
-  OTEL_MODE     otel_mode = OTEL_PREFERRED;
-#ifdef TELEMETRY
-  telemetry::Span_ptr span;
-#endif
+  telemetry::Telemetry<DBC> telemetry;
 
   DBC(ENV *p_env);
   void free_explicit_descriptors();
@@ -1048,9 +1040,13 @@ struct STMT
   DESC *imp_apd;
 
   std::recursive_mutex lock;
-#ifdef TELEMETRY
-  telemetry::Span_ptr span;
-#endif
+  telemetry::Telemetry<STMT> telemetry;
+
+  telemetry::Telemetry<DBC>& conn_telemetry()
+  {
+    assert(dbc);
+    return dbc->telemetry;
+  }
 
   int ssps_bind_result();
 
@@ -1092,7 +1088,7 @@ struct STMT
   */
   SQLRETURN set_error(myodbc_errid errid);
 
-  void add_query_attr(const char *name, std::string &val);
+  void add_query_attr(const char *name, std::string val);
   bool query_attr_exists(const char *name);
   /*
     Error message and errno is taken from dbc->mysql
