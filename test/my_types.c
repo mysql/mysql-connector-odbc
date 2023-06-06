@@ -446,6 +446,7 @@ DECLARE_TEST(t_bug16235)
 
   ok_stmt(hstmt, SQLFreeStmt(hstmt, SQL_UNBIND));
   ok_stmt(hstmt, SQLFreeStmt(hstmt, SQL_CLOSE));
+  ok_stmt(hstmt, SQLFreeStmt(hstmt, SQL_RESET_PARAMS));
 
   ok_sql(hstmt, "SELECT * FROM t_bug16235");
 
@@ -1346,6 +1347,7 @@ DECLARE_TEST(t_bug32135124)
   ok_stmt(hstmt, SQLFetch(hstmt));
   expect_stmt(hstmt, SQLFetch(hstmt), SQL_NO_DATA);
   ok_stmt(hstmt, SQLFreeStmt(hstmt, SQL_CLOSE));
+  ok_stmt(hstmt, SQLFreeStmt(hstmt, SQL_RESET_PARAMS));
 
   ok_sql(hstmt, "SELECT fnumber from t_bug32135124 WHERE id = '5'");
   ok_stmt(hstmt, SQLBindCol(hstmt, 1, SQL_C_CHAR, buf_q, sizeof(buf_q),

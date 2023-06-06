@@ -1073,6 +1073,7 @@ DECLARE_TEST(t_bug29871)
   is_num(my_fetch_int(hstmt, 1), 1);
 
   ok_stmt(hstmt, SQLFreeStmt(hstmt, SQL_CLOSE));
+  ok_stmt(hstmt, SQLFreeStmt(hstmt, SQL_RESET_PARAMS));
   ok_sql(hstmt, "DROP TABLE t_bug29871");
   return OK;
 }
@@ -1171,6 +1172,7 @@ DECLARE_TEST(t_bug67702)
                                       "WHERE `id` = ? AND `vc` = ? AND "\
                                       "`yesno` = ?", SQL_NTS));
   SQLFreeStmt(hstmt, SQL_CLOSE);
+  ok_stmt(hstmt, SQLFreeStmt(hstmt, SQL_RESET_PARAMS));
 
   /* Now check the result of update the bit field should be set to 0 */
   ok_stmt(hstmt, SQLExecDirect(hstmt, "SELECT `yesno` FROM `bug67702`", SQL_NTS));
@@ -1227,6 +1229,7 @@ DECLARE_TEST(t_bug68243)
                                       "WHERE `id` = ? AND `yesno` = ?",
                                       SQL_NTS));
   SQLFreeStmt(hstmt1, SQL_CLOSE);
+  ok_stmt(hstmt1, SQLFreeStmt(hstmt1, SQL_RESET_PARAMS));
 
   /* Now check the result of update the bit field should be set to 0 */
   ok_stmt(hstmt, SQLExecDirect(hstmt, "SELECT `yesno` FROM `bug68243`", SQL_NTS));
@@ -1279,6 +1282,7 @@ DECLARE_TEST(t_bug31667091)
                                   SQL_INTEGER, 0, 0, &id, 0, NULL));
   ok_stmt(hstmt, SQLExecute(hstmt));
   is_num(my_print_non_format_result(hstmt), 3);
+  ok_stmt(hstmt, SQLFreeStmt(hstmt, SQL_RESET_PARAMS));
   ok_sql(hstmt,"DROP TABLE bug31667091");
   return OK;
 }

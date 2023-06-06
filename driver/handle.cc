@@ -565,6 +565,8 @@ SQLRETURN SQL_API my_SQLFreeStmtExtended(SQLHSTMT hstmt, SQLUSMALLINT f_option,
     stmt->orig_query.reset(NULL, NULL, NULL);
     stmt->query.reset(NULL, NULL, NULL);
 
+    // After query reset the span can also be ended.
+    stmt->telemetry.span_end(stmt);
     stmt->param_count= 0;
 
     reset_ptr(stmt->apd->rows_processed_ptr);

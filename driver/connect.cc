@@ -34,6 +34,7 @@
 #include "driver.h"
 #include "installer.h"
 #include "stringutil.h"
+#include "telemetry.h"
 
 #include <map>
 #include <vector>
@@ -761,6 +762,38 @@ SQLRETURN DBC::connect(DataSource *dsrc)
 
   }
 
+  // Handle OPENTELEMETRY option.
+
+  // Note: Using while() instead of if() to be able to get out of it with
+  // `break` statement.
+
+  while (dsrc->opt_OPENTELEMETRY)
+  {
+#ifndef TELEMETRY
+
+    return set_error("HY000", 
+      "OPENTELEMETRY option is not supported on this platform."
+    ,0);
+
+#else
+
+#define SET_OTEL_MODE(X,N) \
+    if (!myodbc_strcasecmp(#X, dsrc->opt_OPENTELEMETRY)) \
+    { telemetry.set_mode(OTEL_ ## X); break; }
+
+    ODBC_OTEL_MODE(SET_OTEL_MODE)
+
+    // If we are here then option was not recognized above.
+    
+    return set_error("HY000", 
+      "OPENTELEMETRY option can be set only to DISABLED or PREFERRED"
+    , 0);
+
+#endif
+  }
+
+  telemetry.span_start(this);
+
   auto do_connect = [this,&dsrc,&flags](
                     const char *host,
                     unsigned int port
@@ -1077,6 +1110,9 @@ SQLRETURN SQL_API MySQLConnect(SQLHDBC   hdbc,
 
   rc= dbc->connect(&ds);
 
+  if (!SQL_SUCCEEDED(rc))
+    dbc->telemetry.set_error(dbc, dbc->error.message);
+
   return rc;
 #endif
 }
@@ -1187,6 +1223,10 @@ SQLRETURN SQL_API MySQLDriverConnect(SQLHDBC hdbc, SQLHWND hwnd,
   case SQL_DRIVER_COMPLETE:
   case SQL_DRIVER_COMPLETE_REQUIRED:
     rc = dbc->connect(&ds);
+
+    if (!SQL_SUCCEEDED(rc))
+      dbc->telemetry.set_error(dbc, dbc->error.message);
+
     if (rc == SQL_SUCCESS || rc == SQL_SUCCESS_WITH_INFO)
       goto connected;
     bPrompt= TRUE;
@@ -1353,6 +1393,7 @@ SQLRETURN SQL_API MySQLDriverConnect(SQLHDBC hdbc, SQLHWND hwnd,
   }
 
   rc = dbc->connect(&ds);
+
   if (rc != SQL_SUCCESS && rc != SQL_SUCCESS_WITH_INFO)
   {
     goto error;
@@ -1415,6 +1456,9 @@ connected:
   }
 
 error:
+
+  if (!SQL_SUCCEEDED(rc))
+    dbc->telemetry.set_error(dbc, dbc->error.message);
   if (hModule)
     FreeLibrary(hModule);
 

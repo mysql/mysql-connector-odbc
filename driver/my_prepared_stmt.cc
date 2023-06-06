@@ -33,7 +33,7 @@
 
 #include "driver.h"
 #include "errmsg.h"
-
+#include <algorithm>
 
 /* {{{ my_l_to_a() -I- */
 static char * my_l_to_a(char * buf, size_t buf_size, long long a)
@@ -941,6 +941,34 @@ int STMT::ssps_bind_result()
   return 0;
 }
 
+bool bind_param(MYSQL_BIND *bind, const char *value, unsigned long length,
+                enum enum_field_types buffer_type);
+
+void STMT::add_query_attr(const char *name, std::string val)
+{
+  query_attr_names.emplace_back(name);
+  query_attr_bind.emplace_back(MYSQL_BIND{});
+  MYSQL_BIND *bind = &query_attr_bind.back();
+  bind_param(bind, val.c_str(), val.length(), MYSQL_TYPE_STRING);
+}
+
+bool STMT::query_attr_exists(const char *name)
+{
+  if (query_attr_names.size() == 0 || name == nullptr)
+    return false;
+
+  size_t len = strlen(name);
+  for (auto c : query_attr_names)
+  {
+    if (c == nullptr)
+      continue;
+      
+    if (strncmp(name, c, len) == 0)
+      return true;
+  }
+  return false;
+}
+
 SQLRETURN STMT::bind_query_attrs(bool use_ssps)
 {
   if (use_ssps)
@@ -952,16 +980,11 @@ SQLRETURN STMT::bind_query_attrs(bool use_ssps)
   }
 
   uint rcount = (uint)apd->rcount();
-  if (rcount == param_count)
+  if (rcount < param_count)
   {
-    // Nothing to do
-    return SQL_SUCCESS;
-  }
-  else if (rcount < param_count)
-  {
-    set_error( MYERR_07001,
+    set_error(MYERR_07001,
               "The number of parameter markers is larger "
-              "than he number of parameters provided",0);
+              "than he number of parameters provided", 0);
     return SQL_ERROR;
   }
   else if (!dbc->has_query_attrs)
@@ -1007,12 +1030,13 @@ SQLRETURN STMT::bind_query_attrs(bool use_ssps)
     ++num;
   }
 
+  telemetry.span_start(this);
+
   MYSQL_BIND *bind = query_attr_bind.data();
   const char** names = (const char**)query_attr_names.data();
 
-  if (mysql_bind_param(dbc->mysql, rcount - param_count,
-                        query_attr_bind.data(),
-                        (const char**)query_attr_names.data()))
+  if (mysql_bind_param(dbc->mysql, (unsigned int)query_attr_bind.size(),
+                        bind, names))
   {
     set_error("HY000");
     return SQL_SUCCESS_WITH_INFO;

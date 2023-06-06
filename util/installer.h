@@ -37,6 +37,7 @@
 #include "../MYODBC_ODBC.h"
 #include <map>
 #include <vector>
+#include <string>
 
 /* the different modes used when calling MYODBCSetupDataSourceConfig */
 #define CONFIG_ADD 1
@@ -287,7 +288,8 @@ class Driver {
               X(PLUGIN_DIR) X(DEFAULT_AUTH) X(LOAD_DATA_LOCAL_DIR)         \
                   X(OCI_CONFIG_FILE) X(OCI_CONFIG_PROFILE)                 \
                       X(AUTHENTICATION_KERBEROS_MODE) X(TLS_VERSIONS)      \
-                           X(SSL_CRL) X(SSL_CRLPATH) X(SSLVERIFY)
+                           X(SSL_CRL) X(SSL_CRLPATH) X(SSLVERIFY)          \
+                              X(OPENTELEMETRY)
 
 #define INT_OPTIONS_LIST(X)                                         \
   X(PORT)                                                           \
@@ -442,6 +444,14 @@ extern const SQLWCHAR W_INVALID_ATTR_STR[];
 #define ODBC_SSL_MODE_REQUIRED           "REQUIRED"
 #define ODBC_SSL_MODE_VERIFY_CA          "VERIFY_CA"
 #define ODBC_SSL_MODE_VERIFY_IDENTITY    "VERIFY_IDENTITY"
+
+
+// Possible values of OPENTELEMETRY option.
+
+#define ODBC_OTEL_MODE(X) \
+  X(DISABLED,0) \
+  X(PREFERRED,1)
+
 
 #define LPASTE(X) L ## X
 #define LSTR(X) LPASTE(X)

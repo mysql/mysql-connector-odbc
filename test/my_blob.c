@@ -490,6 +490,7 @@ DECLARE_TEST(t_putdata3)
 
   ok_stmt(hstmt, SQLFreeStmt(hstmt, SQL_UNBIND));
   ok_stmt(hstmt, SQLFreeStmt(hstmt, SQL_CLOSE));
+  ok_stmt(hstmt, SQLFreeStmt(hstmt, SQL_RESET_PARAMS));
 
   if (mysql_min_version(hdbc, "4.0", 3))
   {
@@ -884,6 +885,7 @@ DECLARE_TEST(t_bug_29282638)
   SQLFetch(hstmt);
 
   ok_stmt(hstmt, SQLFreeStmt(hstmt, SQL_CLOSE));
+  ok_stmt(hstmt, SQLFreeStmt(hstmt, SQL_RESET_PARAMS));
   ok_sql(hstmt, "DROP TABLE if exists bug_29282638");
 
   return OK;

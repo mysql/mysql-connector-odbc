@@ -37,6 +37,7 @@
 #include "../MYODBC_MYSQL.h"
 #include "../MYODBC_CONF.h"
 #include "../MYODBC_ODBC.h"
+#include "telemetry.h"
 #include "installer.h"
 
 /* Disable _attribute__ on non-gcc compilers. */
@@ -562,7 +563,6 @@ struct	ENV
 
 
 /* Connection handler */
-
 struct DBC
 {
   ENV           *env;
@@ -599,6 +599,8 @@ struct DBC
   // Connection have been put to the pool
   int           need_to_wakeup = 0;
   fido_callback_func fido_callback = nullptr;
+
+  telemetry::Telemetry<DBC> telemetry;
 
   DBC(ENV *p_env);
   void free_explicit_descriptors();
@@ -697,7 +699,6 @@ enum OUT_PARAM_STATE
   OPS_PREFETCHED,
   OPS_STREAMS_PENDING
 };
-
 
 #define CAT_SCHEMA_SET_FULL(STMT, C, S, V, CZ, SZ, CL, SL) { \
   bool cat_is_set = false; \
@@ -996,7 +997,7 @@ struct STMT
   MY_PARSED_QUERY	query, orig_query;
   std::vector<MYSQL_BIND> param_bind;
   std::vector<MYSQL_BIND> query_attr_bind;
-  std::vector<char*>      query_attr_names;
+  std::vector<const char*>      query_attr_names;
 
   std::unique_ptr<my_bool[]> rb_is_null;
   std::unique_ptr<my_bool[]> rb_err;
@@ -1039,6 +1040,13 @@ struct STMT
   DESC *imp_apd;
 
   std::recursive_mutex lock;
+  telemetry::Telemetry<STMT> telemetry;
+
+  telemetry::Telemetry<DBC>& conn_telemetry()
+  {
+    assert(dbc);
+    return dbc->telemetry;
+  }
 
   int ssps_bind_result();
 
@@ -1080,6 +1088,8 @@ struct STMT
   */
   SQLRETURN set_error(myodbc_errid errid);
 
+  void add_query_attr(const char *name, std::string val);
+  bool query_attr_exists(const char *name);
   /*
     Error message and errno is taken from dbc->mysql
   */

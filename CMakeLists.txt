@@ -188,7 +188,7 @@ endmacro()
 
 macro(enable_cxx17)
 
-if((CMAKE_VERSION VERSION_LESS 3.1) OR (CMAKE_CXX_COMPILER_ID MATCHES "SunPro"))
+if((CMAKE_VERSION VERSION_LESS 3.8) OR (CMAKE_CXX_COMPILER_ID MATCHES "SunPro"))
 
   # Note: cmake does not know how to enable C++17 for SunPro compiler
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")
@@ -212,6 +212,7 @@ if(WIN32)
 else()
   enable_cxx14()
 endif()
+
 
 if(APPLE)
   set(CMAKE_MACOSX_RPATH ON)
@@ -507,6 +508,17 @@ INCLUDE(${CMAKE_SOURCE_DIR}/cmake/ssl_setup.cmake)
 setup_ssl_libs()
 
 INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR})
+
+add_library(otel_api INTERFACE)
+# Note: For now make it phony target on platforms other than Linux
+if(NOT (WIN32 OR APPLE OR CMAKE_SYSTEM_NAME MATCHES "SunOS"))
+  message(STATUS "Adding OTel support")
+  set(TELEMETRY ON)
+  target_include_directories(otel_api INTERFACE 
+    "${CMAKE_SOURCE_DIR}/extra/otel/opentelemetry-cpp-1.8.3/api/include"
+  )
+  target_compile_definitions(otel_api INTERFACE TELEMETRY)
+endif()
 
 ADD_SUBDIRECTORY(util)
 ADD_SUBDIRECTORY(driver)

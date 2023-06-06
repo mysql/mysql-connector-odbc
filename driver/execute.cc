@@ -176,6 +176,8 @@ SQLRETURN do_query(STMT *stmt, std::string query)
         error= SQL_SUCCESS;     /* no result set */
         stmt->state= ST_EXECUTED;
         update_affected_rows(stmt);
+        // The query without results can end spans here.
+        stmt->telemetry.span_end(stmt);
         goto exit;
       }
     }
@@ -209,6 +211,10 @@ SQLRETURN do_query(STMT *stmt, std::string query)
 
 exit:
 
+    if (!SQL_SUCCEEDED(error)) {
+      stmt->telemetry.set_error(stmt, stmt->error.message);
+    }
+
     /*
       If the original query was modified, we reset stmt->query so that the
       next execution re-starts with the original query.
@@ -221,7 +227,6 @@ exit:
 
     return error;
 }
-
 
 /*
   @type    : myodbc3 internal
@@ -394,26 +399,24 @@ unsigned long add2param_value(MYSQL_BIND *bind, unsigned long pos,
   return pos + length;
 }
 
-
-static
-BOOL bind_param(MYSQL_BIND *bind, const char *value, unsigned long length,
+bool bind_param(MYSQL_BIND *bind, const char *value, unsigned long length,
                 enum enum_field_types buffer_type)
 {
   if (bind->buffer == (void*)value)
   {
-    return FALSE;
+    return false;
   }
 
   if (allocate_param_buffer(bind, length))
   {
-    return TRUE;
+    return true;
   }
 
   memcpy(bind->buffer, value, length);
   bind->buffer_type= buffer_type;
   bind->length_value= length;
 
-  return FALSE;
+  return false;
 }
 
 /* TRUE - on memory allocation error */
