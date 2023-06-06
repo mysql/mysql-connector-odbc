@@ -138,7 +138,7 @@ namespace telemetry
 
       void set_error(Obj *obj, std::string msg)
       {
-        if (Base::disabled(obj))
+        if (!span || Base::disabled(obj))
           return;
         span->SetStatus(trace::StatusCode::kError, msg);
         // TODO: explain why...
