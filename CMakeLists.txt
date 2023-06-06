@@ -733,7 +733,7 @@ set(BUNDLED_LIBS
 # List plugins and other libraries that can be found bundled with the server
 # but which are not relevant on client-side and can be safely ignored.
 
-set(IGNORED_PLUGINS qa_auth_client)
+set(IGNORED_PLUGINS qa_auth_client telemetry_client)
 
 set(IGNORED_LIBS
   libmysql lber libprotobuf
