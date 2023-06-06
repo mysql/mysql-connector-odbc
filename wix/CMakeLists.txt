@@ -147,6 +147,7 @@ ENDIF()
 SET(EXCLUDED_FILES "myodbc8a.dll" "myodbc8w.dll" "myodbc8S.dll"
   "libcrypto-1_1-x64.dll" "libcrypto-1_1.dll"
   "libssl-1_1-x64.dll" "libssl-1_1.dll"
+  "libcrypto-3-x64.dll" "libssl-3-x64.dll"
   "myodbc-installer.exe")
 
 FILE(WRITE "${XML_DEPENDENCIES}" "<Include><Component Id='dependencies' Guid='${XML_DEPS_GUID}' SharedDllRefCount='yes' ${XML_COMPONENT_WIN64}>")
