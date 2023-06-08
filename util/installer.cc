@@ -84,7 +84,8 @@ static SQLWCHAR W_CANNOT_FIND_DRIVER[]= {'C', 'a', 'n', 'n', 'o', 't', ' ',
 
 static SQLWCHAR W_DSN[]= {'D', 'S', 'N', 0};
 static SQLWCHAR W_DRIVER[] = {'D', 'R', 'I', 'V', 'E', 'R', 0};
-static SQLWCHAR W_DESCRIPTION[]=
+static SQLWCHAR W_Driver[] = {'D', 'r', 'i', 'v', 'e', 'r', 0};
+static SQLWCHAR W_DESCRIPTION[] =
   {'D', 'E', 'S', 'C', 'R', 'I', 'P', 'T', 'I', 'O', 'N', 0};
 static SQLWCHAR W_SERVER[]= {'S', 'E', 'R', 'V', 'E', 'R', 0};
 static SQLWCHAR W_UID[]= {'U', 'I', 'D', 0};
@@ -595,7 +596,12 @@ int Driver::to_kvpair_null(SQLWCHAR *attrs, size_t attrslen)
   /* append NULL-separator */
   APPEND_SQLWCHAR(attrs, attrslen, 0);
 
-  attrs+= sqlwcharncat2(attrs, W_DRIVER, &attrslen);
+#if USE_IODBC
+  // iODBC wants "Driver", not "DRIVER"
+  attrs+= sqlwcharncat2(attrs, W_Driver, &attrslen);
+#else
+  attrs += sqlwcharncat2(attrs, W_DRIVER, &attrslen);
+#endif
   APPEND_SQLWCHAR(attrs, attrslen, '=');
   attrs+= sqlwcharncat2(attrs, lib, &attrslen);
 
