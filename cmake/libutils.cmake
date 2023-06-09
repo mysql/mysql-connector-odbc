@@ -332,6 +332,8 @@ function(mangle_osx_rpaths TARGET)
   list(APPEND paths_to_mangle "libcrypto.1.0.0.dylib")
   list(APPEND paths_to_mangle "libssl.1.1.dylib")
   list(APPEND paths_to_mangle "libcrypto.1.1.dylib")
+  list(APPEND paths_to_mangle "libssl.3.dylib")
+  list(APPEND paths_to_mangle "libcrypto.3.dylib")
 
   set(mangle_commands)
 
