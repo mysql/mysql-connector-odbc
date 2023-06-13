@@ -1115,6 +1115,7 @@ struct STMT
   }
 
   ~STMT();
+  void clear_query_attr_bind();
 };
 
 namespace myodbc {

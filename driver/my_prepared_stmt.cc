@@ -713,6 +713,17 @@ void STMT::free_fake_result(bool clear_all_results)
 
 }
 
+
+// Clear and free buffers bound in query_attr_bind
+void STMT::clear_query_attr_bind()
+{
+  for (auto bind : query_attr_bind) {
+    x_free(bind.buffer);
+  }
+  query_attr_bind.clear();
+}
+
+
 STMT::~STMT()
 {
   // Create a local mutex in the destructor.
@@ -730,6 +741,12 @@ STMT::~STMT()
 
   LOCK_DBC(dbc);
   dbc->stmt_list.remove(this);
+  clear_query_attr_bind();
+  for (auto bind : param_bind) {
+    if (bind.buffer != nullptr)
+      x_free(bind.buffer);
+  }
+
 }
 
 void STMT::reset_getdata_position()
@@ -973,7 +990,7 @@ SQLRETURN STMT::bind_query_attrs(bool use_ssps)
   }
 
   uint num = param_count;
-  query_attr_bind.clear();
+  clear_query_attr_bind();
   query_attr_bind.reserve(rcount - param_count);
   query_attr_names.clear();
   query_attr_names.reserve(rcount - param_count);
