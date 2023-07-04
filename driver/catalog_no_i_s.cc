@@ -125,15 +125,6 @@ static my_bool check_table_type(const SQLCHAR *TableType,
 }
 
 
-static MYSQL_ROW fix_fields_copy(STMT *stmt,MYSQL_ROW row)
-{
-    uint i;
-    for ( i=0 ; i < stmt->order_count; ++i )
-        stmt->array[stmt->order[i]]= row[i];
-    return stmt->array;
-}
-
-
 /*
   @type    : internal
   @purpose : returns columns from a particular table, NULL on error
@@ -1127,7 +1118,6 @@ SQLStatistics
 */
 
 char SS_type[10];
-uint SQLSTAT_order[]={2,3,5,7,8,9,10};
 char *SQLSTAT_values[]={NullS,NullS,"","",NullS,"",SS_type,"","","","",NullS,NullS};
 
 MYSQL_FIELD SQLSTAT_fields[]=
@@ -1142,8 +1132,8 @@ MYSQL_FIELD SQLSTAT_fields[]=
   MYODBC_FIELD_SHORT("ORDINAL_POSITION", 0),
   MYODBC_FIELD_NAME("COLUMN_NAME", 0),
   MYODBC_FIELD_STRING("ASC_OR_DESC", 1, 0),
-  MYODBC_FIELD_SHORT("CARDINALITY", 0),
-  MYODBC_FIELD_SHORT("PAGES", 0),
+  MYODBC_FIELD_LONG("CARDINALITY", 0),
+  MYODBC_FIELD_LONG("PAGES", 0),
   MYODBC_FIELD_STRING("FILTER_CONDITION", 10, 0),
 };
 
@@ -1170,6 +1160,7 @@ statistics_no_i_s(SQLHSTMT hstmt,
     DBC *dbc= stmt->dbc;
     char *db_val = nullptr;
     std::string db;
+    MYSQL_ROW mysql_row;
 
     LOCK_DBC(stmt->dbc);
 
@@ -1178,53 +1169,80 @@ statistics_no_i_s(SQLHSTMT hstmt,
 
     db = get_database_name(stmt, catalog, catalog_len, schema, schema_len, false);
 
-    stmt->result= server_list_dbkeys(stmt, (SQLCHAR*)db.c_str(),
+    auto mysql_res = server_list_dbkeys(stmt, (SQLCHAR*)db.c_str(),
                                      (SQLSMALLINT)db.length(),
                                      table, table_len);
-    if (!stmt->result)
+    if (!mysql_res)
     {
       SQLRETURN rc= handle_connection_error(stmt);
       return rc;
     }
-    my_int2str(SQL_INDEX_OTHER,SS_type,10,0);
-    stmt->order=       SQLSTAT_order;
-    stmt->order_count = (uint)array_elements(SQLSTAT_order);
-    stmt->fix_fields=  fix_fields_copy;
-    stmt->array.set((char*)SQLSTAT_values, sizeof(SQLSTAT_values)/sizeof(char *));
 
-    if (!stmt->array)
-    {
-      set_mem_error(stmt->dbc->mysql);
-      return handle_connection_error(stmt);
+    if (!stmt->m_row_storage.is_valid())
+      stmt->result_array.reset();
+
+    size_t rows = mysql_num_rows(mysql_res);
+    stmt->m_row_storage.set_size(rows, SQLSTAT_FIELDS);
+
+    auto &data = stmt->m_row_storage;
+    data.first_row();
+    size_t rnum = 0;
+
+    while ((mysql_row = mysql_fetch_row(mysql_res))) {
+      SQLSMALLINT non_unique = (mysql_row[1][0] == '1' ? 1 : 0);
+
+      // Skip non-unique indexes if only unique are requested
+      if (fUnique == SQL_INDEX_UNIQUE && non_unique)
+        continue;
+
+      CAT_SCHEMA_SET(data[0], data[1], db);
+      /* TABLE_NAME */
+      data[2] = mysql_row[0];
+      /* NON_UNIQUE */
+      data[3] = non_unique;
+      /* INDEX_QUALIFIER - not supported */
+      data[4] = nullptr;
+      /* INDEX_NAME */
+      data[5] = mysql_row[2];
+      /* TYPE */
+      SQLSMALLINT idx_type = SQL_INDEX_OTHER;
+      data[6] = idx_type;
+      /* ORDINAL_POSITION */
+      SQLSMALLINT ordinal_pos =
+          (SQLSMALLINT)std::strtol(mysql_row[3], nullptr, 10);
+      data[7] = ordinal_pos;
+      /* COLUMN_NAME */
+      data[8] = mysql_row[4];
+      /* ASC_OR_DESC */
+      if (mysql_row[5])
+        data[9] = mysql_row[5];
+      else
+        data[9] = nullptr;
+      /* CARDINALITY */
+      SQLINTEGER cardinality =
+          (SQLINTEGER)std::strtol(mysql_row[6], nullptr, 10);
+      data[10] = cardinality;
+      /* PAGES - not supported */
+      data[11] = nullptr;
+      /* FILTER_CONDITION - not supported */
+      data[12] = nullptr;
+
+      if (rnum < rows)
+        data.next_row();
+
+      ++rnum;
     }
 
-    stmt->catalog_name = db;
-    CAT_SCHEMA_SET(stmt->array[0], stmt->array[1], (char*)stmt->catalog_name.c_str());
+    if (mysql_res)
+      mysql_free_result(mysql_res);
 
-    if ( fUnique == SQL_INDEX_UNIQUE )
-    {
-        /* This is too low level... */
-        MYSQL_ROWS **prev,*pos;
-        prev= &stmt->result->data->data;
-        for ( pos= *prev; pos; pos= pos->next )
-        {
-            if ( pos->data[1][0] == '0' ) /* Unlink nonunique index */
-            {
-                (*prev)=pos;
-                prev= &pos->next;
-            }
-            else
-            {
-                --stmt->result->row_count;
-            }
-        }
-        (*prev)= 0;
-        mysql_data_seek(stmt->result,0);  /* Restore pointer */
+    if (rnum) {
+      stmt->result_array = (MYSQL_ROW)data.data();
+      create_fake_resultset(stmt, stmt->result_array, SQLSTAT_FIELDS, rnum,
+                            SQLSTAT_fields, SQLSTAT_FIELDS, false);
+      myodbc_link_fields(stmt, SQLSTAT_fields, SQLSTAT_FIELDS);
+      return SQL_SUCCESS;
     }
-
-    set_row_count(stmt, stmt->result->row_count);
-    myodbc_link_fields(stmt,SQLSTAT_fields,SQLSTAT_FIELDS);
-    return SQL_SUCCESS;
 
 empty_set:
   return create_empty_fake_resultset(stmt, SQLSTAT_values,
