@@ -1010,7 +1010,7 @@ struct STMT
 
   GETDATA           getdata;
 
-  uint		*order, order_count, param_count, current_param, rows_found_in_set;
+  uint		param_count, current_param, rows_found_in_set;
 
   enum MY_STATE state;
   enum MY_DUMMY_STATE dummy_state;
@@ -1090,7 +1090,7 @@ struct STMT
     tempbuf(),
     stmt_options(dbc->stmt_options), lengths(nullptr), affected_rows(0),
     current_row(0), cursor_row(0), dae_type(0),
-    order(NULL), order_count(0), param_count(0), current_param(0),
+    param_count(0), current_param(0),
     rows_found_in_set(0),
     state(ST_UNKNOWN), dummy_state(ST_DUMMY_UNKNOWN),
     setpos_row(0), setpos_lock(0), setpos_op(0),
