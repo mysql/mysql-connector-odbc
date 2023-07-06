@@ -126,7 +126,7 @@ struct xstring : public std::string
 
 struct xbuf
 {
-  std::unique_ptr<char> m_buf;
+  std::unique_ptr<char[]> m_buf;
   size_t size;
 
   void setval(int v, size_t cnt)
@@ -779,7 +779,7 @@ const char* _my_fetch_data(SQLHSTMT hstmt, xbuf &buf, SQLUSMALLINT icol,
 {
     SQLLEN nLen;
 
-    SQLGetData(hstmt, icol, target_type, buf, buf.size, &nLen);
+    SQLGetData(hstmt, icol, target_type, (SQLCHAR*)buf, buf.size, &nLen);
     /* If Null value - putting down smth meaningful. also that allows caller to
        better/(in more easy way) test the value */
     if (nLen < 0)

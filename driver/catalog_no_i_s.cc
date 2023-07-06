@@ -1153,20 +1153,19 @@ statistics_no_i_s(SQLHSTMT hstmt,
                   SQLUSMALLINT fUnique,
                   SQLUSMALLINT fAccuracy)
 {
-    STMT *stmt= (STMT *)hstmt;
-    assert(stmt);
+  STMT *stmt= (STMT *)hstmt;
+  assert(stmt);
 
-    MYSQL *mysql= stmt->dbc->mysql;
-    DBC *dbc= stmt->dbc;
-    char *db_val = nullptr;
-    std::string db;
-    MYSQL_ROW mysql_row;
+  MYSQL *mysql= stmt->dbc->mysql;
+  DBC *dbc= stmt->dbc;
+  char *db_val = nullptr;
+  std::string db;
+  MYSQL_ROW mysql_row;
 
-    LOCK_DBC(stmt->dbc);
+  LOCK_DBC(stmt->dbc);
 
-    if (!table_len)
-        goto empty_set;
-
+  if (table_len)
+  {
     db = get_database_name(stmt, catalog, catalog_len, schema, schema_len, false);
 
     auto mysql_res = server_list_dbkeys(stmt, (SQLCHAR*)db.c_str(),
@@ -1243,8 +1242,7 @@ statistics_no_i_s(SQLHSTMT hstmt,
       myodbc_link_fields(stmt, SQLSTAT_fields, SQLSTAT_FIELDS);
       return SQL_SUCCESS;
     }
-
-empty_set:
+  }
   return create_empty_fake_resultset(stmt, SQLSTAT_values,
                                      sizeof(SQLSTAT_values),
                                      SQLSTAT_fields, SQLSTAT_FIELDS);
