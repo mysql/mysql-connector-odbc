@@ -76,9 +76,9 @@ DECLARE_TEST(t_bug35316630_sqlstatistics) {
         "`u3` VARCHAR(15) NULL,"
         "`txt` TEXT NULL,"
         "PRIMARY KEY(`id`),"
-        "INDEX `IDX1` (`k1` ASC, `k2` ASC)INVISIBLE,"
-        "UNIQUE INDEX `u3_UNIQUE` (`u3` ASC)VISIBLE,"
-        "FULLTEXT INDEX `txt_FT` (`txt`)VISIBLE";
+        "INDEX `IDX1` (`k1` ASC, `k2` ASC),"
+        "UNIQUE INDEX `u3_UNIQUE` (`u3` ASC),"
+        "FULLTEXT INDEX `txt_FT` (`txt`)";
 
     odbc::table tab(hstmt, nullptr, tab_name, fields);
 
@@ -183,6 +183,7 @@ DECLARE_TEST(t_bug35316630_sqlstatistics) {
       }
       // Expecting a different number of rows for all and unique indexes.
       is_num(rnum_exp[1], rnum);
+      odbc::stmt_close(hstmt);
     }
   }
   ENDCATCH;
