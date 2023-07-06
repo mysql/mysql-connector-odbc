@@ -276,9 +276,14 @@ int  get_ctype(MY_PARSER *parser)
 {
   if (END_NOT_REACHED(parser))
   {
-    parser->bytes_at_pos= parser->query->cs->cset->ctype(parser->query->cs,
+    int byte_count = parser->query->cs->cset->ctype(parser->query->cs,
                                       &parser->ctype, (const uchar*)parser->pos,
                                       (const uchar*) parser->query->query_end);
+    // We need to get the byte count after conversion.
+    // The libmysql ctype() function can return negated
+    // byte count for characters that do not have a
+    // corresponding Unicode endpoint.
+    parser->bytes_at_pos = (byte_count < 0 ? -byte_count : byte_count);
   }
   else
   {
