@@ -8,7 +8,7 @@ Source packages are available from our [github releases page](https://github.com
 
 ## Licensing
 
-Please refer to files README and LICENSE, available in this repository, and [Legal Notices in documentation](https://dev.mysql.com/doc/connector-cpp/8.0/en/preface.html) for further details. 
+Please refer to files README and LICENSE, available in this repository, and [Legal Notices in documentation](https://dev.mysql.com/doc/relnotes/connector-odbc/en/preface.html) for further details.
 
 ## Download & Install
 
