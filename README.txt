@@ -19,7 +19,7 @@ You can find the documentation on the MySQL website at
 <https://dev.mysql.com/doc/connector-odbc/en/>
 
 For the new features/bugfix history, see release notes at
-<https://dev.mysql.com/doc/relnotes/connector-odbc/en/news-8-0.html>.
+<https://dev.mysql.com/doc/relnotes/connector-odbc/en/>.
 Note that the initial releases used major version 2.0.
 
 CONTACT
