@@ -114,35 +114,40 @@ std::vector<SQLWSTRING> mygetdatabases(HWND hwnd, DataSource* params)
   params->opt_DATABASE.set_default(nullptr);
   params->opt_NO_CATALOG.set_default(false);
 
-  myodbc::HENV henv;
-  myodbc::HDBC hdbc(henv, params);
+try {
+    myodbc::HENV henv;
+    myodbc::HDBC hdbc(henv, params);
 
-  params->opt_SAVEFILE = preserved_savefile;
-  params->opt_DATABASE = preserved_database;
-  params->opt_NO_CATALOG = preserved_no_catalog;
+    params->opt_SAVEFILE = preserved_savefile;
+    params->opt_DATABASE = preserved_database;
+    params->opt_NO_CATALOG = preserved_no_catalog;
 
-  myodbc::HSTMT hstmt(hdbc);
+    myodbc::HSTMT hstmt(hdbc);
 
-  ret = SQLTablesW(hstmt, (SQLWCHAR*)SQL_ALL_CATALOGS, SQL_NTS,
-                      (SQLWCHAR*)L"", SQL_NTS, (SQLWCHAR*)L"", 0,
-                      (SQLWCHAR*)L"", 0);
-  if (!SQL_SUCCEEDED(ret))
-    return result;
+    SQLWCHAR tmpbuf[1024];
+    SQLWCHAR empty = 0;
+    SQLWCHAR *w_all = _W(L"%");
 
-  ret = SQLBindCol(hstmt, 1, SQL_C_WCHAR, catalog, MYODBC_DB_NAME_MAX,
-                      &n_catalog);
-  if (!SQL_SUCCEEDED(ret))
-    return result;
+    ret = SQLTablesW(hstmt, w_all, SQL_NTS,
+                     &empty, 0, &empty, 0,
+                     &empty, 0);
 
-  while (true)
-  {
-    if (result.size() % 20)
-      result.reserve(result.size() + 20);
+    if (!SQL_SUCCEEDED(ret)) return result;
 
-    if (SQL_SUCCEEDED(SQLFetch(hstmt)))
-      result.emplace_back(catalog);
-    else
-      break;
+    ret = SQLBindCol(hstmt, 1, SQL_C_WCHAR, catalog, MYODBC_DB_NAME_MAX,
+                     &n_catalog);
+    if (!SQL_SUCCEEDED(ret)) return result;
+
+    while (true) {
+      if (result.size() % 20) result.reserve(result.size() + 20);
+
+      if (SQL_SUCCEEDED(SQLFetch(hstmt)))
+        result.emplace_back(catalog);
+      else
+        break;
+    }
+
+  } catch (...) {
   }
 
   return result;
@@ -169,45 +174,46 @@ std::vector<SQLWSTRING> mygetcharsets(HWND hwnd, DataSource* params)
   params->opt_DATABASE.set_default(nullptr);
   params->opt_NO_CATALOG.set_default(false);
 
-  myodbc::HENV henv;
-  myodbc::HDBC hdbc(henv, params);
+try {
+    myodbc::HENV henv;
+    myodbc::HDBC hdbc(henv, params);
 
-  params->opt_SAVEFILE = preserved_savefile;
-  params->opt_DATABASE = preserved_database;
-  params->opt_NO_CATALOG = preserved_no_catalog;
+    params->opt_SAVEFILE = preserved_savefile;
+    params->opt_DATABASE = preserved_database;
+    params->opt_NO_CATALOG = preserved_no_catalog;
 
-  myodbc::HSTMT hstmt(hdbc);
-
+    myodbc::HSTMT hstmt(hdbc);
 
 #ifdef DRIVER_ANSI
-  /* Skip undesired charsets */
-  nReturn = SQLExecDirectW( hStmt, _W(L"SHOW CHARACTER SET WHERE " \
-                                       "charset <> 'utf16' AND " \
-                                       "charset <> 'utf32' AND " \
-                                       "charset <> 'ucs2'" ), SQL_NTS);
+    /* Skip undesired charsets */
+    nReturn = SQLExecDirectW(hStmt,
+                             _W(L"SHOW CHARACTER SET WHERE "
+                                "charset <> 'utf16' AND "
+                                "charset <> 'utf32' AND "
+                                "charset <> 'ucs2'"),
+                             SQL_NTS);
 #else
-  ret = SQLExecDirectW(hstmt, _W(L"SHOW CHARACTER SET"), SQL_NTS);
+    ret = SQLExecDirectW(hstmt, _W(L"SHOW CHARACTER SET"), SQL_NTS);
 #endif
 
-  if (!SQL_SUCCEEDED(ret))
-    return csl;
+    if (!SQL_SUCCEEDED(ret)) return csl;
 
-  ret = SQLBindCol(hstmt, 1, SQL_C_WCHAR, charset, MYODBC_DB_NAME_MAX,
-                      &n_charset);
-  if (!SQL_SUCCEEDED(ret))
-    return csl;
+    ret = SQLBindCol(hstmt, 1, SQL_C_WCHAR, charset, MYODBC_DB_NAME_MAX,
+                     &n_charset);
+    if (!SQL_SUCCEEDED(ret)) return csl;
 
-  while (true)
-  {
-    if (csl.size() % 20)
-      csl.reserve(csl.size() + 20);
+    while (true) {
+      if (csl.size() % 20) csl.reserve(csl.size() + 20);
 
-    if (SQL_SUCCEEDED(SQLFetch(hstmt)))
-      csl.emplace_back(charset);
-    else
-      break;
-}
+      if (SQL_SUCCEEDED(SQLFetch(hstmt)))
+        csl.emplace_back(charset);
+      else
+        break;
+    }
 
+  } catch (...) {
+
+  }
   return csl;
 }
 

@@ -112,9 +112,11 @@ BOOL INSTAPI ConfigDSNW(HWND hWnd, WORD nRequest, LPCWSTR pszDriver,
   BOOL rc= TRUE;
   SQLWSTRING origdsn;
 
-  if (!utf8_charset_info)
+  if (!utf8_charset_info) {
+    my_sys_init();
     utf8_charset_info =
       get_charset_by_csname(transport_charset, MYF(MY_CS_PRIMARY), MYF(0));
+  }
 
   if (pszAttributes && *pszAttributes)
   {
