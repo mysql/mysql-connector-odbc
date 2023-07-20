@@ -207,12 +207,7 @@ on_database_popup (GtkComboBox *widget,
 
   gtk_combo_box_text_remove_all(GTK_COMBO_BOX_TEXT (widget));
   FillParameters((HWND)NULL, pParams);
-  try
-  {
-    dbs = mygetdatabases((HWND)NULL, pParams);
-  }
-  catch(...)
-  { }
+  dbs = mygetdatabases((HWND)NULL, pParams);
 
   for (SQLWSTRING dbwname : dbs)
   {
@@ -248,12 +243,7 @@ void on_database_popup (GtkComboBox *widget, gpointer user_data)
 
   FillParameters((HWND)NULL, pParams);
 
-  try
-  {
-    dbs = mygetdatabases((HWND)NULL, pParams);
-  }
-  catch(...)
-  { }
+  dbs = mygetdatabases((HWND)NULL, pParams);
 
   store = gtk_list_store_new(1, G_TYPE_STRING);
   for (SQLWSTRING dbwname : dbs)
@@ -336,12 +326,7 @@ on_charset_popup (GtkComboBox *widget,
   gtk_combo_box_text_remove_all(GTK_COMBO_BOX_TEXT (widget));
 
   FillParameters((HWND)NULL, pParams);
-  try
-  {
-    css= mygetcharsets((HWND)NULL, pParams);
-  }
-  catch(...)
-  { }
+  css= mygetcharsets((HWND)NULL, pParams);
 
   for(SQLWSTRING cswname : css)
   {
@@ -378,12 +363,7 @@ void on_charset_popup (GtkComboBox *widget, gpointer user_data)
 
   FillParameters((HWND)NULL, pParams);
 
-  try
-  {
-    css= mygetcharsets((HWND)NULL, pParams);
-  }
-  catch(...)
-  { }
+  css= mygetcharsets((HWND)NULL, pParams);
 
   store = gtk_list_store_new(1, G_TYPE_STRING);
   for(SQLWSTRING cswname : css)
