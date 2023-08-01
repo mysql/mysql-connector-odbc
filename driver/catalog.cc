@@ -672,9 +672,9 @@ columns_i_s(SQLHSTMT hstmt, SQLCHAR *catalog, unsigned long catalog_len,
     "BUFFER_LENGTH,"
     "NUMERIC_SCALE as DECIMAL_DIGITS,"
     "IF(ISNULL(NUMERIC_PRECISION), NULL, 10) as NUM_PREC_RADIX,"
-    "IF(EXTRA LIKE \"%auto_increment%\", \"YES\", IS_NULLABLE) as NULLABLE,"
+    "IF(EXTRA LIKE '%auto_increment%', 'YES', IS_NULLABLE) as NULLABLE,"
     "COLUMN_COMMENT as REMARKS,"
-    "IF(ISNULL(COLUMN_DEFAULT), \"NULL\", IF(ISNULL(NUMERIC_PRECISION), CONCAT(\"\'\", COLUMN_DEFAULT, \"\'\"),COLUMN_DEFAULT)) as COLUMN_DEF,"
+    "IF(ISNULL(COLUMN_DEFAULT), 'NULL', IF(ISNULL(NUMERIC_PRECISION), CONCAT('\\'', COLUMN_DEFAULT, '\\''),COLUMN_DEFAULT)) as COLUMN_DEF,"
     "0 as SQL_DATA_TYPE,"
     "NULL as SQL_DATA_TYPE_SUB,"
     "CASE DATA_TYPE"
@@ -683,7 +683,7 @@ columns_i_s(SQLHSTMT hstmt, SQLCHAR *catalog, unsigned long catalog_len,
     "  END as "
     "CHAR_OCTET_LENGTH,"
     "ORDINAL_POSITION,"
-    "IF(EXTRA LIKE \"%auto_increment%\", \"YES\", IS_NULLABLE) AS IS_NULLABLE,"
+    "IF(EXTRA LIKE '%auto_increment%', 'YES', IS_NULLABLE) AS IS_NULLABLE,"
     "IF(DATA_TYPE like 'json', 4, MAXLEN) as CHAR_SIZE "
     "FROM information_schema.COLUMNS c "
     "LEFT JOIN information_schema.CHARACTER_SETS cs ON c.CHARACTER_SET_NAME = cs.CHARACTER_SET_NAME "
@@ -852,7 +852,7 @@ columns_i_s(SQLHSTMT hstmt, SQLCHAR *catalog, unsigned long catalog_len,
     if (no_ssps)
       result_lengths = mysql_fetch_lengths(mysql_res);
 
-    CAT_SCHEMA_SET(data[0], data[1], db);
+    CAT_SCHEMA_SET(data[0], data[1], mysql_row[0]);
     /* TABLE_NAME */
     data[2] = mysql_row[2];
     /* COLUMN_NAME */

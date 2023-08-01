@@ -189,8 +189,37 @@ DECLARE_TEST(t_bug35316630_sqlstatistics) {
   ENDCATCH;
 }
 
+DECLARE_TEST(t_sqlmode_sqlcolumns) {
+  try {
+    odbc::table t(hstmt, "sqlmode_sqlcolumns", "id_col int");
+    odbc::sql(hstmt, "SET SESSION sql_mode='ANSI'");
+    ok_stmt(hstmt, SQLColumns(hstmt, nullptr, 0, nullptr, 0,
+      (SQLCHAR*)t.table_name.c_str(), SQL_NTS, (SQLCHAR*)"id_col", SQL_NTS));
+    int rnum = 0;
+    odbc::xbuf buf(128);
+
+    while (SQL_SUCCESS == SQLFetch(hstmt)) {
+      // Test db name
+      const char *char_data = my_fetch_str(hstmt, buf, 1);
+      is_str(mydb, char_data, strlen(char_data));
+
+      // Test tab name
+      char_data = my_fetch_str(hstmt, buf, 3);
+      is_str(t.table_name.c_str(), char_data, t.table_name.length());
+
+      // Test col name
+      char_data = my_fetch_str(hstmt, buf, 4);
+      is_str("id_col", char_data, 6);
+      ++rnum;
+    }
+    is_num(1, rnum);
+  }
+  ENDCATCH;
+}
+
 
 BEGIN_TESTS
+  ADD_TEST(t_sqlmode_sqlcolumns)
   ADD_TEST(t_bug35316630_sqlstatistics)
   ADD_TEST(t_bug34355094_sqlcolumns_wchar)
 END_TESTS
