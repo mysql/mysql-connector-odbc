@@ -406,21 +406,49 @@ SQLRETURN DBC::connect(DataSource *dsrc)
   if(!fido_func && global_fido_callback)
     fido_func = global_fido_callback;
 
+  std::vector<std::string> plugin_types = {
+    "fido", "webauthn"
+  };
+
   if (fido_func || fido_callback_is_set)
   {
-    struct st_mysql_client_plugin* plugin =
-      mysql_client_find_plugin(mysql,
-        "authentication_fido_client",
-        MYSQL_CLIENT_AUTHENTICATION_PLUGIN);
-
-    if (!plugin)
+    int plugin_load_failures = 0;
+    for (std::string plugin_type : plugin_types)
     {
-      return set_error("HY000", "Couldn't load plugin authentication_fido_client", 0);
+      std::string plugin_name = "authentication_" + plugin_type +
+        "_client";
+      struct st_mysql_client_plugin* plugin =
+        mysql_client_find_plugin(mysql,
+          plugin_name.c_str(),
+          MYSQL_CLIENT_AUTHENTICATION_PLUGIN);
+
+      if (plugin)
+      {
+        std::string opt_name = plugin_type + "_messages_callback";
+        if (mysql_plugin_options(plugin, opt_name.c_str(),
+             (const void*)fido_func))
+        {
+          // If plugin is loaded, but the callback option fails to set
+          // the error is reported.
+          return set_error("HY000",
+            "Failed to set a FIDO authentication callback function", 0);
+        }
+      }
+      else
+      {
+        // Do not report an error yet.
+        // Just increment the failure count.
+        ++plugin_load_failures;
+      }
     }
 
-    if (mysql_plugin_options(plugin, "fido_messages_callback", (const void*)fido_func))
+    if (plugin_load_failures == plugin_types.size())
     {
-      return set_error("HY000", "Failed to set a FIDO authentication callback function", 0);
+      // Report error only if all plugins failed to load
+      return set_error("HY000", "Failed to set a FIDO "
+        "authentication callback because none of FIDO "
+        "authentication plugins (fido, webauthn) could "
+        "be loaded", 0);
     }
     fido_callback_is_set = fido_func;
   }
