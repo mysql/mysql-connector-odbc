@@ -108,9 +108,12 @@
               <?if $(var.odbc_ver_num) < 80018 ?>
                 <File Id="libeay32.dll" Name="libeay32.dll" KeyPath="yes" DiskId="1" Source="x86\libeay32.dll" />
                 <File Id="ssleay32.dll" Name="ssleay32.dll" DiskId="1" Source="x86\ssleay32.dll" />
-              <?else ?>
+              <?elseif $(var.odbc_ver_num) < 80034 ?>
                 <File Id="libcrypto_1_1.dll" Name="libcrypto-1_1.dll" KeyPath="yes" DiskId="1" Source="x86\libcrypto-1_1.dll" />
                 <File Id="libssl_1_1.dll" Name="libssl-1_1.dll" DiskId="1" Source="x86\libssl-1_1.dll" />
+              <?else ?>
+                <File Id="libcrypto_3.dll" Name="libcrypto-3.dll" KeyPath="yes" DiskId="1" Source="x86\libcrypto-3.dll" />
+                <File Id="libssl_3.dll" Name="libssl-3.dll" DiskId="1" Source="x86\libssl-3.dll" />
               <?endif ?>
             </Component>
           <?endif ?>
