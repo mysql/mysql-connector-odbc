@@ -206,12 +206,7 @@ endif()
 
 endmacro()
 
-# With new mysys headers, windows needs c++17, and other platforms c++14.
-if(WIN32)
-  enable_cxx17()
-else()
-  enable_cxx14()
-endif()
+enable_cxx17()
 
 
 if(APPLE)
@@ -514,7 +509,7 @@ add_library(otel_api INTERFACE)
 if(NOT (WIN32 OR APPLE OR CMAKE_SYSTEM_NAME MATCHES "SunOS"))
   message(STATUS "Adding OTel support")
   set(TELEMETRY ON)
-  target_include_directories(otel_api INTERFACE 
+  target_include_directories(otel_api INTERFACE
     "${CMAKE_SOURCE_DIR}/extra/otel/opentelemetry-cpp-1.8.3/api/include"
   )
   target_compile_definitions(otel_api INTERFACE TELEMETRY)

@@ -176,6 +176,10 @@ struct MYERROR
     retcode = rc;
   }
 
+  operator std::string() const
+  {
+    return message;
+  }
 
   operator bool() const
   {

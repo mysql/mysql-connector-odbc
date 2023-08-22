@@ -90,9 +90,20 @@ SQLRETURN my_SQLPrepare(SQLHSTMT hstmt, SQLCHAR *szSqlStr, SQLINTEGER cbSqlStr,
   CLEAR_STMT_ERROR(stmt);
 
   stmt->query.reset(NULL, NULL, NULL);
+  stmt->telemetry.span_start(stmt, "SQL prepare");
 
-  return prepare(stmt, (char*)szSqlStr, cbSqlStr, reset_select_limit,
-                 force_prepare);
+  auto res = prepare(stmt, (char*)szSqlStr, cbSqlStr, reset_select_limit,
+               force_prepare);
+  if (!SQL_SUCCEEDED(res))
+  {
+    stmt->telemetry.set_error(stmt, stmt->error);
+  }
+  else
+  {
+    stmt->telemetry.span_end(stmt);
+  }
+
+  return res;
 }
 
 

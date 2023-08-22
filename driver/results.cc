@@ -1680,6 +1680,20 @@ SQLRETURN SQL_API SQLMoreResults( SQLHSTMT hstmt )
   }
 
 exitSQLMoreResults:
+
+  switch(nReturn)
+  {
+    case SQL_NO_DATA:
+      stmt->telemetry.span_end(stmt);
+      break;
+    case SQL_ERROR:
+      stmt->telemetry.set_error(stmt, stmt->error);
+      break;
+    default:
+      // do nothing with the telemetry
+      break;
+  }
+
   return nReturn;
 }
 
@@ -2250,10 +2264,22 @@ SQLRETURN SQL_API my_SQLExtendedFetch( SQLHSTMT             hstmt,
   SQLULEN           dummy_pcrow;
   BOOL              disconnected= FALSE;
   long              brow= 0;
+
+  auto span_stop_if_no_data = [](STMT *stmt) {
+    if (!mysql_more_results(stmt->dbc->mysql))
+    {
+      stmt->telemetry.span_end(stmt);
+    }
+    return;
+  };
+
   try
   {
     if ( !stmt->result )
-      return stmt->set_error("24000", "Fetch without a SELECT", 0);
+    {
+      res = stmt->set_error("24000", "Fetch without a SELECT", 0);
+      throw stmt->error;
+    }
 
     if (stmt->out_params_state != OPS_UNKNOWN)
     {
@@ -2261,6 +2287,7 @@ SQLRETURN SQL_API my_SQLExtendedFetch( SQLHSTMT             hstmt,
       {
       case OPS_BEING_FETCHED:
         /* Smth weird */
+        span_stop_if_no_data(stmt);
         return SQL_NO_DATA_FOUND;
       case OPS_STREAMS_PENDING:
         /* Magical out params fetch */
@@ -2277,13 +2304,19 @@ SQLRETURN SQL_API my_SQLExtendedFetch( SQLHSTMT             hstmt,
     if ( stmt->stmt_options.cursor_type == SQL_CURSOR_FORWARD_ONLY )
     {
       if ( fFetchType != SQL_FETCH_NEXT && !stmt->dbc->ds.opt_SAFE )
-        return  stmt->set_error(MYERR_S1106,
-                          "Wrong fetchtype with FORWARD ONLY cursor", 0);
+      {
+        res = stmt->set_error(MYERR_S1106,
+              "Wrong fetchtype with FORWARD ONLY cursor", 0);
+        throw stmt->error;
+      }
     }
 
     if ( stmt->is_dynamic_cursor() && set_dynamic_result(stmt) )
-      return stmt->set_error(MYERR_S1000,
-                       "Driver Failed to set the internal dynamic result", 0);
+    {
+      res = stmt->set_error(MYERR_S1000,
+            "Driver Failed to set the internal dynamic result", 0);
+      throw stmt->error;
+    }
 
     if ( !pcrow )
       pcrow= &dummy_pcrow;
@@ -2322,6 +2355,7 @@ SQLRETURN SQL_API my_SQLExtendedFetch( SQLHSTMT             hstmt,
         {
           *stmt->ird->rows_processed_ptr= 0;
         }
+        span_stop_if_no_data(stmt);
         return SQL_NO_DATA_FOUND;
       }
     }
@@ -2496,10 +2530,12 @@ SQLRETURN SQL_API my_SQLExtendedFetch( SQLHSTMT             hstmt,
     {
       if (disconnected)
       {
-        return SQL_ERROR;
+        res = SQL_ERROR;
+        throw stmt->error;
       }
       else if (stmt->rows_found_in_set == 0)
       {
+        span_stop_if_no_data(stmt);
         return SQL_NO_DATA_FOUND;
       }
     }
@@ -2507,6 +2543,7 @@ SQLRETURN SQL_API my_SQLExtendedFetch( SQLHSTMT             hstmt,
   catch(MYERROR &e)
   {
     res = e.retcode;
+    stmt->telemetry.set_error(stmt, e.message);
   }
   return res;
 }

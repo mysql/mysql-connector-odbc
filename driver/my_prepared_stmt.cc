@@ -336,6 +336,7 @@ void ssps_close(STMT *stmt)
     */
     mysql_stmt_close(stmt->ssps);
     stmt->ssps= NULL;
+    stmt->telemetry.span_end(stmt);
   }
   stmt->buf_set_pos(0);
 }
@@ -979,7 +980,7 @@ bool STMT::query_attr_exists(const char *name)
   {
     if (c == nullptr)
       continue;
-      
+
     if (strncmp(name, c, len) == 0)
       return true;
   }

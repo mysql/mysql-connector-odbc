@@ -71,18 +71,20 @@ namespace telemetry
 
     using Span_ptr = nostd::shared_ptr<trace::Span>;
 
-    template<class Obj> 
+    template<class Obj>
     struct Telemetry_base
     {
       bool disabled(Obj*) const;
+      Span_ptr span;
     protected:
-      Span_ptr mk_span(Obj*);
+      Span_ptr mk_span(Obj*, const char *);
     };
 
     template<>
     struct Telemetry_base<DBC>
     {
       using Obj = DBC;
+      Span_ptr span;
 
       bool disabled(Obj *) const
       {
@@ -95,55 +97,65 @@ namespace telemetry
         mode = m;
       }
 
+      void set_attribs(Obj*);
+
     protected:
 
-      Span_ptr mk_span(Obj*);
+      Span_ptr mk_span(Obj*, const char *);
     };
 
 #endif
 
-    template<class Obj> 
+    template<class Obj>
     struct Telemetry
      : public Telemetry_base<Obj>
     {
 #ifndef TELEMETRY
 
-      static void span_start(Obj*) {}
+      static void span_start(Obj*, const char *name = nullptr) {}
       static void span_end(Obj*) {}
       static void set_error(Obj*, std::string) {}
 
 #else
       using Base = Telemetry_base<Obj>;
 
-      Span_ptr span;
-
-      void span_start(Obj *obj)
+      void span_start(Obj *obj, const char *name = nullptr)
       {
         if (Base::disabled(obj))
           return;
-        span = Base::mk_span(obj);  
+        this->span = Base::mk_span(obj, name);
       }
 
-      
+
       void span_end(Obj *obj)
       {
-        if (!span)
+        if (!this->span)
           return;
-        span->End();
+        this->span->End();
         // Destroy span just in case
         Span_ptr sink;
-        span.swap(sink);
+        this->span.swap(sink);
       }
 
 
       void set_error(Obj *obj, std::string msg)
       {
-        if (!span || Base::disabled(obj))
+        if (!this->span || Base::disabled(obj))
           return;
-        span->SetStatus(trace::StatusCode::kError, msg);
+        this->span->SetStatus(trace::StatusCode::kError, msg);
         // TODO: explain why...
         Span_ptr sink;
-        span.swap(sink);       
+        this->span.swap(sink);
+      }
+
+      ~Telemetry()
+      {
+        // Note: we need to explicitly end the span here even though
+        // theoretically it should be ended when the pointed trace::Span
+        // object is deleted. But without explicit close here otel
+        // instrumentation gets confused when it creates a new span later
+        // via tracer->StartSpan()  (and we don't fully understand why)
+        span_end(nullptr);
       }
 #endif
     };

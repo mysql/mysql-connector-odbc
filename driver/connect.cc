@@ -771,7 +771,7 @@ SQLRETURN DBC::connect(DataSource *dsrc)
   {
 #ifndef TELEMETRY
 
-    return set_error("HY000", 
+    return set_error("HY000",
       "OPENTELEMETRY option is not supported on this platform."
     ,0);
 
@@ -784,8 +784,8 @@ SQLRETURN DBC::connect(DataSource *dsrc)
     ODBC_OTEL_MODE(SET_OTEL_MODE)
 
     // If we are here then option was not recognized above.
-    
-    return set_error("HY000", 
+
+    return set_error("HY000",
       "OPENTELEMETRY option can be set only to DISABLED or PREFERRED"
     , 0);
 

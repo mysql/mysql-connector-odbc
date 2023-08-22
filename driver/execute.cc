@@ -1347,246 +1347,271 @@ SQLRETURN my_SQLExecute( STMT *pStmt )
 
   CLEAR_STMT_ERROR( pStmt );
 
-  if (!GET_QUERY(&pStmt->query))
-      return pStmt->set_error( MYERR_S1010,
-                       "No previous SQLPrepare done", 0);
-
-  if (is_set_names_statement(GET_QUERY(&pStmt->query)))
+  if (ssps_used(pStmt))
   {
-    return pStmt->set_error( MYERR_42000,
-                     "SET NAMES not allowed by driver", 0);
+    // The span for non-SSPS case is started in another place.
+    pStmt->telemetry.span_start(pStmt, "SQL execute");
   }
 
-  if ((cursor_pos= check_if_positioned_cursor_exists(pStmt, &pStmtCursor)))
+  try
   {
-    /* Save a copy of the query, because we're about to modify it. */
-    pStmt->orig_query = pStmt->query;
 
-    /* Cursor statement use mysql_use_result - thus any operation
-       will couse commands out of sync */
-    if (if_forward_cache(pStmtCursor))
+    if (!GET_QUERY(&pStmt->query))
     {
-      return pStmt->set_error(MYERR_S1010,NULL,0);
+      rc = pStmt->set_error( MYERR_S1010,
+                        "No previous SQLPrepare done", 0);
+      throw pStmt->error;
     }
 
-    /* Chop off the 'WHERE CURRENT OF ...' - doing it a hard way...*/
-    *cursor_pos= '\0';
-
-    return do_my_pos_cursor_std(pStmt, pStmtCursor);
-  }
-
-  my_SQLFreeStmt((SQLHSTMT)pStmt,FREE_STMT_RESET_BUFFERS);
-
-  query= GET_QUERY(&pStmt->query);
-
-  is_select_stmt = pStmt->query.is_select_statement();
-
-  /* if ssps is used for select query then convert it to non ssps
-   single statement using UNION
-  */
-  if(is_select_stmt && ssps_used(pStmt) && pStmt->apd->array_size > 1)
-  {
-    ssps_close(pStmt);
-  }
-
-  if ( pStmt->ipd->rows_processed_ptr )
-  {
-    *pStmt->ipd->rows_processed_ptr= (SQLULEN)0;
-  }
-
-  LOCK_DBC(pStmt->dbc);
-
-  for (row= 0; row < pStmt->apd->array_size; ++row)
-  {
-    if ( pStmt->param_count )
+    if (is_set_names_statement(GET_QUERY(&pStmt->query)))
     {
-      /* "The SQL_DESC_ROWS_PROCESSED_PTR field of the APD points to a buffer
-      that contains the number of sets of parameters that have been processed,
-      including error sets."
-      "If SQL_NEED_DATA is returned, the value pointed to by the SQL_DESC_ROWS_PROCESSED_PTR
-      field of the APD is set to the set of parameters that is being processed".
-      And actually driver may continue to process paramsets after error.
-      We need to decide do we want that.
-      (http://msdn.microsoft.com/en-us/library/ms710963%28VS.85%29.aspx
-      see "Using Arrays of Parameters")
-      */
-      if ( pStmt->ipd->rows_processed_ptr )
-        *pStmt->ipd->rows_processed_ptr+= 1;
+      rc = pStmt->set_error( MYERR_42000,
+                      "SET NAMES not allowed by driver", 0);
+      throw pStmt->error;
+    }
 
-      param_operation_ptr= (SQLUSMALLINT*)ptr_offset_adjust(pStmt->apd->array_status_ptr,
-                                            NULL,
-                                            0/*SQL_BIND_BY_COLUMN*/,
-                                            sizeof(SQLUSMALLINT), row);
-      param_status_ptr= (SQLUSMALLINT*)ptr_offset_adjust(pStmt->ipd->array_status_ptr,
-                                            NULL,
-                                            0/*SQL_BIND_BY_COLUMN*/,
-                                            sizeof(SQLUSMALLINT), row);
+    if ((cursor_pos= check_if_positioned_cursor_exists(pStmt, &pStmtCursor)))
+    {
+      /* Save a copy of the query, because we're about to modify it. */
+      pStmt->orig_query = pStmt->query;
 
-      if ( param_operation_ptr
-        && *param_operation_ptr == SQL_PARAM_IGNORE)
+      /* Cursor statement use mysql_use_result - thus any operation
+        will couse commands out of sync */
+      if (if_forward_cache(pStmtCursor))
       {
-        /* http://msdn.microsoft.com/en-us/library/ms712631%28VS.85%29.aspx
-           - comments for SQL_ATTR_PARAM_STATUS_PTR */
-        if (param_status_ptr)
-          *param_status_ptr= SQL_PARAM_UNUSED;
-
-        continue;
+        rc = pStmt->set_error(MYERR_S1010,NULL,0);
+        throw pStmt->error;
       }
 
-      /*
-       * If any parameters are required at execution time, cannot perform the
-       * statement. It will be done through SQLPutData() and SQLParamData().
-       */
-      if ((dae_rec= desc_find_dae_rec(pStmt->apd)) > -1)
-      {
-        if (pStmt->apd->array_size > 1)
-        {
-          rc= pStmt->set_error("HYC00", "Parameter arrays "
-                              "with data at execution are not supported", 0);
-          lastError= param_status_ptr;
+      /* Chop off the 'WHERE CURRENT OF ...' - doing it a hard way...*/
+      *cursor_pos= '\0';
 
-          one_of_params_not_succeded= 1;
-
-          /* For other errors we continue processing of paramsets
-             So this creates some inconsistency. But I guess that's better
-             that user see diagnostics for this type of error */
-          break;
-        }
-
-        pStmt->current_param= dae_rec;
-        pStmt->dae_type= DAE_NORMAL;
-
-        return SQL_NEED_DATA;
-      }
-
-      /* Making copy of the built query if that is not last paramset for select
-         query. */
-      if (is_select_stmt && row < pStmt->apd->array_size - 1)
-      {
-        // Just ignore the dummy query
-        std::string dummy;
-        rc= insert_params(pStmt, row, dummy);
-      }
-      else
-      {
-        rc= insert_params(pStmt, row, query);
-      }
-
-      /* Setting status for this paramset*/
-      if (map_error_to_param_status( param_status_ptr, rc))
-      {
-        lastError= param_status_ptr;
-      }
-
-      if (rc != SQL_SUCCESS)
-      {
-        one_of_params_not_succeded= 1;
-      }
-
+      rc = do_my_pos_cursor_std(pStmt, pStmtCursor);
       if (!SQL_SUCCEEDED(rc))
-      {
-        continue/*return rc*/;
-      }
-
-      /* For "SELECT" statement constructing single statement using
-         "UNION ALL" */
-      if (pStmt->apd->array_size > 1 && is_select_stmt)
-      {
-        if (row < pStmt->apd->array_size - 1)
-        {
-          const char * stmtsBinder= " UNION ALL ";
-          const size_t binderLength= strlen(stmtsBinder);
-
-          pStmt->add_to_buffer(stmtsBinder, binderLength);
-          length+= binderLength;
-        }
-      }
+        throw pStmt->error;
+      else
+        return rc;
     }
 
-    if (!is_select_stmt || row == pStmt->apd->array_size-1)
+    my_SQLFreeStmt((SQLHSTMT)pStmt,FREE_STMT_RESET_BUFFERS);
+
+    query= GET_QUERY(&pStmt->query);
+
+    is_select_stmt = pStmt->query.is_select_statement();
+
+    /* if ssps is used for select query then convert it to non ssps
+    single statement using UNION
+    */
+    if(is_select_stmt && ssps_used(pStmt) && pStmt->apd->array_size > 1)
     {
-      if (!connection_failure)
+      ssps_close(pStmt);
+    }
+
+    if ( pStmt->ipd->rows_processed_ptr )
+    {
+      *pStmt->ipd->rows_processed_ptr= (SQLULEN)0;
+    }
+
+    LOCK_DBC(pStmt->dbc);
+
+    for (row= 0; row < pStmt->apd->array_size; ++row)
+    {
+      if ( pStmt->param_count )
       {
-        rc = do_query(pStmt, query);
-      }
-      else
-      {
-        /*
-          If the original query was modified, we reset stmt->query so that the
-          next execution re-starts with the original query.
+        /* "The SQL_DESC_ROWS_PROCESSED_PTR field of the APD points to a buffer
+        that contains the number of sets of parameters that have been processed,
+        including error sets."
+        "If SQL_NEED_DATA is returned, the value pointed to by the SQL_DESC_ROWS_PROCESSED_PTR
+        field of the APD is set to the set of parameters that is being processed".
+        And actually driver may continue to process paramsets after error.
+        We need to decide do we want that.
+        (http://msdn.microsoft.com/en-us/library/ms710963%28VS.85%29.aspx
+        see "Using Arrays of Parameters")
         */
-        if (GET_QUERY(&pStmt->orig_query))
+        if ( pStmt->ipd->rows_processed_ptr )
+          *pStmt->ipd->rows_processed_ptr+= 1;
+
+        param_operation_ptr= (SQLUSMALLINT*)ptr_offset_adjust(pStmt->apd->array_status_ptr,
+                                              NULL,
+                                              0/*SQL_BIND_BY_COLUMN*/,
+                                              sizeof(SQLUSMALLINT), row);
+        param_status_ptr= (SQLUSMALLINT*)ptr_offset_adjust(pStmt->ipd->array_status_ptr,
+                                              NULL,
+                                              0/*SQL_BIND_BY_COLUMN*/,
+                                              sizeof(SQLUSMALLINT), row);
+
+        if ( param_operation_ptr
+          && *param_operation_ptr == SQL_PARAM_IGNORE)
         {
-          pStmt->query = pStmt->orig_query;
-          pStmt->orig_query.reset(NULL, NULL, NULL);
+          /* http://msdn.microsoft.com/en-us/library/ms712631%28VS.85%29.aspx
+            - comments for SQL_ATTR_PARAM_STATUS_PTR */
+          if (param_status_ptr)
+            *param_status_ptr= SQL_PARAM_UNUSED;
+
+          continue;
         }
 
-        /* with broken connection we always return error for all next queries */
-        rc= SQL_ERROR;
+        /*
+        * If any parameters are required at execution time, cannot perform the
+        * statement. It will be done through SQLPutData() and SQLParamData().
+        */
+        if ((dae_rec= desc_find_dae_rec(pStmt->apd)) > -1)
+        {
+          if (pStmt->apd->array_size > 1)
+          {
+            rc= pStmt->set_error("HYC00", "Parameter arrays "
+                                "with data at execution are not supported", 0);
+            lastError= param_status_ptr;
+
+            one_of_params_not_succeded= 1;
+
+            /* For other errors we continue processing of paramsets
+              So this creates some inconsistency. But I guess that's better
+              that user see diagnostics for this type of error */
+            break;
+          }
+
+          pStmt->current_param= dae_rec;
+          pStmt->dae_type= DAE_NORMAL;
+
+          return SQL_NEED_DATA;
+        }
+
+        /* Making copy of the built query if that is not last paramset for select
+          query. */
+        if (is_select_stmt && row < pStmt->apd->array_size - 1)
+        {
+          // Just ignore the dummy query
+          std::string dummy;
+          rc= insert_params(pStmt, row, dummy);
+        }
+        else
+        {
+          rc= insert_params(pStmt, row, query);
+        }
+
+        /* Setting status for this paramset*/
+        if (map_error_to_param_status( param_status_ptr, rc))
+        {
+          lastError= param_status_ptr;
+        }
+
+        if (rc != SQL_SUCCESS)
+        {
+          one_of_params_not_succeded= 1;
+        }
+
+        if (!SQL_SUCCEEDED(rc))
+        {
+          continue/*return rc*/;
+        }
+
+        /* For "SELECT" statement constructing single statement using
+          "UNION ALL" */
+        if (pStmt->apd->array_size > 1 && is_select_stmt)
+        {
+          if (row < pStmt->apd->array_size - 1)
+          {
+            const char * stmtsBinder= " UNION ALL ";
+            const size_t binderLength= strlen(stmtsBinder);
+
+            pStmt->add_to_buffer(stmtsBinder, binderLength);
+            length+= binderLength;
+          }
+        }
       }
 
-      if (is_connection_lost(pStmt->error.native_error)
-        && handle_connection_error(pStmt))
+      if (!is_select_stmt || row == pStmt->apd->array_size-1)
       {
-        connection_failure= 1;
-      }
+        if (!connection_failure)
+        {
+          rc = do_query(pStmt, query);
+        }
+        else
+        {
+          /*
+            If the original query was modified, we reset stmt->query so that the
+            next execution re-starts with the original query.
+          */
+          if (GET_QUERY(&pStmt->orig_query))
+          {
+            pStmt->query = pStmt->orig_query;
+            pStmt->orig_query.reset(NULL, NULL, NULL);
+          }
 
-      if (map_error_to_param_status(param_status_ptr, rc))
-      {
-        lastError= param_status_ptr;
-      }
+          /* with broken connection we always return error for all next queries */
+          rc= SQL_ERROR;
+        }
 
-      /* if we have anything but not SQL_SUCCESS for any paramset, we return SQL_SUCCESS_WITH_INFO
-         as the whole operation result */
-      if (rc != SQL_SUCCESS)
-      {
-        one_of_params_not_succeded= 1;
-      }
-      else
-      {
-        all_parameters_failed= 0;
-      }
+        if (is_connection_lost(pStmt->error.native_error)
+          && handle_connection_error(pStmt))
+        {
+          connection_failure= 1;
+        }
 
-      length= 0;
+        if (map_error_to_param_status(param_status_ptr, rc))
+        {
+          lastError= param_status_ptr;
+        }
+
+        /* if we have anything but not SQL_SUCCESS for any paramset, we return SQL_SUCCESS_WITH_INFO
+          as the whole operation result */
+        if (rc != SQL_SUCCESS)
+        {
+          one_of_params_not_succeded= 1;
+        }
+        else
+        {
+          all_parameters_failed= 0;
+        }
+
+        length= 0;
+      }
+    }
+
+    /* Changing status for last detected error to SQL_PARAM_ERROR as we have
+      diagnostics for it */
+    if (lastError != NULL)
+    {
+      *lastError= SQL_PARAM_ERROR;
+    }
+
+    /* Setting not processed paramsets status to SQL_PARAM_UNUSED
+      this is needed if we stop paramsets processing on error.
+    */
+    if (param_status_ptr != NULL)
+    {
+      while (++row < pStmt->apd->array_size)
+      {
+        param_status_ptr= (SQLUSMALLINT*)ptr_offset_adjust(pStmt->ipd->array_status_ptr,
+                                            NULL,
+                                            0/*SQL_BIND_BY_COLUMN*/,
+                                            sizeof(SQLUSMALLINT), row);
+
+        *param_status_ptr= SQL_PARAM_UNUSED;
+      }
+    }
+    /* code */
+
+    if (pStmt->dummy_state == ST_DUMMY_PREPARED)
+        pStmt->dummy_state= ST_DUMMY_EXECUTED;
+
+    if (pStmt->apd->array_size > 1)
+    {
+      if (all_parameters_failed)
+      {
+        rc = SQL_ERROR;
+        throw pStmt->error;
+      }
+      else if (one_of_params_not_succeded != 0)
+      {
+        return SQL_SUCCESS_WITH_INFO;
+      }
     }
   }
-
-  /* Changing status for last detected error to SQL_PARAM_ERROR as we have
-     diagnostics for it */
-  if (lastError != NULL)
+  catch(const MYERROR& e)
   {
-    *lastError= SQL_PARAM_ERROR;
-  }
-
-  /* Setting not processed paramsets status to SQL_PARAM_UNUSED
-     this is needed if we stop paramsets processing on error.
-  */
-  if (param_status_ptr != NULL)
-  {
-    while (++row < pStmt->apd->array_size)
-    {
-      param_status_ptr= (SQLUSMALLINT*)ptr_offset_adjust(pStmt->ipd->array_status_ptr,
-                                          NULL,
-                                          0/*SQL_BIND_BY_COLUMN*/,
-                                          sizeof(SQLUSMALLINT), row);
-
-      *param_status_ptr= SQL_PARAM_UNUSED;
-    }
-  }
-
-  if (pStmt->dummy_state == ST_DUMMY_PREPARED)
-      pStmt->dummy_state= ST_DUMMY_EXECUTED;
-
-  if (pStmt->apd->array_size > 1)
-  {
-    if (all_parameters_failed)
-    {
-      return SQL_ERROR;
-    }
-    else if (one_of_params_not_succeded != 0)
-    {
-      return SQL_SUCCESS_WITH_INFO;
-    }
+    pStmt->telemetry.set_error(pStmt, e.message);
   }
 
   return rc;

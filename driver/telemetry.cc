@@ -34,18 +34,25 @@
 
 #include <iostream>
 #include <vector>
+#include <optional>
 
+#ifdef _WIN32
+#include <windows.h>
+#else
+#include <pthread.h>
+#endif
 
 namespace telemetry
 {
   Span_ptr mk_span(
-    std::string name, trace::SpanContext *link = nullptr
+    std::string name,
+    std::optional<trace::SpanContext> link = {}
   )
   {
     auto tracer = trace::Provider::GetTracerProvider()->GetTracer(
       "MySQL Connector/ODBC " MYODBC_STRDRIVERTYPE, MYODBC_CONN_ATTR_VER
     );
-  
+
     trace::StartSpanOptions opts;
     opts.kind = trace::SpanKind::kClient;
 
@@ -57,20 +64,47 @@ namespace telemetry
     return span;
   }
 
-  Span_ptr mk_span(std::string name, trace::SpanContext link)
+
+  Span_ptr
+  Telemetry_base<DBC>::mk_span(DBC *conn, const char*)
   {
-    return mk_span(name, &link);
+    auto span = telemetry::mk_span("connection");
+
+    return span;
   }
 
 
-  Span_ptr 
-  Telemetry_base<DBC>::mk_span(DBC *conn)
+  void
+  Telemetry_base<DBC>::set_attribs(DBC *dbc)
   {
-    return telemetry::mk_span("connection");
+    if (disabled(dbc) || !span)
+      return;
+
+    auto &ds = dbc->ds;
+    // NOTE: There is no possibility in ODBC for "other" transport
+    std::string transport = "other";
+
+    if(ds.opt_SOCKET)
+    {
+      transport = "pipe";
+#ifndef _WIN32
+      span->SetAttribute("net.sock.family", "unix");
+#endif
+    } else {
+      transport = "ip_tcp";
+    }
+
+    span->SetAttribute("net.transport", transport);
+    span->SetAttribute("net.peer.name", (const char*)ds.opt_SERVER);
+    if (ds.opt_PORT.is_set())
+    {
+      span->SetAttribute("net.peer.port", ds.opt_PORT);
+    }
   }
+
 
   template<>
-  bool 
+  bool
   Telemetry_base<STMT>::disabled(STMT *stmt) const
   {
     return stmt->conn_telemetry().disabled(stmt->dbc);
@@ -81,32 +115,61 @@ namespace telemetry
     Creating statement span: we link it to the connection span and we also
     set "traceparent" attribute unless user already set it.
   */
- 
+
   template<>
-  Span_ptr 
-  Telemetry_base<STMT>::mk_span(STMT *stmt)
+  Span_ptr
+  Telemetry_base<STMT>::mk_span(STMT *stmt, const char* name)
   {
-    auto span = telemetry::mk_span("SQL statement",
-      stmt->conn_telemetry().span->GetContext()
-    );
-
-    if (!stmt->query_attr_exists("traceparent"))
+    Span_ptr local_span;
+    if (!name)
     {
-      char buf[trace::TraceId::kSize * 2];
-      auto ctx = span->GetContext();
+      /*
+        Creating statement span: we link it to the connection span and we also
+        set "traceparent" attribute unless user already set it.
+    
+        If `name` is not given then this span corresponds to a plain (not prepared) 
+        statement. Otherwise this is a span for prepared statement prepare or execute
+        operation and the name should indicate which operation it is.
+      */
+      local_span = telemetry::mk_span("SQL statement",
+        stmt->conn_telemetry().span->GetContext()
+      );
 
-      ctx.trace_id().ToLowerBase16(buf);
-      std::string trace_id{buf, sizeof(buf)};
+      if (!stmt->query_attr_exists("traceparent"))
+      {
+        char buf[trace::TraceId::kSize * 2];
+        auto ctx = local_span->GetContext();
 
-      ctx.span_id().ToLowerBase16({buf, trace::SpanId::kSize * 2});
-      std::string span_id{buf, trace::SpanId::kSize * 2};
+        ctx.trace_id().ToLowerBase16(buf);
+        std::string trace_id{buf, sizeof(buf)};
 
-      stmt->add_query_attr(
-        "traceparent", "00-" + trace_id + "-" + span_id + "-00"
+        ctx.span_id().ToLowerBase16({buf, trace::SpanId::kSize * 2});
+        std::string span_id{buf, trace::SpanId::kSize * 2};
+
+        stmt->add_query_attr(
+          "traceparent", "00-" + trace_id + "-" + span_id + "-00"
+        );
+      }
+    }
+    else
+    {
+      // For SSPS we give a name indicating whether it is
+      // Prepare or Execute.
+      local_span = telemetry::mk_span(name,
+        stmt->conn_telemetry().span->GetContext()
       );
     }
+    local_span->SetAttribute("db.user", (const char*)stmt->dbc->ds.opt_UID);
+#ifdef _WIN32
+    DWORD tid = GetCurrentThreadId();
+#else
+    auto tid = pthread_self();
+#endif
+    // Currently the conversion of native thread ID to unsigned long
+    // is possible, but in the future it might change.
+    local_span->SetAttribute("thread.id", (unsigned long)tid);
 
-    return span;
+    return local_span;
   }
 
 }
