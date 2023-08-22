@@ -424,7 +424,10 @@ SQLRETURN DBC::connect(DataSource *dsrc)
 
       if (plugin)
       {
-        std::string opt_name = plugin_type + "_messages_callback";
+        std::string opt_name = (plugin_type == "webauthn" ?
+          "plugin_authentication_webauthn_client" :
+          plugin_type) + "_messages_callback";
+
         if (mysql_plugin_options(plugin, opt_name.c_str(),
              (const void*)fido_func))
         {
@@ -799,7 +802,7 @@ SQLRETURN DBC::connect(DataSource *dsrc)
   {
 #ifndef TELEMETRY
 
-    return set_error("HY000", 
+    return set_error("HY000",
       "OPENTELEMETRY option is not supported on this platform."
     ,0);
 
@@ -812,8 +815,8 @@ SQLRETURN DBC::connect(DataSource *dsrc)
     ODBC_OTEL_MODE(SET_OTEL_MODE)
 
     // If we are here then option was not recognized above.
-    
-    return set_error("HY000", 
+
+    return set_error("HY000",
       "OPENTELEMETRY option can be set only to DISABLED or PREFERRED"
     , 0);
 
