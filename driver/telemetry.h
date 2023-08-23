@@ -64,6 +64,11 @@ namespace telemetry
     struct Telemetry_base
     {};
 
+    template <>
+    struct Telemetry_base<DBC>
+    {
+      void set_attribs(DBC *) {}
+    };
 #else
 
     namespace nostd      = opentelemetry::nostd;
