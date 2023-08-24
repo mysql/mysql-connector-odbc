@@ -126,8 +126,8 @@ namespace telemetry
       /*
         Creating statement span: we link it to the connection span and we also
         set "traceparent" attribute unless user already set it.
-    
-        If `name` is not given then this span corresponds to a plain (not prepared) 
+
+        If `name` is not given then this span corresponds to a plain (not prepared)
         statement. Otherwise this is a span for prepared statement prepare or execute
         operation and the name should indicate which operation it is.
       */
@@ -159,15 +159,8 @@ namespace telemetry
         stmt->conn_telemetry().span->GetContext()
       );
     }
+
     local_span->SetAttribute("db.user", (const char*)stmt->dbc->ds.opt_UID);
-#ifdef _WIN32
-    DWORD tid = GetCurrentThreadId();
-#else
-    auto tid = pthread_self();
-#endif
-    // Currently the conversion of native thread ID to unsigned long
-    // is possible, but in the future it might change.
-    local_span->SetAttribute("thread.id", (unsigned long)tid);
 
     return local_span;
   }

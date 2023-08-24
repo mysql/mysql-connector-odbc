@@ -69,6 +69,7 @@ namespace telemetry
     {
       void set_attribs(DBC *) {}
     };
+
 #else
 
     namespace nostd      = opentelemetry::nostd;
@@ -101,6 +102,13 @@ namespace telemetry
       {
         mode = m;
       }
+
+      /*
+        Note: In case of connection spans attributes must be set after span
+        has started and the connection is established. Only then we have access
+        to required information. This is why there is a separate method to set
+        attributes.
+      */
 
       void set_attribs(Obj*);
 
