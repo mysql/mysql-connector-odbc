@@ -889,7 +889,7 @@ SQLRETURN DBC::connect(DataSource *dsrc)
       if(do_connect(el->name.c_str(), el->port) == SQL_SUCCESS)
       {
         connected = true;
-        telemetry.set_attribs(this);
+        telemetry.set_attribs(this, dsrc);
         break;
       }
       else

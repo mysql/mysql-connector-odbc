@@ -75,16 +75,15 @@ namespace telemetry
 
 
   void
-  Telemetry_base<DBC>::set_attribs(DBC *dbc)
+  Telemetry_base<DBC>::set_attribs(DBC *dbc, DataSource *ds)
   {
-    if (disabled(dbc) || !span)
+    if (disabled(dbc) || !span || !ds)
       return;
 
-    auto &ds = dbc->ds;
     // NOTE: There is no possibility in ODBC for "other" transport
     std::string transport = "other";
 
-    if(ds.opt_SOCKET)
+    if(ds->opt_SOCKET)
     {
       transport = "pipe";
 #ifndef _WIN32
@@ -95,10 +94,13 @@ namespace telemetry
     }
 
     span->SetAttribute("net.transport", transport);
-    span->SetAttribute("net.peer.name", (const char*)ds.opt_SERVER);
-    if (ds.opt_PORT.is_set())
+    if (ds->opt_SERVER.is_set())
     {
-      span->SetAttribute("net.peer.port", ds.opt_PORT);
+      span->SetAttribute("net.peer.name", (const char*)ds->opt_SERVER);
+    }
+    if (ds->opt_PORT.is_set())
+    {
+      span->SetAttribute("net.peer.port", ds->opt_PORT);
     }
   }
 

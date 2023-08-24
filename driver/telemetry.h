@@ -58,39 +58,48 @@ namespace telemetry
       be optimized out by the compiler).
     */
 
-#ifndef TELEMETRY
-
-    template<class>
-    struct Telemetry_base
-    {};
-
-    template <>
-    struct Telemetry_base<DBC>
-    {
-      void set_attribs(DBC *) {}
-    };
-
-#else
+#ifdef TELEMETRY
 
     namespace nostd      = opentelemetry::nostd;
     namespace trace      = opentelemetry::trace;
 
     using Span_ptr = nostd::shared_ptr<trace::Span>;
 
+#endif
+
+
     template<class Obj>
     struct Telemetry_base
     {
+#ifdef TELEMETRY
       bool disabled(Obj*) const;
       Span_ptr span;
     protected:
       Span_ptr mk_span(Obj*, const char *);
+#endif
     };
 
-    template<>
+    template <>
     struct Telemetry_base<DBC>
     {
       using Obj = DBC;
+
+#ifndef TELEMETRY
+
+      void set_attribs(Obj*, DataSource*){}
+
+#else
+
       Span_ptr span;
+
+      /*
+        Note: In case of connection spans attributes must be set after span
+        has started and the connection is established. Only then we have access
+        to required information. This is why there is a separate method to set
+        attributes.
+      */
+
+      void set_attribs(Obj*, DataSource*);
 
       bool disabled(Obj *) const
       {
@@ -103,21 +112,13 @@ namespace telemetry
         mode = m;
       }
 
-      /*
-        Note: In case of connection spans attributes must be set after span
-        has started and the connection is established. Only then we have access
-        to required information. This is why there is a separate method to set
-        attributes.
-      */
-
-      void set_attribs(Obj*);
-
     protected:
 
       Span_ptr mk_span(Obj*, const char *);
-    };
 
 #endif
+    };
+
 
     template<class Obj>
     struct Telemetry
