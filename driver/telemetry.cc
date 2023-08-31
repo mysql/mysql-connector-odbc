@@ -85,22 +85,26 @@ namespace telemetry
 
     if(ds->opt_SOCKET)
     {
-      transport = "pipe";
 #ifndef _WIN32
-      span->SetAttribute("net.sock.family", "unix");
+      transport = "socket";
+      span->SetAttribute("network.type", "unix");
+#else
+      transport = "pipe";
 #endif
     } else {
-      transport = "ip_tcp";
+      transport = "tcp";
+      span->SetAttribute("network.type", "ipv4");
     }
 
-    span->SetAttribute("net.transport", transport);
+    span->SetAttribute("network.transport", transport);
+
     if (ds->opt_SERVER.is_set())
     {
-      span->SetAttribute("net.peer.name", (const char*)ds->opt_SERVER);
+      span->SetAttribute("server.address", (const char*)ds->opt_SERVER);
     }
     if (ds->opt_PORT.is_set())
     {
-      span->SetAttribute("net.peer.port", ds->opt_PORT);
+      span->SetAttribute("server.port", ds->opt_PORT);
     }
   }
 
