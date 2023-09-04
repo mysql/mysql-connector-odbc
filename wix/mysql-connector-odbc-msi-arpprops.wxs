@@ -1,4 +1,4 @@
-<!-- *****************************************************************************************
+﻿<!-- *****************************************************************************************
  Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved. 
  
  This program is free software; you can redistribute it and/or modify 
@@ -28,7 +28,7 @@
  51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA 
 -->
 
-<Include>
+<Include xmlns="http://wixtoolset.org/schemas/v4/wxs">
   <Property Id="ARPCOMMENTS" Value="MySQL Connector/ODBC 8.1 is a MySQL database connector for ODBC." />
   <Property Id="ARPCONTACT" Value="http://www.mysql.com/about/contact/" />
   <Property Id="ARPPRODUCTICON" Value="MySQLConnector.ico" />
