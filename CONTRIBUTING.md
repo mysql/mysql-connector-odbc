@@ -35,7 +35,7 @@ To run the unit tests you need to perform the following steps:
 * Run MySQL Server
 * Set the following environment variables (optional):
   * TEST_DSN = <the name of DSN previously created> (default = test)
-  * TEST_DRIVER = <the name of ODBC driver as registered in odbcinst.ini> (default = MySQL ODBC 8.1 Driver)
+  * TEST_DRIVER = <the name of ODBC driver as registered in odbcinst.ini> (default = MySQL ODBC 8.2 Driver)
   * TEST_UID = <MySQL user name> (default = root)
   * TEST_PASSWORD = <MySQL password> (default is an empty string)
   * TEST_SOCKET = <the path to the socket file in Unix-like OS> (default is an empty string)

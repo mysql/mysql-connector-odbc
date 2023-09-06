@@ -34,15 +34,15 @@ DEB_HOST_MULTIARCH="$(dpkg-architecture -qDEB_HOST_MULTIARCH)"
 
 set -e
     echo "Registering Unicode driver using setup package"
-    myodbc-installer -r -d -n "MySQL ODBC 8.1 Unicode Driver"
+    myodbc-installer -r -d -n "MySQL ODBC 8.2 Unicode Driver"
     myodbc-installer -a -d \
-    -n "MySQL ODBC 8.1 Unicode Driver" \
+    -n "MySQL ODBC 8.2 Unicode Driver" \
     -t "DRIVER=/usr/lib/${DEB_HOST_MULTIARCH}/odbc/libmyodbc8w.so;SETUP=/usr/lib/${DEB_HOST_MULTIARCH}/odbc/libmyodbc8S.so"
 
     echo "Registering ANSI driver using setup"
-    myodbc-installer -r -d -n "MySQL ODBC 8.1 ANSI Driver"
+    myodbc-installer -r -d -n "MySQL ODBC 8.2 ANSI Driver"
     myodbc-installer -a -d \
-    -n "MySQL ODBC 8.1 ANSI Driver" \
+    -n "MySQL ODBC 8.2 ANSI Driver" \
     -t "DRIVER=/usr/lib/${DEB_HOST_MULTIARCH}/odbc/libmyodbc8a.so;SETUP=/usr/lib/${DEB_HOST_MULTIARCH}/odbc/libmyodbc8S.so"
 
 set +e

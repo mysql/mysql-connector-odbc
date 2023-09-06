@@ -32,10 +32,10 @@
 
 set -e
 echo "Un-registering Unicode driver"
-/usr/bin/myodbc-installer -r -d -n "MySQL ODBC 8.1 Unicode Driver"
+/usr/bin/myodbc-installer -r -d -n "MySQL ODBC 8.2 Unicode Driver"
 
 echo "Un-registering ANSI driver"
-/usr/bin/myodbc-installer -r -d -n "MySQL ODBC 8.1 ANSI Driver"
+/usr/bin/myodbc-installer -r -d -n "MySQL ODBC 8.2 ANSI Driver"
 set +e
 
 #DEBHELPER#
