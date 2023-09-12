@@ -177,7 +177,7 @@ struct Exception
 
     if (SQL_IS_SUCCESS(drc))
       printf("# [%6s][%d] %*s\n",
-             sqlstate, length, native_error, (char*)msg);
+             sqlstate, native_error, length, (char*)msg);
     else
       printf("# Did not get expected diagnostics from SQLGetDiagRec() = %d\n",
              drc);
