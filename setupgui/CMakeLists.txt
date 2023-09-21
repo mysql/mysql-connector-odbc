@@ -40,6 +40,9 @@ endif(UNICODE OR NOT ANSI)
 
 if(WIN32)
 
+  CONFIGURE_FILE(${CMAKE_SOURCE_DIR}/setupgui/windows/odbcdialogparams.rc.in
+                 ${CMAKE_BINARY_DIR}/setupgui/windows/odbcdialogparams.rc @ONLY)
+
   set(SETUP_SRCS
     ConfigDSN.cc
     callbacks.cc
@@ -49,7 +52,7 @@ if(WIN32)
     windows/main.cpp
     windows/odbcdialogparams.cpp
     windows/odbcdialogparams.h
-    windows/odbcdialogparams.rc
+    ${CMAKE_BINARY_DIR}/setupgui/windows/odbcdialogparams.rc
     windows/resource.h
     windows/TabCtrl.cpp
     windows/TabCtrl.h
@@ -87,6 +90,7 @@ endif()
 include_directories(${CMAKE_SOURCE_DIR})
 include_directories(${CMAKE_SOURCE_DIR}/util)
 include_directories(${CMAKE_SOURCE_DIR}/driver)
+include_directories(${CMAKE_SOURCE_DIR}/setupgui/windows)
 
 add_compile_options(${PLATFORM_CFLAGS})
 

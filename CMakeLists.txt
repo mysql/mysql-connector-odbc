@@ -1,4 +1,4 @@
-# Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License, version 2.0, as
@@ -281,7 +281,6 @@ ENDIF(MYSQL8)
 
 
 CONFIGURE_FILE(${CMAKE_SOURCE_DIR}/VersionInfo.h.cmake ${CMAKE_SOURCE_DIR}/VersionInfo.h @ONLY)
-CONFIGURE_FILE(${CMAKE_SOURCE_DIR}/scripts/macosx/postflight.in ${CMAKE_SOURCE_DIR}/scripts/macosx/postflight @ONLY)
 IF(WIN32)
   CONFIGURE_FILE(${CMAKE_SOURCE_DIR}/Install.bat.cmake ${CMAKE_SOURCE_DIR}/Install.bat @ONLY)
   CONFIGURE_FILE(${CMAKE_SOURCE_DIR}/Uninstall.bat.cmake ${CMAKE_SOURCE_DIR}/Uninstall.bat @ONLY)
@@ -530,6 +529,10 @@ ADD_SUBDIRECTORY(test)
 IF(NOT MYSQLCLIENT_STATIC_LINKING)
   ADD_SUBDIRECTORY(mysql_sys)
   ADD_SUBDIRECTORY(mysql_strings)
+ENDIF()
+
+IF(APPLE)
+  ADD_SUBDIRECTORY(scripts/macosx)
 ENDIF()
 
 ##############################################################################
