@@ -539,13 +539,21 @@ SQLRETURN DBC::connect(DataSource *dsrc)
 
 #endif
 
-  /* set SSL parameters */
-  mysql_ssl_set(mysql,
-                dsrc->opt_SSL_KEY,
-                dsrc->opt_SSL_CERT,
-                dsrc->opt_SSL_CA,
-                dsrc->opt_SSL_CAPATH,
-                dsrc->opt_SSL_CIPHER);
+#define SSL_SET(X, Y) \
+   if (dsrc->opt_##X && mysql_options(mysql, MYSQL_OPT_##X,         \
+                                      (const char *)dsrc->opt_##X)) \
+     return set_error("HY000", "Failed to set " Y, 0);
+
+#define SSL_OPTIONS_LIST(X) \
+  X(SSL_KEY, "the path name of the client private key file") \
+  X(SSL_CERT, "the path name of the client public key certificate file") \
+  X(SSL_CA, "the path name of the Certificate Authority (CA) certificate file") \
+  X(SSL_CAPATH, "the path name of the directory that contains trusted SSL CA certificate files") \
+  X(SSL_CIPHER, "the list of permissible ciphers for SSL encryption") \
+  X(SSL_CRL, "Failed to set the certificate revocation list file") \
+  X(SSL_CRLPATH, "Failed to set the certificate revocation list path")
+
+  SSL_OPTIONS_LIST(SSL_SET);
 
 #if MYSQL_VERSION_ID < 80003
   if (dsrc->SSLVERIFY)
@@ -596,23 +604,6 @@ SQLRETURN DBC::connect(DataSource *dsrc)
     }
   }
 #endif
-
-  if (dsrc->opt_SSL_CRL)
-  {
-    if (mysql_options(mysql, MYSQL_OPT_SSL_CRL, (const char *)dsrc->opt_SSL_CRL))
-    {
-      return set_error("HY000", "Failed to set the certificate revocation list file", 0);
-    }
-  }
-
-  if (dsrc->opt_SSL_CRLPATH)
-  {
-    if (mysql_options(mysql, MYSQL_OPT_SSL_CRLPATH,
-                      (const char *)dsrc->opt_SSL_CRLPATH))
-    {
-      return set_error("HY000", "Failed to set the certificate revocation list path", 0);
-    }
-  }
 
 #if MYSQL_VERSION_ID >= 80004
   if (dsrc->opt_GET_SERVER_PUBLIC_KEY)
