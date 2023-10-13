@@ -437,7 +437,39 @@ static char *ui_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" \
                         "<property name=\"n_columns\">2</property>\n" \
                         "<child>\n" \
                           "<placeholder/>\n" \
+                        "</child>\n"
+#if MYSQL_VERSION_ID >= 80300
+                        "<child>\n" \
+                          "<object class=\"GtkCheckButton\" id=\"BIG_PACKETS\">\n" \
+                            "<property name=\"label\" translatable=\"yes\">Allow Big Results</property>\n" \
+                            "<property name=\"use_action_appearance\">False</property>\n" \
+                            "<property name=\"visible\">True</property>\n" \
+                            "<property name=\"can_focus\">True</property>\n" \
+                            "<property name=\"receives_default\">False</property>\n" \
+                            "<property name=\"xalign\">0.5</property>\n" \
+                            "<property name=\"draw_indicator\">True</property>\n" \
+                          "</object>\n" \
+                          "<packing>\n" \
+                            "<property name=\"top_attach\">4</property>\n" \
+                            "<property name=\"bottom_attach\">5</property>\n" \
+                          "</packing>\n" \
                         "</child>\n" \
+                        "<child>\n" \
+                          "<object class=\"GtkCheckButton\" id=\"COMPRESSED_PROTO\">\n" \
+                            "<property name=\"label\" translatable=\"yes\">Use Compression</property>\n" \
+                            "<property name=\"use_action_appearance\">False</property>\n" \
+                            "<property name=\"visible\">True</property>\n" \
+                            "<property name=\"can_focus\">True</property>\n" \
+                            "<property name=\"receives_default\">False</property>\n" \
+                            "<property name=\"xalign\">0.5</property>\n" \
+                            "<property name=\"draw_indicator\">True</property>\n" \
+                          "</object>\n" \
+                          "<packing>\n" \
+                            "<property name=\"top_attach\">3</property>\n" \
+                            "<property name=\"bottom_attach\">4</property>\n" \
+                          "</packing>\n" \
+                        "</child>\n"
+#else
                         "<child>\n" \
                           "<object class=\"GtkCheckButton\" id=\"BIG_PACKETS\">\n" \
                             "<property name=\"label\" translatable=\"yes\">Allow Big Results</property>\n" \
@@ -483,7 +515,8 @@ static char *ui_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" \
                             "<property name=\"top_attach\">3</property>\n" \
                             "<property name=\"bottom_attach\">4</property>\n" \
                           "</packing>\n" \
-                        "</child>\n" \
+                        "</child>\n"
+#endif
                         "<child>\n" \
                           "<object class=\"GtkCheckButton\" id=\"NO_PROMPT\">\n" \
                             "<property name=\"label\" translatable=\"yes\">Don't Prompt Upon Connect</property>\n" \

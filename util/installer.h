@@ -296,6 +296,8 @@ class Driver {
   X(READTIMEOUT) X(WRITETIMEOUT) X(CLIENT_INTERACTIVE)              \
       X(PREFETCH)
 
+// TODO: remove AUTO_RECONNECT when special handling (warning)
+//       is not needed anymore.
 #define BOOL_OPTIONS_LIST(X)                                                   \
   X(FOUND_ROWS)                                                                \
   X(BIG_PACKETS) X(COMPRESSED_PROTO) X(NO_BIGINT) X(SAFE) X(AUTO_RECONNECT)    \

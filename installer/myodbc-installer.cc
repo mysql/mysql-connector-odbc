@@ -669,10 +669,18 @@ int add_datasource(DataSource *ds, const SQLWCHAR *attrs)
     return 1;
   }
 
+#if MYSQL_VERSION_ID >= 80300
+  if (ds->opt_AUTO_RECONNECT)
+  {
+    // We will not return the error code 1, just print a warning to stderr.
+    fprintf(stderr, "[WARNING] The option AUTO_RECONNECT is not "
+      "supported by MySQL ODBC Driver version 8.3 and newer.\n");
+  }
+#endif
+
   printf("Success\n");
   return 0;
 }
-
 
 /*
  * Handler for "remove data source" command (-s -r -n drivername)

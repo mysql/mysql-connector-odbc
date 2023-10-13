@@ -686,21 +686,22 @@ struct HDBC
   xstring connout;
   connection con;
 
-  void connect(xstring opts = nullptr)
+  int connect(xstring opts = nullptr)
   {
     xbuf buf(4096);
     xstring cstr = con.m_connstr;
     cstr.append(opts);
-    ok_con(hdbc, SQLDriverConnect(hdbc, NULL, cstr, SQL_NTS, buf,
-                                  512, nullptr, SQL_DRIVER_NOPROMPT));
+    auto rc = SQLDriverConnect(hdbc, NULL, cstr, SQL_NTS, buf,
+                               512, nullptr, SQL_DRIVER_NOPROMPT);
     connout = buf;
+    return rc;
   }
 
   HDBC(SQLHENV h, bool do_connect = true) : henv(h), con(false)
   {
     ok_env(henv, SQLAllocHandle(SQL_HANDLE_DBC, henv, &hdbc));
     if (do_connect)
-      connect();
+      ok_con(hdbc, connect());
     ok_con(hdbc, SQLSetConnectAttr(hdbc, SQL_ATTR_AUTOCOMMIT,
                                   (SQLPOINTER)SQL_AUTOCOMMIT_ON, 0));
   }

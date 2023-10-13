@@ -288,7 +288,9 @@ void syncTabsData(HWND hwnd, DataSource *params)
   GET_BOOL_TAB(CONNECTION_TAB, BIG_PACKETS);
   GET_BOOL_TAB(CONNECTION_TAB, COMPRESSED_PROTO);
   GET_BOOL_TAB(CONNECTION_TAB, NO_PROMPT);
+#if MYSQL_VERSION_ID < 80300
   GET_BOOL_TAB(CONNECTION_TAB, AUTO_RECONNECT);
+#endif
   GET_BOOL_TAB(CONNECTION_TAB, MULTI_STATEMENTS);
   GET_BOOL_TAB(CONNECTION_TAB, CLIENT_INTERACTIVE);
   GET_BOOL_TAB(CONNECTION_TAB, CAN_HANDLE_EXP_PWD);
@@ -384,7 +386,9 @@ void syncTabs(HWND hwnd, DataSource *params)
   SET_BOOL_TAB(CONNECTION_TAB, BIG_PACKETS);
   SET_BOOL_TAB(CONNECTION_TAB, COMPRESSED_PROTO);
   SET_BOOL_TAB(CONNECTION_TAB, NO_PROMPT);
+#if MYSQL_VERSION_ID < 80300
   SET_BOOL_TAB(CONNECTION_TAB, AUTO_RECONNECT);
+#endif
   SET_BOOL_TAB(CONNECTION_TAB, ENABLE_DNS_SRV);
   SET_BOOL_TAB(CONNECTION_TAB, MULTI_STATEMENTS);
   SET_BOOL_TAB(CONNECTION_TAB, CLIENT_INTERACTIVE);
@@ -500,7 +504,14 @@ void syncTabs(HWND hwnd, DataSource *params)
 void FillParameters(HWND hwnd, DataSource *params)
 {
   syncData(hwnd, params );
+
+#if MYSQL_VERSION_ID >= 80300
+  // Turn off AUTO_RECONNECT unconditionally.
+  params->opt_AUTO_RECONNECT.set_default(false);
+#endif
+
 #ifdef _WIN32
+  // Controls in Details cannot be read unless it is expanded.
   if(getTabCtrlTab())
 #endif
     syncTabsData(hwnd, params);

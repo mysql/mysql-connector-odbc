@@ -51,6 +51,7 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 #endif //_WIN32
 
 #include "..\..\VersionInfo.h"
+#include <mysql_version.h>
 VS_VERSION_INFO VERSIONINFO
   FILEVERSION MYODBC_FILEVER
   PRODUCTVERSION MYODBC_PRODUCTVER
@@ -135,12 +136,19 @@ BEGIN
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,12,79,10
     CONTROL         "&Use compression",IDC_CHECK_COMPRESSED_PROTO,
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,27,69,10
+#if MYSQL_VERSION_ID < 80300
     CONTROL         "&Enable automatic reconnect",IDC_CHECK_AUTO_RECONNECT,
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,42,105,10
     CONTROL         "&Don't prompt when connecting",IDC_CHECK_NO_PROMPT,
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,57,113,10
     CONTROL         "All&ow multiple statements",IDC_CHECK_MULTI_STATEMENTS,
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,72,97,10
+#else
+    CONTROL         "&Don't prompt when connecting",IDC_CHECK_NO_PROMPT,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,42,113,10
+    CONTROL         "All&ow multiple statements",IDC_CHECK_MULTI_STATEMENTS,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,57,113,10
+#endif
     RTEXT           "&Character Set:",IDC_STATIC,12,102,67,8
     COMBOBOX        IDC_EDIT_CHARSET,90,102,197,8,CBS_DROPDOWN | CBS_AUTOHSCROLL | CBS_SORT | WS_VSCROLL | WS_TABSTOP
 

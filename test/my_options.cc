@@ -1088,7 +1088,22 @@ DECLARE_TEST(t_collation_set)
   ENDCATCH;
 }
 
+
+DECLARE_TEST(t_wl15978_auto_reconnect_deprecation)
+{
+  try
+  {
+    odbc::HDBC hdbc1(henv, false);
+    is_num(SQL_SUCCESS_WITH_INFO, hdbc1.connect(";AUTO_RECONNECT=1"));
+  }
+  ENDCATCH;
+}
+
+
 BEGIN_TESTS
+#if MYSQL_VERSION_ID >= 80300
+  ADD_TEST(t_wl15978_auto_reconnect_deprecation)
+#endif
   ADD_TEST(t_collation_set)
   ADD_TEST(t_password_hang)
   ADD_TEST(t_wl15114)

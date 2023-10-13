@@ -1010,11 +1010,23 @@ SQLRETURN DBC::connect(DataSource *dsrc)
   strxmov(st_error_prefix, MYODBC_ERROR_PREFIX, "[mysqld-",
           mysql->server_version, "]", NullS);
 
+  /*
+    This variable will be needed later to process possible
+    errors when setting MYSQL_OPT_RECONNECT when client lib
+    used at runtime does not support it.
+  */
+  int set_reconnect_result = 0;
+#if MYSQL_VERSION_ID < 80300
   /* This needs to be set after connection, or it doesn't stick.  */
   if (ds.opt_AUTO_RECONNECT)
   {
-    mysql_options(mysql, MYSQL_OPT_RECONNECT, (char *)&on);
+    set_reconnect_result = mysql_options(mysql,
+      MYSQL_OPT_RECONNECT, (char *)&on);
   }
+#else
+  /* MYSQL_OPT_RECONNECT doesn't exist at build time, report warning later. */
+  set_reconnect_result = 1;
+#endif
 
   /* Make sure autocommit is set as configured. */
   if (commit_flag == CHECK_AUTOCOMMIT_OFF)
@@ -1073,6 +1085,36 @@ SQLRETURN DBC::connect(DataSource *dsrc)
              "Transactions are not enabled, so transaction isolation "
              "was ignored.", SQL_SUCCESS_WITH_INFO);
     }
+  }
+
+  /*
+    AUTO_RECONNECT option needs to be handled with the following
+    considerations:
+
+    A - version of ODBC driver code
+    B - version of client lib used for building ODBC driver (*)
+    C - version of client lib used at runtime
+
+    Note (*): As given by MYSQL_VERSION_ID  macro.
+
+    The behavior should be like this:
+
+     A     B     C
+    ==== ===== ===== =======================================
+    old    *    old   reconnect option works
+    old    *    new   reconnect option silently ignored
+    new   old   old   reconnect option works
+    new   old   new   reconnect option ignored with warning
+    new   new    *    reconnect option ignored with warning
+  */
+  if (ds.opt_AUTO_RECONNECT && set_reconnect_result)
+  {
+    set_error("HY000",
+      "The option AUTO_RECONNECT is not supported "
+      "by MySQL version 8.3.0 or later. "
+      "Please remove it from the connection string "
+      "or the Data Source", 0);
+    rc = SQL_SUCCESS_WITH_INFO;
   }
 
   mysql_get_option(mysql, MYSQL_OPT_NET_BUFFER_LENGTH, &net_buffer_len);
