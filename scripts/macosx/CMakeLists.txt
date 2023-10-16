@@ -1,5 +1,4 @@
-#!/bin/sh
-# Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License, version 2.0, as
@@ -27,26 +26,28 @@
 # along with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 
+##########################################################################
 
-. /usr/share/debconf/confmodule
+CONFIGURE_FILE(${CMAKE_SOURCE_DIR}/scripts/macosx/postflight.in ${CMAKE_SOURCE_DIR}/scripts/macosx/postflight @ONLY)
 
-DEB_HOST_MULTIARCH="$(dpkg-architecture -qDEB_HOST_MULTIARCH)"
+SET(LICENSE_FILE "${CMAKE_SOURCE_DIR}/LICENSE.txt")
+SET(LICENSE_HTML  "${CMAKE_SOURCE_DIR}/scripts/macosx/License.html.in")
+SET(HTML_HEADER "<!DOCTYPE html PUBLIC \"-//w3c//dtd html 4.0 transitional//en\">
+<html>
+<head>
+  <meta http-equiv=\"Content-Type\" content=\"text/html; charset=iso-8859-1\">
+  <title>Connector/ODBC - License</title>
+</head>
+<body>
+<font face=\"Helvetica\">
+<pre class=\"programlisting\">
+<h2>Licensing Information User Manual</h2>
+<h3>MySQL Connector/ODBC ${CONNECTOR_MAJOR}.${CONNECTOR_MINOR}</h3>
+<hr>
+")
 
-set -e
-    echo "Registering Unicode driver using setup package"
-    myodbc-installer -r -d -n "MySQL ODBC @CONNECTOR_MAJOR@.@CONNECTOR_MINOR@ Unicode Driver"
-    myodbc-installer -a -d \
-    -n "MySQL ODBC @CONNECTOR_MAJOR@.@CONNECTOR_MINOR@ Unicode Driver" \
-    -t "DRIVER=/usr/lib/${DEB_HOST_MULTIARCH}/odbc/libmyodbc@CONNECTOR_MAJOR@w.so;SETUP=/usr/lib/${DEB_HOST_MULTIARCH}/odbc/libmyodbc@CONNECTOR_MAJOR@S.so"
+FILE(READ ${LICENSE_FILE} CONTENTS)
+FILE(WRITE "${LICENSE_HTML}" ${HTML_HEADER})
+FILE(APPEND "${LICENSE_HTML}" "${CONTENTS}")
+FILE(APPEND "${LICENSE_HTML}" "</pre></body></html>")
 
-    echo "Registering ANSI driver using setup"
-    myodbc-installer -r -d -n "MySQL ODBC @CONNECTOR_MAJOR@.@CONNECTOR_MINOR@ ANSI Driver"
-    myodbc-installer -a -d \
-    -n "MySQL ODBC @CONNECTOR_MAJOR@.@CONNECTOR_MINOR@ ANSI Driver" \
-    -t "DRIVER=/usr/lib/${DEB_HOST_MULTIARCH}/odbc/libmyodbc@CONNECTOR_MAJOR@a.so;SETUP=/usr/lib/${DEB_HOST_MULTIARCH}/odbc/libmyodbc@CONNECTOR_MAJOR@S.so"
-
-set +e
-
-#DEBHELPER#
-
-exit 0
