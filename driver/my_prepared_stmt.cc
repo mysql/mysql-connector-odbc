@@ -769,6 +769,9 @@ SQLRETURN STMT::set_error(myodbc_errid errid, const char *errtext,
 
 SQLRETURN STMT::set_error(myodbc_errid errid)
 {
+  if (ssps)
+    return set_error(errid, mysql_stmt_error(ssps), mysql_stmt_errno(ssps));
+
   return set_error(errid, mysql_error(dbc->mysql), mysql_errno(dbc->mysql));
 }
 
@@ -781,6 +784,9 @@ SQLRETURN STMT::set_error(const char *state, const char *msg,
 
 SQLRETURN STMT::set_error(const char *state)
 {
+  if (ssps)
+    return set_error(state, mysql_stmt_error(ssps), mysql_stmt_errno(ssps));
+
   return set_error(state, mysql_error(dbc->mysql), mysql_errno(dbc->mysql));
 }
 
@@ -1000,17 +1006,14 @@ SQLRETURN STMT::bind_query_attrs(bool use_ssps)
   uint rcount = (uint)apd->rcount();
   if (rcount < param_count)
   {
-    set_error(MYERR_07001,
-              "The number of parameter markers is larger "
-              "than he number of parameters provided", 0);
-    return SQL_ERROR;
+    return set_error(MYERR_07001,
+                     "The number of parameter markers is larger "
+                     "than he number of parameters provided", 0);
   }
   else if (!dbc->has_query_attrs)
   {
-    set_error(MYERR_01000,
-              "The server does not support query attributes",
-              0);
-    return SQL_SUCCESS_WITH_INFO;
+    return set_error(MYERR_01000,
+                     "The server does not support query attributes", 0);
   }
 
   uint num = param_count;
@@ -1039,11 +1042,9 @@ SQLRETURN STMT::bind_query_attrs(bool use_ssps)
     // This will just fill the bind structure and do the param data conversion
     if(insert_param(this, bind, apd, aprec, iprec, 0) == SQL_ERROR)
     {
-      set_error(MYERR_01000,
-                "The number of attributes is larger than the "
-                "number of attribute values provided",
-                0);
-      return SQL_ERROR;
+      return set_error("HY000",
+                       "The number of attributes is larger than the "
+                       "number of attribute values provided", 0);
     }
     ++num;
   }

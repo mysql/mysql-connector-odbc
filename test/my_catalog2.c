@@ -818,14 +818,14 @@ DECLARE_TEST(t_bug55870)
   is_num(rowCount, my_print_non_format_result(hstmt1));
 
   /** surprise-surprise - just removing table is not enough to remove related
-      records from tables_priv and columns_priv
+      records from tables_priv and columns_priv.
+      The columns grants have to be revoked before the full table grants.
   */
-  sprintf(query, "revoke select,insert on bug55870 from '%s'@'localhost'", myuid);
-  ok_stmt(hstmt, SQLExecDirect(hstmt, query, SQL_NTS));
-
   sprintf(query, "revoke select (c),insert (c),update (c) on bug55870 from '%s'@'localhost'", myuid);
   ok_stmt(hstmt, SQLExecDirect(hstmt, query, SQL_NTS));
 
+  sprintf(query, "revoke select,insert on bug55870 from '%s'@'localhost'", myuid);
+  ok_stmt(hstmt, SQLExecDirect(hstmt, query, SQL_NTS));
 
   ok_sql(hstmt, "drop table if exists bug55870r");
   ok_sql(hstmt, "drop table if exists bug55870_2");

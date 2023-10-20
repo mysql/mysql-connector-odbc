@@ -127,7 +127,8 @@ SQLRETURN do_query(STMT *stmt, std::string query)
 
         /* For some errors - translating to more appropriate status */
         translate_error((char*)stmt->error.sqlstate.c_str(), MYERR_S1000,
-                        mysql_stmt_errno(stmt->ssps));
+                        stmt->error.native_error);
+        error = stmt->error.retcode;
         goto exit;
       }
       MYLOG_QUERY(stmt, "ssps has been executed");
@@ -154,12 +155,12 @@ SQLRETURN do_query(STMT *stmt, std::string query)
 
     if (native_error)
     {
-      MYLOG_QUERY(stmt, mysql_error(stmt->dbc->mysql));
-      stmt->set_error("HY000");
-
+      error = stmt->set_error("HY000");
+      MYLOG_QUERY(stmt, stmt->error.message.c_str());
+ 
       /* For some errors - translating to more appropriate status */
       translate_error((char*)stmt->error.sqlstate.c_str(), MYERR_S1000,
-                      mysql_errno(stmt->dbc->mysql));
+                      stmt->error.native_error);
       goto exit;
     }
 
@@ -168,7 +169,7 @@ SQLRETURN do_query(STMT *stmt, std::string query)
       /* Query was supposed to return result, but result is NULL*/
       if (returned_result(stmt))
       {
-        stmt->set_error(MYERR_S1000);
+        error = stmt->set_error(MYERR_S1000);
         goto exit;
       }
       else /* Query was not supposed to return a result */
@@ -184,7 +185,7 @@ SQLRETURN do_query(STMT *stmt, std::string query)
 
     if (bind_result(stmt) || get_result(stmt))
     {
-        stmt->set_error(MYERR_S1000);
+        error = stmt->set_error(MYERR_S1000);
         goto exit;
     }
     /* Caching row counts for queries returning resultset as well */
