@@ -721,6 +721,8 @@ else()
   set(AUTH_DEPS_kerberos gssapi_krb5 k5crypto krb5support krb5 com_err)
 endif()
 
+# Note: The SASL/GSSAPI module further depends on Kerberos libraries.
+#
 # Note: On Solaris and macOS all dependencies of ldap_sasl plugin are assumed
 # to be part of the OS.
 
@@ -728,7 +730,9 @@ if(NOT APPLE AND NOT CMAKE_SYSTEM_NAME MATCHES "SunOS")
   set(AUTH_DEPS_ldap_sasl libsasl ${AUTH_DEPS_kerberos})
 endif()
 if(WIN32)
-  list(APPEND AUTH_DEPS_ldap_sasl saslSCRAM)
+  list(APPEND AUTH_DEPS_ldap_sasl 
+    saslSCRAM saslGSSAPI.dll ${AUTH_DEPS_kerberos}
+  )
 endif()
 
 # additional client-side plugins (if any)
