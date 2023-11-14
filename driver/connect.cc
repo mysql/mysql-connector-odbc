@@ -1532,29 +1532,73 @@ SQLRETURN SQL_API SQLDisconnect(SQLHDBC hdbc)
 
 
 void DBC::execute_prep_stmt(MYSQL_STMT *pstmt, std::string &query,
-  MYSQL_BIND *param_bind, MYSQL_BIND *result_bind)
+  std::vector<MYSQL_BIND> &param_bind, MYSQL_BIND *result_bind)
 {
-  if (
-    mysql_stmt_prepare(pstmt, query.c_str(), (unsigned long)query.length()) ||
-    (param_bind && mysql_stmt_bind_param(pstmt, param_bind)) ||
-    mysql_stmt_execute(pstmt) ||
-    (result_bind && mysql_stmt_bind_result(pstmt, result_bind))
-  )
+  STMT stmt{this, param_bind.size()};
+  telemetry::Telemetry<STMT> stmt_telemetry;
+
+  try
+  {
+    // Prepare the query
+
+    stmt_telemetry.span_start(&stmt, "SQL prepare");
+
+    if (mysql_stmt_prepare(pstmt, query.c_str(), (unsigned long)query.length()))
+    {
+      throw nullptr;
+    }
+
+    stmt_telemetry.span_end(&stmt);
+
+    // Execute it.
+
+    stmt_telemetry.span_start(&stmt, "SQL execute");
+
+#if MYSQL_VERSION_ID >= 80300
+
+    // Move attributes to `param_bind` if any. They are bound as named parameters on top of the regular anonymous ones.
+
+    for (size_t pos = param_bind.size(); pos < stmt.param_bind.size(); ++pos)
+      param_bind.emplace_back(std::move(stmt.param_bind[pos]));
+
+    if (!param_bind.empty() &&
+        mysql_stmt_bind_named_param(pstmt, param_bind.data(),
+        (unsigned int)stmt.query_attr_names.size(),
+        stmt.query_attr_names.data())
+      )
+#else
+    if (!param_bind.empty() && mysql_stmt_bind_param(pstmt, param_bind.data()))
+#endif
+    {
+      throw nullptr;
+    }
+
+    if (mysql_stmt_execute(pstmt) ||
+      (result_bind && mysql_stmt_bind_result(pstmt, result_bind))
+    )
+    {
+      throw nullptr;
+    }
+
+    // Fetch results
+
+    if (result_bind && mysql_stmt_store_result(pstmt))
+    {
+      throw nullptr;
+    }
+
+    stmt_telemetry.span_end(&stmt);
+
+  }
+  catch(nullptr_t)
   {
     set_error("HY000");
+    stmt_telemetry.set_error(&stmt, error.message);
+    stmt_telemetry.span_end(&stmt);
     throw error;
   }
-
-  if (
-
-    (result_bind && mysql_stmt_store_result(pstmt))
-  )
-  {
-    set_error("HY000");
-    throw error;
-  }
-
 }
+
 
 SQLRETURN DBC::execute_query(const char* query,
   SQLULEN query_length, my_bool req_lock)

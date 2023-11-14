@@ -784,7 +784,7 @@ columns_i_s(SQLHSTMT hstmt, SQLCHAR *catalog, unsigned long catalog_len,
     {
       // In case of SSPS the call will throw an error.
       stmt->dbc->execute_prep_stmt(local_stmt, query,
-        params.data(), ssps_res.data());
+        params, ssps_res.data());
     }
     else
     {

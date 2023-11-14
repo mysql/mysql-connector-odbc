@@ -715,13 +715,15 @@ void STMT::free_fake_result(bool clear_all_results)
 }
 
 
-// Clear and free buffers bound in query_attr_bind
-void STMT::clear_query_attr_bind()
+// Clear and free buffers bound in param_bind
+void STMT::clear_param_bind()
 {
-  for (auto bind : query_attr_bind) {
+  for (auto bind : param_bind) {
     x_free(bind.buffer);
+    bind.buffer = nullptr;
   }
-  query_attr_bind.clear();
+  // No need to clear param_bind. It will be reused.
+  // param_bind.clear();
 }
 
 
@@ -742,12 +744,7 @@ STMT::~STMT()
 
   LOCK_DBC(dbc);
   dbc->stmt_list.remove(this);
-  clear_query_attr_bind();
-  for (auto bind : param_bind) {
-    if (bind.buffer != nullptr)
-      x_free(bind.buffer);
-  }
-
+  clear_param_bind();
 }
 
 void STMT::reset_getdata_position()
@@ -968,26 +965,32 @@ int STMT::ssps_bind_result()
 bool bind_param(MYSQL_BIND *bind, const char *value, unsigned long length,
                 enum enum_field_types buffer_type);
 
+
 void STMT::add_query_attr(const char *name, std::string val)
 {
   query_attr_names.emplace_back(name);
-  query_attr_bind.emplace_back(MYSQL_BIND{});
-  MYSQL_BIND *bind = &query_attr_bind.back();
+  size_t num = query_attr_names.size();
+  // Consolidate the size of attribute names and param binds vectors.
+  allocate_param_bind(num);
+
+  MYSQL_BIND *bind = &param_bind[num - 1];
   bind_param(bind, val.c_str(), val.length(), MYSQL_TYPE_STRING);
 }
 
+
 bool STMT::query_attr_exists(const char *name)
 {
-  if (query_attr_names.size() == 0 || name == nullptr)
+  if (m_ipd.rcount() == 0 || name == nullptr)
     return false;
 
   size_t len = strlen(name);
-  for (auto c : query_attr_names)
+  for (auto &c : m_ipd.records2)
   {
-    if (c == nullptr)
+    const char *v = c.par.val();
+    if (v == nullptr || c.par.val_length() < len)
       continue;
 
-    if (strncmp(name, c, len) == 0)
+    if (strncmp(name, v, len) == 0)
       return true;
   }
   return false;
@@ -1017,10 +1020,12 @@ SQLRETURN STMT::bind_query_attrs(bool use_ssps)
   }
 
   uint num = param_count;
-  clear_query_attr_bind();
-  query_attr_bind.reserve(rcount - param_count);
-  query_attr_names.clear();
-  query_attr_names.reserve(rcount - param_count);
+
+  // If anything is added to query_attr_names it means the parameter was added as well.
+  // All other attributes go after it.
+  uint param_idx = query_attr_names.size();
+
+  allocate_param_bind(rcount + 1);
 
   while(num < rcount)
   {
@@ -1034,8 +1039,7 @@ SQLRETURN STMT::bind_query_attrs(bool use_ssps)
     if (!aprec || !iprec)
       return SQL_SUCCESS; // Nothing to do
 
-    query_attr_bind.emplace_back(MYSQL_BIND{});
-    MYSQL_BIND *bind = &query_attr_bind.back();
+    MYSQL_BIND *bind = &param_bind[param_idx];
 
     query_attr_names.emplace_back(iprec->par.val());
 
@@ -1047,17 +1051,18 @@ SQLRETURN STMT::bind_query_attrs(bool use_ssps)
                        "number of attribute values provided", 0);
     }
     ++num;
+    ++param_idx;
   }
 
-  telemetry.span_start(this);
-
-  MYSQL_BIND *bind = query_attr_bind.data();
+  MYSQL_BIND *bind = param_bind.data();
   const char** names = (const char**)query_attr_names.data();
 
-  if (mysql_bind_param(dbc->mysql, (unsigned int)query_attr_bind.size(),
-                        bind, names))
+  if (mysql_bind_param(dbc->mysql, (unsigned int)query_attr_names.size(),
+                       bind, names))
   {
     set_error("HY000");
+    // Clear only attr names. Params will be reused.
+    clear_attr_names();
     return SQL_SUCCESS_WITH_INFO;
   }
 

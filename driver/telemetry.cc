@@ -127,42 +127,36 @@ namespace telemetry
   Telemetry_base<STMT>::mk_span(STMT *stmt, const char* name)
   {
     Span_ptr local_span;
+
+    /*
+      If `name` is not given then this span corresponds to a plain
+      (not prepared) statement. Otherwise this is a span for prepared statement
+      prepare or execute operation and the name should indicate which operation
+      it is.
+    */
+
     if (!name)
+      name = "SQL statement";
+
+    local_span = telemetry::mk_span(name,
+      stmt->conn_telemetry().span->GetContext()
+    );
+
+    // Add "treaceparent" attribute if not already set by user.
+
+    if (!stmt->query_attr_exists("traceparent"))
     {
-      /*
-        Creating statement span: we link it to the connection span and we also
-        set "traceparent" attribute unless user already set it.
+      char buf[trace::TraceId::kSize * 2];
+      auto ctx = local_span->GetContext();
 
-        If `name` is not given then this span corresponds to a plain (not prepared)
-        statement. Otherwise this is a span for prepared statement prepare or execute
-        operation and the name should indicate which operation it is.
-      */
-      local_span = telemetry::mk_span("SQL statement",
-        stmt->conn_telemetry().span->GetContext()
-      );
+      ctx.trace_id().ToLowerBase16(buf);
+      std::string trace_id{buf, sizeof(buf)};
 
-      if (!stmt->query_attr_exists("traceparent"))
-      {
-        char buf[trace::TraceId::kSize * 2];
-        auto ctx = local_span->GetContext();
+      ctx.span_id().ToLowerBase16({buf, trace::SpanId::kSize * 2});
+      std::string span_id{buf, trace::SpanId::kSize * 2};
 
-        ctx.trace_id().ToLowerBase16(buf);
-        std::string trace_id{buf, sizeof(buf)};
-
-        ctx.span_id().ToLowerBase16({buf, trace::SpanId::kSize * 2});
-        std::string span_id{buf, trace::SpanId::kSize * 2};
-
-        stmt->add_query_attr(
-          "traceparent", "00-" + trace_id + "-" + span_id + "-00"
-        );
-      }
-    }
-    else
-    {
-      // For SSPS we give a name indicating whether it is
-      // Prepare or Execute.
-      local_span = telemetry::mk_span(name,
-        stmt->conn_telemetry().span->GetContext()
+      stmt->add_query_attr(
+        "traceparent", "00-" + trace_id + "-" + span_id + "-00"
       );
     }
 

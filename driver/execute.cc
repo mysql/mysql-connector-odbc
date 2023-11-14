@@ -34,7 +34,6 @@
 #include "driver.h"
 #include <locale.h>
 
-
 /*
   @type    : myodbc3 internal
   @purpose : internal function to execute query and return result
@@ -111,11 +110,22 @@ SQLRETURN do_query(STMT *stmt, std::string query)
        this is a batch of queries */
     else if (ssps_used(stmt))
     {
-      native_error = 0;
-      if (stmt->param_bind.size() && stmt->param_count)
-        native_error = mysql_stmt_bind_param(stmt->ssps, &stmt->param_bind[0]);
+#if MYSQL_VERSION_ID >= 80300
 
-      if (native_error == 0)
+      // This assertion will need to be revisited later.
+      // The situation when we can have at most one attribute is temporary.
+      assert(
+        (stmt->param_count.size() == stmt->query_attr_names.size())
+        || (1+stmt->param_count.size() == stmt->query_attr_names.size())
+      );
+
+      if (!mysql_stmt_bind_named_param(stmt->ssps, stmt->param_bind.data(),
+                                      (unsigned int)stmt->query_attr_names.size(),
+                                      stmt->query_attr_names.data()))
+#else
+      if (stmt->param_bind.size() && stmt->param_count &&
+        !mysql_stmt_bind_param(stmt->ssps, &stmt->param_bind[0]))
+#endif
       {
         native_error= mysql_stmt_execute(stmt->ssps);
       }
@@ -157,7 +167,7 @@ SQLRETURN do_query(STMT *stmt, std::string query)
     {
       error = stmt->set_error("HY000");
       MYLOG_QUERY(stmt, stmt->error.message.c_str());
- 
+
       /* For some errors - translating to more appropriate status */
       translate_error((char*)stmt->error.sqlstate.c_str(), MYERR_S1000,
                       stmt->error.native_error);
@@ -1348,10 +1358,22 @@ SQLRETURN my_SQLExecute( STMT *pStmt )
 
   CLEAR_STMT_ERROR( pStmt );
 
+  pStmt->clear_attr_names();
+
   if (ssps_used(pStmt))
   {
-    // The span for non-SSPS case is started in another place.
+    // Telemetry info will be added on top of query_attr_names
+    pStmt->query_attr_names.resize(pStmt->param_count);
+    // For parameter binds the telemetry info is written into
+    // an existing element of the params set. Need to make sure it exists.
+    pStmt->allocate_param_bind(pStmt->param_count + 1);
+
     pStmt->telemetry.span_start(pStmt, "SQL execute");
+  }
+  else
+  {
+    // Start the span for direct query execution "SQL statement"
+    pStmt->telemetry.span_start(pStmt);
   }
 
   try

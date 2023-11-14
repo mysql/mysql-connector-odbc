@@ -1207,6 +1207,7 @@ DECLARE_TEST(t_bug56804)
   }
 
   ok_stmt(hstmt, SQLFreeStmt(hstmt, SQL_CLOSE));
+  ok_stmt(hstmt, SQLFreeStmt(hstmt, SQL_RESET_PARAMS));
   ok_sql(hstmt, "DROP TABLE IF EXISTS bug56804");
 
   return OK;

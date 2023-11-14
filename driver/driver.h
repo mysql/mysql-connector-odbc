@@ -611,7 +611,7 @@ struct DBC
   SQLRETURN set_error(char *state);
   SQLRETURN connect(DataSource *ds);
   void execute_prep_stmt(MYSQL_STMT *pstmt, std::string &query,
-    MYSQL_BIND *param_bind, MYSQL_BIND *result_bind);
+    std::vector<MYSQL_BIND> &param_bind, MYSQL_BIND *result_bind);
 
   inline bool transactions_supported()
   { return mysql->server_capabilities & CLIENT_TRANSACTIONS; }
@@ -996,8 +996,7 @@ struct STMT
 
   MY_PARSED_QUERY	query, orig_query;
   std::vector<MYSQL_BIND> param_bind;
-  std::vector<MYSQL_BIND> query_attr_bind;
-  std::vector<const char*>      query_attr_names;
+  std::vector<const char*> query_attr_names;
 
   std::unique_ptr<my_bool[]> rb_is_null;
   std::unique_ptr<my_bool[]> rb_err;
@@ -1090,6 +1089,8 @@ struct STMT
 
   void add_query_attr(const char *name, std::string val);
   bool query_attr_exists(const char *name);
+  void clear_attr_names() { query_attr_names.clear(); }
+
   /*
     Error message and errno is taken from dbc->mysql
   */
@@ -1125,8 +1126,27 @@ struct STMT
   }
 
   ~STMT();
-  void clear_query_attr_bind();
+  void clear_param_bind();
+
+  private:
+  /*
+    Create a phony, non-functional STMT handle used as a placeholder.
+
+    Warning: The hanlde should not be used other than for storing attributes added using `add_query_attr()`.
+  */
+
+  STMT(DBC *d, size_t param_cnt)
+    : dbc{d}
+    , query_attr_names{param_cnt}
+    , ssps(nullptr)
+    , m_ard(this, SQL_DESC_ALLOC_AUTO, DESC_APP, DESC_ROW)
+    , m_ird(this, SQL_DESC_ALLOC_AUTO, DESC_IMP, DESC_ROW)
+    , m_apd(this, SQL_DESC_ALLOC_AUTO, DESC_APP, DESC_PARAM)
+    , m_ipd(this, SQL_DESC_ALLOC_AUTO, DESC_IMP, DESC_PARAM)
+  {}
+  friend DBC;
 };
+
 
 namespace myodbc {
   struct HENV
