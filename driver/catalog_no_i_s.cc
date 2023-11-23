@@ -163,73 +163,6 @@ static MYSQL_RES *server_list_dbkeys(STMT *stmt,
     return mysql_store_result(mysql);
 }
 
-
-/**
-  Get the list of columns in a table matching a wildcard.
-
-  @param[in] stmt             Statement
-  @param[in] szCatalog        Name of catalog (database)
-  @param[in] catalog_len        Length of catalog
-  @param[in] szTable          Name of table
-  @param[in] table_len          Length of table
-  @param[in] column         Pattern of column names to match
-  @param[in] column_len         Length of column pattern
-
-  @return Result of mysql_list_fields, or NULL if there is an error
-*/
-static MYSQL_RES *
-server_list_dbcolumns(STMT *stmt,
-                      SQLCHAR *szCatalog, SQLSMALLINT cbCatalog,
-                      SQLCHAR *szTable, SQLSMALLINT cbTable,
-                      SQLCHAR *szColumn, SQLSMALLINT cbColumn)
-{
-  assert(stmt);
-  DBC *dbc= stmt->dbc;
-  MYSQL *mysql= dbc->mysql;
-  MYSQL_RES *result;
-  char buff[NAME_LEN * 2 + 64], column_buff[NAME_LEN * 2 + 64];
-
-  LOCK_DBC(stmt->dbc);
-
-  /* If a catalog was specified, we have to change working catalog
-     to be able to use mysql_list_fields. */
-  if (cbCatalog)
-  {
-    if (reget_current_catalog(dbc))
-      return NULL;
-
-
-    strncpy(buff, (const char*)szCatalog, cbCatalog);
-    buff[cbCatalog]= '\0';
-
-    if (mysql_select_db(mysql, buff))
-    {
-      return NULL;
-    }
-  }
-
-  strncpy(buff, (const char*)szTable, cbTable);
-  buff[cbTable]= '\0';
-  strncpy(column_buff, (const char*)szColumn, cbColumn);
-  column_buff[cbColumn]= '\0';
-
-  result= mysql_list_fields(mysql, buff, column_buff);
-
-  /* If before this call no database were selected - we cannot revert that */
-  if (cbCatalog && !dbc->database.empty())
-  {
-    if (mysql_select_db( mysql, dbc->database.c_str()))
-    {
-      /* Well, probably have to return error here */
-      mysql_free_result(result);
-      return NULL;
-    }
-  }
-
-  return result;
-}
-
-
 /*
 @type    : internal
 @purpose : returns a table privileges result, NULL on error. Uses mysql pk_db tables
@@ -553,8 +486,8 @@ primary_keys_no_i_s(SQLHSTMT hstmt,
       return rc;
     }
 
-    if (!stmt->m_row_storage.is_valid())
-      stmt->result_array.reset();
+    // Free if result data was not in row storage.
+    stmt->reset_result_array();
 
     // We will use the ROW_STORAGE here
     stmt->m_row_storage.set_size(stmt->result->row_count,
@@ -771,8 +704,8 @@ procedure_columns_no_i_s(SQLHSTMT hstmt,
     throw ODBCEXCEPTION();
   }
 
-  if (!stmt->m_row_storage.is_valid())
-    stmt->result_array.reset();
+  // Free if result data was not in row storage.
+  stmt->reset_result_array();
 
   // We will use the ROW_STORAGE here
   stmt->m_row_storage.set_size(proc_list_res->row_count,
@@ -936,180 +869,6 @@ procedure_columns_no_i_s(SQLHSTMT hstmt,
 }
 
 
-/*
-****************************************************************************
-SQLSpecialColumns
-****************************************************************************
-*/
-
-MYSQL_FIELD SQLSPECIALCOLUMNS_fields[]=
-{
-  MYODBC_FIELD_SHORT("SCOPE", 0),
-  MYODBC_FIELD_NAME("COLUMN_NAME", NOT_NULL_FLAG),
-  MYODBC_FIELD_SHORT("DATA_TYPE", NOT_NULL_FLAG),
-  MYODBC_FIELD_STRING("TYPE_NAME", 20, NOT_NULL_FLAG),
-  MYODBC_FIELD_LONG("COLUMN_SIZE", 0),
-  MYODBC_FIELD_LONG("BUFFER_LENGTH", 0),
-  MYODBC_FIELD_LONG("DECIMAL_DIGITS", 0),
-  MYODBC_FIELD_SHORT("PSEUDO_COLUMN", 0),
-};
-
-char *SQLSPECIALCOLUMNS_values[]= {
-    0,NULL,0,NULL,0,0,0,0
-};
-
-const uint SQLSPECIALCOLUMNS_FIELDS =
-    (uint)array_elements(SQLSPECIALCOLUMNS_fields);
-
-
-/*
-  @type    : ODBC 1.0 API
-  @purpose : retrieves the following information about columns within a
-       specified table:
-       - The optimal set of columns that uniquely identifies a row
-         in the table.
-       - Columns that are automatically updated when any value in the
-         row is updated by a transaction
-*/
-
-SQLRETURN
-special_columns_no_i_s(SQLHSTMT hstmt, SQLUSMALLINT fColType,
-                       SQLCHAR *catalog, SQLSMALLINT catalog_len,
-                       SQLCHAR *schema, SQLSMALLINT schema_len,
-                       SQLCHAR *szTableName, SQLSMALLINT cbTableName,
-                       SQLUSMALLINT fScope __attribute__((unused)),
-                       SQLUSMALLINT fNullable __attribute__((unused)))
-{
-    STMT        *stmt=(STMT *) hstmt;
-    char        buff[80];
-    MYSQL_FIELD *field;
-    MYSQL_RES   *result;
-    my_bool     primary_key;
-    std::string db;
-
-    /* Reset the statement in order to avoid memory leaks when working with ADODB */
-    my_SQLFreeStmt(hstmt, FREE_STMT_RESET);
-
-    db = get_database_name(stmt, catalog, catalog_len, schema, schema_len,
-                           false);
-
-    stmt->result= server_list_dbcolumns(stmt, (SQLCHAR*)db.c_str(),
-                                        (SQLSMALLINT)db.length(),
-                                        szTableName, cbTableName, NULL, 0);
-    if (!(result= stmt->result))
-    {
-      return handle_connection_error(stmt);
-    }
-
-    if (!stmt->m_row_storage.is_valid())
-      stmt->result_array.reset();
-
-    // We will use the ROW_STORAGE here
-    stmt->m_row_storage.set_size(result->field_count,
-                                  SQLSPECIALCOLUMNS_FIELDS);
-    auto &data = stmt->m_row_storage;
-
-    ////////////////////////////////////////////////////////////////////////
-    auto lambda_fill_data = [&result, &field, &data, &stmt, &buff, &primary_key]
-                            (SQLSMALLINT colType)
-    {
-      uint f_count = 0;
-      mysql_field_seek(result,0);
-      while(field = mysql_fetch_field(result))
-      {
-        if(colType == SQL_ROWVER)
-        {
-          if ((field->type != MYSQL_TYPE_TIMESTAMP))
-            continue;
-          if (!(field->flags & ON_UPDATE_NOW_FLAG))
-            continue;
-          /* SCOPE */
-          data[0] = nullptr;
-        }
-        else
-        {
-          if ( primary_key && !(field->flags & PRI_KEY_FLAG) )
-              continue;
-  #ifndef SQLSPECIALCOLUMNS_RETURN_ALL_COLUMNS
-          /* The ODBC 'standard' doesn't want us to return all columns if there is
-             no primary or unique key */
-          if ( !primary_key )
-              continue;
-  #endif
-          /* SCOPE */
-          data[0] = SQL_SCOPE_SESSION;
-        }
-
-        /* COLUMN_NAME */
-        data[1] = field->name;
-
-        /* DATA_TYPE */
-        data[2] = get_sql_data_type(stmt, field, buff);;
-
-        /* TYPE_NAME */
-        data[3] = buff;
-
-        /* COLUMN_SIZE */
-        fill_column_size_buff(buff, stmt, field);
-        data[4] = buff;
-
-        /* BUFFER_LENGTH */
-        data[5] = get_transfer_octet_length(stmt, field);
-        {
-          SQLSMALLINT digits= get_decimal_digits(stmt, field);
-          /* DECIMAL_DIGITS */
-          if (digits != SQL_NO_TOTAL)
-            data[6] = digits;
-          else
-            data[6] = nullptr;
-        }
-        data[7] = SQL_PC_NOT_PSEUDO;
-        ++f_count;
-
-        data.next_row();
-      }
-
-      stmt->result_array = (MYSQL_ROW)data.data();
-      result->row_count= f_count;
-      myodbc_link_fields(stmt,SQLSPECIALCOLUMNS_fields,SQLSPECIALCOLUMNS_FIELDS);
-
-      return f_count;
-    };
-    ////////////////////////////////////////////////////////////////////////
-
-    if ( fColType == SQL_ROWVER )
-    {
-        /* Convert mysql fields to data that odbc wants */
-        lambda_fill_data(fColType);
-        return SQL_SUCCESS;
-    }
-
-    if ( fColType != SQL_BEST_ROWID )
-    {
-        return stmt->set_error( MYERR_S1000,
-                         "Unsupported argument to SQLSpecialColumns", 4000);
-    }
-
-    /*
-     * The optimal set of columns for identifing a row is either
-     * the primary key, or if there is no primary key, then
-     * all the fields.
-     */
-
-    /* Check if there is a primary (unique) key */
-    primary_key= 0;
-    while ( (field= mysql_fetch_field(result)) )
-    {
-        if ( field->flags & PRI_KEY_FLAG )
-        {
-            primary_key=1;
-            break;
-        }
-    }
-    lambda_fill_data(!SQL_ROWVER);
-    return SQL_SUCCESS;
-}
-
 
 /*
 ****************************************************************************
@@ -1177,8 +936,8 @@ statistics_no_i_s(SQLHSTMT hstmt,
       return rc;
     }
 
-    if (!stmt->m_row_storage.is_valid())
-      stmt->result_array.reset();
+    // Free if result data was not in row storage.
+    stmt->reset_result_array();
 
     size_t rows = mysql_num_rows(mysql_res);
     stmt->m_row_storage.set_size(rows, SQLSTAT_FIELDS);
@@ -1370,9 +1129,8 @@ tables_no_i_s(SQLHSTMT hstmt,
         throw ODBCEXCEPTION(EXCEPTION_TYPE::EMPTY_SET);
       }
 
-      /* Free if result data was not in row storage */
-      if (!stmt->m_row_storage.is_valid())
-        stmt->result_array.reset();
+      // Free if result data was not in row storage.
+      stmt->reset_result_array();
 
       auto &data = stmt->m_row_storage;
 

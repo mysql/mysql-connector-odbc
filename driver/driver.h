@@ -928,11 +928,17 @@ struct ODBCEXCEPTION
 
 struct ODBC_STMT
 {
-  MYSQL_STMT *m_stmt;
+  MYSQL_STMT *m_stmt = nullptr;
 
-  ODBC_STMT(MYSQL *mysql) { m_stmt = mysql_stmt_init(mysql); }
+  ODBC_STMT(MYSQL *mysql) {
+    if (mysql)
+    m_stmt = mysql_stmt_init(mysql);
+  }
   operator MYSQL_STMT*() { return m_stmt; }
-  ~ODBC_STMT() { mysql_stmt_close(m_stmt); }
+  ~ODBC_STMT() {
+    if (m_stmt)
+    mysql_stmt_close(m_stmt);
+  }
 };
 
 
@@ -1116,16 +1122,15 @@ struct STMT
     ipd(&m_ipd),
     imp_ard(ard), imp_apd(apd)
   {
-    //list.data = this;
     allocate_param_bind(10);
 
     LOCK_DBC(dbc);
     dbc->stmt_list.emplace_back(this);
-    //dbc->statements = list_add(dbc->statements, &list);
   }
 
   ~STMT();
   void clear_query_attr_bind();
+  void reset_result_array();
 };
 
 namespace myodbc {
