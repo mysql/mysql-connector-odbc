@@ -726,6 +726,14 @@ void STMT::clear_param_bind()
   // param_bind.clear();
 }
 
+// Reset result array in case when the row storage is not valid.
+// The result data, which was not in the row storage must be cleared
+// before filling it with the row storage data.
+void STMT::reset_result_array()
+{
+  if (!m_row_storage.is_valid())
+    result_array.reset();
+}
 
 STMT::~STMT()
 {
