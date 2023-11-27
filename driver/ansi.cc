@@ -110,6 +110,17 @@ SQLColAttributeImpl(SQLHSTMT hstmt, SQLUSMALLINT column,
 
 
 SQLRETURN SQL_API
+SQLColAttributes(SQLHSTMT hstmt, SQLUSMALLINT column, SQLUSMALLINT field,
+                 SQLPOINTER char_attr, SQLSMALLINT char_attr_max,
+                 SQLSMALLINT *char_attr_len, SQLLEN *num_attr)
+{
+  LOCK_STMT(hstmt);
+  return SQLColAttributeImpl(hstmt, column, field, char_attr, char_attr_max,
+                             char_attr_len, num_attr);
+}
+
+
+SQLRETURN SQL_API
 SQLColumnPrivileges(SQLHSTMT hstmt,
                     SQLCHAR *catalog, SQLSMALLINT catalog_len,
                     SQLCHAR *schema, SQLSMALLINT schema_len,
@@ -296,6 +307,36 @@ error:
 
 
 SQLRETURN SQL_API
+SQLError(SQLHENV henv, SQLHDBC hdbc, SQLHSTMT hstmt, SQLCHAR *sqlstate,
+         SQLINTEGER *native_error, SQLCHAR *message, SQLSMALLINT message_max,
+         SQLSMALLINT *message_len)
+{
+  SQLRETURN rc= SQL_INVALID_HANDLE;
+
+  if (hstmt)
+  {
+    rc= SQLGetDiagRecImpl(SQL_HANDLE_STMT, hstmt, NEXT_STMT_ERROR(hstmt),
+                          sqlstate, native_error, message, message_max,
+                          message_len);
+  }
+  else if (hdbc)
+  {
+    rc= SQLGetDiagRecImpl(SQL_HANDLE_DBC, hdbc, NEXT_DBC_ERROR(hdbc),
+                          sqlstate, native_error, message, message_max,
+                          message_len);
+  }
+  else if (henv)
+  {
+    rc= SQLGetDiagRecImpl(SQL_HANDLE_ENV, henv, NEXT_ENV_ERROR(henv),
+                          sqlstate, native_error, message, message_max,
+                          message_len);
+  }
+
+  return rc;
+}
+
+
+SQLRETURN SQL_API
 SQLExecDirect(SQLHSTMT hstmt, SQLCHAR *str, SQLINTEGER str_len)
 {
   int error;
@@ -381,6 +422,17 @@ SQLGetConnectAttrImpl(SQLHDBC hdbc, SQLINTEGER attribute, SQLPOINTER value,
   }
 
   return rc;
+}
+
+
+SQLRETURN SQL_API
+SQLGetConnectOption(SQLHDBC hdbc, SQLUSMALLINT option, SQLPOINTER value)
+{
+  CHECK_HANDLE(hdbc);
+
+  return SQLGetConnectAttrImpl(hdbc, option, value,
+                               ((option == SQL_ATTR_CURRENT_CATALOG) ?
+                                SQL_MAX_OPTION_STRING_LENGTH : 0), NULL);
 }
 
 
@@ -743,6 +795,20 @@ SQLSetConnectAttrImpl(SQLHDBC hdbc, SQLINTEGER attribute,
   DBC *dbc= (DBC *)hdbc;
   rc= MySQLSetConnectAttr(hdbc, attribute, value, value_len);
   return rc;
+}
+
+
+SQLRETURN SQL_API
+SQLSetConnectOption(SQLHDBC hdbc, SQLUSMALLINT option, SQLULEN param)
+{
+  SQLINTEGER value_len= 0;
+
+  CHECK_HANDLE(hdbc);
+
+  if (option == SQL_ATTR_CURRENT_CATALOG)
+    value_len= SQL_NTS;
+
+  return SQLSetConnectAttrImpl(hdbc, option, (SQLPOINTER)param, value_len);
 }
 
 

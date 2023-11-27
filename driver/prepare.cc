@@ -37,7 +37,9 @@
  *   SQLPrepare		 (ISO 92)					   *
  *   SQLBindParameter	 (ODBC)						   *
  *   SQLDescribeParam	 (ODBC)						   *
+ *   SQLParamOptions	 (ODBC, Deprecated)				   *
  *   SQLNumParams	 (ISO 92)					   *
+ *   SQLSetScrollOptions (ODBC, Deprecated)				   *
  *									   *
  ****************************************************************************/
 
@@ -246,6 +248,39 @@ SQLRETURN SQL_API my_SQLBindParameter( SQLHSTMT     StatementHandle,
 }
 
 
+/**
+  Deprecated function, for more details see SQLBindParamater.
+
+  @param[in] stmt           Handle to statement
+  @param[in] ipar           Parameter number
+  @param[in] fCType         Value type
+  @param[in] fSqlType       Parameter type
+  @param[in] cbColDef       Column size
+  @param[in] ibScale        Decimal digits
+  @param[in] rgbValue       Parameter value pointer
+  @param[in] pcbValue       String length or index pointer
+
+  @return SQL_SUCCESS or SQL_ERROR (and diag is set)
+
+*/
+
+SQLRETURN SQL_API SQLSetParam(SQLHSTMT        hstmt,
+                              SQLUSMALLINT    ipar,
+                              SQLSMALLINT     fCType,
+                              SQLSMALLINT     fSqlType,
+                              SQLULEN         cbColDef,
+                              SQLSMALLINT     ibScale,
+                              SQLPOINTER      rgbValue,
+                              SQLLEN *        pcbValue)
+{
+  LOCK_STMT(hstmt);
+
+  return my_SQLBindParameter(hstmt, ipar, SQL_PARAM_INPUT_OUTPUT, fCType,
+                             fSqlType, cbColDef, ibScale, rgbValue,
+                             SQL_SETPARAM_VALUE_MAX, pcbValue);
+}
+
+
 /*
   @type    : ODBC 2.0 API
   @purpose : binds a buffer to a parameter marker in an SQL statement.
@@ -300,6 +335,37 @@ SQLRETURN SQL_API SQLDescribeParam( SQLHSTMT        hstmt,
 
 /*
   @type    : ODBC 1.0 API
+  @purpose : sets multiple values (arrays) for the set of parameter markers
+*/
+
+#ifdef USE_SQLPARAMOPTIONS_SQLULEN_PTR
+SQLRETURN SQL_API SQLParamOptions( SQLHSTMT     hstmt,
+                                   SQLULEN      crow,
+                                   SQLULEN      *pirow )
+{
+  SQLINTEGER buflen= SQL_IS_ULEN;
+#else
+SQLRETURN SQL_API SQLParamOptions( SQLHSTMT     hstmt,
+                                   SQLUINTEGER  crow,
+                                   SQLUINTEGER *pirow )
+{
+  SQLINTEGER buflen= SQL_IS_UINTEGER;
+#endif
+  SQLRETURN rc;
+  STMT *stmt= (STMT *)hstmt;
+
+  CHECK_HANDLE(hstmt);
+
+  rc= MySQLSetStmtAttr(stmt, SQL_ATTR_PARAMSET_SIZE, (SQLPOINTER)crow, 0);
+  if (!SQL_SUCCEEDED(rc))
+    return rc;
+  rc= MySQLSetStmtAttr(stmt, SQL_ATTR_PARAMS_PROCESSED_PTR, pirow, 0);
+  return rc;
+}
+
+
+/*
+  @type    : ODBC 1.0 API
   @purpose : returns the number of parameter markers.
 */
 
@@ -314,3 +380,24 @@ SQLRETURN SQL_API SQLNumParams(SQLHSTMT hstmt, SQLSMALLINT *pcpar)
 
   return SQL_SUCCESS;
 }
+
+
+/*
+  @type    : ODBC 1.0 API
+  @purpose : sets options that control the behavior of cursors.
+*/
+
+SQLRETURN SQL_API SQLSetScrollOptions(  SQLHSTMT        hstmt,
+                                        SQLUSMALLINT    fConcurrency __attribute__((unused)),
+                                        SQLLEN          crowKeyset __attribute__((unused)),
+                                        SQLUSMALLINT    crowRowset )
+{
+    STMT *stmt= (STMT *)hstmt;
+
+    CHECK_HANDLE(hstmt);
+
+    return stmt_SQLSetDescField(stmt, stmt->ard, 0, SQL_DESC_ARRAY_SIZE,
+                                (SQLPOINTER)(size_t)crowRowset,
+                                SQL_IS_USMALLINT);
+}
+
