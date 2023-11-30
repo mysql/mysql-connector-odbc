@@ -110,22 +110,32 @@ SQLRETURN do_query(STMT *stmt, std::string query)
        this is a batch of queries */
     else if (ssps_used(stmt))
     {
-#if MYSQL_VERSION_ID >= 80300
 
       // This assertion will need to be revisited later.
       // The situation when we can have at most one attribute is temporary.
       assert(
-        (stmt->param_count.size() == stmt->query_attr_names.size())
-        || (1+stmt->param_count.size() == stmt->query_attr_names.size())
+        (stmt->param_count == stmt->query_attr_names.size())
+        || (1+stmt->param_count == stmt->query_attr_names.size())
       );
 
-      if (!mysql_stmt_bind_named_param(stmt->ssps, stmt->param_bind.data(),
-                                      (unsigned int)stmt->query_attr_names.size(),
-                                      stmt->query_attr_names.data()))
+      bool bind_failed = false;
+
+      if (stmt->param_bind.size() && stmt->param_count)
+      {
+        // FIXME: What if runtime client library version does not agree with version used here?
+
+#if MYSQL_VERSION_ID >= 80300
+        bind_failed = mysql_stmt_bind_named_param(stmt->ssps, 
+          stmt->param_bind.data(),
+          (unsigned int)stmt->query_attr_names.size(),
+          stmt->query_attr_names.data())
+        )
 #else
-      if (stmt->param_bind.size() && stmt->param_count &&
-        !mysql_stmt_bind_param(stmt->ssps, &stmt->param_bind[0]))
+        bind_failed = mysql_stmt_bind_param(stmt->ssps, &stmt->param_bind[0]);
 #endif
+      }
+
+      if (!bind_failed)
       {
         native_error= mysql_stmt_execute(stmt->ssps);
       }
