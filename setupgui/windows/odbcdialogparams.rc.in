@@ -27,7 +27,7 @@
 // along with this program; if not, write to the Free Software Foundation, Inc.,
 // 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 
-#include "resource.h"
+#include <resource.h>
 
 #define APSTUDIO_READONLY_SYMBOLS
 /////////////////////////////////////////////////////////////////////////////
@@ -71,14 +71,14 @@ BEGIN
         BEGIN
             VALUE "Comments", "provides setup library functionality\0"
             VALUE "CompanyName", "Oracle Corporation\0"
-            VALUE "FileDescription", "MySQL ODBC 8.2 Driver Setup Library\0"
+            VALUE "FileDescription", "MySQL ODBC @CONNECTOR_MAJOR@.@CONNECTOR_MINOR@ Driver Setup Library\0"
             VALUE "FileVersion", MYODBC_STRFILEVER
-            VALUE "InternalName", "myodbc8S\0"
-            VALUE "LegalCopyright", "Copyright (c) 1995, 2018, Oracle and/or its affiliates.\0"
+            VALUE "InternalName", "myodbc@CONNECTOR_MAJOR@S\0"
+            VALUE "LegalCopyright", "Copyright (c) 1995, 2023, Oracle and/or its affiliates.\0"
             VALUE "LegalTrademarks", "MySQL, MyODBC, Connector/ODBC are trademarks of Oracle Corporation\0"
-            VALUE "OriginalFilename", "myodbc8S.dll\0"
+            VALUE "OriginalFilename", "myodbc@CONNECTOR_MAJOR@S.dll\0"
             VALUE "PrivateBuild", "Production\0"
-            VALUE "ProductName", "Connector/ODBC 8.2\0"
+            VALUE "ProductName", "Connector/ODBC @CONNECTOR_MAJOR@.@CONNECTOR_MINOR@\0"
             VALUE "ProductVersion", MYODBC_STRPRODUCTVER
             VALUE "SpecialBuild", "GA release\0"
         END

@@ -383,14 +383,12 @@ SQLRETURN SQL_API SQLFreeConnect(SQLHDBC hdbc)
  */
 void STMT::allocate_param_bind(uint elements)
 {
-  if (dbc->ds.opt_NO_SSPS)
-    return;
-
-  if (param_bind.capacity() < elements)
+  if (param_bind.size() < elements)
   {
+    query_attr_names.resize(elements);
     param_bind.reserve(elements);
     while(elements > param_bind.size())
-      param_bind.push_back(MYSQL_BIND{});
+      param_bind.emplace_back(MYSQL_BIND{});
   }
 }
 

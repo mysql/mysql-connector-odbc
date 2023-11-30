@@ -1,4 +1,4 @@
-# Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License, version 2.0, as
@@ -281,7 +281,6 @@ ENDIF(MYSQL8)
 
 
 CONFIGURE_FILE(${CMAKE_SOURCE_DIR}/VersionInfo.h.cmake ${CMAKE_SOURCE_DIR}/VersionInfo.h @ONLY)
-CONFIGURE_FILE(${CMAKE_SOURCE_DIR}/scripts/macosx/postflight.in ${CMAKE_SOURCE_DIR}/scripts/macosx/postflight @ONLY)
 IF(WIN32)
   CONFIGURE_FILE(${CMAKE_SOURCE_DIR}/Install.bat.cmake ${CMAKE_SOURCE_DIR}/Install.bat @ONLY)
   CONFIGURE_FILE(${CMAKE_SOURCE_DIR}/Uninstall.bat.cmake ${CMAKE_SOURCE_DIR}/Uninstall.bat @ONLY)
@@ -532,6 +531,10 @@ IF(NOT MYSQLCLIENT_STATIC_LINKING)
   ADD_SUBDIRECTORY(mysql_strings)
 ENDIF()
 
+IF(APPLE)
+  ADD_SUBDIRECTORY(scripts/macosx)
+ENDIF()
+
 ##############################################################################
 #
 #  Packaging
@@ -718,6 +721,8 @@ else()
   set(AUTH_DEPS_kerberos gssapi_krb5 k5crypto krb5support krb5 com_err)
 endif()
 
+# Note: The SASL/GSSAPI module further depends on Kerberos libraries.
+#
 # Note: On Solaris and macOS all dependencies of ldap_sasl plugin are assumed
 # to be part of the OS.
 
@@ -725,7 +730,9 @@ if(NOT APPLE AND NOT CMAKE_SYSTEM_NAME MATCHES "SunOS")
   set(AUTH_DEPS_ldap_sasl libsasl ${AUTH_DEPS_kerberos})
 endif()
 if(WIN32)
-  list(APPEND AUTH_DEPS_ldap_sasl saslSCRAM)
+  list(APPEND AUTH_DEPS_ldap_sasl 
+    saslSCRAM saslGSSAPI.dll ${AUTH_DEPS_kerberos}
+  )
 endif()
 
 # additional client-side plugins (if any)

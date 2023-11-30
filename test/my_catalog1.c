@@ -445,7 +445,7 @@ DECLARE_TEST(tmysql_specialcols)
   SQLRETURN rc;
 
     tmysql_exec(hstmt,"drop table tmysql_specialcols");
-    rc = tmysql_exec(hstmt,"create table tmysql_specialcols(col1 int primary key, col2 varchar(30), col3 int)");
+    rc = tmysql_exec(hstmt,"create table tmysql_specialcols(col1 decimal(10, 4) primary key, col2 varchar(30), col3 int)");
     mystmt(hstmt,rc);
 
     rc = tmysql_exec(hstmt,"create index tmysql_ind1 on tmysql_specialcols(col1)");
@@ -475,7 +475,29 @@ DECLARE_TEST(tmysql_specialcols)
                                      (SQLCHAR *)"tmysql_specialcols",SQL_NTS,
                                      SQL_SCOPE_SESSION, SQL_NULLABLE));
 
-    myresult(hstmt);
+    ok_stmt(hstmt, SQLFetch(hstmt));
+
+    {
+      SQLCHAR buf[128] = {'\0'};
+      // SCOPE
+      is_num(SQL_SCOPE_SESSION, my_fetch_int(hstmt, 1));
+      // COLUMN_NAME
+      is_str("col1", my_fetch_str(hstmt, buf, 2), 4);
+      // DATA_TYPE
+      is_num(SQL_DECIMAL, my_fetch_int(hstmt, 3));
+      // TYPE_NAME
+      is_str("decimal(10,4)", my_fetch_str(hstmt, buf, 4), 13);
+      // COLUMN_SIZE (for DECIMAL(10,4) it is 10)
+      is_num(10, my_fetch_int(hstmt, 5));
+      // BUFFER_LENGTH (10 + 4 + 1(sign) + 1(dot))
+      is_num(16, my_fetch_int(hstmt, 6));
+      // DECIMAL DIGITS (for DECIMAL(10,4) it is 4)
+      is_num(4, my_fetch_int(hstmt, 7));
+      // PSEUDO_COLUMN
+      is_num(SQL_PC_NOT_PSEUDO, my_fetch_int(hstmt, 8));
+    }
+
+    expect_stmt(hstmt, SQLFetch(hstmt), SQL_NO_DATA);
 
     rc = SQLFreeStmt(hstmt,SQL_CLOSE);
     mystmt(hstmt,rc);

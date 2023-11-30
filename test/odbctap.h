@@ -81,7 +81,7 @@
 
 #include "mysql_version.h"
 #include "../util/unicode_transcode.h"
-
+#include "../VersionInfo.h"
 
 void printMessage(const char *fmt, ...)
 {
@@ -139,7 +139,7 @@ const char * wstr4output(const wchar_t *wstr)
 #define _MY_NEWLINE "\n"
 #endif
 
-SQLCHAR *mydriver= (SQLCHAR *)"{MySQL ODBC 8.2 Driver}";
+SQLCHAR *mydriver= (SQLCHAR *)"{MySQL ODBC " MYODBC_STRSERIES " Driver}";
 SQLCHAR *mydsn= (SQLCHAR *)"test";
 SQLCHAR *myuid= (SQLCHAR *)"root";
 SQLCHAR *mypwd= (SQLCHAR *)"";

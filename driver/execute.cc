@@ -34,7 +34,6 @@
 #include "driver.h"
 #include <locale.h>
 
-
 /*
   @type    : myodbc3 internal
   @purpose : internal function to execute query and return result
@@ -111,11 +110,32 @@ SQLRETURN do_query(STMT *stmt, std::string query)
        this is a batch of queries */
     else if (ssps_used(stmt))
     {
-      native_error = 0;
-      if (stmt->param_bind.size() && stmt->param_count)
-        native_error = mysql_stmt_bind_param(stmt->ssps, &stmt->param_bind[0]);
 
-      if (native_error == 0)
+      // This assertion will need to be revisited later.
+      // The situation when we can have at most one attribute is temporary.
+      assert(
+        (stmt->param_count == stmt->query_attr_names.size())
+        || (1+stmt->param_count == stmt->query_attr_names.size())
+      );
+
+      bool bind_failed = false;
+
+      if (stmt->param_bind.size() && stmt->param_count)
+      {
+        // FIXME: What if runtime client library version does not agree with version used here?
+
+#if MYSQL_VERSION_ID >= 80300
+        bind_failed = mysql_stmt_bind_named_param(stmt->ssps, 
+          stmt->param_bind.data(),
+          (unsigned int)stmt->query_attr_names.size(),
+          stmt->query_attr_names.data())
+        )
+#else
+        bind_failed = mysql_stmt_bind_param(stmt->ssps, &stmt->param_bind[0]);
+#endif
+      }
+
+      if (!bind_failed)
       {
         native_error= mysql_stmt_execute(stmt->ssps);
       }
@@ -127,7 +147,8 @@ SQLRETURN do_query(STMT *stmt, std::string query)
 
         /* For some errors - translating to more appropriate status */
         translate_error((char*)stmt->error.sqlstate.c_str(), MYERR_S1000,
-                        mysql_stmt_errno(stmt->ssps));
+                        stmt->error.native_error);
+        error = stmt->error.retcode;
         goto exit;
       }
       MYLOG_QUERY(stmt, "ssps has been executed");
@@ -154,12 +175,12 @@ SQLRETURN do_query(STMT *stmt, std::string query)
 
     if (native_error)
     {
-      MYLOG_QUERY(stmt, mysql_error(stmt->dbc->mysql));
-      stmt->set_error("HY000");
+      error = stmt->set_error("HY000");
+      MYLOG_QUERY(stmt, stmt->error.message.c_str());
 
       /* For some errors - translating to more appropriate status */
       translate_error((char*)stmt->error.sqlstate.c_str(), MYERR_S1000,
-                      mysql_errno(stmt->dbc->mysql));
+                      stmt->error.native_error);
       goto exit;
     }
 
@@ -168,7 +189,7 @@ SQLRETURN do_query(STMT *stmt, std::string query)
       /* Query was supposed to return result, but result is NULL*/
       if (returned_result(stmt))
       {
-        stmt->set_error(MYERR_S1000);
+        error = stmt->set_error(MYERR_S1000);
         goto exit;
       }
       else /* Query was not supposed to return a result */
@@ -184,7 +205,7 @@ SQLRETURN do_query(STMT *stmt, std::string query)
 
     if (bind_result(stmt) || get_result(stmt))
     {
-        stmt->set_error(MYERR_S1000);
+        error = stmt->set_error(MYERR_S1000);
         goto exit;
     }
     /* Caching row counts for queries returning resultset as well */
@@ -1347,10 +1368,22 @@ SQLRETURN my_SQLExecute( STMT *pStmt )
 
   CLEAR_STMT_ERROR( pStmt );
 
+  pStmt->clear_attr_names();
+
   if (ssps_used(pStmt))
   {
-    // The span for non-SSPS case is started in another place.
+    // Telemetry info will be added on top of query_attr_names
+    pStmt->query_attr_names.resize(pStmt->param_count);
+    // For parameter binds the telemetry info is written into
+    // an existing element of the params set. Need to make sure it exists.
+    pStmt->allocate_param_bind(pStmt->param_count + 1);
+
     pStmt->telemetry.span_start(pStmt, "SQL execute");
+  }
+  else
+  {
+    // Start the span for direct query execution "SQL statement"
+    pStmt->telemetry.span_start(pStmt);
   }
 
   try
