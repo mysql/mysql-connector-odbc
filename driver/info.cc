@@ -592,7 +592,8 @@ MySQLGetInfo(SQLHDBC hdbc, SQLUSMALLINT fInfoType,
   // SQL_ACTIVE_STATEMENTS in ODBC v1 has the same definition as
   // SQL_MAX_CONCURRENT_ACTIVITIES in ODBC v3.
   case SQL_MAX_CONCURRENT_ACTIVITIES:
-    MYINFO_SET_USHORT(1); /* Only one active statement per connection */
+    // TODO: Fix Bug#34916959
+    MYINFO_SET_USHORT(0); /* No specific limit */
 
   case SQL_MAX_CURSOR_NAME_LEN:
     MYINFO_SET_USHORT(MYSQL_MAX_CURSOR_LEN);
