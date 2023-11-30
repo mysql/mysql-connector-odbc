@@ -84,22 +84,41 @@ typedef unsigned char * DYNAMIC_ELEMENT;
 typedef char * DYNAMIC_ELEMENT;
 #endif
 
+// Handle the removal of `def` and `def_length`
+// from MYSQL_FIELD struct in MySQL 8.3.0
+#if MYSQL_VERSION_ID >= 80300
+#define MYSQL_FIELD_DEF
+#define MYSQL_FIELD_DEF_LENGTH
+#else
+#define MYSQL_FIELD_DEF NullS,
+#define MYSQL_FIELD_DEF_LENGTH 0,
+#endif
+
 /* Same us MYODBC_FIELD_STRING(name, NAME_LEN, flags) */
 # define MYODBC_FIELD_NAME(name, flags) \
-  {(char*)(name), (char*)(name), NullS, NullS, NullS, NullS, NullS, NAME_LEN, 0, 0, 0, 0, 0, 0, \
-    0, 0, (flags), 0, UTF8_CHARSET_NUMBER, MYSQL_TYPE_VAR_STRING, NULL}
+  {(char*)(name), (char*)(name), NullS, NullS, NullS, NullS, MYSQL_FIELD_DEF \
+    NAME_LEN, 0, 0, 0, 0, 0, 0, 0, MYSQL_FIELD_DEF_LENGTH \
+    (flags), 0, UTF8_CHARSET_NUMBER, MYSQL_TYPE_VAR_STRING, NULL}
+
 # define MYODBC_FIELD_STRING(name, len, flags) \
-  {(char*)(name), (char*)(name), NullS, NullS, NullS, NullS, NullS, (len*SYSTEM_CHARSET_MBMAXLEN), 0, 0, 0, 0, 0, 0, \
-    0, 0, (flags), 0, UTF8_CHARSET_NUMBER, MYSQL_TYPE_VAR_STRING, NULL}
+  {(char*)(name), (char*)(name), NullS, NullS, NullS, NullS, MYSQL_FIELD_DEF \
+    (len*SYSTEM_CHARSET_MBMAXLEN), 0, 0, 0, 0, 0, 0, 0, MYSQL_FIELD_DEF_LENGTH \
+    (flags), 0, UTF8_CHARSET_NUMBER, MYSQL_TYPE_VAR_STRING, NULL}
+
 # define MYODBC_FIELD_SHORT(name, flags) \
-  {(char*)(name), (char*)(name), NullS, NullS, NullS, NullS, NullS, 5, 5, 0, 0, 0, 0, 0, 0, \
-    0, (flags), 0, 0, MYSQL_TYPE_SHORT, NULL}
+  {(char*)(name), (char*)(name), NullS, NullS, NullS, NullS, MYSQL_FIELD_DEF \
+    5, 5, 0, 0, 0, 0, 0, 0, MYSQL_FIELD_DEF_LENGTH \
+    (flags), 0, 0, MYSQL_TYPE_SHORT, NULL}
+
 # define MYODBC_FIELD_LONG(name, flags) \
-  {(char*)(name), (char*)(name), NullS, NullS, NullS, NullS, NullS, 11, 11, 0, 0, 0, 0, 0, \
-    0, 0, (flags), 0, 0, MYSQL_TYPE_LONG, NULL}
+  {(char*)(name), (char*)(name), NullS, NullS, NullS, NullS, MYSQL_FIELD_DEF \
+    11, 11, 0, 0, 0, 0, 0, 0, MYSQL_FIELD_DEF_LENGTH \
+    (flags), 0, 0, MYSQL_TYPE_LONG, NULL}
+
 # define MYODBC_FIELD_LONGLONG(name, flags) \
-  {(char*)(name), (char*)(name), NullS, NullS, NullS, NullS, NullS, 20, 20, 0, 0, 0, 0, 0, \
-    0, 0, (flags), 0, 0, MYSQL_TYPE_LONGLONG, NULL}
+  {(char*)(name), (char*)(name), NullS, NullS, NullS, NullS, MYSQL_FIELD_DEF \
+    20, 20, 0, 0, 0, 0, 0, 0, MYSQL_FIELD_DEF_LENGTH \
+    (flags), 0, 0, MYSQL_TYPE_LONGLONG, NULL}
 
 /*
   Utility function prototypes that share among files
