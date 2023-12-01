@@ -120,20 +120,26 @@ SQLRETURN do_query(STMT *stmt, std::string query)
 
       bool bind_failed = false;
 
-      if (stmt->param_bind.size() && stmt->param_count)
-      {
-        // FIXME: What if runtime client library version does not agree with version used here?
+      // FIXME: What if runtime client library version does not agree with version used here?
 
 #if MYSQL_VERSION_ID >= 80300
-        bind_failed = mysql_stmt_bind_named_param(stmt->ssps, 
-          stmt->param_bind.data(),
-          (unsigned int)stmt->query_attr_names.size(),
-          stmt->query_attr_names.data()
-        );
-#else
-        bind_failed = mysql_stmt_bind_param(stmt->ssps, &stmt->param_bind[0]);
-#endif
+      // For older servers that don't support named params
+      // we just don't count them and specify the number of unnamed params.
+      unsigned int p_number = is_minimum_version(stmt->dbc->mysql->server_version, "8.3.0") ?
+        stmt->query_attr_names.size() : stmt->param_count;
+
+      if (p_number)
+      {
+        bind_failed = mysql_stmt_bind_named_param(stmt->ssps,
+          stmt->param_bind.data(), p_number, stmt->query_attr_names.data());
       }
+
+#else
+      if (stmt->param_bind.size() && stmt->param_count)
+      {
+        bind_failed = mysql_stmt_bind_param(stmt->ssps, &stmt->param_bind[0]);
+      }
+#endif
 
       if (!bind_failed)
       {
