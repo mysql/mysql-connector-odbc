@@ -128,8 +128,8 @@ SQLRETURN do_query(STMT *stmt, std::string query)
         bind_failed = mysql_stmt_bind_named_param(stmt->ssps, 
           stmt->param_bind.data(),
           (unsigned int)stmt->query_attr_names.size(),
-          stmt->query_attr_names.data())
-        )
+          stmt->query_attr_names.data()
+        );
 #else
         bind_failed = mysql_stmt_bind_param(stmt->ssps, &stmt->param_bind[0]);
 #endif
