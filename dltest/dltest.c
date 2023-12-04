@@ -28,6 +28,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>  // for strncmp()
 
 #ifdef WIN32
     #include <windows.h>
