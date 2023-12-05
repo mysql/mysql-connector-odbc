@@ -480,7 +480,15 @@ ELSE(WIN32)
 
     else()
 
-    add_compile_options( -w )
+    add_compile_options(
+      -w
+      -Wno-error=implicit-function-declaration #(1)
+    )
+
+    # (1) -- this warning was turned into error in clang, see discussion
+    # at [1]
+    #
+    # [1] https://discourse.llvm.org/t/configure-script-breakage-with-the-new-werror-implicit-function-declaration/65213/3
 
   endif()
 
