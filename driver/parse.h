@@ -173,6 +173,7 @@ struct MY_PARSED_QUERY
   const char *get_cursor_name();
   size_t token_count();
   bool is_select_statement();
+  size_t length() { return query_end - query; }
 };
 
 

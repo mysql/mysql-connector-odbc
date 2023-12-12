@@ -357,9 +357,69 @@ void sig_handler(int sig) {
 }
 #endif
 
+/*
+  Bug #35790175: Cannot run parameterized stored procedure
+  using My SQL ODBC 8.1 connector
+*/
+DECLARE_TEST(t_bug35790175_ado_call)
+{
+  for (int no_ssps = 0; no_ssps < 2; ++no_ssps)
+  try
+  {
+    // Try how preparing "{ call ... }" works with and without SSPS
+    odbc::xstring opts = ";NO_SSPS=" + odbc::xstring(no_ssps);
+    odbc::connection con(nullptr, nullptr, nullptr, nullptr, opts);
+    SQLHSTMT hstmt = con.hstmt;
+    odbc::procedure proc(hstmt, "proc_bug35790175",
+      "(IN p1 INT, IN p2 VARCHAR(32))"
+      "BEGIN "
+      "  SELECT p1, p2; "
+      "END");
+
+    // The bug in ODBC driver caused the prepare call to fail.
+    odbc::stmt_prepare(hstmt, "{ CALL " + proc.proc_name + "(?,?) }");
+
+    SQLLEN len1 = 0, len2 = 0;  // Param lengths
+    int p1 = 0;                 // Param 1
+    odbc::xbuf p2(32);          // Param 2
+    odbc::xbuf r2(32);          // Buffer for reading result
+
+    ok_stmt(hstmt, SQLBindParameter(hstmt, 1, SQL_PARAM_INPUT,
+            SQL_C_LONG, SQL_INTEGER, 0, 0, &p1, 0, &len1));
+    ok_stmt(hstmt, SQLBindParameter(hstmt, 2, SQL_PARAM_INPUT,
+            SQL_C_CHAR, SQL_CHAR, 0, 0, p2, p2.size, &len2));
+
+    int i_vals[] = {100, 234};
+    odbc::xstring s_vals[] = {"mysql string", "another string"};
+
+    for (int i = 0 ; i < 2; ++i) {
+      auto &s = s_vals[i];
+
+      len1 = 0;
+      len2 = s.length();
+      p1 = i_vals[i];
+      p2.setval(s.c_str());
+
+      odbc::stmt_execute(hstmt);
+
+      ok_stmt(hstmt, SQLFetch(hstmt));
+      is_num(i_vals[i], my_fetch_int(hstmt, 1));
+      const char *col2 = my_fetch_str(hstmt, r2, 2);
+      is_str((char *)s_vals[i], (char *)col2, s.length());
+
+      // Only one row is expected.
+      is_no_data(SQLFetch(hstmt));
+      odbc::stmt_close(hstmt);
+    }
+  }
+  ENDCATCH;
+}
+
+
 BEGIN_TESTS
   // TODO: enable test when the problem is fixed
   // ADD_TEST(t_stmt_thread)
+  ADD_TEST(t_bug35790175_ado_call)
   ADD_TEST(t_bug30578291_inout_param)
   ADD_TEST(t_bug30578291_in_param)
   ADD_TEST(t_bug30578291_just_rows)
