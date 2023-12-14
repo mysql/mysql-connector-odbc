@@ -955,7 +955,59 @@ DECLARE_TEST(t_bug35520983_sjis) {
   ENDCATCH;
 }
 
+/*
+  Bug #26474471/61991 - SQLGetData return shorter than expected
+  string when multiple rows are fetched.
+
+  NOTE: The issue happens with multiple rows fetch when the fetch
+        positions change.
+*/
+DECLARE_TEST(t_bug26474471)
+{
+  try {
+    odbc::connection conn;
+    SQLHSTMT hstmt = conn.hstmt;
+    odbc::table tab(hstmt, "t_bug26474471", "names VARCHAR(32)");
+    odbc::xstring data[] = {"02 Str 0123456789ABCDEF", "01 Str 0123456789"};
+
+    for(auto &d : data)
+      tab.insert("('" + d + "')");
+
+    odbc::sql(hstmt, "SELECT * FROM " + tab.table_name + " ORDER BY names DESC");
+
+    SQLULEN rows_fetched = 0;
+    ok_stmt(hstmt, SQLSetStmtAttr(hstmt, SQL_ATTR_ROWS_FETCHED_PTR,
+                                  &rows_fetched, 0));
+
+    ok_stmt(hstmt, SQLSetStmtAttr(hstmt, SQL_ATTR_ROW_ARRAY_SIZE,
+                                  (SQLPOINTER)100, 0));
+
+    ok_stmt(hstmt, SQLFetchScroll(hstmt, SQL_FETCH_NEXT, 0));
+    // Two rows should be fetched at this point.
+    is_num(2, rows_fetched);
+
+    // To ensure correctness of SQLGetData() the row positions
+    // will increase and decrease over iterations.
+    int row_positions[] = {1, 2, 1};
+    SQLLEN len = 0;
+    odbc::xbuf buf(65536);
+
+    // Check that setting the position changes the data and the length
+    for (auto pos : row_positions) {
+      ok_stmt(hstmt, SQLSetPos(hstmt, pos, SQL_POSITION, SQL_LOCK_NO_CHANGE));
+
+      ok_stmt(hstmt, SQLGetData(hstmt, 1, SQL_C_CHAR, buf, buf.size, &len));
+
+      is_num(data[pos - 1].length(), (size_t)len);
+      is_str((const char *)data[pos - 1], (const char*)buf, len);
+    }
+
+  }
+  ENDCATCH;
+}
+
 BEGIN_TESTS
+  ADD_TEST(t_bug26474471)
   ADD_TEST(t_bug35520983_sjis)
   ADD_TEST(t_utf8mb4_param)
   ADD_TEST(t_bug_34350417_performance)

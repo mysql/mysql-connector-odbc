@@ -1685,6 +1685,12 @@ SQLRETURN SQL_API my_SQLSetPos(SQLHSTMT hstmt, SQLSETPOSIROW irow,
                 stmt->cursor_row= (long)(stmt->current_row+irow);
                 data_seek(stmt, (my_ulonglong)stmt->cursor_row);
                 stmt->current_values = stmt->fetch_row();
+
+                // After moving through the resultset the lengths
+                // in IRD must be updated accordingly.
+                fill_ird_data_lengths(stmt->ird, fetch_lengths(stmt),
+                                      stmt->result->field_count);
+
                 stmt->reset_getdata_position();
                 if ( stmt->fix_fields )
                     stmt->current_values= (*stmt->fix_fields)(stmt,stmt->current_values);
