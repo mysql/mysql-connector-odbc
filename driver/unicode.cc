@@ -1,4 +1,4 @@
-// Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License, version 2.0, as
@@ -124,18 +124,6 @@ SQLColAttributeWImpl(SQLHSTMT hstmt, SQLUSMALLINT column,
   }
 
   return rc;
-}
-
-
-SQLRETURN SQL_API
-SQLColAttributesW(SQLHSTMT hstmt, SQLUSMALLINT column, SQLUSMALLINT field,
-                  SQLPOINTER char_attr, SQLSMALLINT char_attr_max,
-                  SQLSMALLINT *char_attr_len, SQLLEN *num_attr)
-{
-  LOCK_STMT(hstmt);
-
-  return SQLColAttributeWImpl(hstmt, column, field, char_attr, char_attr_max,
-                              char_attr_len, num_attr);
 }
 
 
@@ -326,36 +314,6 @@ SQLDescribeColW(SQLHSTMT hstmt, SQLUSMALLINT column,
 
 
 SQLRETURN SQL_API
-SQLErrorW(SQLHENV henv, SQLHDBC hdbc, SQLHSTMT hstmt, SQLWCHAR *sqlstate,
-          SQLINTEGER *native_error, SQLWCHAR *message, SQLSMALLINT message_max,
-          SQLSMALLINT *message_len)
-{
-  SQLRETURN rc= SQL_INVALID_HANDLE;
-
-  if (hstmt)
-  {
-    rc= SQLGetDiagRecWImpl(SQL_HANDLE_STMT, hstmt, NEXT_STMT_ERROR(hstmt),
-                           sqlstate, native_error, message, message_max,
-                           message_len);
-  }
-  else if (hdbc)
-  {
-    rc= SQLGetDiagRecWImpl(SQL_HANDLE_DBC, hdbc, NEXT_DBC_ERROR(hdbc),
-                           sqlstate, native_error, message, message_max,
-                           message_len);
-  }
-  else if (henv)
-  {
-    rc= SQLGetDiagRecWImpl(SQL_HANDLE_ENV, henv, NEXT_ENV_ERROR(henv),
-                           sqlstate, native_error, message, message_max,
-                           message_len);
-  }
-
-  return rc;
-}
-
-
-SQLRETURN SQL_API
 SQLExecDirectW(SQLHSTMT hstmt, SQLWCHAR *str, SQLINTEGER str_len)
 {
   int error;
@@ -509,17 +467,6 @@ SQLGetConnectAttrWImpl(SQLHDBC hdbc, SQLINTEGER attribute, SQLPOINTER value,
   }
 
   return rc;
-}
-
-
-SQLRETURN SQL_API
-SQLGetConnectOptionW(SQLHDBC hdbc, SQLUSMALLINT option, SQLPOINTER param)
-{
-  CHECK_HANDLE(hdbc);
-
-  return SQLGetConnectAttrWImpl(hdbc, option, param,
-                                ((option == SQL_ATTR_CURRENT_CATALOG) ?
-                                 SQL_MAX_OPTION_STRING_LENGTH : 0), NULL);
 }
 
 
@@ -1078,17 +1025,6 @@ SQLSetCursorNameW(SQLHSTMT hstmt, SQLWCHAR *name, SQLSMALLINT name_len)
   }
 
   return rc;
-}
-
-
-SQLRETURN SQL_API
-SQLSetConnectOptionW(SQLHDBC hdbc, SQLUSMALLINT option, SQLULEN param)
-{
-  CHECK_HANDLE(hdbc);
-
-  return SQLSetConnectAttrWImpl(hdbc, option, (SQLPOINTER)param,
-                                ((option == SQL_ATTR_CURRENT_CATALOG) ?
-                                 SQL_NTS : 0));
 }
 
 

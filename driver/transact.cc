@@ -1,4 +1,4 @@
-// Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License, version 2.0, as
@@ -156,29 +156,4 @@ SQLEndTran(SQLSMALLINT HandleType,
   CHECK_HANDLE(Handle);
 
   return end_transaction(HandleType, Handle, CompletionType);
-}
-
-
-/**
-  Commit or roll back the transactions associated with a particular
-  database connection, or all connections in an environment.
-
-  @deprecated This function is deprecated, SQLEndTran() should be used instead.
-
-  @param[in] henv            Handle to database environment
-  @param[in] hdbc            Handle to database connection
-  @param[in] fType           How to complete the transactions,
-                             @c SQL_COMMIT or @c SQL_ROLLBACK
-
-  @since ODBC 1.0
-*/
-SQLRETURN SQL_API SQLTransact(SQLHENV henv,
-			      SQLHDBC hdbc,
-			      SQLUSMALLINT fType)
-{
-  if(henv == NULL && hdbc == NULL)
-    return SQL_INVALID_HANDLE;
-
-  return end_transaction(hdbc ? SQL_HANDLE_DBC : SQL_HANDLE_ENV,
-                         hdbc ? hdbc : henv, fType);
 }

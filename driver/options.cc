@@ -1,4 +1,4 @@
-// Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License, version 2.0, as
@@ -993,6 +993,10 @@ SQLGetEnvAttr(SQLHENV    henv,
     return SQL_SUCCESS;
 }
 
+#ifdef USE_IODBC
+
+// iODBC has problems mapping SQLGetStmtOption()/SQLSetStmtOption() to
+// SQLGetStmtAttr()/SQLSetStmtAttr()
 
 SQLRETURN SQL_API
 SQLGetStmtOption(SQLHSTMT hstmt,SQLUSMALLINT option, SQLPOINTER param)
@@ -1010,3 +1014,6 @@ SQLSetStmtOption(SQLHSTMT hstmt, SQLUSMALLINT option, SQLULEN param)
 
   return MySQLSetStmtAttr(hstmt, option, (SQLPOINTER)param, SQL_NTS);
 }
+
+#endif
+

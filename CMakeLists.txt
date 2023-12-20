@@ -343,12 +343,9 @@ ENDIF(WIN32)
 
 #-----------------------------------------------------
 
-#-------- configuring paths to odbc heders for compatibility checks ---------
 CONFIGURE_FILE(${CMAKE_SOURCE_DIR}/cmake/sqlcolattrib1.c.cmake ${CMAKE_BINARY_DIR}/cmake/sqlcolattrib1.c @ONLY)
 CONFIGURE_FILE(${CMAKE_SOURCE_DIR}/cmake/sqlcolattrib2.c.cmake ${CMAKE_BINARY_DIR}/cmake/sqlcolattrib2.c @ONLY)
-CONFIGURE_FILE(${CMAKE_SOURCE_DIR}/cmake/sqlparamopt1.c.cmake ${CMAKE_BINARY_DIR}/cmake/sqlparamopt1.c @ONLY)
-CONFIGURE_FILE(${CMAKE_SOURCE_DIR}/cmake/sqlparamopt2.c.cmake ${CMAKE_BINARY_DIR}/cmake/sqlparamopt2.c @ONLY)
-#-----------------------------------------------------
+
 
 #------------------ check compatibility---------------
 TRY_COMPILE(COMPILE_RESULT ${CMAKE_BINARY_DIR} ${CMAKE_BINARY_DIR}/cmake/sqlcolattrib1.c)
@@ -368,24 +365,33 @@ ELSE(COMPILE_RESULT)
         ENDIF(COMPILE_RESULT1)
 ENDIF(COMPILE_RESULT)
 
-TRY_COMPILE(COMPILE_RESULT ${CMAKE_BINARY_DIR} ${CMAKE_BINARY_DIR}/cmake/sqlparamopt1.c)
-MESSAGE(STATUS "Checking if SQLParamOptions() 2nd and 3rd arg is compatible with SQLULEN - ${COMPILE_RESULT}")
 
-IF(COMPILE_RESULT)
-        ADD_DEFINITIONS(-DUSE_SQLPARAMOPTIONS_SQLULEN_PTR)
-ELSE(COMPILE_RESULT)
-        TRY_COMPILE(COMPILE_RESULT1 ${CMAKE_BINARY_DIR} ${CMAKE_BINARY_DIR}/cmake/sqlparamopt2.c)
-        MESSAGE(STATUS "Checking if SQLParamOptions() 2nd and 3rd arg is compatible with SQLUINTEGER - ${COMPILE_RESULT1}")
+IF(NOT WIN32 AND NOT WITH_UNIXODBC)
+  # This should be done only for iODBC because it has problems mapping
+  # deprecated ODBC 1.0 functions to newer API.
+  CONFIGURE_FILE(${CMAKE_SOURCE_DIR}/cmake/sqlparamopt1.c.cmake ${CMAKE_BINARY_DIR}/cmake/sqlparamopt1.c @ONLY)
+  CONFIGURE_FILE(${CMAKE_SOURCE_DIR}/cmake/sqlparamopt2.c.cmake ${CMAKE_BINARY_DIR}/cmake/sqlparamopt2.c @ONLY)
 
-        IF(COMPILE_RESULT1)
-                ADD_DEFINITIONS(-DUSE_SQLPARAMOPTIONS_SQLUINTEGER_PTR)
-        ELSE(COMPILE_RESULT1)
-                # SQLULEN is a default
-    MESSAGE(STATUS "Apparently odbc headers could not be found. 2nd and 3rd parameters assumed to be (*)SQLULEN by default")
-                ADD_DEFINITIONS(-DUSE_SQLPARAMOPTIONS_SQLULEN_PTR)
-        ENDIF(COMPILE_RESULT1)
+  TRY_COMPILE(COMPILE_RESULT ${CMAKE_BINARY_DIR} ${CMAKE_BINARY_DIR}/cmake/sqlparamopt1.c)
+  MESSAGE(STATUS "Checking if SQLParamOptions() 2nd and 3rd arg is compatible with SQLULEN - ${COMPILE_RESULT}")
 
-ENDIF(COMPILE_RESULT)
+  IF(COMPILE_RESULT)
+          ADD_DEFINITIONS(-DUSE_SQLPARAMOPTIONS_SQLULEN_PTR)
+  ELSE(COMPILE_RESULT)
+          TRY_COMPILE(COMPILE_RESULT1 ${CMAKE_BINARY_DIR} ${CMAKE_BINARY_DIR}/cmake/sqlparamopt2.c)
+          MESSAGE(STATUS "Checking if SQLParamOptions() 2nd and 3rd arg is compatible with SQLUINTEGER - ${COMPILE_RESULT1}")
+
+          IF(COMPILE_RESULT1)
+                  ADD_DEFINITIONS(-DUSE_SQLPARAMOPTIONS_SQLUINTEGER_PTR)
+          ELSE(COMPILE_RESULT1)
+                  # SQLULEN is a default
+      MESSAGE(STATUS "Apparently odbc headers could not be found. 2nd and 3rd parameters assumed to be (*)SQLULEN by default")
+                  ADD_DEFINITIONS(-DUSE_SQLPARAMOPTIONS_SQLULEN_PTR)
+          ENDIF(COMPILE_RESULT1)
+
+  ENDIF(COMPILE_RESULT)
+ENDIF(NOT WITH_UNIXODBC)
+
 #-----------------------------------------------------
 
   IF(NOT NO_THREADS)
