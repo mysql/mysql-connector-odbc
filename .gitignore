@@ -9,3 +9,5 @@ INFO_SRC
 Install.bat
 myodbc3.spec
 Uninstall.bat
+CMakeUserPresets.json
+VersionInfo.h
