@@ -55,6 +55,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <wchar.h>
 
 #ifdef _WIN32
 /* Driver does that - applications should do that too, to have same size of structures */
@@ -597,7 +598,7 @@ do { \
 */
 #define is_wstr(a, b, c) \
 do { \
-  SQLWCHAR *val_a= (a), *val_b= (b); \
+  wchar_t *val_a= (a), *val_b= (b); \
   int val_len= (int)(c); \
   if (memcmp(val_a, val_b, val_len * sizeof(SQLWCHAR)) != 0) { \
     printf("# %s ('%*ls') != '%*ls' in %s on line %d\n", \
