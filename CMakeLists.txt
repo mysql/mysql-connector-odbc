@@ -517,17 +517,7 @@ setup_ssl_libs()
 
 INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR})
 
-add_library(otel_api INTERFACE)
-# Note: For now make it phony target on platforms other than Linux
-if(NOT (WIN32 OR APPLE OR CMAKE_SYSTEM_NAME MATCHES "SunOS"))
-  message(STATUS "Adding OTel support")
-  set(TELEMETRY ON)
-  target_include_directories(otel_api INTERFACE
-    "${CMAKE_SOURCE_DIR}/extra/otel/opentelemetry-cpp-1.8.3/api/include"
-  )
-  target_compile_definitions(otel_api INTERFACE TELEMETRY)
-endif()
-
+add_subdirectory(extra/otel)
 ADD_SUBDIRECTORY(util)
 ADD_SUBDIRECTORY(driver)
 
@@ -744,7 +734,7 @@ if(NOT APPLE AND NOT CMAKE_SYSTEM_NAME MATCHES "SunOS")
   set(AUTH_DEPS_ldap_sasl libsasl ${AUTH_DEPS_kerberos})
 endif()
 if(WIN32)
-  list(APPEND AUTH_DEPS_ldap_sasl 
+  list(APPEND AUTH_DEPS_ldap_sasl
     saslSCRAM saslGSSAPI.dll ${AUTH_DEPS_kerberos}
   )
 endif()
