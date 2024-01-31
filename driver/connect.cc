@@ -406,53 +406,34 @@ SQLRETURN DBC::connect(DataSource *dsrc)
   if(!fido_func && global_fido_callback)
     fido_func = global_fido_callback;
 
-  std::vector<std::string> plugin_types = {
-    "fido", "webauthn"
-  };
-
   if (fido_func || fido_callback_is_set)
   {
-    int plugin_load_failures = 0;
-    for (std::string plugin_type : plugin_types)
+    std::string plugin_name = "authentication_webauthn_client";
+    struct st_mysql_client_plugin* plugin =
+      mysql_client_find_plugin(mysql,
+        plugin_name.c_str(),
+        MYSQL_CLIENT_AUTHENTICATION_PLUGIN);
+
+    if (plugin)
     {
-      std::string plugin_name = "authentication_" + plugin_type +
-        "_client";
-      struct st_mysql_client_plugin* plugin =
-        mysql_client_find_plugin(mysql,
-          plugin_name.c_str(),
-          MYSQL_CLIENT_AUTHENTICATION_PLUGIN);
+      std::string opt_name = "plugin_authentication_webauthn_client_messages_callback";
 
-      if (plugin)
+      if (mysql_plugin_options(plugin, opt_name.c_str(),
+            (const void*)fido_func))
       {
-        std::string opt_name = (plugin_type == "webauthn" ?
-          "plugin_authentication_webauthn_client" :
-          plugin_type) + "_messages_callback";
-
-        if (mysql_plugin_options(plugin, opt_name.c_str(),
-             (const void*)fido_func))
-        {
-          // If plugin is loaded, but the callback option fails to set
-          // the error is reported.
-          return set_error("HY000",
-            "Failed to set a FIDO authentication callback function", 0);
-        }
-      }
-      else
-      {
-        // Do not report an error yet.
-        // Just increment the failure count.
-        ++plugin_load_failures;
+        // If plugin is loaded, but the callback option fails to set
+        // the error is reported.
+        return set_error("HY000",
+          "Failed to set a WebAuthn authentication callback function", 0);
       }
     }
-
-    if (plugin_load_failures == plugin_types.size())
+    else
     {
-      // Report error only if all plugins failed to load
-      return set_error("HY000", "Failed to set a FIDO "
-        "authentication callback because none of FIDO "
-        "authentication plugins (fido, webauthn) could "
-        "be loaded", 0);
+      return set_error("HY000", "Failed to set a WebAuthn authentciation "
+                                "callback beacause the WebAuthn authentication "
+                                "plugin could not be loaded", 0);
     }
+
     fido_callback_is_set = fido_func;
   }
   else

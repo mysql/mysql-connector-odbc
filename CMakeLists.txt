@@ -725,7 +725,6 @@ endif()
 # will break... For example: `krb5support` must go before `krb5`
 
 set(AUTH_DEPS_webauthn fido2)
-set(AUTH_DEPS_fido fido2)
 
 if(WIN32)
   set(AUTH_DEPS_kerberos
@@ -744,7 +743,7 @@ if(NOT APPLE AND NOT CMAKE_SYSTEM_NAME MATCHES "SunOS")
   set(AUTH_DEPS_ldap_sasl libsasl ${AUTH_DEPS_kerberos})
 endif()
 if(WIN32)
-  list(APPEND AUTH_DEPS_ldap_sasl 
+  list(APPEND AUTH_DEPS_ldap_sasl
     saslSCRAM saslGSSAPI.dll ${AUTH_DEPS_kerberos}
   )
 endif()
