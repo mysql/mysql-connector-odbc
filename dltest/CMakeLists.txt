@@ -32,6 +32,11 @@ ADD_EXECUTABLE(dltest dltest.c)
 set_target_properties(dltest PROPERTIES FOLDER Tests)
 set_target_properties(dltest PROPERTIES PDB_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/test/)
 
+add_version_info(dltest
+  "MySQL Connector/ODBC driver module tester."
+  "Checks whether the driver can be correctly loaded at run-time."
+)
+
 IF(NOT WIN32)
 
   INCLUDE_DIRECTORIES(${DL_INCLUDES})

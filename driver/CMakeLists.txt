@@ -74,7 +74,7 @@ WHILE(${DRIVER_INDEX} LESS ${DRIVERS_COUNT})
   INCLUDE_DIRECTORIES(../util)
 
   IF(WIN32)
-  
+
     # Headers added for convenience of VS users
     CONFIGURE_FILE(${CMAKE_SOURCE_DIR}/driver/driver.def.cmake ${CMAKE_SOURCE_DIR}/driver/driver${CONNECTOR_DRIVER_TYPE_SHORT}.def @ONLY)
     CONFIGURE_FILE(${CMAKE_SOURCE_DIR}/driver/driver.rc.cmake ${CMAKE_SOURCE_DIR}/driver/driver${CONNECTOR_DRIVER_TYPE_SHORT}.rc @ONLY)
@@ -83,7 +83,7 @@ WHILE(${DRIVER_INDEX} LESS ${DRIVERS_COUNT})
     if(TELEMETRY)
       list(APPEND DRIVER_SRCS telemetry.h)
     endif()
-                                                              
+
   ENDIF(WIN32)
 
   # Note: We build driver as a MODULE, because this is what it really is
@@ -93,7 +93,12 @@ WHILE(${DRIVER_INDEX} LESS ${DRIVERS_COUNT})
   # be generated nor installed.
 
   ADD_LIBRARY(${DRIVER_NAME} MODULE ${DRIVER_SRCS})
-  
+
+  add_version_info(${DRIVER_NAME}
+   "MySQL Connector/ODBC ${DRIVER_TYPE} driver."
+   "Provides core driver functionality."
+  )
+
   ADD_COVERAGE(${DRIVER_NAME})
 
   IF(WIN32)

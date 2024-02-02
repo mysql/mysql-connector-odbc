@@ -32,6 +32,11 @@ SET(CONNECTOR_PATCH "0")
 SET(CONNECTOR_LEVEL "")
 SET(CONNECTOR_QUALITY "GA")
 
+# Note: To be used in copyright notes of generated files
+
+set(COPYRIGHT_YEAR 2024)
+
+
 # ----------------------------------------------------------------------
 # Set other variables that are about the version
 # ----------------------------------------------------------------------

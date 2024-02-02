@@ -1,0 +1,5 @@
+find_program(PWS powershell)
+if(PWS)
+  message("Version information for: ${FILE}")
+  execute_process(COMMAND ${PWS} -command "ls ${FILE} | % VersionInfo | fl *")
+endif()

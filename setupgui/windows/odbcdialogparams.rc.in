@@ -50,44 +50,6 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 #pragma code_page(1252)
 #endif //_WIN32
 
-#include "..\..\VersionInfo.h"
-#include <mysql_version.h>
-VS_VERSION_INFO VERSIONINFO
-  FILEVERSION MYODBC_FILEVER
-  PRODUCTVERSION MYODBC_PRODUCTVER
- FILEFLAGSMASK 0x3L
-#ifdef _DEBUG
- FILEFLAGS 0x29L
-#else
- FILEFLAGS 0x28L
-#endif
- FILEOS 0x40004L
- FILETYPE 0x2L
- FILESUBTYPE 0x0L
-BEGIN
-    BLOCK "StringFileInfo"
-    BEGIN
-        BLOCK "040904e4"
-        BEGIN
-            VALUE "Comments", "provides setup library functionality\0"
-            VALUE "CompanyName", "Oracle Corporation\0"
-            VALUE "FileDescription", "MySQL ODBC @CONNECTOR_MAJOR@.@CONNECTOR_MINOR@ Driver Setup Library\0"
-            VALUE "FileVersion", MYODBC_STRFILEVER
-            VALUE "InternalName", "myodbc@CONNECTOR_MAJOR@S\0"
-            VALUE "LegalCopyright", "Copyright (c) 1995, 2023, Oracle and/or its affiliates.\0"
-            VALUE "LegalTrademarks", "MySQL, MyODBC, Connector/ODBC are trademarks of Oracle Corporation\0"
-            VALUE "OriginalFilename", "myodbc@CONNECTOR_MAJOR@S.dll\0"
-            VALUE "PrivateBuild", "Production\0"
-            VALUE "ProductName", "Connector/ODBC @CONNECTOR_MAJOR@.@CONNECTOR_MINOR@\0"
-            VALUE "ProductVersion", MYODBC_STRPRODUCTVER
-            VALUE "SpecialBuild", "GA release\0"
-        END
-    END
-    BLOCK "VarFileInfo"
-    BEGIN
-        VALUE "Translation", 0x409, 1252
-    END
-END
 
 /////////////////////////////////////////////////////////////////////////////
 //

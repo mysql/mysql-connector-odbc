@@ -60,6 +60,11 @@ FOREACH(FN my_basics.c my_blob.c my_bulk.c my_catalog1.c my_catalog2.c
     ADD_EXECUTABLE(${T} ${FN})
   ENDIF(WIN32)
 
+  add_version_info(${T}
+    "MySQL Connector/ODBC unit test."
+    "Tests the driver functionality."
+  )
+
   add_dependencies(${T} generate_test_config_files)
 
   set_target_properties(${T} PROPERTIES FOLDER Tests)
@@ -127,6 +132,11 @@ IF(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
       ELSE(WIN32)
         ADD_EXECUTABLE(${T} ${T}.c)
       ENDIF(WIN32)
+
+      add_version_info(${T}
+        "MySQL Connector/ODBC unit test."
+        "Tests the driver functionality."
+      )
 
       IF(MYSQL_CXX_LINKAGE)
         SET_TARGET_PROPERTIES(${T} PROPERTIES

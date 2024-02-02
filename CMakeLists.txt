@@ -218,6 +218,7 @@ include(CheckCSourceCompiles)
 include(CheckCXXSourceCompiles)
 INCLUDE(${CMAKE_SOURCE_DIR}/cmake/character_sets.cmake)
 include(${CMAKE_SOURCE_DIR}/cmake/libutils.cmake)
+include(${CMAKE_SOURCE_DIR}/cmake/version_info.cmake)
 
 # We need some extra FAIL_REGEX patterns
 # Note that CHECK_C_SOURCE_COMPILES is a misnomer, it will also link.
@@ -390,7 +391,7 @@ IF(NOT WIN32 AND NOT WITH_UNIXODBC)
           ENDIF(COMPILE_RESULT1)
 
   ENDIF(COMPILE_RESULT)
-ENDIF(NOT WITH_UNIXODBC)
+ENDIF()
 
 #-----------------------------------------------------
 
@@ -744,7 +745,7 @@ if(NOT APPLE AND NOT CMAKE_SYSTEM_NAME MATCHES "SunOS")
   set(AUTH_DEPS_ldap_sasl libsasl ${AUTH_DEPS_kerberos})
 endif()
 if(WIN32)
-  list(APPEND AUTH_DEPS_ldap_sasl 
+  list(APPEND AUTH_DEPS_ldap_sasl
     saslSCRAM saslGSSAPI.dll ${AUTH_DEPS_kerberos}
   )
 endif()

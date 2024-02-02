@@ -101,6 +101,11 @@ add_compile_options(${PLATFORM_CFLAGS})
 
 add_library(myodbc8S MODULE ${SETUP_SRCS})
 
+add_version_info(myodbc8S
+  "MySQL Connector/ODBC driver setup library."
+  "Provides driver configuration GUI."
+)
+
 target_link_libraries(myodbc8S ${ODBCLIB} ${ODBCINSTLIB} otel_api)
 
 # Note: When using GTK+, these libraries will be linked to -gtk modules.

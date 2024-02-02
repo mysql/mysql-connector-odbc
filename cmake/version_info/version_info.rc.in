@@ -1,0 +1,33 @@
+// Version info resources for @BASE@
+// Note: This is a generated file -- see cmake/version_info.cmake in the source tree.
+
+#include <windows.h>
+#define VER_PRIVATEBUILD 0x0L
+#define VER_PRERELEASE 0x0L
+
+
+VS_VERSION_INFO VERSIONINFO
+  FILEVERSION    @ODBC_VERSION_RAW@,0
+  PRODUCTVERSION @ODBC_VERSION_RAW@,0
+  FILEFLAGSMASK  VS_FFI_FILEFLAGSMASK
+  FILEFLAGS      @FILEFLAGS@
+  FILEOS         VOS__WINDOWS32
+  FILETYPE       @FILETYPE@
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "040904b0"
+        BEGIN
+            VALUE "CompanyName", "Oracle Corporation\0"
+            VALUE "ProductName", "MySQL Connector/ODBC\0"
+            VALUE "ProductVersion", "@ODBC_VERSION@.0\0"
+            VALUE "FileVersion", "@ODBC_VERSION@.0\0"
+            VALUE "LegalCopyright", "Copyright (c) 1995, @COPYRIGHT_YEAR@, Oracle and/or its affiliates.\0"
+            VALUE "LegalTrademarks", "Oracle(R), Java, MySQL, and NetSuite are registered trademarks of Oracle and/or its affiliates.\0"
+            VALUE "OriginalFileName", "@BASE@\0"
+            VALUE "InternalName", "@BASE_WE@\0"
+            VALUE "FileDescription", "@DESCRIPTION@\0"
+            VALUE "Comments", "@COMMENTS@\0"
+        END
+    END
+END

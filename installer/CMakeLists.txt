@@ -37,6 +37,11 @@ ENDIF(DL_INCLUDES)
 
 ADD_EXECUTABLE(myodbc-installer myodbc-installer.cc)
 
+add_version_info(myodbc-installer
+  "MySQL Connector/ODBC installer tool."
+  "Provides installer tool functionality."
+)
+
 TARGET_LINK_LIBRARIES(myodbc-installer otel_api)
 
 IF(WIN32)
