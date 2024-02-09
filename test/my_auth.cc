@@ -650,37 +650,37 @@ DECLARE_TEST(t_dummy_test)
 
 
 /**
- * Testing FIDO connection
+ * Testing Webauthn connection
  *
  * The test is designed for manual run.
  * It requires the following preparation steps:
  *
- * 1. Install FIDO auth plugin on the server:
- *   INSTALL PLUGIN authentication_fido SONAME 'authentication_fido.so'
+ * 1. Install Webauthn auth plugin on the server:
+ *   INSTALL PLUGIN authentication_fido SONAME 'authentication_webauthn.so'
  *
  * 2. Create user with FIDO authentication:
- *   CREATE USER 'u2'@'localhost' IDENTIFIED WITH caching_sha2_password
- *   BY 'sha2_password' AND IDENTIFIED WITH authentication_fido
+ *   CREATE USER 'uwebauthn'@'localhost' IDENTIFIED WITH caching_sha2_password
+ *   BY 'sha2_password' AND IDENTIFIED WITH authentication_webauthn
  *
  * 3. Register FIDO:
- *   mysql --port=13000 --protocol=tcp --user=u2 --password1
+ *   mysql --port=13000 --protocol=tcp --user=uwebauthn --password1
  *   --fido-register-factor=2
  *
- * 4. Set env variable MYSQL_FIDO to non-empty value
+ * 4. Set env variable MYSQL_WEBAUTHN to non-empty value
  */
-DECLARE_TEST(t_fido_test)
+DECLARE_TEST(t_webauthn_test)
 {
   DECLARE_BASIC_HANDLES(henv1, hdbc1, hstmt1);
 
-  if (!getenv("MYSQL_FIDO"))
+  if (!getenv("MYSQL_WEBAUTHN"))
   {
     SKIP_REASON = "This test needs to be run manually. "
-      "Set MYSQL_FIDO environment variable to enable running this test";
+      "Set MYSQL_WEBAUTHN environment variable to enable running this test";
     return SKIP;
   }
 
   is(OK == alloc_basic_handles_with_opt(&henv1, &hdbc1, &hstmt1, NULL,
-                                        (SQLCHAR*)"u3", (SQLCHAR*)"sha2_password",
+                                       (SQLCHAR*)"uwebauthn", (SQLCHAR*)"sha2_password",
                                         NULL, (SQLCHAR*)"DATABASE=;"));
 
   free_basic_handles(&henv1, &hdbc1, &hstmt1);
@@ -708,20 +708,18 @@ int fido_var2[] = { FIDO_VAL_DEFAULT,
 DECLARE_TEST(t_fido_callback_test)
 {
 
-  if (!getenv("MYSQL_FIDO"))
+  if (!getenv("MYSQL_WEBAUTHN"))
   {
     SKIP_REASON = "This test needs to be run manually. "
-      "Set MYSQL_FIDO environment variable to enable running this test";
+      "Set MYSQL_WEBAUTHN environment variable to enable running this test";
     return SKIP;
   }
 
   SQLHDBC hdbc1 = NULL, hdbc2 = NULL;
-  std::vector<std::string> connstrs = {
+  std::string str_connstr =
     (char*)make_conn_str(NULL, (SQLCHAR*)"uwebauthn", (SQLCHAR*)"sha2_password",
-      NULL, (SQLCHAR*)"DATABASE=;", 0),
-    (char*)make_conn_str(NULL, (SQLCHAR*)"ufido", (SQLCHAR*)"sha2_password",
-      NULL, (SQLCHAR*)"DATABASE=;", 0),
-  };
+      NULL, (SQLCHAR*)"DATABASE=;", 0);
+
   fido_var = FIDO_VAL_DEFAULT;
 
   // We cannot use the C++ random distribution because
@@ -735,22 +733,19 @@ DECLARE_TEST(t_fido_callback_test)
    * for connection and CB_FIDO_NOFUNC for not setting any callback) and
    * check if after connection `fido_var` equals `result`.
    */
-  auto fido_test_check = [henv, connstrs](int attr_type, void (*callback_func)(const char*), int result)
+  auto fido_test_check = [henv, str_connstr](int attr_type, void (*callback_func)(const char*), int result)
   {
-    // Get a random string.
-    std::string s = connstrs[std::rand() % 2];
-    {
-      SQLHDBC hdbc = NULL;
-      SQLCHAR *connstr = (SQLCHAR*)s.c_str();
-      ok_env(henv, SQLAllocConnect(henv, &hdbc));
-      if (attr_type != CB_FIDO_NOFUNC)
-        ok_con(hdbc, SQLSetConnectAttr(hdbc, attr_type, (void*)callback_func, SQL_IS_POINTER));
-      fido_var = FIDO_VAL_DEFAULT;
-      SQLDriverConnect(hdbc, NULL, connstr, SQL_NTS, NULL, 0, NULL, SQL_DRIVER_NOPROMPT);
-      SQLDisconnect(hdbc);
-      SQLFreeHandle(SQL_HANDLE_DBC, hdbc);
-      is_num(result, fido_var);
-    }
+    SQLHDBC hdbc = NULL;
+    SQLCHAR *connstr = (SQLCHAR*)str_connstr.c_str();
+    ok_env(henv, SQLAllocConnect(henv, &hdbc));
+    if (attr_type != CB_FIDO_NOFUNC)
+      ok_con(hdbc, SQLSetConnectAttr(hdbc, attr_type, (void*)callback_func, SQL_IS_POINTER));
+    fido_var = FIDO_VAL_DEFAULT;
+    ok_con(hdbc, SQLDriverConnect(hdbc, NULL, connstr, SQL_NTS, NULL, 0, NULL, SQL_DRIVER_NOPROMPT));
+    SQLDisconnect(hdbc);
+    SQLFreeHandle(SQL_HANDLE_DBC, hdbc);
+    is_num(result, fido_var);
+
     return SQL_SUCCESS;
   };
 
@@ -833,53 +828,45 @@ DECLARE_TEST(t_fido_callback_test)
   * callback was called.
   * For global callbacks there should be a check that a callback was set at all.
   */
-  auto fido_thr_global_check = [henv, connstrs, fido_func_global]()
+  auto fido_thr_global_check = [henv, str_connstr, fido_func_global]()
   {
     auto ptr = (void (*)(const char*))fido_func_global;
-    // Get a random string.
-    std::string s = connstrs[std::rand() % 2];
+    SQLCHAR *connstr = (SQLCHAR*)str_connstr.c_str();
+    fido_var = FIDO_VAL_DEFAULT;
+    for (int i = 0; i < 3; ++i)
     {
-      SQLCHAR *connstr = (SQLCHAR*)s.c_str();
-      fido_var = FIDO_VAL_DEFAULT;
-      for (int i = 0; i < 3; ++i)
-      {
-        SQLHDBC hdbc = NULL;
-        ok_env(henv, SQLAllocConnect(henv, &hdbc));
-        ok_con(hdbc, SQLSetConnectAttr(hdbc, CB_FIDO_GLOBAL,
-          (void*)(ptr), SQL_IS_POINTER));
+      SQLHDBC hdbc = NULL;
+      ok_env(henv, SQLAllocConnect(henv, &hdbc));
+      ok_con(hdbc, SQLSetConnectAttr(hdbc, CB_FIDO_GLOBAL,
+        (void*)(ptr), SQL_IS_POINTER));
 
-        SQLDriverConnect(hdbc, NULL, (SQLCHAR*)connstr, SQL_NTS, NULL, 0, NULL, SQL_DRIVER_NOPROMPT);
-        SQLDisconnect(hdbc);
-        SQLFreeHandle(SQL_HANDLE_DBC, hdbc);
+      SQLDriverConnect(hdbc, NULL, (SQLCHAR*)connstr, SQL_NTS, NULL, 0, NULL, SQL_DRIVER_NOPROMPT);
+      SQLDisconnect(hdbc);
+      SQLFreeHandle(SQL_HANDLE_DBC, hdbc);
 
-        is(fido_var != FIDO_VAL_DEFAULT);
-      }
+      is(fido_var != FIDO_VAL_DEFAULT);
     }
     return SQL_SUCCESS;
   };
 
 
-  auto fido_thr_conn_check = [henv, connstrs](
+  auto fido_thr_conn_check = [henv, str_connstr](
     void (*callback_func)(const char*), int idx)
   {
-    // Get a random string.
-    std::string s = connstrs[std::rand() % 2];
+    SQLCHAR* connstr = (SQLCHAR*)str_connstr.c_str();
+    for (int i = 0; i < 3; ++i)
     {
-      SQLCHAR* connstr = (SQLCHAR*)s.c_str();
-      for (int i = 0; i < 3; ++i)
-      {
-        SQLHDBC hdbc = NULL;
-        ok_env(henv, SQLAllocConnect(henv, &hdbc));
-        ok_con(hdbc, SQLSetConnectAttr(hdbc, CB_FIDO_CONNECTION,
-          (void *)(callback_func), SQL_IS_POINTER));
-        fido_var2[idx] = FIDO_VAL_DEFAULT;
+      SQLHDBC hdbc = NULL;
+      ok_env(henv, SQLAllocConnect(henv, &hdbc));
+      ok_con(hdbc, SQLSetConnectAttr(hdbc, CB_FIDO_CONNECTION,
+        (void *)(callback_func), SQL_IS_POINTER));
+      fido_var2[idx] = FIDO_VAL_DEFAULT;
 
-        SQLDriverConnect(hdbc, NULL, (SQLCHAR*)connstr, SQL_NTS, NULL, 0, NULL, SQL_DRIVER_NOPROMPT);
-        SQLDisconnect(hdbc);
-        SQLFreeHandle(SQL_HANDLE_DBC, hdbc);
-        int expected_val = idx + 1;
-        is_num(expected_val, fido_var2[idx]);
-      }
+      SQLDriverConnect(hdbc, NULL, (SQLCHAR*)connstr, SQL_NTS, NULL, 0, NULL, SQL_DRIVER_NOPROMPT);
+      SQLDisconnect(hdbc);
+      SQLFreeHandle(SQL_HANDLE_DBC, hdbc);
+      int expected_val = idx + 1;
+      is_num(expected_val, fido_var2[idx]);
     }
     return SQL_SUCCESS;
   };
@@ -948,7 +935,7 @@ BEGIN_TESTS
   ADD_TEST(t_kerberos_mode)
 #endif
   ADD_TEST(t_fido_callback_test)
-  ADD_TEST(t_fido_test)
+  ADD_TEST(t_webauthn_test)
   // ADD_TEST(t_plugin_auth) TODO: Fix
   ADD_TEST(t_dummy_test)
   ADD_TEST(t_ldap_auth)

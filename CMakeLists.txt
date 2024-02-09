@@ -726,7 +726,6 @@ endif()
 # will break... For example: `krb5support` must go before `krb5`
 
 set(AUTH_DEPS_webauthn fido2)
-set(AUTH_DEPS_fido fido2)
 
 if(WIN32)
   set(AUTH_DEPS_kerberos
