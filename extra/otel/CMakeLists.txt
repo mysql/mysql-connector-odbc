@@ -1,21 +1,25 @@
-#
-# Copyright (c) 2022, 2023, Oracle and/or its affiliates.
-#
-project(otel)
+SET(OPENTELEMETRY_CPP_TAG "opentelemetry-cpp-1.10.0" CACHE INTERNAL "")
 
-add_subdirectory(opentelemetry-cpp-1.8.3/api)
+add_library(otel_api INTERFACE)
 
-# Export targets
+# Note: For now make it phony target on platforms other than Linux
 
-export(
-  TARGETS 
-# Note: opentelemetry_api is header-only -- see the generated exports.cmake
-  opentelemetry_api
-# TODO: Are these really needed for our purposes? It seems these libraires 
-# depend on opentelemetry_sdk and we should not need to link to SDK
-#    opentelemetry_common
-#    opentelemetry_resources
-#    opentelemetry_trace
-  NAMESPACE otel_
-  FILE "${PROJECT_BINARY_DIR}/exports.cmake"
-)
+if(NOT (WIN32 OR APPLE OR CMAKE_SYSTEM_NAME MATCHES "SunOS"))
+
+  message(STATUS "Adding OTel support")
+
+  set(TELEMETRY ON CACHE INTERNAL "Whether connector is built with OTel support")
+
+  target_include_directories(otel_api INTERFACE
+    "${PROJECT_SOURCE_DIR}/extra/otel/${OPENTELEMETRY_CPP_TAG}/api/include"
+  )
+
+  target_compile_definitions(otel_api INTERFACE TELEMETRY)
+
+  if(WIN32)
+    # Note: warning C4996 is triggered by OTel headers (as of version 1.10.0)
+    target_compile_definitions(otel_api INTERFACE _SILENCE_CXX17_RESULT_OF_DEPRECATION_WARNING)
+  endif()
+
+endif()
+
