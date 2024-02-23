@@ -24,7 +24,7 @@ BEGIN
             VALUE "FileVersion", "@ODBC_VERSION@.0\0"
             VALUE "LegalCopyright", "Copyright (c) 1995, @COPYRIGHT_YEAR@, Oracle and/or its affiliates.\0"
             VALUE "LegalTrademarks", "Oracle(R), Java, MySQL, and NetSuite are registered trademarks of Oracle and/or its affiliates.\0"
-            VALUE "OriginalFileName", "@BASE@\0"
+            VALUE "OriginalFilename", "@BASE@\0"
             VALUE "InternalName", "@BASE_WE@\0"
             VALUE "FileDescription", "@DESCRIPTION@\0"
             VALUE "Comments", "@COMMENTS@\0"
