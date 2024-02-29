@@ -872,8 +872,11 @@ DECLARE_TEST(t_bug18286118)
   sprintf(tmpBuff, "DROP TABLE IF EXISTS %s,%s CASCADE", tabname2,tabname1);
   ok_stmt(hstmt1, SQLExecDirect(hstmt1, (SQLCHAR*)tmpBuff, SQL_NTS));
 
-  sprintf(tmpBuff, "CREATE TABLE %s (id int, %s bigint, primary key(%s,id)) "\
-                   "COMMENT  \"  Comment1 \"", tabname1, colname1, colname1);
+  sprintf(tmpBuff,
+    "CREATE TABLE %s (id int, %s bigint unique, primary key(%s,id))"
+    " COMMENT  \"  Comment1 \"",
+    tabname1, colname1, colname1
+  );
   ok_stmt(hstmt1, SQLExecDirect(hstmt1, (SQLCHAR*)tmpBuff, SQL_NTS));
 
   sprintf(tmpBuff, "CREATE TABLE %s (id  int, `%s` bigint, bd1 double, "\
