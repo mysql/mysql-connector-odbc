@@ -1025,24 +1025,30 @@ int DataSource::add() {
     return rc;
 #endif
 
-#define MFA_COND(X) || k == W_##X
-#define SKIP_COND(X) || k == W_##X
-
+#define OR_K_EQUAL(X) || k == W_##X
 
   for (const auto &el : m_opt_map) {
     auto &k = el.first;
     auto &v = el.second;
-    // Skip non-set options, default values and aliases
-    if (!v.is_set() SKIP_OPTIONS_LIST(SKIP_COND) ||
-        v.is_default() ||
-        std::find(m_alias_list.begin(), m_alias_list.end(), k) != m_alias_list.end())
-      continue;
+
+    // Make sure not to allow skiping non-skippable options.
+    if (!(false NON_SKIP_OPTIONS_LIST(OR_K_EQUAL))) {
+      // Skip non-set options, default values and aliases.
+      if (!v.is_set() SKIP_OPTIONS_LIST(OR_K_EQUAL) ||
+          v.is_default() ||
+          std::find(m_alias_list.begin(), m_alias_list.end(), k) != m_alias_list.end())
+        continue;
+    }
 
     SQLWSTRING val = v;
-    if (k == W_PWD MFA_OPTS(MFA_COND)) {
+    if (k == W_PWD MFA_OPTS(OR_K_EQUAL)) {
       // Escape the password(s)
       val = escape_brackets(v, false);
     }
+
+    // For options without value that were not skipped set '0' as their value.
+    if (val.empty())
+      val = {(SQLWCHAR)'0'};
 
     if (write_opt(k.c_str(), val.c_str()))
       return rc;

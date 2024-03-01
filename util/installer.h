@@ -347,6 +347,11 @@ class Driver {
 #define SKIP_OPTIONS_LIST(X) \
   X(DRIVER) X(DSN)
 
+// Options that should be always written to DSN even if not set
+// explicitly: in this case DSN will contain OPT_NAME = 0
+#define NON_SKIP_OPTIONS_LIST(X) \
+  X(NO_CATALOG) X(NO_SCHEMA)
+
 class DataSource {
   private:
     // Map containing options, the key is SQLWSTRING for easier search
