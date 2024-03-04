@@ -1044,11 +1044,10 @@ int DataSource::add() {
     if (k == W_PWD MFA_OPTS(OR_K_EQUAL)) {
       // Escape the password(s)
       val = escape_brackets(v, false);
-    }
-
-    // For options without value that were not skipped set '0' as their value.
-    if (val.empty())
+    } else if (val.empty()) {
+      // For options without value that were not skipped set '0' as their value.
       val = {(SQLWCHAR)'0'};
+    }
 
     if (write_opt(k.c_str(), val.c_str()))
       return rc;
