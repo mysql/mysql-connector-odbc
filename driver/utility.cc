@@ -1101,7 +1101,16 @@ std::map<std::string, int> sql_data_types_map = {
 
 SQLSMALLINT get_sql_data_type_from_str(const char *mysql_type_name)
 {
-  return sql_data_types_map.at(mysql_type_name);
+  try
+  {
+    return sql_data_types_map.at(mysql_type_name);
+  }
+  catch(const std::out_of_range&)
+  {
+    return SQL_UNKNOWN_TYPE;
+  }
+  // Keep compiler happy
+  return SQL_UNKNOWN_TYPE;
 }
 
 SQLSMALLINT compute_sql_data_type(STMT *stmt, SQLSMALLINT sql_type,
