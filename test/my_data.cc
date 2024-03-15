@@ -1006,7 +1006,81 @@ DECLARE_TEST(t_bug26474471)
   ENDCATCH;
 }
 
+/*
+  Bug #21115726 - INCORRECT RESULT FETCHED FROM BIGINT COLUMN.
+*/
+DECLARE_TEST(t_bug21115726)
+{
+  try
+  {
+    odbc::table tab(hstmt, "bigint21115726",
+      "C1 BIGINT, C2 BIGINT UNSIGNED, C3 BIGINT(7)");
+
+    tab.insert("(-9223372036854775808,18446744073709551615,1234567123)");
+
+    SQLLEN c1 = 0, len1 = 0, len2 = 0, len3 = 0, c3 = 0;
+    SQLULEN c2 = 0;
+
+    auto res_check = [&c1, &c2, &c3, &len1, &len2, &len3]()
+    {
+      is_num(-9223372036854775808LL, c1);
+      is_num(18446744073709551615LL, c2);
+      is_num(1234567123LL, c3);
+      is_num(8, len1);
+      is_num(8, len2);
+      is_num(8, len3);
+
+      std::cout << "C1=" << c1 << " (len:" << len1 << ")\n" <<
+                    "C2=" << c2 << " (len:" << len2 << ")\n" <<
+                    "C3=" << c3 << " (len:" << len3 << ")\n";
+    };
+
+    auto set_zero = [&c1, &c2, &c3, &len1, &len2, &len3]()
+    {
+      c1 = 0; c2 = 0; c3 = 0;
+      len1 = len2 = len3 = 0;
+    };
+
+    for (int i = 0; i < 2; ++i)
+    {
+      if (i == 0)
+      {
+        // Execute the query
+        odbc::sql(hstmt, "SELECT * FROM bigint21115726");
+      }
+      else
+      {
+        SQLINTEGER int_val = 1;
+        // Do SSPS
+        odbc::stmt_prepare(hstmt, "SELECT * FROM bigint21115726 WHERE 1 = ?");
+        ok_stmt(hstmt, SQLBindParameter(hstmt, 1, SQL_PARAM_INPUT, SQL_C_LONG,
+          SQL_INTEGER, 10, 0, &int_val, 0, nullptr));
+        odbc::stmt_execute(hstmt);
+      }
+
+      ok_stmt(hstmt, SQLBindCol(hstmt, 1, SQL_C_SBIGINT, &c1, 0, &len1));
+      ok_stmt(hstmt, SQLBindCol(hstmt, 2, SQL_C_UBIGINT, &c2, 0, &len2));
+      ok_stmt(hstmt, SQLBindCol(hstmt, 3, SQL_C_SBIGINT, &c3, 0, &len3));
+      ok_stmt(hstmt, SQLFetch(hstmt));
+
+      res_check();
+      set_zero();
+
+      ok_stmt(hstmt, SQLGetData(hstmt, 1, SQL_C_SBIGINT, &c1, 0, &len1));
+      ok_stmt(hstmt, SQLGetData(hstmt, 2, SQL_C_UBIGINT, &c2, 0, &len2));
+      ok_stmt(hstmt, SQLGetData(hstmt, 3, SQL_C_SBIGINT, &c3, 0, &len3));
+
+      res_check();
+
+      is_no_data(SQLFetch(hstmt));
+      odbc::stmt_close(hstmt);
+    }
+  }
+  ENDCATCH;
+}
+
 BEGIN_TESTS
+  ADD_TEST(t_bug21115726)
   ADD_TEST(t_bug26474471)
   ADD_TEST(t_bug35520983_sjis)
   ADD_TEST(t_utf8mb4_param)
