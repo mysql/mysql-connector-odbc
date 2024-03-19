@@ -731,6 +731,7 @@ set(BUNDLED_LIBS
 set(IGNORED_PLUGINS qa_auth_client telemetry_client)
 
 set(IGNORED_LIBS
+  abseil_dll  # Added in 8.0.37
   libmysql lber libprotobuf
   ldap  # note: this is needed only by server-side plugin
   libcurl libmecab zlib
