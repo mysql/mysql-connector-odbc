@@ -86,7 +86,7 @@ typedef char * DYNAMIC_ELEMENT;
 
 // Handle the removal of `def` and `def_length`
 // from MYSQL_FIELD struct in MySQL 8.3.0
-#if MYSQL_VERSION_ID >= 80300
+#if MYSQL_VERSION_ID == 80300
 #define MYSQL_FIELD_DEF
 #define MYSQL_FIELD_DEF_LENGTH
 #else

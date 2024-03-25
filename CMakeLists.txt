@@ -755,6 +755,8 @@ set(IGNORED_PLUGINS
 )
 
 set(IGNORED_LIBS
+  libabsl abseil_dll # Since 8.4.0
+  libpolyglot  # present on MacOS since 8.4.0
   libmysql lber libprotobuf
   ldap  # note: this is needed only by server-side plugin
   libcurl libmecab zlib
@@ -841,7 +843,10 @@ macro(bundle_libs to_bundle ignored)
     # On windows, libs are in bin directory
 
     if(WIN32)
-      file(GLOB _bundled1 "${MYSQL_DIR}/bin/*${CMAKE_SHARED_LIBRARY_SUFFIX}*")
+      file(GLOB _bundled1
+        "${MYSQL_DIR}/bin/*${CMAKE_SHARED_LIBRARY_SUFFIX}*"
+        "${MYSQL_DIR}/bin/sasl2/*${CMAKE_SHARED_LIBRARY_SUFFIX}*" # SASL plugins
+      )
     endif()
 
   endif()

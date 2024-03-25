@@ -1104,7 +1104,7 @@ DECLARE_TEST(t_bookmark)
 {
   SQLLEN len= 0;
   SQLINTEGER abookmark[4];
-  SQLINTEGER outlen;
+  SQLLEN outlen;
   SQLUSMALLINT rowStatus[4];
   SQLUINTEGER numRowsFetched;
   SQLINTEGER nData[4];

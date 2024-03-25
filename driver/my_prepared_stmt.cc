@@ -708,7 +708,9 @@ void STMT::free_fake_result(bool clear_all_results)
     {
       result->field_alloc->Clear();
     }
-
+    // Result array must be reset for fake resultset.
+    // Otherwise the data in the next resultset might be corrupted.
+    reset_result_array();
     stmt_result_free(this);
   }
 
@@ -1006,14 +1008,6 @@ bool STMT::query_attr_exists(const char *name)
 
 SQLRETURN STMT::bind_query_attrs(bool use_ssps)
 {
-  if (use_ssps)
-  {
-    set_error(MYERR_01000,
-              "Query attributes for prepared statements are not supported",
-              0);
-    return SQL_SUCCESS_WITH_INFO;
-  }
-
   uint rcount = (uint)apd->rcount();
   if (rcount < param_count)
   {
@@ -1061,6 +1055,44 @@ SQLRETURN STMT::bind_query_attrs(bool use_ssps)
     ++num;
     ++param_idx;
   }
+
+  if (use_ssps)
+  {
+    bool bind_failed = false;
+#if MYSQL_VERSION_ID >= 80300
+
+    // For older servers that don't support named params
+    // we just don't count them and specify the number of unnamed params.
+    unsigned int p_number =
+      dbc->mysql->server_capabilities & CLIENT_QUERY_ATTRIBUTES
+        ? query_attr_names.size() : param_count;
+
+    if (p_number) {
+      bind_failed =
+        mysql_stmt_bind_named_param(ssps, param_bind.data(),
+                                    p_number, query_attr_names.data());
+    }
+
+#else
+    if (param_bind.size() && param_count) {
+      bind_failed = mysql_stmt_bind_param(ssps, param_bind.data());
+    }
+#endif
+
+    if (bind_failed)
+    {
+      set_error("HY000", mysql_stmt_error(ssps),
+                mysql_stmt_errno(ssps));
+
+      /* For some errors - translating to more appropriate status */
+      translate_error((char *)error.sqlstate.c_str(), MYERR_S1000,
+                      error.native_error);
+      return SQL_ERROR;
+    }
+
+    return SQL_SUCCESS;
+  }
+
 
   MYSQL_BIND *bind = param_bind.data();
   const char** names = (const char**)query_attr_names.data();
