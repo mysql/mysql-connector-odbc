@@ -78,7 +78,7 @@
 #define my_int2str(val, dst, radix, upcase) \
     myodbc_int10_to_str((val), (dst), (radix))
 
-#if MYSQL_VERSION_ID >= 50100
+#if LIBMYSQL_VERSION_ID >= 50100
 typedef unsigned char * DYNAMIC_ELEMENT;
 #else
 typedef char * DYNAMIC_ELEMENT;
@@ -89,7 +89,7 @@ typedef char * DYNAMIC_ELEMENT;
 // Note: These fields were added back in 8.4.0 (to keep ABI compatibilyu)
 // and then removed in 9.0.0 (which is not ABI compatible with 8.x)
 
-#if MYSQL_VERSION_ID >= 90000 || MYSQL_VERSION_ID == 80300
+#if LIBMYSQL_VERSION_ID >= 90000 || LIBMYSQL_VERSION_ID == 80300
 #define MYSQL_FIELD_DEF
 #define MYSQL_FIELD_DEF_LENGTH
 #else
