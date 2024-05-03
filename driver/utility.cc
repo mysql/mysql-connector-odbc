@@ -349,7 +349,7 @@ char *fix_str(char *to, const char *from, int length)
         return "";
     if ( length == SQL_NTS )
         return (char *)from;
-    strmake(to,from,length);
+    myodbc::strmake(to,from,length);
     return to;
 }
 
@@ -447,8 +447,8 @@ copy_ansi_result(STMT *stmt,
                           (field->org_table_length == 0 ? 1 : 0) &&
                           stmt->dbc->ds.opt_NO_BINARY_RESULT;
 
-  CHARSET_INFO *to_cs= stmt->dbc->ansi_charset_info,
-               *from_cs= get_charset(field->charsetnr && (!convert_binary) ?
+  myodbc::CHARSET_INFO *to_cs= stmt->dbc->ansi_charset_info,
+               *from_cs= myodbc::get_charset(field->charsetnr && (!convert_binary) ?
                                      field->charsetnr : UTF8_CHARSET_NUMBER,
                                      MYF(0));
 
@@ -552,7 +552,7 @@ copy_ansi_result(STMT *stmt,
     /* Find the conversion functions. */
     auto mb_wc = from_cs->cset->mb_wc;
     auto wc_mb = to_cs->cset->wc_mb;
-    my_wc_t wc;
+    myodbc::my_wc_t wc;
     uchar dummy[7]; /* Longer than any single character in our charsets. */
     int to_cnvres;
 
@@ -719,7 +719,7 @@ copy_wchar_result(STMT *stmt,
   char *src_end;
   SQLWCHAR *result_end;
   ulong used_chars= 0, error_count= 0;
-  CHARSET_INFO *from_cs= get_charset(field->charsetnr ? field->charsetnr :
+  myodbc::CHARSET_INFO *from_cs= myodbc::get_charset(field->charsetnr ? field->charsetnr :
                                      UTF8_CHARSET_NUMBER,
                                      MYF(0));
 
@@ -778,7 +778,7 @@ copy_wchar_result(STMT *stmt,
     /* Find the conversion functions. */
     auto mb_wc = from_cs->cset->mb_wc;
     auto wc_mb = utf16_charset_info->cset->wc_mb;
-    my_wc_t wc = 0;
+    myodbc::my_wc_t wc = 0;
     UTF16 ubuf[5] = {0, 0, 0, 0, 0};
     int to_cnvres;
 
@@ -1558,7 +1558,7 @@ SQLULEN get_column_size(STMT *stmt, MYSQL_FIELD *field)
       return length;
     else
     {
-      CHARSET_INFO *charset=  get_charset(field->charsetnr, MYF(0));
+      myodbc::CHARSET_INFO *charset=  myodbc::get_charset(field->charsetnr, MYF(0));
       return length / (charset ? charset->mbmaxlen : 1);
     }
 
@@ -1743,7 +1743,7 @@ SQLLEN get_transfer_octet_length(STMT *stmt, MYSQL_FIELD *field)
 SQLLEN get_display_size(STMT *stmt __attribute__((unused)),MYSQL_FIELD *field)
 {
   int capint32 = stmt->dbc->ds.opt_COLUMN_SIZE_S32 ? 1 : 0;
-  CHARSET_INFO *charset= get_charset(field->charsetnr, MYF(0));
+  myodbc::CHARSET_INFO *charset= myodbc::get_charset(field->charsetnr, MYF(0));
   unsigned int mbmaxlen= charset ? charset->mbmaxlen : 1;
 
   switch (field->type) {
@@ -2228,7 +2228,7 @@ int str_to_ts(SQL_TIMESTAMP_STRUCT *ts, const char *str, int len, int zeroToMin,
 
     if (length < DATETIME_DIGITS)
     {
-      strfill(buff + length, DATETIME_DIGITS - length, '0');
+      myodbc::strfill(buff + length, DATETIME_DIGITS - length, '0');
     }
     else
     {
@@ -2690,7 +2690,7 @@ ulong myodbc_escape_string(STMT *stmt,
   /*get_charset_by_csname(charset,
                         MYF(MY_CS_PRIMARY),
                         MYF(0));*/
-  CHARSET_INFO *charset_info= stmt->dbc->cxn_charset_info;
+  myodbc::CHARSET_INFO *charset_info= stmt->dbc->cxn_charset_info;
   my_bool use_mb_flag= use_mb(charset_info);
   for (end= from + length; from < end; ++from)
   {
@@ -3846,7 +3846,7 @@ get_fractional_part(const char * str, int len, BOOL dont_use_set_locale,
     while (*str && str < end)
     {
       if (str[0] == locale_decimal_point[0] &&
-          is_prefix(str, locale_decimal_point))
+          myodbc::is_prefix(str, locale_decimal_point))
       {
         decptr= str;
         break;
@@ -3861,7 +3861,7 @@ get_fractional_part(const char * str, int len, BOOL dont_use_set_locale,
   {
     char buff[10], *ptr;
 
-    strfill(buff, sizeof(buff)-1, '0');
+    myodbc::strfill(buff, sizeof(buff)-1, '0');
     str= decptr + decpoint_len;
 
     for (ptr= buff; str < end && ptr < buff + sizeof(buff); ++ptr)
@@ -4056,7 +4056,7 @@ void tempBuf::operator=(const tempBuf& b)
 
   @return the position where LIMIT OFFS, ROWS is ending
 */
-const char* get_limit_numbers(CHARSET_INFO* cs, const char *query, const char * query_end,
+const char* get_limit_numbers(myodbc::CHARSET_INFO* cs, const char *query, const char * query_end,
                        unsigned long long *offs_out, unsigned int *rows_out)
 {
   char digit_buf[30];
@@ -4122,7 +4122,7 @@ const char* get_limit_numbers(CHARSET_INFO* cs, const char *query, const char * 
   @return position of "FOR UPDATE" or "LOCK IN SHARE MODE" inside a query.
           Otherwise returns NULL.
 */
-const char* check_row_locking(CHARSET_INFO* cs, const char * query, const char * query_end, BOOL is_share_mode)
+const char* check_row_locking(myodbc::CHARSET_INFO* cs, const char * query, const char * query_end, BOOL is_share_mode)
 {
   const char *before_token= query_end;
   const char *token= NULL;
@@ -4148,7 +4148,7 @@ const char* check_row_locking(CHARSET_INFO* cs, const char * query, const char *
 }
 
 
-MY_LIMIT_CLAUSE find_position4limit(CHARSET_INFO* cs, const char *query, const char * query_end)
+MY_LIMIT_CLAUSE find_position4limit(myodbc::CHARSET_INFO* cs, const char *query, const char * query_end)
 {
   MY_LIMIT_CLAUSE result(0,0,NULL,NULL);
   char *limit_pos = NULL;
@@ -4194,7 +4194,7 @@ MY_LIMIT_CLAUSE find_position4limit(CHARSET_INFO* cs, const char *query, const c
 }
 
 
-BOOL myodbc_isspace(CHARSET_INFO* cs, const char * begin, const char *end)
+BOOL myodbc_isspace(myodbc::CHARSET_INFO* cs, const char * begin, const char *end)
 {
   int ctype;
   cs->cset->ctype(cs, &ctype, (const uchar*) begin, (const uchar*) end);
@@ -4202,7 +4202,7 @@ BOOL myodbc_isspace(CHARSET_INFO* cs, const char * begin, const char *end)
   return ctype & _MY_SPC;
 }
 
-BOOL myodbc_isnum(CHARSET_INFO* cs, const char * begin, const char *end)
+BOOL myodbc_isnum(myodbc::CHARSET_INFO* cs, const char * begin, const char *end)
 {
   int ctype;
   cs->cset->ctype(cs, &ctype, (const uchar*)begin, (const uchar*)end);

@@ -32,9 +32,9 @@ SET(SYS_SOURCES array.cc charset-def.cc charset.cc errors.cc list.cc
                   mf_dirname.cc mf_pack.cc my_access.cc my_alloc.cc my_file.cc
                   my_error.cc my_fstream.cc my_getwd.cc my_init.cc my_lib.cc my_malloc.cc my_mess.cc
                   my_once.cc my_open.cc my_read.cc my_static.cc my_thread.cc my_thr_init.cc
-                  psi_noop.cc sql_chars.cc my_string.cc thr_cond.cc thr_mutex.cc
+                  sql_chars.cc my_string.cc thr_cond.cc thr_mutex.cc
                   my_time.cc my_systime.cc
-                  #my_getsystime.cc
+                  #my_getsystime.cc psi_noop.cc
 )
 
 IF (WIN32)

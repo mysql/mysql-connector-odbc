@@ -49,6 +49,9 @@
 #include "my_macros.h"
 #include "template_utils.h"
 
+namespace myodbc
+{
+
 static const uchar ctype_bin[] = {
     0,  32,  32,  32,  32,  32,  32,  32,  32,  32,  40,  40, 40, 40, 40, 32,
     32, 32,  32,  32,  32,  32,  32,  32,  32,  32,  32,  32, 32, 32, 32, 32,
@@ -541,3 +544,5 @@ CHARSET_INFO my_charset_bin = {
     &my_charset_handler,
     &my_collation_binary_handler,
     NO_PAD};
+
+} /* namespace myodbc */

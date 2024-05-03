@@ -55,6 +55,9 @@
 #include "m_ctype.h"
 #include "m_string.h"  // IWYU pragma: keep
 
+namespace myodbc
+{
+
 #define char_val(X)                          \
   (X >= '0' && X <= '9'                      \
        ? X - '0'                             \
@@ -188,3 +191,5 @@ const char *str2int(const char *src, int radix, long int lower, long int upper,
   errno = 0; /* indicate that all went well */
   return src;
 }
+
+} /* namespace myodbc */

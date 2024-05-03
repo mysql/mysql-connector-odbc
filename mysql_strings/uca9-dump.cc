@@ -69,6 +69,9 @@
 #include "mb_wc.h"
 #include "uca900_data.h"  // uca900_weights[]
 
+namespace myodbc
+{
+
 typedef unsigned char uchar;
 typedef unsigned short uint16;
 typedef unsigned int uint;
@@ -455,6 +458,7 @@ int dump_ja_hans(MY_UCA *uca, FILE *infile, FILE *outfile) {
   }
 
   fprintf(outfile, "#include \"my_inttypes.h\"\n\n");
+  fprintf(outfile, "namespace myodbc {\n\n");
   fprintf(outfile, "extern const int MIN_JA_HAN_PAGE = 0x%X;\n", min_page);
   fprintf(outfile, "extern const int MAX_JA_HAN_PAGE = 0x%X;\n\n", max_page);
   // Print weights.
@@ -502,7 +506,7 @@ int dump_ja_hans(MY_UCA *uca, FILE *infile, FILE *outfile) {
       fprintf(outfile, "\n");
   }
   fprintf(outfile, "};\n\n");
-
+  fprintf(outfile, "} /* namespace myodbsc */");
   return 0;
 }
 
@@ -672,6 +676,7 @@ int dump_zh_hans(MY_UCA *uca, int *pageloaded, FILE *infile, FILE *outfile) {
   }
 
   fprintf(outfile, "#include \"my_inttypes.h\"\n\n");
+  fprintf(outfile, "namespace myodbc {\n\n");
   fprintf(outfile, "extern const int MIN_ZH_HAN_PAGE = 0x%X;\n", min_page);
   fprintf(outfile, "extern const int MAX_ZH_HAN_PAGE = 0x%X;\n\n", max_page);
   for (int page = min_page; page <= max_page; page++) {
@@ -713,6 +718,7 @@ int dump_zh_hans(MY_UCA *uca, int *pageloaded, FILE *infile, FILE *outfile) {
   fprintf(outfile, "\n};\n\n");
   fprintf(outfile, "extern const int ZH_HAN_WEIGHT_PAIRS = %lu;\n",
           static_cast<unsigned long>(zh_han_to_single_weight_map.size()));
+  fprintf(outfile, "} /* namespace myodbc */\n");
 
   return 0;
 }
@@ -779,6 +785,10 @@ int dump_ducet(MY_UCA *uca, int *pageloaded, FILE *infile, FILE *outfile) {
   fprintf(outfile, "};\n\n");
   return 0;
 }
+
+} /* namespace myodbc */
+
+using namespace myodbc;
 
 int main(int ac, char **av) {
   char *infilename = nullptr;

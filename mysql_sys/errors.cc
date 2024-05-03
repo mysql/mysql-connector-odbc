@@ -41,6 +41,9 @@
 #include "my_thread_local.h"
 #include "mysys_err.h"
 
+namespace myodbc
+{
+
 const char *globerrs[GLOBERRS] = {
     "Can't create/write to file '%s' (OS errno %d - %s)",
     "Error reading file '%s' (OS errno %d - %s)",
@@ -173,3 +176,5 @@ void wait_for_free_space(const char *filename, int errors) {
 }
 
 const char *get_global_errmsg(int nr) { return globerrs[nr - EE_ERROR_FIRST]; }
+
+} /* namespace myodbc */

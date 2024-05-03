@@ -29,6 +29,9 @@
 #ifndef UCA_DATA_H
 #define UCA_DATA_H
 
+namespace myodbc
+{
+
 uint16 page000data[]= { /* 0000 (4 weights per char) */
 0x0000,0x0000,0x0000,0x0000, 0x0000,0x0000,0x0000,0x0000,
 0x0000,0x0000,0x0000,0x0000, 0x0000,0x0000,0x0000,0x0000,
@@ -18809,4 +18812,7 @@ uint16 *uca520_weight[4352] = {
     nullptr,     nullptr,     nullptr,     nullptr,     nullptr,
     nullptr,     nullptr,     nullptr,     nullptr,     nullptr,
     nullptr,     nullptr};
+
+} /* namespace myodbc */
+
 #endif

@@ -700,14 +700,6 @@ void STMT::free_fake_result(bool clear_all_results)
   }
   else
   {
-    if (result && result->field_alloc
-#if (!MYSQL8)
-      && result->field_alloc->pre_alloc
-#endif
-      )
-    {
-      result->field_alloc->Clear();
-    }
     // Result array must be reset for fake resultset.
     // Otherwise the data in the next resultset might be corrupted.
     reset_result_array();

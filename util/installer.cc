@@ -321,7 +321,7 @@ void optionStr::set(const SQLWSTRING& val, bool is_default = false) {
 void optionStr::set(const std::string &val, bool is_default = false) {
   m_str = val;
   SQLINTEGER len = (SQLINTEGER)val.length();
-  SQLWCHAR *converted = sqlchar_as_sqlwchar(default_charset_info, (SQLCHAR*)val.c_str(), &len, nullptr);
+  SQLWCHAR *converted = sqlchar_as_sqlwchar(myodbc::default_charset_info, (SQLCHAR*)val.c_str(), &len, nullptr);
   m_wstr = SQLWSTRING(converted, len);
   x_free(converted);
   m_is_set = true;

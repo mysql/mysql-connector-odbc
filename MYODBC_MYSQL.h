@@ -93,7 +93,7 @@ extern "C"
 #endif
 
 
-#define my_sys_init my_init
+#define my_sys_init myodbc::my_init
 #define x_free(A) { void *tmp= (A); if (tmp) free((char *) tmp); }
 #define myodbc_malloc(A, B) (B == MY_ZEROFILL ? calloc(A, 1) : malloc(A))
 #define myodbc_realloc(A, B) realloc(A, B)

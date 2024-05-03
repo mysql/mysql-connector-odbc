@@ -39,6 +39,9 @@
 #include <stddef.h>
 #include "m_string.h"  // IWYU pragma: keep
 
+namespace myodbc
+{
+
 char *strmake(char *dst, const char *src, size_t length) {
 #ifdef EXTRA_DEBUG
   /*
@@ -63,3 +66,5 @@ char *strmake(char *dst, const char *src, size_t length) {
   *dst = 0;
   return dst;
 }
+
+} /* namespace myodbc */

@@ -23,6 +23,9 @@
 #include <stdio.h>
 #include <string.h>
 
+namespace myodbc
+{
+
 static void print_short_array(unsigned short *a, size_t width) {
   int i;
   printf("{\n");
@@ -81,3 +84,5 @@ int main(void) {
 
   return 0;
 }
+
+} /* namespace myodbc */

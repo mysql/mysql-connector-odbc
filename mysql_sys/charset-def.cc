@@ -30,6 +30,9 @@
 #include "my_inttypes.h"
 #include "my_sys.h"
 
+namespace myodbc
+{
+
 /**
   @file mysys/charset-def.cc
 */
@@ -504,3 +507,5 @@ bool init_compiled_charsets(myf flags [[maybe_unused]]) {
 
   return false;
 }
+
+} /* namespace myodbc */

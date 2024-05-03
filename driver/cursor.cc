@@ -155,7 +155,7 @@ char *check_if_positioned_cursor_exists(STMT *pStmt, STMT **pStmtCursor)
     /* Did we run out of statements without finding a viable cursor? */
     {
       char buff[200];
-      strxmov(buff,"Cursor '", cursorName,
+      myodbc::strxmov(buff,"Cursor '", cursorName,
               "' does not exist or does not have a result set.", NullS);
       pStmt->set_error("34000", buff, ER_INVALID_CURSOR_NAME);
     }

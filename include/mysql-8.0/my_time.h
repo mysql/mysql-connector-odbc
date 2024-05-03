@@ -48,6 +48,9 @@
 
 #include "mysql_time.h"  // struct MYSQL_TIME, shared with client code
 
+namespace myodbc
+{
+
 enum enum_field_types : int;
 
 extern const unsigned long long int log_10_int[20];
@@ -596,7 +599,11 @@ long long int longlong_from_datetime_packed(enum enum_field_types type,
 double double_from_datetime_packed(enum enum_field_types type,
                                    long long int packed_value);
 
+
 /**
   @} (end of ingroup MY_TIME)
 */
+
+} /* namespace myodbc */
+
 #endif /* MY_TIME_INCLUDED */

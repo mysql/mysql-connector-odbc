@@ -27,6 +27,9 @@
   @file mysys/my_handler_errors.h
 */
 
+namespace myodbc
+{
+
 /**
   Errors a handler can give you
 */
@@ -127,5 +130,7 @@ static const char *handler_error_messages[] = {
 
 extern void my_handler_error_register(void);
 extern void my_handler_error_unregister(void);
+
+} /* namespace myodbc */
 
 #endif /* MYSYS_MY_HANDLER_ERRORS_INCLUDED */

@@ -33,6 +33,9 @@
 
 #include "my_inttypes.h"
 
+namespace myodbc
+{
+
 /* Defines for my_dir and my_stat */
 
 #ifdef _WIN32
@@ -92,5 +95,7 @@ extern MY_DIR *my_dir(const char *path, myf MyFlags);
 extern void my_dirend(MY_DIR *buffer);
 extern MY_STAT *my_stat(const char *path, MY_STAT *stat_area, myf my_flags);
 extern int my_fstat(int filenr, MY_STAT *stat_area);
+
+} /* namespace myodbc */
 
 #endif /* MY_DIR_H */

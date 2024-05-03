@@ -37,9 +37,14 @@
 #include "my_macros.h"
 #include "my_sys.h"
 
+namespace myodbc
+{
+
 extern char curr_dir[FN_REFLEN], home_dir_buff[FN_REFLEN];
 
 extern USED_MEM *my_once_root_block;
 extern uint my_once_extra;
+
+} /* namespace myodbc */
 
 #endif /* MYSYS_MY_STATIC_INCLUDED */

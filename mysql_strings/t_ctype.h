@@ -39,6 +39,9 @@
 #ifndef _t_ctype_h
 #define _t_ctype_h
 
+namespace myodbc
+{
+
 typedef unsigned char tchar;
 
 #define TOT_LEVELS 5
@@ -253,3 +256,5 @@ enum level_symbols { L_UPRUPR = TOT_LEVELS, L_UPPER, L_MIDDLE, L_LOWER };
 void ThNormalize(uchar *ptr, uint field_length, const uchar *from, uint length);
 
 #endif
+
+} /* namespace myodbc */

@@ -63,6 +63,9 @@
 #include "uca_data.h"
 #include "template_utils.h"
 
+namespace myodbc
+{
+
 #define MY_UTF8MB3 "utf8"
 
 MY_UCA_INFO my_uca_v400 = {
@@ -4846,7 +4849,7 @@ static bool my_coll_init_uca(CHARSET_INFO *cs, MY_CHARSET_LOADER *loader) {
 static int my_strnncoll_any_uca(const CHARSET_INFO *cs, const uchar *s,
                                 size_t slen, const uchar *t, size_t tlen,
                                 bool t_is_prefix) {
-  if (cs->cset->mb_wc == my_mb_wc_utf8mb4_thunk) {
+  if (cs->cset->mb_wc == myodbc_mb_wc_utf8mb4_thunk) {
     return my_strnncoll_uca<uca_scanner_any<Mb_wc_utf8mb4>, 1>(
         cs, Mb_wc_utf8mb4(), s, slen, t, tlen, t_is_prefix);
   }
@@ -4858,7 +4861,7 @@ static int my_strnncoll_any_uca(const CHARSET_INFO *cs, const uchar *s,
 
 static int my_strnncollsp_any_uca(const CHARSET_INFO *cs, const uchar *s,
                                   size_t slen, const uchar *t, size_t tlen) {
-  if (cs->cset->mb_wc == my_mb_wc_utf8mb4_thunk) {
+  if (cs->cset->mb_wc == myodbc_mb_wc_utf8mb4_thunk) {
     return my_strnncollsp_uca(cs, Mb_wc_utf8mb4(), s, slen, t, tlen);
   }
 
@@ -4868,7 +4871,7 @@ static int my_strnncollsp_any_uca(const CHARSET_INFO *cs, const uchar *s,
 
 static void my_hash_sort_any_uca(const CHARSET_INFO *cs, const uchar *s,
                                  size_t slen, uint64 *n1, uint64 *n2) {
-  if (cs->cset->mb_wc == my_mb_wc_utf8mb4_thunk) {
+  if (cs->cset->mb_wc == myodbc_mb_wc_utf8mb4_thunk) {
     my_hash_sort_uca(cs, Mb_wc_utf8mb4(), s, slen, n1, n2);
   } else {
     Mb_wc_through_function_pointer mb_wc(cs);
@@ -4879,7 +4882,7 @@ static void my_hash_sort_any_uca(const CHARSET_INFO *cs, const uchar *s,
 static size_t my_strnxfrm_any_uca(const CHARSET_INFO *cs, uchar *dst,
                                   size_t dstlen, uint num_codepoints,
                                   const uchar *src, size_t srclen, uint flags) {
-  if (cs->cset->mb_wc == my_mb_wc_utf8mb4_thunk) {
+  if (cs->cset->mb_wc == myodbc_mb_wc_utf8mb4_thunk) {
     return my_strnxfrm_uca(cs, Mb_wc_utf8mb4(), dst, dstlen, num_codepoints,
                            src, srclen, flags);
   }
@@ -4892,7 +4895,7 @@ static size_t my_strnxfrm_any_uca(const CHARSET_INFO *cs, uchar *dst,
 static int my_strnncoll_uca_900(const CHARSET_INFO *cs, const uchar *s,
                                 size_t slen, const uchar *t, size_t tlen,
                                 bool t_is_prefix) {
-  if (cs->cset->mb_wc == my_mb_wc_utf8mb4_thunk) {
+  if (cs->cset->mb_wc == myodbc_mb_wc_utf8mb4_thunk) {
     switch (cs->levels_for_compare) {
       case 1:
         return my_strnncoll_uca<uca_scanner_900<Mb_wc_utf8mb4, 1>, 1>(
@@ -4986,7 +4989,7 @@ extern "C" {
 
 static void my_hash_sort_uca_900(const CHARSET_INFO *cs, const uchar *s,
                                  size_t slen, uint64 *n1, uint64 *) {
-  if (cs->cset->mb_wc == my_mb_wc_utf8mb4_thunk) {
+  if (cs->cset->mb_wc == myodbc_mb_wc_utf8mb4_thunk) {
     switch (cs->levels_for_compare) {
       case 1:
         return my_hash_sort_uca_900_tmpl<Mb_wc_utf8mb4, 1>(cs, Mb_wc_utf8mb4(),
@@ -5082,7 +5085,7 @@ static size_t my_strnxfrm_uca_900(const CHARSET_INFO *cs, uchar *dst,
                                   size_t dstlen,
                                   uint num_codepoints [[maybe_unused]],
                                   const uchar *src, size_t srclen, uint flags) {
-  if (cs->cset->mb_wc == my_mb_wc_utf8mb4_thunk) {
+  if (cs->cset->mb_wc == myodbc_mb_wc_utf8mb4_thunk) {
     switch (cs->levels_for_compare) {
       case 1:
         return my_strnxfrm_uca_900_tmpl<Mb_wc_utf8mb4, 1>(
@@ -11465,3 +11468,5 @@ CHARSET_INFO my_charset_utf8mb4_0900_bin = {
     &my_charset_utf8mb4_handler,
     &my_collation_utf8mb4_0900_bin_handler,
     NO_PAD};
+
+} /* namespace myodbc */

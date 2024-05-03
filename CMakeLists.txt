@@ -525,11 +525,9 @@ ADD_SUBDIRECTORY(dltest)
 ADD_SUBDIRECTORY(installer)
 ADD_SUBDIRECTORY(test)
 
-# For dynamic linking use the built-in sys and strings
-IF(NOT MYSQLCLIENT_STATIC_LINKING)
-  ADD_SUBDIRECTORY(mysql_sys)
-  ADD_SUBDIRECTORY(mysql_strings)
-ENDIF()
+# The built-in sys and strings are used for static and dynamic linking now.
+ADD_SUBDIRECTORY(mysql_sys)
+ADD_SUBDIRECTORY(mysql_strings)
 
 IF(APPLE)
   ADD_SUBDIRECTORY(scripts/macosx)

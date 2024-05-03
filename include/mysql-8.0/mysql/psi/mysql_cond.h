@@ -41,6 +41,9 @@
 #include "pfs_cond_provider.h"  // IWYU pragma: keep
 #endif
 
+namespace myodbc
+{
+
 #ifndef PSI_COND_CALL
 #define PSI_COND_CALL(M) psi_cond_service->M
 #endif
@@ -284,5 +287,7 @@ static inline int inline_mysql_cond_broadcast(mysql_cond_t *that,
 #endif /* DISABLE_MYSQL_THREAD_H */
 
 /** @} (end of group psi_api_cond) */
+
+} /* namespace myodbc */
 
 #endif

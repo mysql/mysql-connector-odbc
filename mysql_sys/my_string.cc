@@ -41,6 +41,9 @@
 #include "mysql/service_mysql_alloc.h"
 #include "mysys_priv.h"
 
+namespace myodbc
+{
+
 bool init_dynamic_string(DYNAMIC_STRING *str, const char *init_str,
                          size_t init_alloc) {
   DBUG_TRACE;
@@ -187,3 +190,5 @@ void dynstr_free(DYNAMIC_STRING *str) {
   my_free(str->str);
   str->str = nullptr;
 }
+
+} /* namespace myodbc */

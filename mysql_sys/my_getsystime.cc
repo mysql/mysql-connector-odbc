@@ -45,6 +45,9 @@
 #include "my_static.h"
 #endif
 
+namespace myodbc
+{
+
 #if defined(_WIN32)
 typedef VOID(WINAPI *time_fn)(_Out_ LPFILETIME);
 static time_fn my_get_system_time_as_file_time = GetSystemTimeAsFileTime;
@@ -158,3 +161,5 @@ ulonglong my_micro_time() {
   return newtime;
 #endif
 }
+
+} /* namespace myodbc */

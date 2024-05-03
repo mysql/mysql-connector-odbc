@@ -72,6 +72,9 @@
 #include "mysql/components/services/psi_stage_bits.h"
 //#include "sql/stream_cipher.h"
 
+namespace myodbc
+{
+
 class Stream_cipher;
 
 struct CHARSET_INFO;
@@ -1030,4 +1033,8 @@ size_t mysql_encryption_file_read(IO_CACHE *cache, uchar *buffer, size_t count,
 */
 size_t mysql_encryption_file_write(IO_CACHE *cache, const uchar *buffer,
                                    size_t count, myf flags);
+
+
+} /* namespace myodbc */
+
 #endif /* _my_sys_h */

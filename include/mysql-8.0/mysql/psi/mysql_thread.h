@@ -52,6 +52,9 @@
 #include "pfs_thread_provider.h"  // IWYU pragma: keep
 #endif
 
+namespace myodbc
+{
+
 #ifndef PSI_THREAD_CALL
 #define PSI_THREAD_CALL(M) psi_thread_service->M
 #endif
@@ -175,5 +178,7 @@ static inline void mysql_thread_set_peer_port(uint port [[maybe_unused]]) {
 }
 
 /** @} (end of group psi_api_thread) */
+
+} /* namespace myodbc */
 
 #endif

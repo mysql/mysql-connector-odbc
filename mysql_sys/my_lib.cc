@@ -56,6 +56,9 @@
 #include <dirent.h>
 #endif
 
+namespace myodbc
+{
+
 /*
   Allocate space for 100 FILEINFO structs up-front.
 */
@@ -319,3 +322,5 @@ MY_STAT *my_stat(const char *path, MY_STAT *stat_area, myf MyFlags) {
   }
   return nullptr;
 }
+
+} /* namespace myodbc */

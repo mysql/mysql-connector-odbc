@@ -43,6 +43,9 @@
 #include "mysql/psi/psi_memory.h"
 #include "mysql/service_mysql_alloc.h"
 
+namespace myodbc
+{
+
 /*
   Initiate dynamic array
 
@@ -184,3 +187,5 @@ void delete_dynamic(DYNAMIC_ARRAY *array) {
     array->elements = array->max_element = 0;
   }
 }
+
+} /* namespace myodbc */

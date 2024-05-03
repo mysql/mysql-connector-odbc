@@ -115,7 +115,7 @@ try
   {
     if (charset && charset[0])
     {
-      ansi_charset_info= get_charset_by_csname(charset,
+      ansi_charset_info= myodbc::get_charset_by_csname(charset,
                                                MYF(MY_CS_PRIMARY),
                                                MYF(0));
       if (!ansi_charset_info)
@@ -138,7 +138,7 @@ try
   {
     MY_CHARSET_INFO my_charset;
     mysql_get_character_set_info(mysql, &my_charset);
-    cxn_charset_info = get_charset(my_charset.number, MYF(0));
+    cxn_charset_info = myodbc::get_charset(my_charset.number, MYF(0));
   }
 
   if (!unicode)
@@ -601,7 +601,7 @@ SQLRETURN DBC::connect(DataSource *dsrc)
     */
     MY_CHARSET_INFO my_charset;
     mysql_get_character_set_info(mysql, &my_charset);
-    ansi_charset_info= get_charset(my_charset.number, MYF(0));
+    ansi_charset_info= myodbc::get_charset(my_charset.number, MYF(0));
     /*
       We always use utf8 for the connection, and change it afterwards if needed.
     */
@@ -620,12 +620,12 @@ SQLRETURN DBC::connect(DataSource *dsrc)
     if (client_cs_name)
     {
       mysql_options(mysql, MYSQL_SET_CHARSET_NAME, client_cs_name);
-      ansi_charset_info= cxn_charset_info= get_charset_by_csname(client_cs_name, MYF(MY_CS_PRIMARY), MYF(0));
+      ansi_charset_info= cxn_charset_info= myodbc::get_charset_by_csname(client_cs_name, MYF(MY_CS_PRIMARY), MYF(0));
     }
 #else
     MY_CHARSET_INFO my_charset;
     mysql_get_character_set_info(mysql, &my_charset);
-    ansi_charset_info= get_charset(my_charset.number, MYF(0));
+    ansi_charset_info= myodbc::get_charset(my_charset.number, MYF(0));
 #endif
 }
 
@@ -988,7 +988,7 @@ SQLRETURN DBC::connect(DataSource *dsrc)
     query_log = init_query_log();
 
   /* Set the statement error prefix based on the server version. */
-  strxmov(st_error_prefix, MYODBC_ERROR_PREFIX, "[mysqld-",
+  myodbc::strxmov(st_error_prefix, MYODBC_ERROR_PREFIX, "[mysqld-",
           mysql->server_version, "]", NullS);
 
   /*

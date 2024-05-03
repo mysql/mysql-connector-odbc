@@ -39,6 +39,9 @@
   @file mysys/mf_dirname.cc
 */
 
+namespace myodbc
+{
+
 /**
   Get the string length of the directory part of name, including the
   last FN_LIBCHAR. If name is not a path, return 0.
@@ -181,3 +184,5 @@ char *convert_dirname(char *to, const char *from, const char *from_end) {
   }
   return to; /* Pointer to end of dir */
 } /* convert_dirname */
+
+} /* namespace myodbc */

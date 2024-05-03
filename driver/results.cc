@@ -38,7 +38,6 @@
 
 #define SQL_MY_PRIMARY_KEY 1212
 
-
 /* Verifies if C type is suitable for copying SQL_BINARY data
    http://msdn.microsoft.com/en-us/library/ms713559%28VS.85%29.aspx */
 my_bool is_binary_ctype( SQLSMALLINT cType)
@@ -1126,7 +1125,7 @@ MySQLDescribeCol(SQLHSTMT hstmt, SQLUSMALLINT column,
     }
     else
     {
-      strxmov(tmp, (char *)irrec->table_name, ".", (char *)irrec->name, NullS);
+      myodbc::strxmov(tmp, (char *)irrec->table_name, ".", (char *)irrec->name, NullS);
       *name= (SQLCHAR *)tmp;
       *need_free= 1;
     }

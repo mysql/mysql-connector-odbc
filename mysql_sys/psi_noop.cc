@@ -82,6 +82,9 @@
 #include "mysql/psi/psi_tls_channel.h"
 #include "mysql/psi/psi_transaction.h"
 
+namespace myodbc
+{
+
 class THD;
 struct MDL_key;
 
@@ -974,3 +977,5 @@ PSI_tls_channel_service_t *psi_tls_channel_service = &psi_tls_channel_noop;
 void set_psi_tls_channel_service(void *psi) {
   psi_tls_channel_service = (PSI_tls_channel_service_t *)psi;
 }
+
+} /* namespace myodbc */

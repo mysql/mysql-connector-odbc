@@ -59,6 +59,9 @@
 #include "mysys_err.h"
 #include "sql_chars.h"
 
+namespace myodbc
+{
+
 /*
   The code below implements this functionality:
 
@@ -940,3 +943,5 @@ void charset_uninit() {
 
   new (&charsets_initialized) std::once_flag;
 }
+
+} /* namespace myodbc */

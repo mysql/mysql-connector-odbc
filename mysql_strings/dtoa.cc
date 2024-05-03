@@ -65,6 +65,9 @@
 
 #include "m_string.h"
 
+namespace myodbc
+{
+
 #ifndef EOVERFLOW
 #define EOVERFLOW 84
 #endif
@@ -2476,3 +2479,5 @@ ret1:
   if (rve) *rve = s;
   return s0;
 }
+
+} /* namespace myodbc */

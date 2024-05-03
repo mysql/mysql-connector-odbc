@@ -30,6 +30,9 @@
 
 #include "m_ctype.h"
 
+namespace myodbc
+{
+
 /**
   Calculate the length of the initial segment of 'str' which consists
   entirely of characters not in 'reject'.
@@ -80,3 +83,5 @@ size_t my_strcspn(const CHARSET_INFO *cs, const char *str, const char *str_end,
   }
   return (size_t)(ptr_str - str);
 }
+
+} /* namespace myodbc */

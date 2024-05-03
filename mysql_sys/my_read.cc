@@ -49,6 +49,9 @@
 #include "mysys_priv.h"
 #endif
 
+namespace myodbc
+{
+
 #ifndef _WIN32
 // Mock away read() for unit testing.
 ssize_t (*mock_read)(int fd, void *buf, size_t count) = nullptr;
@@ -128,3 +131,5 @@ size_t my_read(File fd, uchar *Buffer, size_t Count, myf MyFlags) {
     return readbytes;
   }  // for (;;)
 }
+
+} /* namespace myodbc */

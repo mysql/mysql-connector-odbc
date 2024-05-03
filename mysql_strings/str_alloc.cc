@@ -27,6 +27,9 @@
 
 #include <stdlib.h>
 
+namespace myodbc
+{
+
 static void *my_str_malloc_default(size_t size) {
   void *ret = malloc(size);
   if (!ret) exit(1);
@@ -42,3 +45,5 @@ static void *my_str_realloc_default(void *ptr, size_t size) {
 void *(*my_str_malloc)(size_t) = &my_str_malloc_default;
 void (*my_str_free)(void *) = &my_str_free_default;
 void *(*my_str_realloc)(void *, size_t) = &my_str_realloc_default;
+
+} /* namespace myodbc */

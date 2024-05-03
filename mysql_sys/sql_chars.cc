@@ -36,6 +36,9 @@
 
 #include "my_sys.h"
 
+namespace myodbc
+{
+
 static void hint_lex_init_maps(CHARSET_INFO *cs,
                                enum hint_lex_char_classes *hint_map) {
   size_t i;
@@ -128,3 +131,5 @@ bool init_state_maps(CHARSET_INFO *cs) {
 
   return false;
 }
+
+} /* namespace myodbc */

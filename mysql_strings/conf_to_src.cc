@@ -50,6 +50,9 @@
 #define ROW16_LEN 8
 #define MAX_BUF 64 * 1024
 
+namespace myodbc
+{
+
 static CHARSET_INFO all_charsets[512];
 
 static void print_array(FILE *f, const char *set, const char *name,
@@ -342,3 +345,5 @@ int main(int argc, char **argv [[maybe_unused]]) {
 
   return 0;
 }
+
+} /* namespace myodbc */

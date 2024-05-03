@@ -32,6 +32,9 @@
 #include <my_sys.h>
 #include "my_thread_local.h"
 
+namespace myodbc
+{
+
 struct errentry {
   unsigned long oscode; /* OS return value */
   int sysv_errno;       /* System V error code */
@@ -130,3 +133,5 @@ void my_osmaperr(unsigned long oserrno) {
   set_thr_winerr(oserrno);
   errno = get_errno_from_oserr(oserrno);
 }
+
+} /* namespace myodbc */

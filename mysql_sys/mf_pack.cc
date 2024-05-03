@@ -47,6 +47,9 @@
 #include "my_sys.h"
 #include "my_static.h"
 
+namespace myodbc
+{
+
 static std::string expand_tilde(char **path);
 
 /**
@@ -386,3 +389,5 @@ char *intern_filename(char *to, const char *from) {
   to[FN_REFLEN - 1] = '\0';  // make sure to is valid c-string
   return (to);
 } /* intern_filename */
+
+} /* namespace myodbc */

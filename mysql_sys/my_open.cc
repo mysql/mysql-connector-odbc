@@ -51,6 +51,9 @@
 #include "mysys_priv.h"
 #include "mysys_err.h"
 
+namespace myodbc
+{
+
 /**
   Open a file.
 
@@ -121,3 +124,5 @@ int my_close(File fd, myf MyFlags) {
   }
   return err;
 }
+
+} /* namespace myodbc */

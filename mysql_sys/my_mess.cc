@@ -39,6 +39,9 @@
 #include "my_io.h"
 #include "my_sys.h"
 
+namespace myodbc
+{
+
 /**
   Print an error message on stderr.
   Prefixed with the binary's name (sans .exe, where applicable,
@@ -81,3 +84,5 @@ void my_message_stderr(uint error [[maybe_unused]], const char *str,
   (void)fputc('\n', stderr);
   (void)fflush(stderr);
 }
+
+} /* namespace myodbc */

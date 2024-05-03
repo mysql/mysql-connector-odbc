@@ -44,6 +44,9 @@
 // be in ctime until C++17
 #include <time.h>  // time_t, timespec
 
+namespace myodbc
+{
+
 /**
    Set the value of a timespec object to the current time plus a
    number of nanosconds.
@@ -146,3 +149,5 @@ void get_date(char *to, int flag, time_t date) {
                        start_time->tm_min, start_time->tm_sec);
   }
 }
+
+} /* namespace myodbc */

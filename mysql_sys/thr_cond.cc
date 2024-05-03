@@ -39,6 +39,9 @@
 
 #include "my_thread_local.h"
 
+namespace myodbc
+{
+
 int safe_cond_wait(native_cond_t *cond, safe_mutex_t *mp, const char *file,
                    uint line) {
   int error;
@@ -136,5 +139,7 @@ int safe_cond_timedwait(native_cond_t *cond, safe_mutex_t *mp,
   native_mutex_unlock(&mp->global);
   return error;
 }
+
+} /* namespace myodbc */
 
 #endif

@@ -59,6 +59,9 @@
 #include "myisampack.h"      // mi_int2store
 #include "template_utils.h"  // pointer_cast
 
+namespace myodbc
+{
+
 const ulonglong log_10_int[20] = {1,
                                   10,
                                   100,
@@ -999,8 +1002,8 @@ void adjust_time_range(MYSQL_TIME *my_time, int *warning) {
 */
 void my_init_time() {
   time_t seconds;
-  struct tm *l_time;
-  struct tm tm_tmp;
+  struct ::tm *l_time;
+  struct ::tm tm_tmp;
   MYSQL_TIME my_time;
   bool not_used;
 
@@ -1086,8 +1089,8 @@ my_time_t my_system_gmt_sec(const MYSQL_TIME &my_time, long *my_timezone,
   int shift = 0;
   MYSQL_TIME tmp_time;
   MYSQL_TIME *t = &tmp_time;
-  struct tm *l_time;
-  struct tm tm_tmp;
+  struct ::tm *l_time;
+  struct ::tm tm_tmp;
   long diff, current_timezone;
 
   /*
@@ -2679,7 +2682,7 @@ void mix_date_and_time(MYSQL_TIME *ldate, const MYSQL_TIME &my_time) {
    @param [out] to store converted timepoint here
    @param from posix tm struct holding a valid timepoint
  */
-void localtime_to_TIME(MYSQL_TIME *to, const struct tm *from) {
+void localtime_to_TIME(MYSQL_TIME *to, const struct ::tm *from) {
   to->neg = false;
   to->second_part = 0;
   to->year = ((from->tm_year + 1900) % 10000);
@@ -2896,9 +2899,13 @@ double double_from_datetime_packed(enum enum_field_types type,
              1000000;
 }
 
+} /* namespace myodbc */
+
 /**
    @} (end of defgroup MY_TIME)
 */
+
+using namespace myodbc;
 
 // Non-static driver functions for unit tests
 namespace mysys_my_time {

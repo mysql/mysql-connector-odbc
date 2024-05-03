@@ -44,6 +44,9 @@
   Note that the auth subsystem also uses codes with a CR_ prefix.
 */
 
+namespace myodbc
+{
+
 void init_client_errs(void);
 void finish_client_errs(void);
 extern const char *client_errors[]; /* Error messages */
@@ -140,5 +143,7 @@ static inline const char *ER_CLIENT(int client_errno) {
     return client_errors[client_errno - CR_ERROR_FIRST];
   return client_errors[CR_UNKNOWN_ERROR - CR_ERROR_FIRST];
 }
+
+} /* namespace myodbc */
 
 #endif /* ERRMSG_INCLUDED */

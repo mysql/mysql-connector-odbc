@@ -53,6 +53,9 @@
 #include "mysql_strings/mb_wc.h"
 #include "template_utils.h"
 
+namespace myodbc
+{
+
 /* Max length of a error message. Should be kept in sync with MYSQL_ERRMSG_SIZE.
  */
 #define ERRMSGSIZE (512)
@@ -477,3 +480,5 @@ void my_message_local(enum loglevel ll, uint ecode, ...) {
   (*local_message_hook)(ll, ecode, args);
   va_end(args);
 }
+
+} /* namespace myodbc */

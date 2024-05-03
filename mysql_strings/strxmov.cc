@@ -45,6 +45,9 @@
 
 #include "m_string.h"  // IWYU pragma: keep
 
+namespace myodbc
+{
+
 char *strxmov(char *dst, const char *src, ...) {
   va_list pvar;
 
@@ -59,3 +62,5 @@ char *strxmov(char *dst, const char *src, ...) {
   *dst = 0; /* there might have been no sources! */
   return dst;
 }
+
+} /* namespace myodbc */

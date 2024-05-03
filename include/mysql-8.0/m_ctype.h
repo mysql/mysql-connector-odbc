@@ -41,6 +41,9 @@
 #include "my_sharedlib.h"
 #include "template_utils.h"
 
+namespace myodbc
+{
+
 #define MY_CS_NAME_SIZE 32
 #define MY_CS_CTYPE_TABLE_SIZE 257
 #define MY_CS_TO_LOWER_TABLE_SIZE 256
@@ -745,5 +748,7 @@ static inline uint my_ismbchar(const CHARSET_INFO *cs, const uchar *str,
 static inline bool is_supported_parser_charset(const CHARSET_INFO *cs) {
   return (cs->mbminlen == 1);
 }
+
+} /* namespace myodbc */
 
 #endif  // M_CTYPE_INCLUDED

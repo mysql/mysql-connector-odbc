@@ -52,6 +52,9 @@
 #include "mysql/components/services/thr_cond_bits.h"
 #include "thr_mutex.h"
 
+namespace myodbc
+{
+
 #ifdef _WIN32
 /**
   Convert abstime to milliseconds
@@ -161,5 +164,7 @@ static inline int my_cond_wait(native_cond_t *cond, my_mutex_t *mp
   return native_cond_wait(cond, &mp->m_u.m_native);
 #endif
 }
+
+} /* namespace myodbc */
 
 #endif /* THR_COND_INCLUDED */

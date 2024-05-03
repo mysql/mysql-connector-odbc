@@ -28,6 +28,9 @@
 #ifndef _list_h_
 #define _list_h_
 
+namespace myodbc
+{
+
 /**
   @file include/my_list.h
 */
@@ -53,5 +56,7 @@ extern unsigned int list_length(LIST *);
 extern int list_walk(LIST *, list_walk_action action, unsigned char *argument);
 
 #define list_rest(a) ((a)->next)
+
+} /* namespace myodbc */
 
 #endif

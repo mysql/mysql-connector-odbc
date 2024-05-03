@@ -43,6 +43,9 @@
 #include "my_compiler.h"
 #include "my_inttypes.h"
 
+namespace myodbc
+{
+
 static const uchar ctype_gb2312[257] = {
     0, /* For standard library */
     32,  32,  32,  32,  32,  32,  32,  32,  32,  40,  40, 40, 40, 40, 32, 32,
@@ -6619,3 +6622,5 @@ CHARSET_INFO my_charset_gb2312_bin = {
     &my_charset_handler,
     &my_collation_mb_bin_handler,
     PAD_SPACE};
+
+} /* namespace myodbc */

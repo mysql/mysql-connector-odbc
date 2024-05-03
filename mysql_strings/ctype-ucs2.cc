@@ -46,6 +46,9 @@
 #include "my_sys.h"
 #include "template_utils.h"
 
+namespace myodbc
+{
+
 #ifndef EILSEQ
 #define EILSEQ ENOENT
 #endif
@@ -2974,3 +2977,5 @@ CHARSET_INFO my_charset_ucs2_bin = {
     &my_charset_ucs2_handler,
     &my_collation_ucs2_bin_handler,
     PAD_SPACE};
+
+} /* namespace myodbc */

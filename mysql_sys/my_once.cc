@@ -45,6 +45,9 @@
 #include "my_static.h"
 #include "mysys_err.h"
 
+namespace myodbc
+{
+
 /*
   Alloc for things we don't nend to free run-time (that only
   should be free'd on exit)
@@ -127,3 +130,5 @@ void my_once_free(void) {
   }
   my_once_root_block = nullptr;
 } /* my_once_free */
+
+} /* namespace myodbc */

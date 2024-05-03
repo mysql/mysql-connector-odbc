@@ -42,6 +42,9 @@
 #include "my_io.h"
 #include "my_thread_local.h"
 
+namespace myodbc
+{
+
 /*
   Check a file or path for accessability.
 
@@ -74,7 +77,12 @@ int my_access(const char *path, int amode) {
   return 0;
 }
 
+} /* namespace myodbc */
+
 #endif /* _WIN32 */
+
+namespace myodbc
+{
 
 /*
   List of file names that causes problem on windows
@@ -259,3 +267,5 @@ int check_if_legal_filename(const char *path) {
 }
 
 #endif /* defined(_WIN32) */
+
+} /* namespace myodbc */

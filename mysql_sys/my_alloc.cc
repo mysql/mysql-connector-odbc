@@ -45,6 +45,9 @@
 #include "mysys_err.h"
 #include "template_utils.h"
 
+namespace myodbc
+{
+
 // For instrumented code: Always use malloc(); never reuse a chunk.
 // This gives a lot more memory chunks, each with a red-zone around them.
 #if defined(HAVE_VALGRIND) || defined(HAVE_ASAN)
@@ -293,3 +296,5 @@ void *memdup_root(MEM_ROOT *root, const void *str, size_t len) {
 }
 
 char MEM_ROOT::s_dummy_target;
+
+} /* namespace myodbc */

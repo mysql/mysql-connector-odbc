@@ -102,14 +102,14 @@ void myodbc_init(void)
 
     __LOCALE_RESTORE()
 
-    utf8_charset_info= get_charset_by_csname(transport_charset, MYF(MY_CS_PRIMARY),
+    utf8_charset_info= myodbc::get_charset_by_csname(transport_charset, MYF(MY_CS_PRIMARY),
                                              MYF(0));
 
 #ifdef IS_BIG_ENDIAN
-    utf16_charset_info = get_charset_by_csname("utf16", MYF(MY_CS_PRIMARY),
+    utf16_charset_info = myodbc::get_charset_by_csname("utf16", MYF(MY_CS_PRIMARY),
                                              MYF(0));
 #else
-    utf16_charset_info = get_charset_by_csname("utf16le", MYF(MY_CS_PRIMARY),
+    utf16_charset_info = myodbc::get_charset_by_csname("utf16le", MYF(MY_CS_PRIMARY),
                                              MYF(0));
 #endif
   }

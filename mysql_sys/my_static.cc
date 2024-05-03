@@ -47,6 +47,9 @@
 #include "mysql/psi/psi_stage.h"
 #include "mysys_priv.h"  // IWYU pragma: keep
 
+namespace myodbc
+{
+
 /* get memory in hunks */
 constexpr uint ONCE_ALLOC_INIT = 4096 - MALLOC_OVERHEAD;
 
@@ -225,3 +228,5 @@ DebugSyncCallbackFp debug_sync_C_callback_ptr;
 /* How to disable options */
 bool my_disable_locking = false;
 bool my_enable_symlinks = false;
+
+} /* namespace myodbc */

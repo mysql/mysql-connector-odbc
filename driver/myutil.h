@@ -347,8 +347,8 @@ const char *get_fractional_part   (const char * str, int len,
                                   SQLUINTEGER * fraction);
 /* Convert MySQL timestamp to full ANSI timestamp format. */
 char *          complete_timestamp  (const char * value, ulong length, char buff[21]);
-BOOL            myodbc_isspace      (CHARSET_INFO* cs, const char * begin, const char *end);
-BOOL            myodbc_isnum        (CHARSET_INFO* cs, const char * begin, const char *end);
+BOOL            myodbc_isspace      (myodbc::CHARSET_INFO* cs, const char * begin, const char *end);
+BOOL            myodbc_isnum        (myodbc::CHARSET_INFO* cs, const char * begin, const char *end);
 
 #define NO_OUT_PARAMETERS         0
 #define GOT_OUT_PARAMETERS        1
@@ -362,7 +362,6 @@ int get_session_variable(STMT *stmt, const char *var, char *result,
                          size_t buf_len);
 
 /* handle.c*/
-BOOL          allocate_param_bind     (DYNAMIC_ARRAY **param_bind, uint elements);
 int           adjust_param_bind_array (STMT *stmt);
 /* Actions taken when connection is put to the pool. Used in connection freeing as well */
 int           reset_connection        (DBC *dbc);

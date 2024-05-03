@@ -41,6 +41,9 @@
 #include "my_inttypes.h"
 #include "my_macros.h"
 
+namespace myodbc
+{
+
 #define isbig5head(c) (0xa1 <= (uchar)(c) && (uchar)(c) <= 0xf9)
 #define isbig5tail(c)                            \
   ((0x40 <= (uchar)(c) && (uchar)(c) <= 0x7e) || \
@@ -6599,3 +6602,5 @@ CHARSET_INFO my_charset_big5_bin = {
     &my_charset_big5_handler,
     &my_collation_mb_bin_handler,
     PAD_SPACE};
+
+} /* namespace myodbc */

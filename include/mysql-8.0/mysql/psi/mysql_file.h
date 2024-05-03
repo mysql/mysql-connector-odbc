@@ -58,6 +58,9 @@
 #include "pfs_file_provider.h"  // IWYU pragma: keep
 #endif
 
+namespace myodbc
+{
+
 #ifndef PSI_FILE_CALL
 #define PSI_FILE_CALL(M) psi_file_service->M
 #endif
@@ -1330,5 +1333,8 @@ static inline int inline_mysql_file_sync(
 }
 
 /** @} (end of group psi_api_file) */
+
+
+} /* namespace myodbc */
 
 #endif

@@ -142,7 +142,7 @@ MY_PARSED_QUERY::MY_PARSED_QUERY() : buf(1024) {
 }
 
 
-void MY_PARSED_QUERY::reset(char * query, char * query_end, CHARSET_INFO *cs)
+void MY_PARSED_QUERY::reset(char * query, char * query_end, myodbc::CHARSET_INFO *cs)
 {
   token2.clear();
   param_pos.clear();
@@ -294,7 +294,7 @@ int  get_ctype(MY_PARSER *parser)
 }
 
 
-const char *mystr_get_prev_token(CHARSET_INFO *charset,
+const char *mystr_get_prev_token(myodbc::CHARSET_INFO *charset,
                                         const char **query, const char *start)
 {
   const char *pos= *query, *end= *query;
@@ -313,7 +313,7 @@ const char *mystr_get_prev_token(CHARSET_INFO *charset,
 
 
 /*TODO test it*/
-const char *mystr_get_next_token(CHARSET_INFO *charset,
+const char *mystr_get_next_token(myodbc::CHARSET_INFO *charset,
                                         const char **query, const char *end)
 {
   const char *pos= *query;
@@ -335,7 +335,7 @@ const char *mystr_get_next_token(CHARSET_INFO *charset,
 }
 
 
-const char * find_token(CHARSET_INFO *charset, const char * begin,
+const char * find_token(myodbc::CHARSET_INFO *charset, const char * begin,
                         const char * end, const char * target)
 {
   const char * token, *before= end;
@@ -353,7 +353,7 @@ const char * find_token(CHARSET_INFO *charset, const char * begin,
 }
 
 
-const char * find_first_token(CHARSET_INFO *charset, const char * begin,
+const char * find_first_token(myodbc::CHARSET_INFO *charset, const char * begin,
                         const char * end, const char * target)
 {
   const char * token, *before= end;

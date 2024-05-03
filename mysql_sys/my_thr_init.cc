@@ -55,6 +55,9 @@
 #include "mysys_err.h"
 #include "thr_mutex.h"
 
+namespace myodbc
+{
+
 static bool my_thread_global_init_done = false;
 #ifndef NDEBUG
 static uint THR_thread_count = 0;
@@ -265,7 +268,7 @@ void my_thread_global_end() {
   @retval true   Fatal error; mysys/dbug functions can't be used
 */
 
-extern "C" bool my_thread_init() {
+bool my_thread_init() {
 #ifndef NDEBUG
   struct st_my_thread_var *tmp;
 #endif
@@ -300,7 +303,7 @@ extern "C" bool my_thread_init() {
   mysql_server_end() and then ends with a mysql_end().
 */
 
-extern "C" void my_thread_end() {
+void my_thread_end() {
 #ifndef NDEBUG
   struct st_my_thread_var *tmp = mysys_thread_var();
 #endif
@@ -377,3 +380,5 @@ static void install_sigabrt_handler() {
   signal(SIGABRT, my_sigabrt_handler);
 }
 #endif
+
+} /* namespace myodbc */

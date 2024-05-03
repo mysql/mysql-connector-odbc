@@ -23,6 +23,9 @@
 #ifndef UCA900_ZH_DATA_H
 #define UCA900_ZH_DATA_H
 
+namespace myodbc
+{
+
 /*
   For collation which changes character's primary weight according to its
   tailoring rule, we give this character a extra collation element (see
@@ -481,4 +484,7 @@ extern const int MIN_ZH_HAN_PAGE;
 extern const int MAX_ZH_HAN_PAGE;
 extern int zh_han_to_single_weight[];
 extern const int ZH_HAN_WEIGHT_PAIRS;
+
+} /* namespace myodbc */
+
 #endif

@@ -32,6 +32,9 @@
 
 #include "m_string.h"
 
+namespace myodbc
+{
+
 uchar to_upper[256];
 uchar to_lower[256], sort_order[256];
 
@@ -151,3 +154,5 @@ void init_case_convert() {
     lower_pos++;
   }
 } /* init_case_convert */
+
+} /* namespace myodbc */

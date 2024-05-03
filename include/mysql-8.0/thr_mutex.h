@@ -56,6 +56,9 @@
 */
 #include "mysql/components/services/thr_mutex_bits.h"
 
+namespace myodbc
+{
+
 /* Define mutex types, see my_thr_init.c */
 #define MY_MUTEX_INIT_SLOW NULL
 
@@ -238,5 +241,7 @@ static inline int my_mutex_destroy(my_mutex_t *mp
   return native_mutex_destroy(&mp->m_u.m_native);
 #endif
 }
+
+} /* namespace myodbc */
 
 #endif /* THR_MUTEX_INCLUDED */

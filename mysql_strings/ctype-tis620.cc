@@ -70,6 +70,9 @@
 #include "my_macros.h"
 #include "t_ctype.h"
 
+namespace myodbc
+{
+
 #define M L_MIDDLE
 #define U L_UPPER
 #define L L_LOWER
@@ -992,3 +995,5 @@ CHARSET_INFO my_charset_tis620_bin = {
     &my_charset_handler,
     &my_collation_8bit_bin_handler,
     PAD_SPACE};
+
+} /* namespace myodbc */

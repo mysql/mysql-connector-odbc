@@ -50,24 +50,6 @@
 
 using UTC_clock = std::chrono::system_clock;
 
-/* Bits for get_date timeflag */
-constexpr const int GETDATE_DATE_TIME = 1;
-constexpr const int GETDATE_SHORT_DATE = 2;
-constexpr const int GETDATE_HHMMSSTIME = 4;
-constexpr const int GETDATE_GMT = 8;
-constexpr const int GETDATE_FIXEDLENGTH = 16;
-constexpr const int GETDATE_T_DELIMITER = 32;
-constexpr const int GETDATE_SHORT_DATE_FULL_YEAR = 64;
-
-/**
-   Wait a given number of microseconds.
-
-   @param m_seconds number of microseconds to wait.
-*/
-inline void my_sleep(time_t m_seconds) {
-  std::this_thread::sleep_for(std::chrono::microseconds{m_seconds});
-}
-
 #ifdef _WIN32
 
 #include <windows.h>
@@ -96,6 +78,27 @@ inline void sleep(unsigned long seconds) {
 }
 
 #endif /* _WIN32 */
+
+namespace myodbc
+{
+
+/* Bits for get_date timeflag */
+constexpr const int GETDATE_DATE_TIME = 1;
+constexpr const int GETDATE_SHORT_DATE = 2;
+constexpr const int GETDATE_HHMMSSTIME = 4;
+constexpr const int GETDATE_GMT = 8;
+constexpr const int GETDATE_FIXEDLENGTH = 16;
+constexpr const int GETDATE_T_DELIMITER = 32;
+constexpr const int GETDATE_SHORT_DATE_FULL_YEAR = 64;
+
+/**
+   Wait a given number of microseconds.
+
+   @param m_seconds number of microseconds to wait.
+*/
+inline void my_sleep(time_t m_seconds) {
+  std::this_thread::sleep_for(std::chrono::microseconds{m_seconds});
+}
 
 /**
   Get high-resolution time. Forwards to std::chrono.
@@ -240,5 +243,7 @@ inline void my_micro_time_to_timeval(std::uint64_t micro_time,
 }
 
 void get_date(char *to, int flag, time_t date);
+
+} /* namespace myodbc */
 
 #endif  // MY_SYSTIME_INCLUDED

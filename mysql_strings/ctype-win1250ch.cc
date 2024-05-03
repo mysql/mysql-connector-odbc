@@ -56,6 +56,9 @@
 #include "my_inttypes.h"
 #include "template_utils.h"
 
+namespace myodbc
+{
+
 static uint16 tab_cp1250_uni[256] = {
     0,      0x0001, 0x0002, 0x0003, 0x0004, 0x0005, 0x0006, 0x0007, 0x0008,
     0x0009, 0x000A, 0x000B, 0x000C, 0x000D, 0x000E, 0x000F, 0x0010, 0x0011,
@@ -628,3 +631,5 @@ CHARSET_INFO my_charset_cp1250_czech_ci = {
     &my_charset_8bit_handler,
     &my_collation_czech_ci_handler,
     PAD_SPACE};
+
+} /* namespace myodbc */

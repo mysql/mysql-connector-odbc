@@ -56,6 +56,9 @@
 #include "m_ctype.h"
 #endif
 
+namespace myodbc
+{
+
 /* Gets current working directory in buff.
 
   SYNPOSIS
@@ -164,3 +167,5 @@ bool has_path(const char *name) {
 #endif
       ;
 }
+
+} /* namespace myodbc */

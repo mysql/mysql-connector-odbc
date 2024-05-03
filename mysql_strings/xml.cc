@@ -33,6 +33,9 @@
 #include "my_inttypes.h"
 #include "my_xml.h"
 
+namespace myodbc
+{
+
 #define MY_XML_UNKNOWN 'U'
 #define MY_XML_EOF 'E'
 #define MY_XML_STRING 'S'
@@ -515,3 +518,5 @@ uint my_xml_error_lineno(MY_XML_PARSER *p) {
   }
   return res;
 }
+
+} /* namespace myodbc */

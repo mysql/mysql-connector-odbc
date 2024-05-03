@@ -39,9 +39,6 @@
 #include "my_inttypes.h"
 #include "my_list.h"
 #include "mysql_com.h"
-#ifdef MYSQL_SERVER
-#include "mysql_com_server.h"
-#endif
 struct MEM_ROOT;
 
 #ifdef __cplusplus

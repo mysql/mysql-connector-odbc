@@ -131,13 +131,13 @@ uint SetOsLimitMaxOpenFiles(uint max_file_limit) {
 */
 class FileInfo {
   const char *m_name = nullptr;
-  file_info::OpenType m_type = file_info::OpenType::UNOPEN;
+  myodbc::file_info::OpenType m_type = myodbc::file_info::OpenType::UNOPEN;
 
  public:
   FileInfo() = default;
 
-  FileInfo(const char *n, file_info::OpenType t)
-      : m_name{my_strdup(key_memory_my_file_info, n,
+  FileInfo(const char *n, myodbc::file_info::OpenType t)
+      : m_name{my_strdup(myodbc::key_memory_my_file_info, n,
                          MYF(MY_WME | ME_FATALERROR))},
         m_type{t} {}
 
@@ -147,7 +147,7 @@ class FileInfo {
   // Rule of 5 (4)
   FileInfo(FileInfo &&src) noexcept
       : m_name{std::exchange(src.m_name, nullptr)},
-        m_type{std::exchange(src.m_type, file_info::OpenType::UNOPEN)} {}
+        m_type{std::exchange(src.m_type, myodbc::file_info::OpenType::UNOPEN)} {}
 
   // Rule of 5 (1)
   ~FileInfo() { my_free(const_cast<char *>(m_name)); }
@@ -169,13 +169,16 @@ class FileInfo {
   }
 
   const char *name() const { return m_name; }
-  file_info::OpenType type() const { return m_type; }
+  myodbc::file_info::OpenType type() const { return m_type; }
 };
 
 using FileInfoAllocator = Malloc_allocator<FileInfo>;
 using FileInfoVector = std::vector<FileInfo, FileInfoAllocator>;
 FileInfoVector *fivp = nullptr;
 }  // namespace
+
+namespace myodbc
+{
 
 namespace file_info {
 
@@ -282,3 +285,5 @@ void MyFileInit() {
   Destroys static objects.
 */
 void MyFileEnd() { delete fivp; }
+
+} /* namespace myodbc */

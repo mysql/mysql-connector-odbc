@@ -881,12 +881,12 @@ int main(int argc, char **argv)
 
   /* init libmysqlclient */
   my_sys_init();
-  utf8_charset_info= get_charset_by_csname(transport_charset, MYF(MY_CS_PRIMARY),
+  utf8_charset_info= myodbc::get_charset_by_csname(transport_charset, MYF(MY_CS_PRIMARY),
                                            MYF(0));
 
   /* convert to SQLWCHAR for installer API */
   convlen= SQL_NTS;
-  if (name && !(wname= sqlchar_as_sqlwchar(default_charset_info,
+  if (name && !(wname= sqlchar_as_sqlwchar(myodbc::default_charset_info,
                                            (SQLCHAR *)name, &convlen, NULL)))
   {
     fprintf(stderr, "[ERROR] Name is invalid\n");
@@ -894,7 +894,7 @@ int main(int argc, char **argv)
   }
 
   convlen= SQL_NTS;
-  if (attrstr && !(wattrs= sqlchar_as_sqlwchar(default_charset_info,
+  if (attrstr && !(wattrs= sqlchar_as_sqlwchar(myodbc::default_charset_info,
                                                (SQLCHAR *)attrstr, &convlen,
                                                NULL)))
   {

@@ -47,6 +47,9 @@
 #include "stdarg.h"
 #include "template_utils.h"
 
+namespace myodbc
+{
+
 /*
   Returns the number of bytes required for strnxfrm().
 */
@@ -1585,3 +1588,5 @@ MY_COLLATION_HANDLER my_collation_8bit_simple_ci_handler = {
     my_instr_simple,
     my_hash_sort_simple,
     my_propagate_simple};
+
+} /* namespace myodbc */

@@ -33,6 +33,9 @@
 #include "integer_digits.h"
 #include "m_string.h"  // IWYU pragma: keep
 
+namespace myodbc
+{
+
 /*
   _dig_vec arrays are public because they are used in several outer places.
 */
@@ -115,3 +118,5 @@ char *longlong10_to_str(int64_t val, char *dst, int radix) {
   *end = '\0';
   return end;
 }
+
+} /* namespace myodbc */

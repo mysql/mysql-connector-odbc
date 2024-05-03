@@ -59,6 +59,9 @@
 #include <signal.h>
 #include "my_sys.h" /* my_osmaperr */
 
+namespace myodbc
+{
+
 struct thread_start_parameter {
   my_start_routine func;
   void *arg;
@@ -72,7 +75,13 @@ static unsigned int __stdcall win_thread_start(void *p) {
   (*func)(arg);
   return 0;
 }
+
+} /* namespace myodbc */
+
 #endif
+
+namespace myodbc
+{
 
 int my_thread_create(my_thread_handle *thread, const my_thread_attr_t *attr,
                      my_start_routine func, void *arg) {
@@ -259,3 +268,5 @@ void my_thread_self_setname(const char *name [[maybe_unused]]) {
   return;
 #endif
 }
+
+} /* namespace myodbc */

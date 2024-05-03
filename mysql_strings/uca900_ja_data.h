@@ -23,6 +23,9 @@
 #ifndef UCA900_JA_DATA_H
 #define UCA900_JA_DATA_H
 
+namespace myodbc
+{
+
 // Quaternary weight of katakana.
 static constexpr int JA_KATA_QUAT_WEIGHT= 0x08;
 // Quaternary weight of hiragana.
@@ -579,4 +582,7 @@ static const char ja_cldr_30[]=
 extern uint16 *ja_han_pages[];
 extern const int MIN_JA_HAN_PAGE;
 extern const int MAX_JA_HAN_PAGE;
+
+} /* namespace myodbc */
+
 #endif

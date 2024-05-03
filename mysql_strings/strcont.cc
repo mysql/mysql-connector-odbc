@@ -33,6 +33,9 @@
 
 #include "m_string.h"  // IWYU pragma: keep
 
+namespace myodbc
+{
+
 char *strcont(char *str, const char *set) {
   const char *start = set;
 
@@ -45,3 +48,5 @@ char *strcont(char *str, const char *set) {
   }
   return nullptr;
 } /* strcont */
+
+} /* namespace myodbc */

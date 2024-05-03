@@ -79,6 +79,9 @@
 #include "my_inttypes.h"
 #include "template_utils.h"
 
+namespace myodbc
+{
+
 /*
         These are four tables for four passes of the algorithm. Please see
         below for what are the "special values"
@@ -701,3 +704,5 @@ CHARSET_INFO my_charset_latin2_czech_ci = {
     &my_charset_8bit_handler,
     &my_collation_latin2_czech_ci_handler,
     PAD_SPACE};
+
+} /* namespace myodbc */

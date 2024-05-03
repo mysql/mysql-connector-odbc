@@ -29,6 +29,9 @@
 
 #include "my_inttypes.h"
 
+namespace myodbc
+{
+
 /*
   So far we have only Croatian collation needs to reorder Latin and
   Cyrillic group of characters. May add more in future.
@@ -246,4 +249,7 @@ inline bool my_uca_can_be_contraction_tail(const char *flags, my_wc_t wc) {
 
 const uint16 *my_uca_contraction2_weight(
     const std::vector<MY_CONTRACTION> *cont_nodes, my_wc_t wc1, my_wc_t wc2);
+
+} /* namespace myodbc */
+
 #endif

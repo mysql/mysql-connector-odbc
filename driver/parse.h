@@ -149,7 +149,7 @@ struct tempBuf {
 
 struct MY_PARSED_QUERY
 {
-  CHARSET_INFO  *cs;                   /* We need it for parsing                  */
+  myodbc::CHARSET_INFO  *cs;                   /* We need it for parsing                  */
   tempBuf buf;
   const char          *query = nullptr;      /* Original query itself                   */
   const char          *query_end = nullptr;  /* query end                               */
@@ -165,7 +165,7 @@ struct MY_PARSED_QUERY
   MY_PARSED_QUERY &operator=(const MY_PARSED_QUERY &src);
   ~MY_PARSED_QUERY();
 
-  void reset(char *query, char *query_end, CHARSET_INFO *cs);
+  void reset(char *query, char *query_end, myodbc::CHARSET_INFO *cs);
   const char *get_token(uint index);
   const char *get_param_pos(uint index);
   bool returns_result();
@@ -231,13 +231,13 @@ BOOL              case_compare(MY_PARSED_QUERY *parser, const char *pos,
 BOOL              parse(MY_PARSED_QUERY *pq);
 
 
-const char *mystr_get_prev_token(CHARSET_INFO *charset,
+const char *mystr_get_prev_token(myodbc::CHARSET_INFO *charset,
                                         const char **query, const char *start);
-const char *mystr_get_next_token(CHARSET_INFO *charset,
+const char *mystr_get_next_token(myodbc::CHARSET_INFO *charset,
                                         const char **query, const char *end);
-const char *find_token(CHARSET_INFO *charset, const char * begin,
+const char *find_token(myodbc::CHARSET_INFO *charset, const char * begin,
                        const char * end, const char * target);
-const char *find_first_token(CHARSET_INFO *charset, const char * begin,
+const char *find_first_token(myodbc::CHARSET_INFO *charset, const char * begin,
                        const char * end, const char * target);
 const char *skip_leading_spaces(const char *str);
 

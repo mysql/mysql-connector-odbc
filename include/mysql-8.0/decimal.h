@@ -30,6 +30,9 @@
 #include "my_inttypes.h"
 #include "my_macros.h"
 
+namespace myodbc
+{
+
 typedef enum {
   TRUNCATE = 0,
   HALF_EVEN,
@@ -152,5 +155,7 @@ static constexpr int DECIMAL_MAX_SCALE{30};
 static constexpr int DECIMAL_NOT_SPECIFIED{DECIMAL_MAX_SCALE + 1};
 
 #endif  // MYSQL_ABI_CHECK
+
+} /* namespace myodbc */
 
 #endif  // DECIMAL_INCLUDED

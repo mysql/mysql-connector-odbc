@@ -57,8 +57,8 @@ extern "C" {
 
 #define MAX_BYTES_PER_UTF8_CP 4 /* max 4 bytes per utf8 codepoint */
 
-extern CHARSET_INFO *utf8_charset_info;
-extern CHARSET_INFO *utf16_charset_info;
+extern myodbc::CHARSET_INFO *utf8_charset_info;
+extern myodbc::CHARSET_INFO *utf16_charset_info;
 extern const char* transport_charset;
 
 struct CHARSET_COLLATION_INFO
@@ -88,9 +88,9 @@ int utf32toutf8(UTF32 i, UTF8 *c);
 
 
 /* Conversions */
-SQLWCHAR *sqlchar_as_sqlwchar(CHARSET_INFO *charset_info, SQLCHAR *str,
+SQLWCHAR *sqlchar_as_sqlwchar(myodbc::CHARSET_INFO *charset_info, SQLCHAR *str,
                               SQLINTEGER *len, uint *errors);
-SQLCHAR *sqlwchar_as_sqlchar(CHARSET_INFO *charset_info, SQLWCHAR *str,
+SQLCHAR *sqlwchar_as_sqlchar(myodbc::CHARSET_INFO *charset_info, SQLWCHAR *str,
                              SQLINTEGER *len, uint *errors);
 SQLCHAR *sqlwchar_as_utf8_ext(const SQLWCHAR *str, SQLINTEGER *len,
                               SQLCHAR *buff, uint buff_max, int *utf8mb4_used);
@@ -98,15 +98,15 @@ SQLCHAR *sqlwchar_as_utf8(const SQLWCHAR *str, SQLINTEGER *len);
 SQLSMALLINT utf8_as_sqlwchar(SQLWCHAR *out, SQLINTEGER out_max, SQLCHAR *in,
                              SQLINTEGER in_len);
 
-SQLCHAR *sqlchar_as_sqlchar(CHARSET_INFO *from_charset,
-                            CHARSET_INFO *to_charset,
+SQLCHAR *sqlchar_as_sqlchar(myodbc::CHARSET_INFO *from_charset,
+                            myodbc::CHARSET_INFO *to_charset,
                             SQLCHAR *str, SQLINTEGER *len, uint *errors);
-SQLINTEGER sqlwchar_as_sqlchar_buf(CHARSET_INFO *charset_info,
+SQLINTEGER sqlwchar_as_sqlchar_buf(myodbc::CHARSET_INFO *charset_info,
                                    SQLCHAR *out, SQLINTEGER out_bytes,
                                    SQLWCHAR *str, SQLINTEGER len, uint *errors);
 uint32
-copy_and_convert(char *to, uint32 to_length, CHARSET_INFO *to_cs,
-                 const char *from, uint32 from_length, CHARSET_INFO *from_cs,
+copy_and_convert(char *to, uint32 to_length, myodbc::CHARSET_INFO *to_cs,
+                 const char *from, uint32 from_length, myodbc::CHARSET_INFO *from_cs,
                  uint32 *used_bytes, uint32 *used_chars, uint *errors);
 
 
@@ -134,8 +134,6 @@ char *myodbc_int10_to_str(long int val, char *dst, int radix);
 bool myodbc_append_mem_std(std::string &str, const char *append, size_t length);
 
 bool myodbc_append_os_quoted_std(std::string &str, const char *append, ...);
-void myodbc_dynstr_free(DYNAMIC_STRING *str);
-bool myodbc_dynstr_realloc(DYNAMIC_STRING *str, size_t additional_size);
 
 unsigned int get_charset_maxlen(unsigned int num);
 void delocalize_radix(char* buffer);

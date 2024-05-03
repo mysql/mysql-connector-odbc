@@ -40,6 +40,9 @@
 #include "str_uca_type.h"
 #include "template_utils.h"
 
+namespace myodbc
+{
+
 size_t my_caseup_str_mb(const CHARSET_INFO *cs, char *str) {
   uint32 l;
   const uchar *map = cs->to_upper;
@@ -1345,3 +1348,5 @@ MY_COLLATION_HANDLER my_collation_mb_bin_handler = {nullptr, /* init */
                                                     my_instr_mb,
                                                     my_hash_sort_mb_bin,
                                                     my_propagate_simple};
+
+} /* namespace myodbc */

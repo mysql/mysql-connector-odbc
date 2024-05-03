@@ -24,6 +24,9 @@
 #include <stdlib.h>
 #include <string.h>
 
+namespace myodbc
+{
+
 typedef unsigned char uchar;
 typedef unsigned short uint16;
 typedef unsigned int uint;
@@ -557,6 +560,8 @@ static void process_options(int ac, char **av, MY_UCA *uca) {
     }
   }
 }
+
+} /* namespace myodbc */
 
 int main(int ac, char **av) {
   static MY_UCA uca;

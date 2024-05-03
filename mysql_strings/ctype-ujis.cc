@@ -47,6 +47,9 @@
 #include "my_inttypes.h"
 #include "template_utils.h"
 
+namespace myodbc
+{
+
 static const uchar ctype_ujis[257] = {
     0,                                              /* For standard library */
     0040, 0040, 0040, 0040, 0040, 0040, 0040, 0040, /* NUL ^A - ^G */
@@ -35886,3 +35889,5 @@ CHARSET_INFO my_charset_ujis_bin = {
     &my_charset_handler,
     &my_collation_mb_bin_handler,
     PAD_SPACE};
+
+} /* namespace myodbc */

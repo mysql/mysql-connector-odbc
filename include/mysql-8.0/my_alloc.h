@@ -44,6 +44,9 @@
 #include "my_pointer_arithmetic.h"
 #include "mysql/psi/psi_memory.h"
 
+namespace myodbc
+{
+
 /**
  * The MEM_ROOT is a simple arena, where allocations are carved out of
  * larger blocks. Using an arena over plain malloc gives you two main
@@ -394,6 +397,8 @@ struct MEM_ROOT {
   PSI_memory_key m_psi_key = 0;
 };
 
+} /* namespace myodbc */
+
 /**
  * Allocate an object of the given type. Use like this:
  *
@@ -408,27 +413,30 @@ struct MEM_ROOT {
  * a MEM_ROOT using regular placement new. We should make a less ambiguous
  * syntax, e.g. new (On(mem_root)) Foo().
  */
-inline void *operator new(size_t size, MEM_ROOT *mem_root,
+inline void *operator new(size_t size, myodbc::MEM_ROOT *mem_root,
                           const std::nothrow_t &arg
                           [[maybe_unused]] = std::nothrow) noexcept {
   return mem_root->Alloc(size);
 }
 
-inline void *operator new[](size_t size, MEM_ROOT *mem_root,
+inline void *operator new[](size_t size, myodbc::MEM_ROOT *mem_root,
                             const std::nothrow_t &arg
                             [[maybe_unused]] = std::nothrow) noexcept {
   return mem_root->Alloc(size);
 }
 
-inline void operator delete(void *, MEM_ROOT *,
+inline void operator delete(void *, myodbc::MEM_ROOT *,
                             const std::nothrow_t &) noexcept {
   /* never called */
 }
 
-inline void operator delete[](void *, MEM_ROOT *,
+inline void operator delete[](void *, myodbc::MEM_ROOT *,
                               const std::nothrow_t &) noexcept {
   /* never called */
 }
+
+namespace myodbc
+{
 
 template <class T>
 inline void destroy(T *ptr) {
@@ -469,5 +477,7 @@ unique_ptr_destroy_only<T> make_unique_destroy_only(MEM_ROOT *mem_root,
   return unique_ptr_destroy_only<T>(new (mem_root)
                                         T(std::forward<Args>(args)...));
 }
+
+} /* namespace myodbc */
 
 #endif  // INCLUDE_MY_ALLOC_H_

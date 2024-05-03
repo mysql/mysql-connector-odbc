@@ -42,6 +42,9 @@
 #include "my_xml.h"
 #include "mysys_err.h"
 
+namespace myodbc
+{
+
 /*
 
   This files implements routines which parse XML based
@@ -1064,3 +1067,5 @@ bool my_is_prefixidx_cand(const CHARSET_INFO *cs, const char *wildstr,
 
   return true;
 }
+
+} /* namespace myodbc */

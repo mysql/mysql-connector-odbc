@@ -53,6 +53,9 @@
 
 #include <limits.h>
 
+namespace myodbc
+{
+
 #ifndef ll2str
 
 /*
@@ -143,3 +146,5 @@ char *longlong10_to_str(longlong val, char *dst, int radix) {
   return dst - 1;
 }
 #endif
+
+} /* namespace myodbc */

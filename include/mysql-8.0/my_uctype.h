@@ -27,6 +27,9 @@
 
 #include "m_ctype.h"
 
+namespace myodbc
+{
+
 /*
   Unicode ctype data
   Generated from UnicodeData-5.0.0d9.txt
@@ -1018,5 +1021,7 @@ MY_UNI_CTYPE my_uni_ctype[256] = {
     {2, nullptr},       {0, uctype_pageFA}, {0, uctype_pageFB},
     {2, nullptr},       {0, uctype_pageFD}, {0, uctype_pageFE},
     {0, uctype_pageFF}};
+
+} /* namespace myodbc */
 
 #endif /* MY_UCTYPE_INCLUDED */

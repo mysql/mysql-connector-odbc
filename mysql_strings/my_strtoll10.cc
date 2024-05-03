@@ -32,6 +32,9 @@
 #include "my_inttypes.h"
 #include "my_sys.h" /* Needed for MY_ERRNO_ERANGE */
 
+namespace myodbc
+{
+
 #define MAX_NEGATIVE_NUMBER ((ulonglong)0x8000000000000000LL)
 #define INIT_CNT 9
 #define LFACTOR 1000000000ULL
@@ -212,3 +215,5 @@ no_conv:
   *endptr = nptr;
   return 0;
 }
+
+} /* namespace myodbc */

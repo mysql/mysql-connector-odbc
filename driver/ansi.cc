@@ -98,7 +98,7 @@ SQLColAttributeImpl(SQLHSTMT hstmt, SQLUSMALLINT column,
       rc= stmt->set_error(MYERR_01004, NULL, 0);
 
     if (char_attr && char_attr_max > 1)
-      strmake((char *)char_attr, (char *)value, char_attr_max - 1);
+      myodbc::strmake((char *)char_attr, (char *)value, char_attr_max - 1);
 
     if (char_attr_len)
       *char_attr_len= (SQLSMALLINT)len;
@@ -160,11 +160,11 @@ SQLConnect(SQLHDBC hdbc, SQLCHAR *dsn, SQLSMALLINT dsn_len_in,
   SQLINTEGER dsn_len= dsn_len_in, user_len= user_len_in,
              auth_len= auth_len_in;
 
-  SQLWCHAR *dsnw=  sqlchar_as_sqlwchar(default_charset_info,
+  SQLWCHAR *dsnw=  sqlchar_as_sqlwchar(myodbc::default_charset_info,
                                        dsn, &dsn_len, &errors);
-  SQLWCHAR *userw= sqlchar_as_sqlwchar(default_charset_info,
+  SQLWCHAR *userw= sqlchar_as_sqlwchar(myodbc::default_charset_info,
                                        user, &user_len, &errors);
-  SQLWCHAR *authw= sqlchar_as_sqlwchar(default_charset_info,
+  SQLWCHAR *authw= sqlchar_as_sqlwchar(myodbc::default_charset_info,
                                        auth, &auth_len, &errors);
 
   CHECK_HANDLE(hdbc);
@@ -214,7 +214,7 @@ SQLDescribeCol(SQLHSTMT hstmt, SQLUSMALLINT column,
       rc= stmt->set_error(MYERR_01004, NULL, 0);
 
     if (name && name_max > 1)
-      strmake((char *)name, (char *)value, name_max - 1);
+      myodbc::strmake((char *)name, (char *)value, name_max - 1);
 
     if (name_len)
       *name_len= (SQLSMALLINT)len;
@@ -278,7 +278,7 @@ SQLDriverConnect(SQLHDBC hdbc, SQLHWND hwnd, SQLCHAR *in, SQLSMALLINT in_len,
   {
     uint errors;
     /* Now we have to convert SQLWCHAR back into a SQLCHAR. */
-    sqlwchar_as_sqlchar_buf(default_charset_info, out, out_max,
+    sqlwchar_as_sqlchar_buf(myodbc::default_charset_info, out, out_max,
                             outw, *out_len, &errors);
     if (*out_len > out_max - 1)
     {
@@ -373,7 +373,7 @@ SQLGetConnectAttrImpl(SQLHDBC hdbc, SQLINTEGER attribute, SQLPOINTER value,
       rc = dbc->set_error(MYERR_01004, NULL, 0);
 
     if (value && value_max > 1)
-      strmake((char *)value, (char *)char_value, value_max - 1);
+      myodbc::strmake((char *)value, (char *)char_value, value_max - 1);
 
     if (value_len)
       *value_len= len;
@@ -401,7 +401,7 @@ SQLGetCursorName(SQLHSTMT hstmt, SQLCHAR *cursor, SQLSMALLINT cursor_max,
   SQLINTEGER len = (SQLINTEGER)strlen((char *)name);
 
   if (cursor && cursor_max > 1)
-    strmake((char *)cursor, (char *)name, cursor_max - 1);
+    myodbc::strmake((char *)cursor, (char *)name, cursor_max - 1);
 
   if (cursor_len)
     *cursor_len= (SQLSMALLINT)len;
@@ -457,7 +457,7 @@ SQLGetDiagField(SQLSMALLINT handle_type, SQLHANDLE handle,
       *info_len= (SQLSMALLINT)len;
 
     if (info && info_max > 1)
-      strmake((char *)info, (char *)value, info_max - 1);
+      myodbc::strmake((char *)info, (char *)value, info_max - 1);
   }
 
   return rc;
@@ -533,12 +533,12 @@ SQLGetDiagRecImpl(SQLSMALLINT handle_type, SQLHANDLE handle,
       *message_len= (SQLSMALLINT)len;
 
     if (message && message_max > 1)
-      strmake((char *)message, (char *)msg_value, message_max - 1);
+      myodbc::strmake((char *)message, (char *)msg_value, message_max - 1);
   }
 
   if (sqlstate && sqlstate_value)
   {
-    strmake((char *)sqlstate,
+    myodbc::strmake((char *)sqlstate,
             sqlstate_value ? (char *)sqlstate_value : "00000", 5);
   }
 
@@ -569,7 +569,7 @@ SQLGetInfo(SQLHDBC hdbc, SQLUSMALLINT type, SQLPOINTER value,
       rc = dbc->set_error(MYERR_01004, NULL, 0);
 
     if (value && value_max > 1)
-      strmake((char *)value, (char *)char_value, value_max - 1);
+      myodbc::strmake((char *)value, (char *)char_value, value_max - 1);
 
     if (value_len)
       *value_len= (SQLSMALLINT)len;

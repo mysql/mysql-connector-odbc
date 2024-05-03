@@ -53,6 +53,9 @@
 #include "my_compiler.h"
 #include "my_config.h"
 
+namespace myodbc
+{
+
 template <bool RANGE_CHECK, bool SUPPORT_MB4>
 static int my_mb_wc_utf8_prototype(my_wc_t *pwc, const uchar *s,
                                    const uchar *e);
@@ -215,10 +218,12 @@ static ALWAYS_INLINE int my_mb_wc_utf8mb4(my_wc_t *pwc, const uchar *s,
 // in MY_CHARSET_HANDLER structs, and you can compare againt them to see
 // if using the Mb_wc_utf8* functors would be appropriate.
 
-extern "C" int my_mb_wc_utf8_thunk(const CHARSET_INFO *cs, my_wc_t *pwc,
+extern "C" int myodbc_mb_wc_utf8_thunk(const CHARSET_INFO *cs, my_wc_t *pwc,
                                    const uchar *s, const uchar *e);
 
-extern "C" int my_mb_wc_utf8mb4_thunk(const CHARSET_INFO *cs, my_wc_t *pwc,
+extern "C" int myodbc_mb_wc_utf8mb4_thunk(const CHARSET_INFO *cs, my_wc_t *pwc,
                                       const uchar *s, const uchar *e);
+
+} /* namespace myodbc */
 
 #endif  // MB_WC_INCLUDED

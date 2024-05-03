@@ -425,7 +425,7 @@ SQLGetConnectAttrWImpl(SQLHDBC hdbc, SQLINTEGER attribute, SQLPOINTER value,
     SQLWCHAR *wvalue;
     SQLINTEGER len= SQL_NTS;
     uint errors;
-    CHARSET_INFO *result_charset_info= dbc->cxn_charset_info;
+    myodbc::CHARSET_INFO *result_charset_info= dbc->cxn_charset_info;
 
     /*
       When SQLGetConnectAttr is called before connecting the connection
@@ -434,7 +434,7 @@ SQLGetConnectAttrWImpl(SQLHDBC hdbc, SQLINTEGER attribute, SQLPOINTER value,
     */
     if(!dbc->cxn_charset_info)
     {
-      result_charset_info= get_charset_by_csname(transport_charset, MYF(MY_CS_PRIMARY),
+      result_charset_info= myodbc::get_charset_by_csname(transport_charset, MYF(MY_CS_PRIMARY),
                                                  MYF(0));
     }
 
@@ -547,7 +547,7 @@ SQLGetDiagFieldW(SQLSMALLINT handle_type, SQLHANDLE handle,
     uint errors;
     SQLWCHAR *wvalue= sqlchar_as_sqlwchar((dbc && dbc->cxn_charset_info) ?
                                           dbc->cxn_charset_info :
-                                          default_charset_info,
+                                          myodbc::default_charset_info,
                                           value, &len, &errors);
 
     /* info_max is in bytes, we want it in chars. */
@@ -635,7 +635,7 @@ SQLGetDiagRecWImpl(SQLSMALLINT handle_type, SQLHANDLE handle,
   {
     SQLWCHAR *wvalue= sqlchar_as_sqlwchar((dbc && dbc->cxn_charset_info) ?
                                           dbc->cxn_charset_info :
-                                          default_charset_info,
+                                          myodbc::default_charset_info,
                                           msg_value, &len, &errors);
 
     /*
@@ -664,7 +664,7 @@ SQLGetDiagRecWImpl(SQLSMALLINT handle_type, SQLHANDLE handle,
   {
     SQLWCHAR *wvalue= sqlchar_as_sqlwchar((dbc && dbc->cxn_charset_info) ?
                                           dbc->cxn_charset_info :
-                                          default_charset_info,
+                                          myodbc::default_charset_info,
                                           sqlstate_value, &len, &errors);
 
     if (wvalue)
@@ -708,7 +708,7 @@ SQLGetInfoW(SQLHDBC hdbc, SQLUSMALLINT type, SQLPOINTER value,
   {
     SQLWCHAR *wvalue= sqlchar_as_sqlwchar((dbc->cxn_charset_info ?
                                            dbc->cxn_charset_info :
-                                           default_charset_info),
+                                           myodbc::default_charset_info),
                                           char_value, &len, &errors);
 
     /* value_max is in bytes, we want it in chars. */
@@ -983,7 +983,7 @@ SQLSetConnectAttrWImpl(SQLHDBC hdbc, SQLINTEGER attribute,
       value= sqlwchar_as_sqlchar(dbc->cxn_charset_info,
                                  (SQLWCHAR*)value, &len, &errors);
     else
-      value= sqlwchar_as_sqlchar(default_charset_info,
+      value= sqlwchar_as_sqlchar(myodbc::default_charset_info,
                                  (SQLWCHAR*)value, &len, &errors);
     free_value= TRUE;
   }

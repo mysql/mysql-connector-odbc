@@ -58,6 +58,9 @@ int64_t fseek_(FILE *stream, int64_t offset, int whence) {
 }
 }  // namespace
 
+namespace myodbc
+{
+
 /**
    Read a chunk of bytes from a FILE stream.
 
@@ -184,3 +187,5 @@ File my_fileno(FILE *f) {
   return fileno(f);
 #endif
 }
+
+} /* namespace myodbc */

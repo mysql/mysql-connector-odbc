@@ -127,6 +127,9 @@
 #include "my_sys.h" /* for my_alloca */
 #include "myisampack.h"
 
+namespace myodbc
+{
+
 /**
   Internally decimal numbers are stored base 10^9 (see DIG_BASE below)
   So one variable of type decimal_digit_t is limited:
@@ -2502,3 +2505,5 @@ int decimal_div(const decimal_t *from1, const decimal_t *from2, decimal_t *to,
 int decimal_mod(const decimal_t *from1, const decimal_t *from2, decimal_t *to) {
   return do_div_mod(from1, from2, nullptr, to, 0);
 }
+
+} /* namespace myodbc */

@@ -46,6 +46,9 @@
 #include "my_uctype.h"  // IWYU pragma: keep
 #include "mb_wc.h"
 
+namespace myodbc
+{
+
 #ifndef EILSEQ
 #define EILSEQ ENOENT
 #endif
@@ -5113,7 +5116,7 @@ size_t my_strnxfrm_unicode(const CHARSET_INFO *cs, uchar *dst, size_t dstlen,
                            uint flags) {
   // my_mb_wc_utf8 is so common that we special-case it; short-circuit away
   // the thunk, and get it inlined.
-  if (cs->cset->mb_wc == my_mb_wc_utf8_thunk) {
+  if (cs->cset->mb_wc == myodbc_mb_wc_utf8_thunk) {
     return my_strnxfrm_unicode_tmpl(cs, Mb_wc_utf8(), dst, dstlen, nweights,
                                     src, srclen, flags);
   } else {
@@ -5759,7 +5762,7 @@ MY_CHARSET_HANDLER my_charset_utf8_handler = {nullptr, /* init */
                                               my_well_formed_len_utf8,
                                               my_lengthsp_8bit,
                                               my_numcells_mb,
-                                              my_mb_wc_utf8_thunk,
+                                              myodbc_mb_wc_utf8_thunk,
                                               my_uni_utf8,
                                               my_mb_ctype_mb,
                                               my_caseup_str_utf8,
@@ -7207,7 +7210,7 @@ extern "C" {
   @return The number of bytes read from s, or a value <= 0 for failure
     (see m_ctype.h).
 */
-int my_mb_wc_utf8_thunk(const CHARSET_INFO *cs [[maybe_unused]], my_wc_t *pwc,
+int myodbc_mb_wc_utf8_thunk(const CHARSET_INFO *cs [[maybe_unused]], my_wc_t *pwc,
                         const uchar *s, const uchar *e) {
   return my_mb_wc_utf8(pwc, s, e);
 }
@@ -7223,7 +7226,7 @@ int my_mb_wc_utf8_thunk(const CHARSET_INFO *cs [[maybe_unused]], my_wc_t *pwc,
   @return The number of bytes read from s, or a value <= 0 for failure
     (see m_ctype.h).
 */
-int my_mb_wc_utf8mb4_thunk(const CHARSET_INFO *cs [[maybe_unused]],
+int myodbc_mb_wc_utf8mb4_thunk(const CHARSET_INFO *cs [[maybe_unused]],
                            my_wc_t *pwc, const uchar *s, const uchar *e) {
   return my_mb_wc_utf8mb4(pwc, s, e);
 }
@@ -7712,7 +7715,7 @@ static uint my_ismbchar_utf8mb4(const CHARSET_INFO *cs, const char *b,
   return my_ismbchar_utf8mb4_inl(cs, b, e);
 }
 
-size_t my_charpos_mb4(const CHARSET_INFO *cs, const char *pos, const char *end,
+size_t myodbc_charpos_mb4(const CHARSET_INFO *cs, const char *pos, const char *end,
                       size_t length) {
   // Fast path as long as we see ASCII characters only.
   size_t min_length = std::min<size_t>(end - pos, length);
@@ -7779,11 +7782,11 @@ MY_CHARSET_HANDLER my_charset_utf8mb4_handler = {nullptr, /* init */
                                                  my_ismbchar_utf8mb4,
                                                  my_mbcharlen_utf8mb4,
                                                  my_numchars_mb,
-                                                 my_charpos_mb4,
+                                                 myodbc_charpos_mb4,
                                                  my_well_formed_len_utf8mb4,
                                                  my_lengthsp_8bit,
                                                  my_numcells_mb,
-                                                 my_mb_wc_utf8mb4_thunk,
+                                                 myodbc_mb_wc_utf8mb4_thunk,
                                                  my_wc_mb_utf8mb4,
                                                  my_mb_ctype_mb,
                                                  my_caseup_str_utf8mb4,
@@ -7874,3 +7877,5 @@ CHARSET_INFO my_charset_utf8mb4_bin = {
     &my_charset_utf8mb4_handler,
     &my_collation_utf8mb4_bin_handler,
     PAD_SPACE};
+
+} /* namespace myodbc */

@@ -36,6 +36,9 @@
 
 #include "my_timer.h" /* my_timer_t */
 
+namespace myodbc
+{
+
 /**
   Timer expiration notification thread.
 
@@ -125,3 +128,5 @@ int my_timer_cancel(my_timer_t *timer, int *state) {
 */
 
 void my_timer_delete(my_timer_t *timer) { timer_delete(timer->id); }
+
+} /* namespace myodbc */

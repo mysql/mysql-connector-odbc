@@ -40,6 +40,10 @@
 #include "my_thread_local.h"
 
 #if defined(SAFE_MUTEX)
+
+namespace myodbc
+{
+
 /* This makes a wrapper for mutex handling to make it easier to debug mutex */
 
 static bool safe_mutex_inited = false;
@@ -198,5 +202,7 @@ int safe_mutex_destroy(safe_mutex_t *mp, const char *file, uint line) {
   mp->file = nullptr; /* Mark destroyed */
   return error;
 }
+
+} /* namespace myodbc */
 
 #endif /* SAFE_MUTEX */

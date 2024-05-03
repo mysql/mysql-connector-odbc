@@ -32,6 +32,9 @@
 #include "my_inttypes.h"
 #include "my_macros.h"
 
+namespace myodbc
+{
+
 struct CHARSET_INFO;
 
 enum MY_ATTRIBUTE((__packed__)) my_lex_states {
@@ -94,5 +97,7 @@ struct lex_state_maps_st {
 typedef struct lex_state_maps_st lex_state_maps_st;
 
 bool init_state_maps(CHARSET_INFO *cs);
+
+} /* namespace myodbc */
 
 #endif /* SQL_LEX_CHARS_INCLUDED */

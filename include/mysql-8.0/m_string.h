@@ -44,6 +44,9 @@
 #include "my_inttypes.h"
 #include "my_macros.h"
 
+namespace myodbc
+{
+
 /**
   Definition of the null string (a null pointer of type char *),
   used in some of our string handling code. New code should use
@@ -374,5 +377,7 @@ static inline void lex_cstring_set(LEX_CSTRING *lex_str, const char *c_str) {
   lex_str->str = c_str;
   lex_str->length = strlen(c_str);
 }
+
+} /* namespace myodbc */
 
 #endif  // M_STRING_INCLUDED

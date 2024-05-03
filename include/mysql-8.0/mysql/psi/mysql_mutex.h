@@ -68,6 +68,9 @@
 #include "pfs_mutex_provider.h"  // IWYU pragma: keep
 #endif
 
+namespace myodbc
+{
+
 #ifndef PSI_MUTEX_CALL
 #define PSI_MUTEX_CALL(M) psi_mutex_service->M
 #endif
@@ -348,6 +351,8 @@ static inline int inline_mysql_mutex_unlock(mysql_mutex_t *that,
 }
 
 #endif /* DISABLE_MYSQL_THREAD_H */
+
+} /* namespace myodbc */
 
 /** @} (end of group psi_api_mutex) */
 

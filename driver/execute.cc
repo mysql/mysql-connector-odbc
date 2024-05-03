@@ -1138,11 +1138,11 @@ SQLRETURN insert_param(STMT *stmt, MYSQL_BIND *bind, DESC* apd,
 
           while ( *from && from < end )
           {
-            if ( from[0] == local_thousands_sep[0] && is_prefix(from,local_thousands_sep) )
+            if ( from[0] == local_thousands_sep[0] && myodbc::is_prefix(from,local_thousands_sep) )
             {
               from+= local_thousands_sep_length;
             }
-            else if ( from[0] == local_decimal_point[0] && is_prefix(from,local_decimal_point) )
+            else if ( from[0] == local_decimal_point[0] && myodbc::is_prefix(from,local_decimal_point) )
             {
               from+= local_decimal_point_length;
               *to++='.';

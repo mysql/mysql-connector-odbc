@@ -133,7 +133,7 @@ MySQLGetInfo(SQLHDBC hdbc, SQLUSMALLINT fInfoType,
                      0);
 
   case SQL_COLLATION_SEQ:
-    MYINFO_SET_STR(dbc->mysql->charset->name);
+    MYINFO_SET_STR(dbc->cxn_charset_info->name);
 
   case SQL_COLUMN_ALIAS:
     MYINFO_SET_STR("Y");

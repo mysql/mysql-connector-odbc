@@ -38,6 +38,9 @@
 #include "my_inttypes.h"
 #include "template_utils.h"
 
+namespace myodbc
+{
+
 #define is_mb_1(c) ((uchar)(c) <= 0x7F)
 #define is_mb_odd(c) (0x81 <= (uchar)(c) && (uchar)(c) <= 0xFE)
 #define is_mb_even_2(c)                          \
@@ -20490,3 +20493,5 @@ CHARSET_INFO my_charset_gb18030_bin = {
     &my_charset_gb18030_handler,
     &my_collation_mb_bin_handler,
     PAD_SPACE};
+
+} /* namespace myodbc */

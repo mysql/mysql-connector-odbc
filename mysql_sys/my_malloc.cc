@@ -46,6 +46,9 @@
 #include "mysql/psi/psi_memory.h"
 #include "mysys_err.h"
 
+namespace myodbc
+{
+
 struct PSI_thread;
 
 #ifdef HAVE_PSI_MEMORY_INTERFACE
@@ -305,3 +308,5 @@ char *my_strndup(PSI_memory_key key, const char *from, size_t length,
   }
   return ptr;
 }
+
+} /* namespace myodbc */

@@ -29,6 +29,9 @@
 
 #include <mysql/psi/mysql_mutex.h>
 
+namespace myodbc
+{
+
 /**
   A simple wrapper around a mutex:
   Grabs the mutex in the CTOR, releases it in the DTOR.
@@ -58,5 +61,7 @@ class Mutex_lock {
 };
 
 #define MUTEX_LOCK(NAME, X) Mutex_lock NAME(X, __FILE__, __LINE__)
+
+} /* namespace myodbc */
 
 #endif  // MUTEX_LOCK_INCLUDED

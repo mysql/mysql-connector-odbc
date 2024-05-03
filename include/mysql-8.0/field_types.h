@@ -38,9 +38,8 @@
 #ifndef FIELD_TYPES_INCLUDED
 #define FIELD_TYPES_INCLUDED
 
-#ifdef __cplusplus
-extern "C" {
-#endif /* __cplusplus */
+namespace myodbc
+{
 
 /*
  * Constants exported from this package.
@@ -89,10 +88,6 @@ enum enum_field_types
   MYSQL_TYPE_STRING = 254,
   MYSQL_TYPE_GEOMETRY = 255 };
 
-#ifdef __cplusplus
-}  // extern "C"
-#else
-typedef enum enum_field_types enum_field_types;
-#endif /* __cplusplus */
+} /* namespace myodbc */
 
 #endif /* FIELD_TYPES_INCLUDED */

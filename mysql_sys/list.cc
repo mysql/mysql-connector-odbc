@@ -39,6 +39,9 @@
 #include "mysql/service_mysql_alloc.h"
 #include "mysys_priv.h"
 
+namespace myodbc
+{
+
 /* Add a element to start of list */
 
 LIST *list_add(LIST *root, LIST *element) {
@@ -110,3 +113,5 @@ int list_walk(LIST *list, list_walk_action action, uchar *argument) {
   }
   return 0;
 }
+
+} /* namespace myodbc */

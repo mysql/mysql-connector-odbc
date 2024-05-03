@@ -43,6 +43,9 @@
 #include "mysql/components/services/psi_thread_bits.h"  // for PSI_thread_key
 #include "mysql/psi/mysql_mutex.h"                      // for mysql_mutex_lock
 
+namespace myodbc
+{
+
 extern PSI_mutex_key key_IO_CACHE_append_buffer_lock, key_IO_CACHE_SHARE_mutex,
     key_KEY_CACHE_cache_lock, key_THR_LOCK_charset, key_THR_LOCK_heap,
     key_THR_LOCK_lock, key_THR_LOCK_malloc, key_THR_LOCK_mutex,
@@ -167,5 +170,7 @@ void UnregisterFilename(File fd);
 
 void MyFileInit();
 void MyFileEnd();
+
+} /* namespace myodbc */
 
 #endif /* MYSYS_PRIV_INCLUDED */

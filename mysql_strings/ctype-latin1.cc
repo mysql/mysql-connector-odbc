@@ -33,6 +33,9 @@
 #include "my_compiler.h"
 #include "my_inttypes.h"
 
+namespace myodbc
+{
+
 static const uchar ctype_latin1[] = {
     0,  32,  32,  32,  32,  32,  32,  32,  32,  32,  40,  40, 40, 40, 40, 32,
     32, 32,  32,  32,  32,  32,  32,  32,  32,  32,  32,  32, 32, 32, 32, 32,
@@ -701,3 +704,5 @@ CHARSET_INFO my_charset_latin1_bin = {
     &my_charset_handler,
     &my_collation_8bit_bin_handler,
     PAD_SPACE};
+
+} /* namespace myodbc */

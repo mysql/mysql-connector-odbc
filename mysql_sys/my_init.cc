@@ -79,14 +79,23 @@
 #include <crtdbg.h>
 #include <locale.h>
 
+namespace myodbc
+{
+
 /* WSAStartup needs winsock library*/
 #pragma comment(lib, "ws2_32")
 bool have_tcpip = 0;
 static void my_win_init();
+
+} /* namespace myodbc */
+
 #endif
 
 #define SCALE_SEC 100
 #define SCALE_USEC 10000
+
+namespace myodbc
+{
 
 bool my_init_done = false;
 ulong my_thread_stack_size = 65536;
@@ -148,7 +157,7 @@ bool my_init() {
   if ((str = getenv("UMASK_DIR")) != nullptr)
     my_umask_dir = (int)(atoi_octal(str) | 0700);
 
-  if (my_thread_global_init()) return true;
+  if (myodbc::my_thread_global_init()) return true;
 
   if (my_thread_init()) return true;
 
@@ -594,3 +603,5 @@ void my_init_mysys_psi_keys() {
 #endif /* HAVE_PSI_THREAD_INTERFACE */
 }
 #endif /* HAVE_PSI_INTERFACE */
+
+} /* namespace myodbc */

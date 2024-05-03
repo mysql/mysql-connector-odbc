@@ -51,6 +51,9 @@
 
 #include "m_string.h"  // IWYU pragma: keep
 
+namespace myodbc
+{
+
 char *strxnmov(char *dst, size_t len, const char *src, ...) {
   va_list pvar;
   char *end_of_dst = dst + len;
@@ -68,3 +71,5 @@ end:
   va_end(pvar);
   return dst;
 }
+
+} /* namespace myodbc */

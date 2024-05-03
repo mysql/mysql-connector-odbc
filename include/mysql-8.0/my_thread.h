@@ -39,6 +39,9 @@
 #include "my_inttypes.h"
 #include "my_macros.h"
 
+namespace myodbc
+{
+
 #ifndef ETIME
 #define ETIME ETIMEDOUT /* For FreeBSD */
 #endif
@@ -163,7 +166,9 @@ extern void my_thread_global_reinit();
 extern void my_thread_global_end();
 
 // Need to be extern "C" for the time being, due to memcached.
-extern "C" bool my_thread_init();
-extern "C" void my_thread_end();
+extern bool my_thread_init();
+extern void my_thread_end();
+
+} /* namespace myodbc */
 
 #endif /* MY_THREAD_INCLUDED */
