@@ -434,7 +434,7 @@ DECLARE_TEST(t_bug55024)
   ok_stmt(hstmt, SQLExecDirect(hstmt, "SELECT * FROM t_test55024", SQL_NTS));
 
   ok_stmt(hstmt, SQLColAttribute(hstmt, 1, SQL_DESC_TYPE, NULL, 0, &len, &res));
-  is_num(res, SQL_LONGVARCHAR);
+  is_num(res, unicode_driver ? SQL_WLONGVARCHAR : SQL_LONGVARCHAR);
 
   ok_stmt(hstmt, SQLColAttribute(hstmt, 2, SQL_DESC_TYPE, NULL, 0, &len, &res));
   is_num(res, SQL_BINARY);
@@ -573,7 +573,7 @@ DECLARE_TEST(t_desccol_before_exec)
                                    "where tt_int <= ?", SQL_NTS));
 
   ok_stmt(hstmt, SQLColAttribute(hstmt, 2, SQL_DESC_TYPE, NULL, 0, NULL, &coltype));
-  is_num(coltype, SQL_VARCHAR);
+  is_num(coltype, unicode_driver ? SQL_WVARCHAR : SQL_VARCHAR);
 
   /* Just to make sure that SQLNumResultCols still works fine */
   ok_stmt(hstmt, SQLNumResultCols(hstmt, &colCount));

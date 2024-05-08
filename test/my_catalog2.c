@@ -572,7 +572,7 @@ DECLARE_TEST(t_sqlprocedurecolumns)
   ok_sql(hstmt, "create procedure procedure_columns_test1(IN re_param1 TINYINT, OUT re_param2 SMALLINT," \
                 "re_param3 MEDIUMINT, INOUT `re_param 4` INT UNSIGNED, OUT re_param5 BIGINT, re_param6 FLOAT(4,2)," \
                 "OUT re_param7 DOUBLE(5, 3), IN re_param8 DECIMAL(10,3) unSIGned, re_param9 CHAR(32)," \
-                "Out re_param10 VARCHAR(64) charset utf8, ignore_param INT, re_param11 MEDIUMBLOB)" \
+                "Out re_param10 VARCHAR(64), ignore_param INT, re_param11 MEDIUMBLOB)" \
                 "begin end;"
                 );
   ok_sql(hstmt, "create procedure procedure_columns_test2(IN re_paramA bloB," \
@@ -686,13 +686,17 @@ DECLARE_TEST(t_bug57182)
     "  insert into simp values (id, name);"
     "END");
 
-  ok_sql(hstmt, "select SPECIFIC_NAME, GROUP_CONCAT(IF(ISNULL(PARAMETER_NAME), concat('RETURN_VALUE ', DTD_IDENTIFIER), concat(PARAMETER_MODE, ' ', PARAMETER_NAME, ' ', DTD_IDENTIFIER)) ORDER BY ORDINAL_POSITION ASC SEPARATOR ', ') PARAMS_LIST, SPECIFIC_SCHEMA, ROUTINE_TYPE FROM information_schema.parameters WHERE SPECIFIC_SCHEMA = 'test' AND SPECIFIC_NAME = 'bug57182' GROUP BY SPECIFIC_NAME, SPECIFIC_SCHEMA, ROUTINE_TYPE");
+  ok_sql(hstmt, "select SPECIFIC_NAME, GROUP_CONCAT(IF(ISNULL(PARAMETER_NAME),"
+    "concat('RETURN_VALUE ', DTD_IDENTIFIER), concat(PARAMETER_MODE, "
+    "' ', PARAMETER_NAME, ' ', DTD_IDENTIFIER)) ORDER BY ORDINAL_POSITION ASC SEPARATOR ', ')"
+    " PARAMS_LIST, SPECIFIC_SCHEMA, ROUTINE_TYPE FROM information_schema.parameters"
+    " WHERE SPECIFIC_SCHEMA = 'test' AND SPECIFIC_NAME = 'bug57182'"
+    " GROUP BY SPECIFIC_NAME, SPECIFIC_SCHEMA, ROUTINE_TYPE");
 
   my_print_non_format_result(hstmt);
 
   ok_stmt(hstmt, SQLProcedureColumns(hstmt, "test", SQL_NTS, NULL, 0,
-    "bug57182", SQL_NTS,
-    NULL, 0));
+    "bug57182", SQL_NTS, NULL, 0));
 
   ok_stmt(hstmt, SQLRowCount(hstmt, &nRowCount));
   is_num(2, nRowCount);
@@ -1254,7 +1258,6 @@ DECLARE_TEST(t_bug_14005343)
     ++nrows;
     ok_stmt(hstmt, SQLGetData(hstmt, 1, SQL_C_CHAR, database,
                              sizeof(database), NULL));
-    printf("%s\n", database);
     /* the table catalog in the results must not be '%' */
     is(database[0] != '%');
   }

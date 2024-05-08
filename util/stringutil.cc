@@ -41,6 +41,10 @@ using namespace myodbc;
 myodbc::CHARSET_INFO *utf8_charset_info = NULL;
 myodbc::CHARSET_INFO *utf16_charset_info = NULL;
 
+// The default charset for ANSI driver if CHARSET option is not specified
+const char *ansi_default_charset = "latin1";
+
+// The transport charset is used for unicode driver
 const char *transport_charset = "utf8mb4";
 
 // Scientific floating point notation:

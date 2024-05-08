@@ -482,10 +482,15 @@ SQLRETURN convert_c_type2str(STMT *stmt, SQLSMALLINT ctype, DESCREC *iprec,
         /* length is in bytes, we want chars */
         *length= *length / sizeof(SQLWCHAR);
 
-        *res= (char*)sqlwchar_as_utf8_ext((SQLWCHAR*)*res, (SQLINTEGER*)length,
+        // The length is passed as pointer. We need to account for platforms
+        // where sizeof(SQLINTEGER) != sizeof(long).
+        SQLINTEGER int_len = (SQLINTEGER)*length;
+
+        *res= (char*)sqlwchar_as_utf8_ext((SQLWCHAR*)*res, &int_len,
                                           (SQLCHAR*)buff, buff_max,
                                           &has_utf8_maxlen4);
-
+        // Write the returned SQLINTEGER value into the output param.
+        *length = int_len;
 
         if (has_utf8_maxlen4 &&
             !is_minimum_version(stmt->dbc->mysql->server_version, "5.5.3"))
@@ -949,21 +954,18 @@ SQLRETURN insert_param(STMT *stmt, MYSQL_BIND *bind, DESC* apd,
         {
           if (bind != NULL)
           {
-            /* i guess for ssps we do not need introducer */
+            /* For ssps we do not need introducer */
             convert= 0;
           }
           else
           {
-            if (dbc->cxn_charset_info->number !=
-                dbc->ansi_charset_info->number)
-            {
-              stmt->add_to_buffer("_binary", 7);
-            }
+            /* Always add the introducer for NO_SSPS and binary data */
+            stmt->add_to_buffer("_binary", 7);
           }
           /* We have only added the introducer, data is added below. */
           break;
-          }
-          /* else treat as a string */
+        }
+        /* else treat as a string */
       case SQL_CHAR:
       case SQL_VARCHAR:
       case SQL_LONGVARCHAR:
@@ -971,22 +973,10 @@ SQLRETURN insert_param(STMT *stmt, MYSQL_BIND *bind, DESC* apd,
       case SQL_WVARCHAR:
       case SQL_WLONGVARCHAR:
         {
-          if (aprec->concise_type == SQL_C_WCHAR &&
-              dbc->cxn_charset_info->number != UTF8_CHARSET_NUMBER)
-          {
-            if (bind != NULL)
-            {
-              if (bind_param(bind, data, length, MYSQL_TYPE_BLOB))
-              {
-                goto memerror;
-              }
-
-              goto out;
-            }
-          }
-          else if (aprec->concise_type != SQL_C_WCHAR &&
-                    dbc->cxn_charset_info->number !=
-                    dbc->ansi_charset_info->number)
+          if ((aprec->concise_type == SQL_C_WCHAR &&
+               dbc->cxn_charset_info->number != UTF8_CHARSET_NUMBER) ||
+              (aprec->concise_type != SQL_C_WCHAR &&
+               aprec->concise_type != SQL_C_CHAR))
           {
             if (bind != NULL)
             {

@@ -588,10 +588,8 @@ struct DBC
 
   // Whether SQL*ConnectW was used
   bool          unicode = false;
-  // 'ANSI' charset (SQL_C_CHAR)
-  myodbc::CHARSET_INFO  *ansi_charset_info = nullptr,
   // Connection charset ('ANSI' or utf-8)
-                *cxn_charset_info = nullptr;
+  myodbc::CHARSET_INFO *cxn_charset_info = nullptr;
   // data source used to connect (parsed or stored)
   DataSource    ds;
   // value of the sql_select_limit currently set for a session

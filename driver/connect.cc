@@ -113,46 +113,20 @@ try
 {
   if (unicode)
   {
-    if (charset && charset[0])
-    {
-      ansi_charset_info= myodbc::get_charset_by_csname(charset,
-                                               MYF(MY_CS_PRIMARY),
-                                               MYF(0));
-      if (!ansi_charset_info)
-      {
-        std::string errmsg = "Wrong character set name ";
-        errmsg.append(charset);
-        /* This message should help the user to identify the error */
-        throw MYERROR("HY000", errmsg);
-      }
-    }
-
+    // For unicode driver always use UTF8MB4
     charset = transport_charset;
   }
-
-  if (charset && charset[0])
-    set_charset(charset);
-  else
-    set_charset(ansi_charset_info->csname);
-
+  else if (!charset || !charset[0])
   {
-    MY_CHARSET_INFO my_charset;
-    mysql_get_character_set_info(mysql, &my_charset);
-    cxn_charset_info = myodbc::get_charset(my_charset.number, MYF(0));
+    // For ANSI use default charset (latin1) if no chaset
+    // option was specified.
+    charset = ansi_default_charset;
   }
 
-  if (!unicode)
-    ansi_charset_info = cxn_charset_info;
-
-  /*
-    We always set character_set_results to NULL so we can do our own
-    conversion to the ANSI character set or Unicode.
-  */
-  if (execute_query("SET character_set_results = NULL", SQL_NTS, true)
-    != SQL_SUCCESS)
-  {
-    throw error;
-  }
+  set_charset(charset);
+  MY_CHARSET_INFO my_charset;
+  mysql_get_character_set_info(mysql, &my_charset);
+  cxn_charset_info = myodbc::get_charset(my_charset.number, MYF(0));
 
   return SQL_SUCCESS;
 }
@@ -593,41 +567,6 @@ SQLRETURN DBC::connect(DataSource *dsrc)
     mysql_options(mysql, MYSQL_OPT_GET_SERVER_PUBLIC_KEY, (const void*)&on);
   }
 #endif
-
-  if (unicode)
-  {
-    /*
-      Get the ANSI charset info before we change connection to UTF-8.
-    */
-    MY_CHARSET_INFO my_charset;
-    mysql_get_character_set_info(mysql, &my_charset);
-    ansi_charset_info= myodbc::get_charset(my_charset.number, MYF(0));
-    /*
-      We always use utf8 for the connection, and change it afterwards if needed.
-    */
-    mysql_options(mysql, MYSQL_SET_CHARSET_NAME, transport_charset);
-    cxn_charset_info= utf8_charset_info;
-  }
-  else
-  {
-#ifdef _WIN32
-    char cpbuf[64];
-    const char *client_cs_name= NULL;
-
-    myodbc_snprintf(cpbuf, sizeof(cpbuf), "cp%u", GetACP());
-    client_cs_name= my_os_charset_to_mysql_charset(cpbuf);
-
-    if (client_cs_name)
-    {
-      mysql_options(mysql, MYSQL_SET_CHARSET_NAME, client_cs_name);
-      ansi_charset_info= cxn_charset_info= myodbc::get_charset_by_csname(client_cs_name, MYF(MY_CS_PRIMARY), MYF(0));
-    }
-#else
-    MY_CHARSET_INFO my_charset;
-    mysql_get_character_set_info(mysql, &my_charset);
-    ansi_charset_info= myodbc::get_charset(my_charset.number, MYF(0));
-#endif
-}
 
 #if MYSQL_VERSION_ID >= 50610
   if (dsrc->opt_CAN_HANDLE_EXP_PWD)

@@ -206,37 +206,48 @@ DECLARE_TEST(sqlprepare_ansi)
 DECLARE_TEST(sqlchar)
 {
   DECLARE_BASIC_HANDLES(henv1, hdbc1, hstmt1);
-  SQLCHAR data[]= "S\xe3o Paolo", buff[30];
+  SQLCHAR data[]= "S\xC3\xA3o Paolo", buff[30];
   SQLWCHAR wbuff[MAX_ROW_DATA_LEN+1];
-  wchar_t wcdata[]= L"S\x00e3o Paolo";
+  wchar_t wcdata[] = L"S\x00e3o Paolo";
 
   alloc_basic_handles_with_opt(&henv1, &hdbc1, &hstmt1, NULL, NULL, NULL,
-                               NULL, "");
+                               NULL, unicode_driver ? "" : "CHARSET=utf8mb4");
 
   ok_con(hdbc, SQLAllocStmt(hdbc1, &hstmt1));
 
-  ok_stmt(hstmt1, SQLPrepareW(hstmt1, W(L"SELECT CAST(? AS BINARY)"), SQL_NTS));
+  ok_stmt(hstmt1, SQLPrepareW(hstmt1, W(L"SELECT ?"), SQL_NTS));
 
-  ok_stmt(hstmt1, SQLBindParameter(hstmt1, 1, SQL_PARAM_INPUT, SQL_C_CHAR,
-                                   SQL_WVARCHAR, 0, 0, data, sizeof(data),
-                                   NULL));
+  if (unicode_driver)
+  {
+    ok_stmt(hstmt1, SQLBindParameter(hstmt1, 1, SQL_PARAM_INPUT, SQL_C_WCHAR,
+                                     SQL_WCHAR, 0, 0, W(wcdata), sizeof(wcdata),
+                                     NULL));
+  }
+  else
+  {
+    ok_stmt(hstmt1, SQLBindParameter(hstmt1, 1, SQL_PARAM_INPUT, SQL_C_CHAR,
+                                     SQL_VARCHAR, 0, 0, data, sizeof(data),
+                                     NULL));
+  }
+
   ok_stmt(hstmt1, SQLExecute(hstmt1));
 
   ok_stmt(hstmt1, SQLFetch(hstmt1));
-  is_str(my_fetch_str(hstmt1, buff, 1), data, sizeof(data));
+
+  if (unicode_driver)
+  {
+    wchar_t *wresult = my_fetch_wstr(hstmt1, wbuff, 1);
+    is_wstr(wcdata, wresult, 9);
+  }
+  else
+  {
+    my_fetch_str(hstmt1, buff, 1);
+    is_str(buff, data, sizeof(data));
+  }
 
   expect_stmt(hstmt1, SQLFetch(hstmt1), SQL_NO_DATA_FOUND);
 
   ok_stmt(hstmt1, SQLFreeStmt(hstmt1, SQL_CLOSE));
-
-  /* Do it again so we can try as SQLWCHAR */
-  ok_stmt(hstmt1, SQLExecute(hstmt1));
-
-  ok_stmt(hstmt1, SQLFetch(hstmt1));
-
-  is_wstr(my_fetch_wstr(hstmt1, wbuff, 1), wcdata, 9);
-
-  expect_stmt(hstmt1, SQLFetch(hstmt1), SQL_NO_DATA_FOUND);
 
   free_basic_handles(&henv1, &hdbc1, &hstmt1);
   return OK;
@@ -1489,7 +1500,7 @@ BEGIN_TESTS
   ADD_TEST_UNICODE(sqlstatistics)
   ADD_TEST_UNICODE(sqlprepare)
   ADD_TEST(sqlprepare_ansi)
-  ADD_TEST_UNICODE(sqlchar)
+  ADD_TEST(sqlchar)
   ADD_TEST_UNICODE(sqldriverconnect)
   // ADD_TEST(sqlnativesql) TODO: Fix
   ADD_TEST_UNICODE(sqlcolattribute)

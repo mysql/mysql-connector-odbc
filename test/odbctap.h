@@ -925,6 +925,11 @@ int my_print_non_format_result(SQLHSTMT hstmt)
         rc = SQLFetch(hstmt);
     }
 
+    if (rc == SQL_ERROR)
+    {
+      print_diag(rc, SQL_HANDLE_STMT, hstmt, "SQLFetch()", __FILE__, __LINE__);
+    }
+
     SQLFreeStmt(hstmt,SQL_UNBIND);
     SQLFreeStmt(hstmt,SQL_CLOSE);
 

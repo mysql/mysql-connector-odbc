@@ -696,6 +696,7 @@ procedure_columns_no_i_s(SQLHSTMT hstmt,
     db = get_database_name(stmt, catalog, catalog_len,
                             schema, schema_len, false);
 
+  // TODO: Extend param info fetching from I_S
   if (!(proc_list_res= server_list_proc_params(stmt,
       (SQLCHAR*)db.c_str(), (SQLSMALLINT)db.length(), proc, proc_len,
       column, column_len)))

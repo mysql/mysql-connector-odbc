@@ -581,7 +581,7 @@ void scroller_create(STMT * stmt, const char *query, SQLULEN query_len)
   /* MAX32_BUFF_SIZE includes place for terminating null, which we do not need
      and will use for comma */
   const size_t len2add = 7/*" LIMIT "*/ + MAX64_BUFF_SIZE/*offset*/ /*- 1*/ + MAX32_BUFF_SIZE;
-  MY_LIMIT_CLAUSE limit = find_position4limit(stmt->dbc->ansi_charset_info,
+  MY_LIMIT_CLAUSE limit = find_position4limit(stmt->dbc->cxn_charset_info,
                                             query, query + query_len);
 
   stmt->scroller.start_offset= limit.offset;
@@ -689,10 +689,10 @@ bool scrollable(STMT * stmt, const char * query, const char * query_end)
   /* FOR UPDATE*/
   {
     const char *before_token= query_end;
-    const char *last= mystr_get_prev_token(stmt->dbc->ansi_charset_info,
+    const char *last= mystr_get_prev_token(stmt->dbc->cxn_charset_info,
                                                 &before_token,
                                                 query);
-    const char *prev= mystr_get_prev_token(stmt->dbc->ansi_charset_info,
+    const char *prev= mystr_get_prev_token(stmt->dbc->cxn_charset_info,
                                                 &before_token,
                                                 query);
 
@@ -707,7 +707,7 @@ bool scrollable(STMT * stmt, const char * query, const char * query_end)
        no need to scroll if there is no FROM clause
      */
     if ( myodbc_casecmp(prev,"FROM", 4)
-      && !find_token(stmt->dbc->ansi_charset_info, query, before_token, "FROM"))
+      && !find_token(stmt->dbc->cxn_charset_info, query, before_token, "FROM"))
     {
       return FALSE;
     }

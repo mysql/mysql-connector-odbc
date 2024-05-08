@@ -417,7 +417,7 @@ DECLARE_TEST(t_bug17999659)
 
   ok_env(henv, SQLAllocHandle(SQL_HANDLE_DBC, henv, &hdbc1));
 
-  /* getting error here */
+  /* getting error here only for ANSI driver, UNICODE will ignore CHARSET option */
   expect_dbc(hdbc1, get_connection(&hdbc1, NULL, NULL, NULL, NULL,
              "CHARSET=wrongcharset"), SQL_ERROR);
 
@@ -1072,7 +1072,7 @@ BEGIN_TESTS
   ADD_TEST(t_bug17587913)
   ADD_TEST(t_bug17857204)
   ADD_TEST(t_bug17854697)
-  ADD_TEST(t_bug17999659)
+  ADD_TEST_ANSI(t_bug17999659)
   ADD_TEST(t_bug17966018)
   ADD_TEST(t_bug17085344)
   ADD_TEST(t_bookmark_update_zero_rec)

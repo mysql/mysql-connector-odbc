@@ -32,7 +32,6 @@
 #define DONT_DEFINE_VOID
 
 #define my_bool bool
-#define mysys_end my_end
 #define TRUE 1
 #define FALSE 0
 
@@ -94,6 +93,7 @@ extern "C"
 
 
 #define my_sys_init myodbc::my_init
+#define mysys_end myodbc::my_end
 #define x_free(A) { void *tmp= (A); if (tmp) free((char *) tmp); }
 #define myodbc_malloc(A, B) (B == MY_ZEROFILL ? calloc(A, 1) : malloc(A))
 #define myodbc_realloc(A, B) realloc(A, B)

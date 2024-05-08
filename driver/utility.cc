@@ -182,11 +182,6 @@ void fix_result_types(STMT *stmt)
       get_dticode_from_concise_type(irrec->concise_type);
     irrec->type_name= (SQLCHAR *) irrec->row.type_name;
     irrec->length= get_column_size(stmt, field);
-    /* prevent overflowing of result when ADO multiplies the length
-       by sizeof(SQLWCHAR) */
-    if (capint32 && irrec->length == INT_MAX32 &&
-        irrec->concise_type == SQL_WLONGVARCHAR)
-      irrec->length /= sizeof(SQL_WCHAR);
     irrec->octet_length= get_transfer_octet_length(stmt, field);
     irrec->display_size= get_display_size(stmt, field);
     /* According ODBC specs(http://msdn.microsoft.com/en-us/library/ms713558%28v=VS.85%29.aspx)
@@ -439,258 +434,29 @@ copy_ansi_result(STMT *stmt,
                  MYSQL_FIELD *field, char *src, unsigned long src_bytes)
 {
   SQLRETURN rc= SQL_SUCCESS;
-  char *src_end;
-  SQLCHAR *result_end;
-  ulong used_bytes= 0, used_chars= 0, error_count= 0;
-
-  my_bool convert_binary= (field->charsetnr == BINARY_CHARSET_NUMBER ? 1 : 0) &&
-                          (field->org_table_length == 0 ? 1 : 0) &&
-                          stmt->dbc->ds.opt_NO_BINARY_RESULT;
-
-  myodbc::CHARSET_INFO *to_cs= stmt->dbc->ansi_charset_info,
-               *from_cs= myodbc::get_charset(field->charsetnr && (!convert_binary) ?
-                                     field->charsetnr : UTF8_CHARSET_NUMBER,
-                                     MYF(0));
-
-  if (!from_cs)
-    return stmt->set_error("07006", "Source character set not "
-    "supported by client", 0);
 
   if (!result_bytes)
     result= 0;       /* Don't copy anything! */
 
-  /*
-   If we don't have to do any charset conversion, we can just use
-   copy_binary_result() and NUL-terminate the buffer here.
-  */
-  if (to_cs->number == from_cs->number)
+  SQLLEN bytes;
+  if (!avail_bytes)
+    avail_bytes= &bytes;
+
+  if (!result_bytes && !stmt->getdata.source)
   {
-    SQLLEN bytes;
-    if (!avail_bytes)
-      avail_bytes= &bytes;
-
-    if (!result_bytes && !stmt->getdata.source)
-    {
-      *avail_bytes= src_bytes;
-      stmt->set_error("01004", NULL, 0);
-      return SQL_SUCCESS_WITH_INFO;
-    }
-
-    if (result_bytes)
-      --result_bytes;
-
-    rc= copy_binary_result(stmt, result, result_bytes, avail_bytes,
-                           field, src, src_bytes);
-
-    if (SQL_SUCCEEDED(rc) && result && stmt->stmt_options.retrieve_data)
-      result[myodbc_min(*avail_bytes, result_bytes)]= '\0';
-
-    return rc;
-  }
-
-  result_end= result + result_bytes - 1;
-  /*
-    Handle when result_bytes is 1 -- we have room for the NUL termination,
-    but nothing else.
-  */
-  if (result == result_end)
-  {
-    if (stmt->stmt_options.retrieve_data)
-      *result= '\0';
-
-    result= 0;
-  }
-
-  /* Apply max length to source data, if one was specified. */
-  if (stmt->stmt_options.max_length &&
-      src_bytes > stmt->stmt_options.max_length)
-    src_bytes = (unsigned long)stmt->stmt_options.max_length;
-  src_end= src + src_bytes;
-
-  /* Initialize the source offset */
-  if (!stmt->getdata.source)
-    stmt->getdata.source= src;
-  else
-    src= stmt->getdata.source;
-
-  /* If we've already retrieved everything, return SQL_NO_DATA_FOUND */
-  if (stmt->getdata.dst_bytes != (ulong)~0L &&
-      stmt->getdata.dst_offset >= stmt->getdata.dst_bytes)
-    return SQL_NO_DATA_FOUND;
-
-  /*
-    If we have leftover bytes from an earlier character conversion,
-    copy as much as we can into place.
-  */
-  if (stmt->getdata.latest_bytes)
-  {
-    int new_bytes = (int)myodbc_min(stmt->getdata.latest_bytes -
-                              stmt->getdata.latest_used,
-                              result_end - result);
-    if (stmt->stmt_options.retrieve_data)
-      memcpy(result, stmt->getdata.latest + stmt->getdata.latest_used,
-             new_bytes);
-
-    if (new_bytes + stmt->getdata.latest_used == stmt->getdata.latest_bytes)
-      stmt->getdata.latest_bytes= 0;
-
-    result+= new_bytes;
-
-    if (result == result_end)
-    {
-      if (stmt->stmt_options.retrieve_data)
-        *result= '\0';
-      result= NULL;
-    }
-
-    used_bytes+= new_bytes;
-    stmt->getdata.latest_used+= new_bytes;
-  }
-
-  while (src < src_end)
-  {
-    /* Find the conversion functions. */
-    auto mb_wc = from_cs->cset->mb_wc;
-    auto wc_mb = to_cs->cset->wc_mb;
-    myodbc::my_wc_t wc;
-    uchar dummy[7]; /* Longer than any single character in our charsets. */
-    int to_cnvres;
-
-    int cnvres= (*mb_wc)(from_cs, &wc, (uchar *)src, (uchar *)src_end);
-    if (cnvres == MY_CS_ILSEQ)
-    {
-      ++error_count;
-      cnvres= 1;
-      wc= '?';
-    }
-    else if (cnvres < 0 && cnvres > MY_CS_TOOSMALL)
-    {
-      ++error_count;
-      cnvres= abs(cnvres);
-      wc= '?';
-    }
-    else if (cnvres < 0)
-      return stmt->set_error("HY000",
-                            "Unknown failure when converting character "
-                            "from server character set.", 0);
-
-convert_to_out:
-    /*
-     We always convert into a temporary buffer, so we can properly handle
-     characters that are going to get split across requests.
-    */
-    if (stmt->stmt_options.retrieve_data)
-    {
-      to_cnvres= (*wc_mb)(to_cs, wc, result ? result : dummy,
-                          (result ? result_end : dummy + sizeof(dummy)));
-    }
-    else
-    {
-      // If not copying data then pretend all went as planned
-      to_cnvres= 1;
-    }
-
-    if (to_cnvres > 0)
-    {
-      used_chars+= 1;
-      used_bytes+= to_cnvres;
-
-      if (result)
-        result+= to_cnvres;
-
-      src+= cnvres;
-
-      if (result && result == result_end)
-      {
-        if (stmt->getdata.dst_bytes != (ulong)~0L)
-        {
-          stmt->getdata.source+= cnvres;
-          break;
-        }
-
-        if (stmt->stmt_options.retrieve_data)
-          *result= '\0';
-
-        result= NULL;
-      }
-      else if (!result)
-        continue;
-
-      stmt->getdata.source+= cnvres;
-    }
-    else if (result && to_cnvres <= MY_CS_TOOSMALL)
-    {
-      /*
-       If we didn't have enough room for the character, we convert into
-       stmt->getdata.latest and copy what we can. The next call to
-       SQLGetData() will then copy what it can to the next buffer.
-      */
-      stmt->getdata.latest_bytes= (*wc_mb)(to_cs, wc, stmt->getdata.latest,
-                                           stmt->getdata.latest +
-                                           sizeof(stmt->getdata.latest));
-
-      stmt->getdata.latest_used = (int)myodbc_min(stmt->getdata.latest_bytes,
-                                            result_end - result);
-      memcpy(result, stmt->getdata.latest, stmt->getdata.latest_used);
-      result+= stmt->getdata.latest_used;
-
-      if (stmt->stmt_options.retrieve_data)
-        *result= '\0';
-
-      result= NULL;
-
-      used_chars+= 1;
-      used_bytes+= stmt->getdata.latest_bytes;
-
-      src+= stmt->getdata.latest_bytes;
-      stmt->getdata.source+= stmt->getdata.latest_bytes;
-    }
-    else if (stmt->getdata.latest_bytes == MY_CS_ILUNI && wc != '?')
-    {
-      ++error_count;
-      wc= '?';
-      goto convert_to_out;
-    }
-    else
-      return stmt->set_error("HY000",
-                            "Unknown failure when converting character "
-                            "to result character set.", 0);
-  }
-
-  if (result && stmt->stmt_options.retrieve_data)
-    *result= 0;
-
-  if (result_bytes && stmt->getdata.dst_bytes == (ulong)~0L)
-  {
-    stmt->getdata.dst_bytes= used_bytes;
-    stmt->getdata.dst_offset= 0;
-  }
-
-  if (avail_bytes && stmt->stmt_options.retrieve_data)
-  {
-    if (stmt->getdata.dst_bytes != (ulong)~0L)
-      *avail_bytes= stmt->getdata.dst_bytes - stmt->getdata.dst_offset;
-    else
-      *avail_bytes= used_bytes;
-  }
-
-  stmt->getdata.dst_offset+= myodbc_min((ulong)(result_bytes ?
-                                                result_bytes - 1 : 0),
-                                        used_bytes);
-
-  /* Did we truncate the data? */
-  if (!result_bytes || stmt->getdata.dst_bytes > stmt->getdata.dst_offset)
-  {
+    *avail_bytes= src_bytes;
     stmt->set_error("01004", NULL, 0);
-    rc= SQL_SUCCESS_WITH_INFO;
+    return SQL_SUCCESS_WITH_INFO;
   }
 
-  /* Did we encounter any character conversion problems? */
-  if (error_count)
-  {
-    stmt->set_error("22018", NULL, 0);
-    rc= SQL_SUCCESS_WITH_INFO;
-  }
+  if (result_bytes)
+    --result_bytes;
+
+  rc= copy_binary_result(stmt, result, result_bytes, avail_bytes,
+                          field, src, src_bytes);
+
+  if (SQL_SUCCEEDED(rc) && result && stmt->stmt_options.retrieve_data)
+    result[myodbc_min(*avail_bytes, result_bytes)]= '\0';
 
   return rc;
 }
@@ -719,13 +485,7 @@ copy_wchar_result(STMT *stmt,
   char *src_end;
   SQLWCHAR *result_end;
   ulong used_chars= 0, error_count= 0;
-  myodbc::CHARSET_INFO *from_cs= myodbc::get_charset(field->charsetnr ? field->charsetnr :
-                                     UTF8_CHARSET_NUMBER,
-                                     MYF(0));
-
-  if (!from_cs)
-    return stmt->set_error("07006", "Source character set not "
-    "supported by client", 0);
+  myodbc::CHARSET_INFO *from_cs = utf8_charset_info;
 
   if (!result_len)
     result= NULL; /* Don't copy anything! */
@@ -1297,9 +1057,10 @@ SQLSMALLINT get_sql_data_type(STMT *stmt, MYSQL_FIELD *field, char *buff)
     if (buff)
       (void)myodbc_stpmov(buff, field_is_binary ? "binary" : "char");
 
+    // Return the wide type only if driver is unicode and field charset
+    // is multibyte.
     return field_is_binary ? SQL_BINARY :
-      (stmt->dbc->unicode && field->charsetnr != stmt->dbc->ansi_charset_info->number ?
-       SQL_WCHAR : SQL_CHAR);
+      (stmt->dbc->unicode ? SQL_WCHAR : SQL_CHAR);
 
   /*
     MYSQL_TYPE_VARCHAR is never actually sent, this just silences
@@ -1311,7 +1072,7 @@ SQLSMALLINT get_sql_data_type(STMT *stmt, MYSQL_FIELD *field, char *buff)
       (void)myodbc_stpmov(buff, field_is_binary ? "varbinary" : "varchar");
 
     return field_is_binary ? SQL_VARBINARY :
-      (stmt->dbc->unicode && field->charsetnr != stmt->dbc->ansi_charset_info->number ?
+      (stmt->dbc->unicode && get_charset_maxlen(field->charsetnr) > 1 ?
        SQL_WVARCHAR : SQL_VARCHAR);
 
   case MYSQL_TYPE_TINY_BLOB:
@@ -1319,7 +1080,7 @@ SQLSMALLINT get_sql_data_type(STMT *stmt, MYSQL_FIELD *field, char *buff)
       (void)myodbc_stpmov(buff, field_is_binary ? "tinyblob" : "tinytext");
 
     return field_is_binary ? SQL_LONGVARBINARY :
-      (stmt->dbc->unicode && field->charsetnr != stmt->dbc->ansi_charset_info->number ?
+      (stmt->dbc->unicode && get_charset_maxlen(field->charsetnr) > 1 ?
        SQL_WLONGVARCHAR : SQL_LONGVARCHAR);
 
   case MYSQL_TYPE_BLOB:
@@ -1341,7 +1102,7 @@ SQLSMALLINT get_sql_data_type(STMT *stmt, MYSQL_FIELD *field, char *buff)
       }
     }
     return field_is_binary ? SQL_LONGVARBINARY :
-      (stmt->dbc->unicode && field->charsetnr != stmt->dbc->ansi_charset_info->number ?
+      (stmt->dbc->unicode && get_charset_maxlen(field->charsetnr) > 1 ?
        SQL_WLONGVARCHAR : SQL_LONGVARCHAR);
 
   case MYSQL_TYPE_MEDIUM_BLOB:
@@ -1349,7 +1110,7 @@ SQLSMALLINT get_sql_data_type(STMT *stmt, MYSQL_FIELD *field, char *buff)
       (void)myodbc_stpmov(buff, field_is_binary ? "mediumblob" : "mediumtext");
 
     return field_is_binary ? SQL_LONGVARBINARY :
-      (stmt->dbc->unicode && field->charsetnr != stmt->dbc->ansi_charset_info->number ?
+      (stmt->dbc->unicode && get_charset_maxlen(field->charsetnr) > 1 ?
        SQL_WLONGVARCHAR : SQL_LONGVARCHAR);
 
   case MYSQL_TYPE_LONG_BLOB:
@@ -1357,7 +1118,7 @@ SQLSMALLINT get_sql_data_type(STMT *stmt, MYSQL_FIELD *field, char *buff)
       (void)myodbc_stpmov(buff, field_is_binary ? "longblob" : "longtext");
 
     return field_is_binary ? SQL_LONGVARBINARY :
-      (stmt->dbc->unicode && field->charsetnr != stmt->dbc->ansi_charset_info->number ?
+      (stmt->dbc->unicode && get_charset_maxlen(field->charsetnr) > 1 ?
        SQL_WLONGVARCHAR : SQL_LONGVARCHAR);
 
   case MYSQL_TYPE_ENUM:
@@ -1384,12 +1145,6 @@ SQLSMALLINT get_sql_data_type(STMT *stmt, MYSQL_FIELD *field, char *buff)
   if (buff)
     *buff= '\0';
   return SQL_UNKNOWN_TYPE;
-}
-
-
-void sqlulen_to_str(char *buff, SQLULEN value)
-{
-
 }
 
 
@@ -1554,20 +1309,17 @@ SQLULEN get_column_size(STMT *stmt, MYSQL_FIELD *field)
   case MYSQL_TYPE_VARCHAR:
   case MYSQL_TYPE_VAR_STRING:
   case MYSQL_TYPE_STRING:
-    if (field->charsetnr == BINARY_CHARSET_NUMBER)
-      return length;
-    else
-    {
-      myodbc::CHARSET_INFO *charset=  myodbc::get_charset(field->charsetnr, MYF(0));
-      return length / (charset ? charset->mbmaxlen : 1);
-    }
-
   case MYSQL_TYPE_TINY_BLOB:
   case MYSQL_TYPE_MEDIUM_BLOB:
   case MYSQL_TYPE_LONG_BLOB:
   case MYSQL_TYPE_BLOB:
   case MYSQL_TYPE_GEOMETRY:
-    return length;
+    // For LONGTEXT we must return 4G or 2G if it was capped.
+    if (length >= INT32_MAX)
+      return length;
+    // For BINARY charset the maxlen is 1, so the result
+    // will be the byte length.
+    return length / get_charset_maxlen(field->charsetnr);
   case MYSQL_TYPE_JSON:
     return UINT32_MAX / 4; // Because JSON is always UTF8MB4
   }
@@ -1719,12 +1471,11 @@ SQLLEN get_transfer_octet_length(STMT *stmt, MYSQL_FIELD *field)
   case MYSQL_TYPE_BLOB:
   case MYSQL_TYPE_GEOMETRY:
   case MYSQL_TYPE_JSON:
-    if (field->charsetnr != stmt->dbc->ansi_charset_info->number &&
-        field->charsetnr != BINARY_CHARSET_NUMBER)
-      length *= stmt->dbc->ansi_charset_info->mbmaxlen;
-    if (capint32 && length > INT_MAX32)
-      length= INT_MAX32;
-    return length;
+    {
+      if (capint32 && length > INT_MAX32)
+        length= INT_MAX32;
+      return length;
+    }
   }
 
   return SQL_NO_TOTAL;
@@ -1743,8 +1494,7 @@ SQLLEN get_transfer_octet_length(STMT *stmt, MYSQL_FIELD *field)
 SQLLEN get_display_size(STMT *stmt __attribute__((unused)),MYSQL_FIELD *field)
 {
   int capint32 = stmt->dbc->ds.opt_COLUMN_SIZE_S32 ? 1 : 0;
-  myodbc::CHARSET_INFO *charset= myodbc::get_charset(field->charsetnr, MYF(0));
-  unsigned int mbmaxlen= charset ? charset->mbmaxlen : 1;
+  unsigned int mbmaxlen = get_charset_maxlen(field->charsetnr);
 
   switch (field->type) {
   case MYSQL_TYPE_TINY:
@@ -1799,15 +1549,21 @@ SQLLEN get_display_size(STMT *stmt __attribute__((unused)),MYSQL_FIELD *field)
       return 1;
     return (field->length + 7) / 8 * 2;
 
+  case MYSQL_TYPE_TINY_BLOB:
+  case MYSQL_TYPE_MEDIUM_BLOB:
+  case MYSQL_TYPE_LONG_BLOB:
+  case MYSQL_TYPE_BLOB:
+    // For these types the storage is in bytes and it is fixed,
+    // not specified by the user.
+    // The driver must give the maximum possible display size.
+    mbmaxlen = 1;
+    // Fall through
+
   case MYSQL_TYPE_ENUM:
   case MYSQL_TYPE_SET:
   case MYSQL_TYPE_VARCHAR:
   case MYSQL_TYPE_VAR_STRING:
   case MYSQL_TYPE_STRING:
-  case MYSQL_TYPE_TINY_BLOB:
-  case MYSQL_TYPE_MEDIUM_BLOB:
-  case MYSQL_TYPE_LONG_BLOB:
-  case MYSQL_TYPE_BLOB:
   case MYSQL_TYPE_GEOMETRY:
     {
       unsigned long length;
@@ -1815,6 +1571,7 @@ SQLLEN get_display_size(STMT *stmt __attribute__((unused)),MYSQL_FIELD *field)
         length= field->length * 2;
       else
         length= field->length / mbmaxlen;
+
       if (capint32 && length > INT_MAX32)
         length= INT_MAX32;
       return length;
@@ -3660,11 +3417,41 @@ SQLLEN proc_get_param_col_len(STMT *stmt, int sql_type_index, SQLULEN col_size,
     (SQL_TYPE_MAP_values[sql_type_index].mysql_type == MYSQL_TYPE_DECIMAL ?
     1 + (flags & UNSIGNED_FLAG ? 0 : 1) : 0); /* add 1for sign, if needed, and 1 for decimal point */
 
+
+
   temp_fld.max_length = (unsigned long)col_size;
   temp_fld.decimals= decimal_digits;
-  temp_fld.flags= flags;
-  temp_fld.charsetnr= stmt->dbc->ansi_charset_info->number;
+
+  // Handle binary flag and binary charset number when required
+  temp_fld.flags= flags + (SQL_TYPE_MAP_values[sql_type_index].binary ? BINARY_FLAG : 0);
+
   temp_fld.type= (enum_field_types)(SQL_TYPE_MAP_values[sql_type_index].mysql_type);
+
+  if (temp_fld.type == MYSQL_TYPE_STRING ||
+      temp_fld.type == MYSQL_TYPE_VARCHAR ||
+      temp_fld.type == MYSQL_TYPE_LONG_BLOB ||
+      SQL_TYPE_MAP_values[sql_type_index].binary)
+  {
+    // The types with specifiers for character lengths are CHAR(N) and VARCHAR(N).
+    // Instead of trying to deduce their character length it should take N
+    // as it is. This is done by a trick of setting BINARY charset.
+    // For LONGTEXT we also should take its max length without trying to
+    // divide by character byte size.
+    temp_fld.charsetnr = BINARY_CHARSET_NUMBER;
+  }
+  else
+  {
+    temp_fld.charsetnr = stmt->dbc->cxn_charset_info->number;
+  }
+
+  if (temp_fld.type == MYSQL_TYPE_TINY_BLOB ||
+      temp_fld.type == MYSQL_TYPE_BLOB ||
+      temp_fld.type == MYSQL_TYPE_MEDIUM_BLOB)
+  {
+    // We need to mimic the behavior of mysqlclient, which is
+    // multiplying the length by the max character length.
+    temp_fld.length *= get_charset_maxlen(temp_fld.charsetnr);
+  }
 
   if (str_buff != NULL)
   {
@@ -3699,8 +3486,13 @@ SQLLEN proc_get_param_octet_len(STMT *stmt, int sql_type_index, SQLULEN col_size
 
   temp_fld.max_length = (unsigned long)col_size;
   temp_fld.decimals= decimal_digits;
-  temp_fld.flags= flags;
-  temp_fld.charsetnr= stmt->dbc->ansi_charset_info->number;
+
+  // Handle binary flag and binary charset number when required
+  temp_fld.flags= flags + (SQL_TYPE_MAP_values[sql_type_index].binary ? BINARY_FLAG : 0);
+  temp_fld.charsetnr =
+    SQL_TYPE_MAP_values[sql_type_index].binary ?
+      BINARY_CHARSET_NUMBER : stmt->dbc->cxn_charset_info->number;
+
   temp_fld.type= (enum_field_types)(SQL_TYPE_MAP_values[sql_type_index].mysql_type);
 
   if (str_buff != NULL)
@@ -4357,7 +4149,7 @@ const char get_identifier_quote(STMT *stmt)
     uint length= get_session_variable(stmt, "SQL_MODE", (char*)(sql_mode+1));
 
     const char *end=  sql_mode + length;
-    if (find_first_token(stmt->dbc->ansi_charset_info, sql_mode, end, "ANSI_QUOTES"))
+    if (find_first_token(stmt->dbc->cxn_charset_info, sql_mode, end, "ANSI_QUOTES"))
     {
       return quote;
     }

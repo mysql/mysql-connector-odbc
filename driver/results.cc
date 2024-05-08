@@ -2539,7 +2539,7 @@ SQLRETURN SQL_API my_SQLExtendedFetch( SQLHSTMT             hstmt,
       }
     }
   }
-  catch(MYERROR &e)
+  catch(const MYERROR &e)
   {
     res = e.retcode;
     stmt->telemetry.set_error(stmt, e.message);

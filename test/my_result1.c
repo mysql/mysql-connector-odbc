@@ -237,7 +237,6 @@ static SQLINTEGER desc_col_check(SQLHSTMT hstmt,
                            const char *name,
                            SQLSMALLINT sql_type,
                            SQLULEN col_def,
-                           SQLULEN col_def1,
                            SQLSMALLINT scale,
                            SQLSMALLINT nullable)
 {
@@ -262,7 +261,7 @@ static SQLINTEGER desc_col_check(SQLHSTMT hstmt,
 
   is_str(szColName, name, pcbColName);
   is_num(pfSqlType, sql_type);
-  is(col_def == pcbColDef || col_def1 == pcbColDef);
+  is(col_def == pcbColDef);
   is_num(pibScale, scale);
   is_num(pfNullable, nullable);
 
@@ -308,31 +307,59 @@ DECLARE_TEST(t_desc_col)
 
   is_num(ColumnCount, 23);
 
-  is(desc_col_check(hstmt, 1,  "c1",  SQL_INTEGER,   10, 10, 0,  SQL_NULLABLE) == OK);
-  is(desc_col_check(hstmt, 2,  "c2",  SQL_BINARY,    4,  2,  0,  SQL_NO_NULLS) == OK);
-  is(desc_col_check(hstmt, 3,  "c3",  SQL_CHAR,      1,  1,  0,  SQL_NULLABLE) == OK);
-  is(desc_col_check(hstmt, 4,  "c4",  SQL_VARCHAR,   5,  5,  0,  SQL_NULLABLE) == OK);
-  is(desc_col_check(hstmt, 5,  "c5",  SQL_DECIMAL,   10, 10, 3,  SQL_NO_NULLS) == OK);
-  is(desc_col_check(hstmt, 6,  "c6",  SQL_TINYINT,   3,  4,  0,  SQL_NULLABLE) == OK);
-  is(desc_col_check(hstmt, 7,  "c7",  SQL_SMALLINT,  5,  6,  0,  SQL_NULLABLE) == OK);
-  is(desc_col_check(hstmt, 8,  "c8",  SQL_DECIMAL,   4,  4,  2,  SQL_NULLABLE) == OK);
-  is(desc_col_check(hstmt, 9,  "c9",  SQL_DOUBLE,    15, 15, 0, SQL_NULLABLE) == OK);
-  is(desc_col_check(hstmt, 10, "c10", SQL_REAL,      7,  7,  0, SQL_NULLABLE) == OK);
-  is(desc_col_check(hstmt, 11, "c11", SQL_BIGINT,    19, 19, 0,  SQL_NO_NULLS) == OK);
+  is(desc_col_check(hstmt, 1,  "c1",  SQL_INTEGER,   10, 0,  SQL_NULLABLE) == OK);
+  is(desc_col_check(hstmt, 2,  "c2",  SQL_BINARY,    2,  0,  SQL_NO_NULLS) == OK);
 
-  is(desc_col_check(hstmt, 12, "c12", SQL_VARBINARY, 12, 12, 0,  SQL_NULLABLE) == OK);
+  if (unicode_driver)
+  {
+    is(desc_col_check(hstmt, 3,  "c3",  SQL_WCHAR,      1,  0,  SQL_NULLABLE) == OK);
+    is(desc_col_check(hstmt, 4,  "c4",  SQL_WVARCHAR,   5,  0,  SQL_NULLABLE) == OK);
+  }
+  else
+  {
+    is(desc_col_check(hstmt, 3,  "c3",  SQL_CHAR,      1,  0,  SQL_NULLABLE) == OK);
+    is(desc_col_check(hstmt, 4,  "c4",  SQL_VARCHAR,   5,  0,  SQL_NULLABLE) == OK);
+  }
 
-  is(desc_col_check(hstmt, 13, "c13", SQL_CHAR,      20, 20, 0,  SQL_NO_NULLS) == OK);
-  is(desc_col_check(hstmt, 14, "c14", SQL_REAL,      7,  7,  0,  SQL_NULLABLE) == OK);
-  is(desc_col_check(hstmt, 15, "c15", SQL_LONGVARCHAR, 255, 255, 0,  SQL_NULLABLE) == OK);
-  is(desc_col_check(hstmt, 16, "c16", SQL_LONGVARCHAR, 65535, 65535, 0,  SQL_NULLABLE) == OK);
-  is(desc_col_check(hstmt, 17, "c17", SQL_LONGVARCHAR, 16777215, 16777215, 0,  SQL_NULLABLE) == OK);
-  is(desc_col_check(hstmt, 18, "c18", SQL_LONGVARCHAR, 4294967295UL, 16777215 , 0,  SQL_NULLABLE) == OK);
-  is(desc_col_check(hstmt, 19, "c19", SQL_LONGVARBINARY, 255, 255, 0,  SQL_NULLABLE) == OK);
-  is(desc_col_check(hstmt, 20, "c20", SQL_LONGVARBINARY, 65535, 65535, 0,  SQL_NULLABLE) == OK);
-  is(desc_col_check(hstmt, 21, "c21", SQL_LONGVARBINARY, 16777215, 16777215, 0,  SQL_NULLABLE) == OK);
-  is(desc_col_check(hstmt, 22, "c22", SQL_LONGVARBINARY, 4294967295UL, 16777215 , 0,  SQL_NULLABLE) == OK);
-  is(desc_col_check(hstmt, 23, "c23", SQL_LONGVARBINARY, 255, 5, 0,  SQL_NULLABLE) == OK);
+  is(desc_col_check(hstmt, 5,  "c5",  SQL_DECIMAL,   10, 3,  SQL_NO_NULLS) == OK);
+  is(desc_col_check(hstmt, 6,  "c6",  SQL_TINYINT,   3,  0,  SQL_NULLABLE) == OK);
+  is(desc_col_check(hstmt, 7,  "c7",  SQL_SMALLINT,  5,  0,  SQL_NULLABLE) == OK);
+  is(desc_col_check(hstmt, 8,  "c8",  SQL_DECIMAL,   4,  2,  SQL_NULLABLE) == OK);
+  is(desc_col_check(hstmt, 9,  "c9",  SQL_DOUBLE,    15, 0, SQL_NULLABLE) == OK);
+  is(desc_col_check(hstmt, 10, "c10", SQL_REAL,      7,  0, SQL_NULLABLE) == OK);
+  is(desc_col_check(hstmt, 11, "c11", SQL_BIGINT,    19, 0,  SQL_NO_NULLS) == OK);
+  is(desc_col_check(hstmt, 12, "c12", SQL_VARBINARY, 12, 0,  SQL_NULLABLE) == OK);
+
+  if (unicode_driver)
+  {
+    is(desc_col_check(hstmt, 13, "c13", SQL_WCHAR,   20, 0,  SQL_NO_NULLS) == OK);
+  }
+  else
+  {
+    is(desc_col_check(hstmt, 13, "c13", SQL_CHAR,    20, 0,  SQL_NO_NULLS) == OK);
+  }
+
+  is(desc_col_check(hstmt, 14, "c14", SQL_REAL,      7,  0,  SQL_NULLABLE) == OK);
+
+  if (unicode_driver)
+  {
+    is(desc_col_check(hstmt, 15, "c15", SQL_WLONGVARCHAR, 255, 0,  SQL_NULLABLE) == OK);
+    is(desc_col_check(hstmt, 16, "c16", SQL_WLONGVARCHAR, 65535, 0,  SQL_NULLABLE) == OK);
+    is(desc_col_check(hstmt, 17, "c17", SQL_WLONGVARCHAR, 16777215, 0,  SQL_NULLABLE) == OK);
+    is(desc_col_check(hstmt, 18, "c18", SQL_WLONGVARCHAR, 4294967295UL, 0,  SQL_NULLABLE) == OK);
+  }
+  else
+  {
+    is(desc_col_check(hstmt, 15, "c15", SQL_LONGVARCHAR, 255, 0,  SQL_NULLABLE) == OK);
+    is(desc_col_check(hstmt, 16, "c16", SQL_LONGVARCHAR, 65535, 0,  SQL_NULLABLE) == OK);
+    is(desc_col_check(hstmt, 17, "c17", SQL_LONGVARCHAR, 16777215, 0,  SQL_NULLABLE) == OK);
+    is(desc_col_check(hstmt, 18, "c18", SQL_LONGVARCHAR, 4294967295UL, 0,  SQL_NULLABLE) == OK);
+  }
+  is(desc_col_check(hstmt, 19, "c19", SQL_LONGVARBINARY, 255, 0,  SQL_NULLABLE) == OK);
+  is(desc_col_check(hstmt, 20, "c20", SQL_LONGVARBINARY, 65535, 0,  SQL_NULLABLE) == OK);
+  is(desc_col_check(hstmt, 21, "c21", SQL_LONGVARBINARY, 16777215, 0,  SQL_NULLABLE) == OK);
+  is(desc_col_check(hstmt, 22, "c22", SQL_LONGVARBINARY, 4294967295UL, 0,  SQL_NULLABLE) == OK);
+  is(desc_col_check(hstmt, 23, "c23", SQL_LONGVARBINARY, 255, 0,  SQL_NULLABLE) == OK);
 
   ok_stmt(hstmt, SQLFreeStmt(hstmt, SQL_CLOSE));
 
@@ -2085,7 +2112,6 @@ DECLARE_TEST(t_bug13776)
   ok_stmt(hstmt1, SQLDescribeCol(hstmt1, 1, szColName, MAX_NAME_LEN+1, NULL,
                                  &pfSqlType, &pcColSz, &pcbScale, &pfNullable));
 
-  /* Size of LONGTEXT should have been capped to 1 << 31. */
   is_num(pcColSz, 2147483647L);
 
   /* also, check display size and octet length (see bug#30890) */
@@ -2093,6 +2119,7 @@ DECLARE_TEST(t_bug13776)
                                   0, NULL, &display_size));
   ok_stmt(hstmt1, SQLColAttribute(hstmt1, 1, SQL_DESC_OCTET_LENGTH, NULL,
                                   0, NULL, &octet_length));
+
   is_num(display_size, 2147483647L);
   is_num(octet_length, 2147483647L);
 

@@ -486,7 +486,7 @@ DECLARE_TEST(t_bug27862_1)
   ok_stmt(hstmt, SQLColAttribute(hstmt, 1, SQL_DESC_OCTET_LENGTH, NULL, 0,
                                  NULL, &len));
   /* Octet length shoul *not* include terminanting null character according to ODBC specs */
-  is_num(len, 4);
+  is_num(len, unicode_driver ? 16 : 4);
 
   ok_stmt(hstmt, SQLFreeStmt(hstmt, SQL_CLOSE));
 
@@ -1178,7 +1178,10 @@ DECLARE_TEST(t_bug29402)
   SQLCHAR buf[80]= {0};
   SQLLEN buflen= 0;
   DECLARE_BASIC_HANDLES(henv1, hdbc1, hstmt1);
-  const SQLCHAR *expected= "\x80""100";
+
+  // UNICODE Driver will return the string in UTF8MB4.
+  // ANSI Driver will return the result in CP1250
+  const SQLCHAR *expected = unicode_driver ? "\xE2\x82\xAC""100" : "\x80""100";
 
   is(OK == alloc_basic_handles_with_opt(&henv1, &hdbc1, &hstmt1, NULL,
                                         NULL, NULL, NULL,
@@ -1195,7 +1198,7 @@ DECLARE_TEST(t_bug29402)
   ok_stmt(hstmt1, SQLFetch(hstmt1));
   ok_stmt(hstmt1, SQLGetData(hstmt1, 1, SQL_C_CHAR, buf, sizeof(buf), &buflen));
 
-  is_num(buflen, 4);
+  is_num(buflen, unicode_driver ? 6 : 4);
 
   if (strncmp(buf, expected, buflen) != 0)
   {
@@ -1220,12 +1223,7 @@ DECLARE_TEST(t_bug29402)
   /* Fixed in 5.5(tested in 5.5.9), result's type is SQL_VARCHAR */
   if (mysql_min_version(hdbc, "5.5", 3))
   {
-    /* Depending on server default charset it can be either SQL_VARCHAR or
-       SQL_WVARCHAR. Wee are fine to know if the data_type is one of those */
-    if(data_type != SQL_VARCHAR && data_type != SQL_WVARCHAR)
-    {
-      return FAIL;
-    }
+    is(unicode_driver ? data_type == SQL_WVARCHAR : data_type == SQL_VARCHAR);
   }
   else
   {
