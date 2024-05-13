@@ -30,6 +30,9 @@
 #include "my_inttypes.h"
 #include "my_macros.h"
 
+namespace myodbc
+{
+
 typedef uint32 my_thread_id;
 
 /**
@@ -64,5 +67,7 @@ my_thread_id my_thread_var_id();
 void set_my_thread_var_id(my_thread_id id);
 
 #endif
+
+} /* namespace myodbc */
 
 #endif  // MY_THREAD_LOCAL_INCLUDED

@@ -27,6 +27,9 @@
   @file include/mysys_err.h
 */
 
+namespace myodbc
+{
+
 #define GLOBERRS                                              \
   (EE_ERROR_LAST - EE_ERROR_FIRST + 1) /* Nr of global errors \
                                         */
@@ -153,5 +156,7 @@ extern const char *globerrs[]; /* my_error_messages is here */
 #define EXIT_CANNOT_CONNECT_TO_SERVICE 11
 #define EXIT_OPTION_DISABLED 12
 #define EXIT_ARGUMENT_INVALID 13
+
+} /* namespace myodbc */
 
 #endif

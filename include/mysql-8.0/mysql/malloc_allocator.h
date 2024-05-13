@@ -32,6 +32,9 @@
 #include "mysql/service_mysql_alloc.h"
 //#include "sql/psi_memory_key.h"
 
+namespace myodbc
+{
+
 /**
   Malloc_allocator is a C++ STL memory allocator based on my_malloc/my_free.
 
@@ -141,5 +144,7 @@ template <class T>
 bool operator!=(const Malloc_allocator<T> &a1, const Malloc_allocator<T> &a2) {
   return a1.psi_key() != a2.psi_key();
 }
+
+} /* namespace myodbc */
 
 #endif  // MALLOC_ALLOCATOR_INCLUDED

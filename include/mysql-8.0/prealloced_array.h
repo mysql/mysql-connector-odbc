@@ -41,6 +41,9 @@
 #include "mysql/psi/psi_memory.h"
 #include "mysql/service_mysql_alloc.h"
 
+namespace myodbc
+{
+
 /**
   A typesafe replacement for DYNAMIC_ARRAY. We do our own memory management,
   and pre-allocate space for a number of elements. The purpose is to
@@ -630,5 +633,7 @@ class Prealloced_array {
 };
 static_assert(sizeof(Prealloced_array<void *, 4>) <= 40,
               "Check for no unexpected padding");
+
+} /* namespace myodbc */
 
 #endif  // PREALLOCED_ARRAY_INCLUDED

@@ -34,6 +34,9 @@
 /* PSI_memory_key */
 #include "mysql/components/services/psi_memory_bits.h"
 
+namespace myodbc
+{
+
 /* myf */
 typedef int myf_t;
 
@@ -47,60 +50,6 @@ typedef void *(*my_memdup_t)(PSI_memory_key key, const void *from,
 typedef char *(*my_strdup_t)(PSI_memory_key key, const char *from, myf_t flags);
 typedef char *(*my_strndup_t)(PSI_memory_key key, const char *from,
                               size_t length, myf_t flags);
-
-/**
-  @ingroup group_ext_plugin_services
-
-  This service allows plugins to allocate and free memory through the server's
-  memory handling routines.
-  This allows uniform memory handling and instrumentation.
-*/
-struct mysql_malloc_service_st {
-  /**
-    Allocates a block of memory
-
-    @sa my_malloc
-  */
-  mysql_malloc_t mysql_malloc;
-  /**
-    Reallocates a block of memory
-
-    @sa my_realloc
-  */
-  mysql_realloc_t mysql_realloc;
-  /**
-    Re-instruments a block of memory
-
-    @sa my_claim
-  */
-  mysql_claim_t mysql_claim;
-  /**
-    Frees a block of memory
-
-    @sa my_free
-  */
-  mysql_free_t mysql_free;
-  /**
-    Copies a buffer into a new buffer
-
-    @sa my_memdup
-  */
-  my_memdup_t my_memdup;
-  /**
-    Copies a string into a new buffer
-
-    @sa my_strdup
-  */
-  my_strdup_t my_strdup;
-  /**
-    Copies no more than n characters of a string into a new buffer
-
-    @sa my_strndup
-  */
-  my_strndup_t my_strndup;
-};
-
-extern "C" struct mysql_malloc_service_st *mysql_malloc_service;
 
 #ifdef MYSQL_DYNAMIC_PLUGIN
 
@@ -126,5 +75,7 @@ extern char *my_strndup(PSI_memory_key key, const char *from, size_t length,
                         myf_t flags);
 
 #endif
+
+} /* namespace myodbc */
 
 #endif

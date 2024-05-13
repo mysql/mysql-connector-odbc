@@ -137,7 +137,7 @@ class FileInfo {
   FileInfo() = default;
 
   FileInfo(const char *n, myodbc::file_info::OpenType t)
-      : m_name{my_strdup(myodbc::key_memory_my_file_info, n,
+      : m_name{myodbc::my_strdup(myodbc::key_memory_my_file_info, n,
                          MYF(MY_WME | ME_FATALERROR))},
         m_type{t} {}
 
@@ -150,7 +150,7 @@ class FileInfo {
         m_type{std::exchange(src.m_type, myodbc::file_info::OpenType::UNOPEN)} {}
 
   // Rule of 5 (1)
-  ~FileInfo() { my_free(const_cast<char *>(m_name)); }
+  ~FileInfo() { myodbc::my_free(const_cast<char *>(m_name)); }
 
   // Rule of 5 (3)
   FileInfo &operator=(const FileInfo &) = delete;
@@ -172,7 +172,7 @@ class FileInfo {
   myodbc::file_info::OpenType type() const { return m_type; }
 };
 
-using FileInfoAllocator = Malloc_allocator<FileInfo>;
+using FileInfoAllocator = myodbc::Malloc_allocator<FileInfo>;
 using FileInfoVector = std::vector<FileInfo, FileInfoAllocator>;
 FileInfoVector *fivp = nullptr;
 }  // namespace
