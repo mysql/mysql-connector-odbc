@@ -209,8 +209,8 @@ void setComboFieldDataTab(const SQLWCHAR *param, unsigned int framenum, int idc)
   if ( TabCtrl_1.hTabPages[framenum-1])
   {
     HWND tabHwndMisc = TabCtrl_1.hTabPages[framenum-1];
-    HWND charsetCtrl = GetDlgItem(tabHwndMisc, idc);
-    ComboBox_SetText(charsetCtrl, param);
+    HWND ctrl = GetDlgItem(tabHwndMisc, idc);
+    ComboBox_SetText(ctrl, param);
   }
 }
 

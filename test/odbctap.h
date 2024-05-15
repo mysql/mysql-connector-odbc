@@ -487,11 +487,11 @@ do { \
 
 
 #define expect_env(env, call, expect) \
-  expect_odbc((env), SQL_HANDLE_STMT, (call), (expect))
+  expect_odbc((env), SQL_HANDLE_ENV, (call), (expect))
 
 
 #define expect_dbc(dbc, call, expect) \
-  expect_odbc((dbc), SQL_HANDLE_STMT, (call), (expect))
+  expect_odbc((dbc), SQL_HANDLE_DBC, (call), (expect))
 
 
 #define expect_stmt(statement, call, expect) \

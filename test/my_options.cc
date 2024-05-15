@@ -1099,8 +1099,21 @@ DECLARE_TEST(t_wl15978_auto_reconnect_deprecation)
   ENDCATCH;
 }
 
+DECLARE_TEST(t_wl16311_charset_deprecation)
+{
+  try
+  {
+    odbc::HDBC hdbc1(henv, false);
+    expect_dbc(hdbc1.hdbc,
+      hdbc1.connect(";CHARSET=Latin1"),
+      unicode_driver ? SQL_SUCCESS_WITH_INFO : SQL_SUCCESS);
+  }
+  ENDCATCH;
+}
+
 
 BEGIN_TESTS
+  ADD_TEST(t_wl16311_charset_deprecation)
 #if MYSQL_VERSION_ID >= 80300
   ADD_TEST(t_wl15978_auto_reconnect_deprecation)
 #endif

@@ -401,7 +401,19 @@ void syncTabs(HWND hwnd, DataSource *params)
   if ( getTabCtrlTabPages(CONNECTION_TAB-1))
 #endif
   {
-    SET_COMBO_TAB(CONNECTION_TAB, CHARSET);
+    if (is_unicode)
+    {
+#ifdef _WIN32
+      SET_ENABLED(CONNECTION_TAB, IDC_EDIT_CHARSET, FALSE);
+#else
+      SET_SENSITIVE(CHARSET, FALSE);
+#endif
+    }
+    else
+    {
+      SET_COMBO_TAB(CONNECTION_TAB, CHARSET);
+    }
+
     SET_STRING_TAB(CONNECTION_TAB, INITSTMT);
     SET_STRING_TAB(CONNECTION_TAB, PLUGIN_DIR);
   }

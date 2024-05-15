@@ -688,11 +688,11 @@ struct HDBC
 
   int connect(xstring opts = nullptr)
   {
-    xbuf buf(4096);
+    xbuf buf(8192);
     xstring cstr = con.m_connstr;
     cstr.append(opts);
     auto rc = SQLDriverConnect(hdbc, NULL, cstr, SQL_NTS, buf,
-                               512, nullptr, SQL_DRIVER_NOPROMPT);
+                               2048, nullptr, SQL_DRIVER_NOPROMPT);
     connout = buf;
     return rc;
   }

@@ -54,7 +54,8 @@
 #endif
 
 typedef BOOL (*PromptFunc)(SQLHWND, SQLWCHAR *, SQLUSMALLINT,
-                           SQLWCHAR *, SQLSMALLINT, SQLSMALLINT *);
+                           SQLWCHAR *, SQLSMALLINT, SQLSMALLINT *,
+                           SQLSMALLINT);
 
 const char *my_os_charset_to_mysql_charset(const char *csname);
 
@@ -111,8 +112,18 @@ void DBC::set_charset(std::string charset)
 SQLRETURN DBC::set_charset_options(const char *charset)
 try
 {
+  SQLRETURN rc = SQL_SUCCESS;
   if (unicode)
   {
+    if (charset && charset[0])
+    {
+      // Set the warning message, SQL_SUCCESS_WITH_INFO result
+      // and continue as normal.
+      set_error("HY000",
+        "CHARSET option is not supported by UNICODE version "
+        "of MySQL Connector/ODBC", 0);
+      rc = SQL_SUCCESS_WITH_INFO;
+    }
     // For unicode driver always use UTF8MB4
     charset = transport_charset;
   }
@@ -128,7 +139,7 @@ try
   mysql_get_character_set_info(mysql, &my_charset);
   cxn_charset_info = myodbc::get_charset(my_charset.number, MYF(0));
 
-  return SQL_SUCCESS;
+  return rc;
 }
 catch(const MYERROR &e)
 {
@@ -1302,11 +1313,6 @@ SQLRETURN SQL_API MySQLDriverConnect(SQLHDBC hdbc, SQLHWND hwnd,
      We dynamically load the setup library so the driver itself does not
      depend on GUI libraries.
     */
-#ifndef WIN32
-/*
-    lt_dlinit();
-*/
-#endif
 
     if (!(hModule= LoadLibrary(driver.setup_lib)))
     {
@@ -1347,7 +1353,8 @@ SQLRETURN SQL_API MySQLDriverConnect(SQLHDBC hdbc, SQLHWND hwnd,
       inner buffer prompt_outstr
     */
     if (!pFunc(hwnd, (SQLWCHAR*)prompt_instr.c_str(), fDriverCompletion,
-               prompt_outstr, sizeof(prompt_outstr), pcbConnStrOut))
+               prompt_outstr, sizeof(prompt_outstr), pcbConnStrOut,
+               (SQLSMALLINT)dbc->unicode))
     {
       dbc->set_error("HY000", "User cancelled.", 0);
       rc= SQL_NO_DATA;

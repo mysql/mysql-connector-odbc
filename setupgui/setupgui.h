@@ -86,6 +86,7 @@ extern "C" {
 }
 #endif
 
+extern bool is_unicode;
 
 /* Utility functions. */
 void ShowDiagnostics(SQLRETURN nReturn, SQLSMALLINT nHandleType, SQLHANDLE h);

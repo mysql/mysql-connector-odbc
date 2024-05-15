@@ -26,6 +26,7 @@
 // along with this program; if not, write to the Free Software Foundation, Inc.,
 // 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 
+#include "MYODBC_CONF.h"
 #ifndef _WIN32
 #include "MYODBC_MYSQL.h"
 #include "installer.h"
@@ -36,9 +37,12 @@
 #include "setupgui.h"
 #include "stringutil.h"
 
+bool is_unicode = 0;
+
 extern "C" {
 BOOL Driver_Prompt(HWND hWnd, SQLWCHAR *instr, SQLUSMALLINT completion,
-                   SQLWCHAR *outstr, SQLSMALLINT outmax, SQLSMALLINT *outlen);
+                   SQLWCHAR *outstr, SQLSMALLINT outmax, SQLSMALLINT *outlen,
+                   SQLSMALLINT unicode_flag);
 }
 
 
@@ -46,13 +50,14 @@ BOOL Driver_Prompt(HWND hWnd, SQLWCHAR *instr, SQLUSMALLINT completion,
    Entry point for GUI prompting from SQLDriverConnect().
 */
 BOOL Driver_Prompt(HWND hWnd, SQLWCHAR *instr, SQLUSMALLINT completion,
-                   SQLWCHAR *outstr, SQLSMALLINT outmax, SQLSMALLINT *outlen)
+                   SQLWCHAR *outstr, SQLSMALLINT outmax, SQLSMALLINT *outlen,
+                   SQLSMALLINT unicode_flag)
 {
   DataSource ds;
   BOOL rc= FALSE;
   SQLWSTRING out;
   size_t copy_len = 0;
-
+  is_unicode = unicode_flag;
   /*
      parse the attr string, dsn lookup will have already been
      done in the driver
@@ -147,17 +152,35 @@ BOOL INSTAPI ConfigDSNW(HWND hWnd, WORD nRequest, LPCWSTR pszDriver,
     origdsn = (const SQLWCHAR*)ds.opt_DSN;
   }
 
+  Driver driver;
+  driver.name = pszDriver;
+
+  // For certain operations failure to lookup the driver
+  // is not a critical error.
+  int driver_lookup_error = driver.lookup();
+
+  if (!driver_lookup_error)
+  {
+    // Detecting the type of the driver using the driver library file name,
+    // which is not ideal. This might give wrong result if user renames
+    // the library. However, not much harm is done in this case because
+    // it will allow editing a CHARSET option, which normally should be
+    // disabled for Unicode version of the driver.
+    if (static_cast<std::string>(driver.lib).find(
+          "myodbc" + std::to_string(MYODBC_MAJOR_VERSION) + "w."
+        ) != std::string::npos)
+    {
+      is_unicode = 1;
+    }
+  }
+
   switch (nRequest)
   {
   case ODBC_ADD_DSN:
     {
-      Driver driver;
-      driver.name = pszDriver;
-      if (driver.lookup())
-      {
-        rc= FALSE;
-        break;
-      }
+      if (driver_lookup_error)
+        return FALSE;
+
       if (hWnd)
       {
         /*
