@@ -32,6 +32,7 @@
 #include <iostream>
 #include <string.h>
 #include <odbcinst.h>
+#include <VersionInfo.h>
 
 
 struct SubmoduleLoader
@@ -57,10 +58,10 @@ struct SubmoduleLoader
     switch(check_major_gtk_version())
     {
       case 2:
-        dlhandle = dlopen("libmyodbc8S-gtk2.so", RTLD_NOW);
+        dlhandle = dlopen("libmyodbc" MYODBC_STRMAJOR_VERSION "S-gtk2.so", RTLD_NOW);
         break;
       case 3:
-        dlhandle = dlopen("libmyodbc8S-gtk3.so", RTLD_NOW);
+        dlhandle = dlopen("libmyodbc" MYODBC_STRMAJOR_VERSION "S-gtk3.so", RTLD_NOW);
         break;
     }
 

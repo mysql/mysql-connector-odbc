@@ -199,16 +199,16 @@ popd
 
 %post
 if [ -x /usr/bin/myodbc-installer ]; then
-    /usr/bin/myodbc-installer -a -d -n "MySQL ODBC @CONNECTOR_BASE_VERSION@ Unicode Driver" -t "DRIVER=%{_libdir}/libmyodbc8w.so"
-    /usr/bin/myodbc-installer -a -d -n "MySQL ODBC @CONNECTOR_BASE_VERSION@ ANSI Driver"    -t "DRIVER=%{_libdir}/libmyodbc8a.so"
+    /usr/bin/myodbc-installer -a -d -n "MySQL ODBC @CONNECTOR_BASE_VERSION@ Unicode Driver" -t "DRIVER=%{_libdir}/libmyodbc@CONNECTOR_MAJOR@w.so"
+    /usr/bin/myodbc-installer -a -d -n "MySQL ODBC @CONNECTOR_BASE_VERSION@ ANSI Driver"    -t "DRIVER=%{_libdir}/libmyodbc@CONNECTOR_MAJOR@a.so"
 fi
 
 %if 0%{?odbc_gui}
 %post setup
 /usr/bin/myodbc-installer -r -d -n "MySQL ODBC @CONNECTOR_BASE_VERSION@ Unicode Driver"
 /usr/bin/myodbc-installer -r -d -n "MySQL ODBC @CONNECTOR_BASE_VERSION@ ANSI Driver"
-/usr/bin/myodbc-installer -a -d -n "MySQL ODBC @CONNECTOR_BASE_VERSION@ Unicode Driver" -t "DRIVER=%{_libdir}/libmyodbc8w.so;SETUP=%{_libdir}/libmyodbc8S.so"
-/usr/bin/myodbc-installer -a -d -n "MySQL ODBC @CONNECTOR_BASE_VERSION@ ANSI Driver"    -t "DRIVER=%{_libdir}/libmyodbc8a.so;SETUP=%{_libdir}/libmyodbc8S.so"
+/usr/bin/myodbc-installer -a -d -n "MySQL ODBC @CONNECTOR_BASE_VERSION@ Unicode Driver" -t "DRIVER=%{_libdir}/libmyodbc@CONNECTOR_MAJOR@w.so;SETUP=%{_libdir}/libmyodbc@CONNECTOR_MAJOR@S.so"
+/usr/bin/myodbc-installer -a -d -n "MySQL ODBC @CONNECTOR_BASE_VERSION@ ANSI Driver"    -t "DRIVER=%{_libdir}/libmyodbc@CONNECTOR_MAJOR@a.so;SETUP=%{_libdir}/libmyodbc@CONNECTOR_MAJOR@S.so"
 %endif
 
 # ----------------------------------------------------------------------
@@ -227,8 +227,8 @@ if [ "$1" = 0 ]; then
     if [ -x %{_bindir}/myodbc-installer ]; then
         %{_bindir}/myodbc-installer -r -d -n "MySQL ODBC @CONNECTOR_BASE_VERSION@ Unicode Driver" > /dev/null 2>&1 || :
         %{_bindir}/myodbc-installer -r -d -n "MySQL ODBC @CONNECTOR_BASE_VERSION@ ANSI Driver"    > /dev/null 2>&1 || :
-        %{_bindir}/myodbc-installer -a -d -n "MySQL ODBC @CONNECTOR_BASE_VERSION@ Unicode Driver" -t "DRIVER=%{_libdir}/libmyodbc8w.so" > /dev/null 2>&1 || :
-        %{_bindir}/myodbc-installer -a -d -n "MySQL ODBC @CONNECTOR_BASE_VERSION@ ANSI Driver"    -t "DRIVER=%{_libdir}/libmyodbc8a.so" > /dev/null 2>&1 || :
+        %{_bindir}/myodbc-installer -a -d -n "MySQL ODBC @CONNECTOR_BASE_VERSION@ Unicode Driver" -t "DRIVER=%{_libdir}/libmyodbc@CONNECTOR_MAJOR@w.so" > /dev/null 2>&1 || :
+        %{_bindir}/myodbc-installer -a -d -n "MySQL ODBC @CONNECTOR_BASE_VERSION@ ANSI Driver"    -t "DRIVER=%{_libdir}/libmyodbc@CONNECTOR_MAJOR@a.so" > /dev/null 2>&1 || :
     fi
 fi
 %endif
@@ -242,8 +242,8 @@ fi
 %files
 %defattr(-, root, root, -)
 %{_bindir}/myodbc-installer
-%{_libdir}/libmyodbc8w.so
-%{_libdir}/libmyodbc8a.so
+%{_libdir}/libmyodbc@CONNECTOR_MAJOR@w.so
+%{_libdir}/libmyodbc@CONNECTOR_MAJOR@a.so
 %doc %{license_files}
 %doc ChangeLog INFO_SRC INFO_BIN
 
@@ -252,8 +252,8 @@ fi
 %defattr(-, root, root, -)
 %doc %{license_files}
 %doc INFO_SRC INFO_BIN
-%{_libdir}/libmyodbc8S.so
-%{_libdir}/libmyodbc8S-gtk*.so
+%{_libdir}/libmyodbc@CONNECTOR_MAJOR@S.so
+%{_libdir}/libmyodbc@CONNECTOR_MAJOR@S-gtk*.so
 %endif
 
 %files test

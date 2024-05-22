@@ -44,25 +44,18 @@ int main(int argc, char *argv[])
 
 	sscanf(SETUP_VERSION, "%d.%d.%d", &v1, &v2, &v3);
 
+	fprintf(fp, "<?define odbc_ver_major=\"%d\" ?>\n", v1);
 	fprintf(fp, "<?define odbc_ver_short=\"%d.%d\" ?>\n", v1, v2);
 	fprintf(fp, "<?define odbc_ver_long=\"%d.%d.%d\" ?>\n", v1, v2, v3);
-        if (v3 == 0) {
-          if (v2 == 0)
-            fprintf(fp, "<?define odbc_ver_prev=\"%d.%d.%d\" ?>\n", v1-1, 999, 999);
-          else
-            fprintf(fp, "<?define odbc_ver_prev=\"%d.%d.%d\" ?>\n", v1, v2-1, 999);
-        } else {
-          fprintf(fp, "<?define odbc_ver_prev=\"%d.%d.%d\" ?>\n", v1, v2, v3-1);
-        }
-	fprintf(fp, "<?define odbc_ver_next=\"%d.%d.%d\" ?>\n", v1, v2, v3+1);
+	fprintf(fp, "<?define odbc_ver_prev=\""MYODBC_VERSION_PREV"\"?>\n");
+	fprintf(fp, "<?define odbc_ver_next=\"%d.%d.%d\" ?>\n", v1, v2 + 1, v3);
 	fprintf(fp, "<?define odbc_driver_type=\""MYODBC_STRDRIVERTYPE"\" ?>\n");
 	fprintf(fp, "<?define odbc_driver_type_suffix=\""MYODBC_STRTYPE_SUFFIX"\" ?>\n");
 	fprintf(fp, "<?define odbc_driver_series=\""MYODBC_STRDRIVERID"\" ?>\n");
 	fprintf(fp, "<?define odbc_ver_num=\"%d%02d%02d\" ?>\n", v1, v2, v3);
-
 	fclose(fp);
 
-	
+
 	if (!(fp = fopen("myodbc_version.cmake",  "w")))
 		exit (2);
 

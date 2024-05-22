@@ -104,15 +104,15 @@ fi
 for driver_type in @CONNECTOR_DRIVER_TYPE@
 do
   if [ $driver_type = "ANSI" ] ; then
-    suffix=a
+    suffix=@CONNECTOR_MAJOR@a
     dsn=myodbca
   else
-    suffix=w
+    suffix=@CONNECTOR_MAJOR@w
     dsn=myodbc
   fi
 
   echo "Registering $driver_type driver..."
-  $bindir/myodbc-installer -a -d -n "MySQL ODBC @CONNECTOR_MAJOR@.@CONNECTOR_MINOR@ $driver_type Driver" -t "Driver=$libdir/libmyodbc8$suffix.so;"
+  $bindir/myodbc-installer -a -d -n "MySQL ODBC @CONNECTOR_MAJOR@.@CONNECTOR_MINOR@ $driver_type Driver" -t "Driver=$libdir/libmyodbc$suffix.so;"
 
 # ----------------------------------------------------------------------
 # CREATE A SAMPLE DSN

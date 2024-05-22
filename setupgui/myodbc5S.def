@@ -1,5 +1,0 @@
-LIBRARY MYODBC5S.DLL
-EXPORTS
-ConfigDSNW
-Driver_Prompt
-;

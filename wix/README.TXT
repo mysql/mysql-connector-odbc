@@ -11,7 +11,7 @@ MSI build instructions
 
 - WIX_DIR
 If Wix executables are not in your default path, you need to specify
-WIX_DIR environment variable which points to your Wix installation 
+WIX_DIR environment variable which points to your Wix installation
 directory.
 
 - WIX_RESOURCE
@@ -27,20 +27,27 @@ Create the directors "doc" (for license files), and "x86"
 bit directory as well, i.e. a 64-bit package contains both 32-bit and
 64-bit binaries. Copy the required files:
 
+NOTE: X in the file names below represents a MAJOR version of the
+      Connector ODBC Driver.
+
   doc/README.txt
   doc/LICENSE.txt
-  x86/myodbc8.lib
-  x86/myodbc8.dll
-  x86/myodbc8S.lib
-  x86/myodbc8S.dll
+  x86/myodbcXa.lib
+  x86/myodbcXa.dll
+  x86/myodbcXw.lib
+  x86/myodbcXw.dll
+  x86/myodbcXS.lib
+  x86/myodbcXS.dll
   x86/myodbc-installer.exe
 
 and in addition if a 64-bit package
 
-  x64/myodbc8.lib
-  x64/myodbc8.dll
-  x64/myodbc8S.lib
-  x64/myodbc8S.dll
+  x64/myodbcXa.lib
+  x64/myodbcXa.dll
+  x64/myodbcXw.lib
+  x64/myodbcXw.dll
+  x64/myodbcXS.lib
+  x64/myodbcXS.dll
   x64/myodbc-installer.exe
 
 4) CMake

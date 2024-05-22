@@ -28,11 +28,11 @@ REM along with this program; if not, write to the Free Software Foundation, Inc.
 REM 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 
 REM #########################################################
-REM 
+REM
 REM \brief  Register Connector/ODBC driver with ODBC system
-REM   
-REM         This exists for those working with the Windows 
-REM         source distribution or with installer-less 
+REM
+REM         This exists for those working with the Windows
+REM         source distribution or with installer-less
 REM         binary distribution.
 REM
 REM         Name under which the driver should be registered
@@ -48,8 +48,8 @@ REM # be exported to the environment and pollute it
 SETLOCAL
 
 SET    driver_name=%*
-SET    driver_lib=myodbc8
-SET    driver_lib_setup=myodbc8S
+SET    driver_lib=myodbc@CONNECTOR_MAJOR@
+SET    driver_lib_setup=myodbc@CONNECTOR_MAJOR@S
 SET    installer=myodbc-installer
 SET    do_pause=no
 
@@ -167,11 +167,11 @@ SET libdir=none
 GOTO :eof
 
 REM ######
-REM # A subroutine to compute bindir of the form 
-REM # C:\current\working\directory\bin\XXX where XXX is 
+REM # A subroutine to compute bindir of the form
+REM # C:\current\working\directory\bin\XXX where XXX is
 REM # the last component of libdir, such as Release, Debug etc.
 REM # The libdir should be given as the first argument %1.
-REM # Construct %~n1 is used which returns the last component 
+REM # Construct %~n1 is used which returns the last component
 REM # ("file name") of the path stored in %1.
 REM ######
 :subFindBinDir

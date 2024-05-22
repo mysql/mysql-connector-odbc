@@ -46,17 +46,6 @@ SET(BUILDTYPE_DOCSTRING
  "Choose the type of build, options are: None(CMAKE_CXX_FLAGS or
  CMAKE_C_FLAGS used) Debug Release RelWithDebInfo MinSizeRel")
 
-#
-# If cmake is invoked with -DCMAKE_BUILD_TYPE,
-# respect user wishes and do not (re)define CMAKE_BUILD_TYPE. Otherwise,
-# use Relwithdebinfo.
-#
-
-#IF(NOT DEFINED CMAKE_BUILD_TYPE)
-#  SET(CMAKE_BUILD_TYPE "Debug" CACHE STRING
-#  ${BUILDTYPE_DOCSTRING} FORCE)
-#ENDIF()
-
 macro(add_compile_options)
   add_definitions(${ARGV})
 endmacro()

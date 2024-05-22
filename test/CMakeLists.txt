@@ -159,7 +159,8 @@ IF(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
       ENDIF(WIN32)
 
       # Not quite clear atm whether ${ODBCINSTLIB} is needed
-      TARGET_LINK_LIBRARIES(${T} myodbc8${CONNECTOR_DRIVER_TYPE_SHORT})
+      TARGET_LINK_LIBRARIES(${T} myodbc-${CONNECTOR_DRIVER_TYPE_SHORT})
+
       ADD_TEST(${T} ${T})
     ENDIF (NOT ${CONNECTOR_DRIVER_TYPE_SHORT} STREQUAL "w")
 
@@ -187,8 +188,7 @@ foreach(idx RANGE 0 1)
 
   list(GET CONNECTOR_DRIVER_TYPE_LIST ${idx} driver_type)
   list(GET CONNECTOR_DRIVER_TYPES_SHORT ${idx} driver_type_short)
-  set(driver_tgt "myodbc8${driver_type_short}")
-
+  set(driver_tgt "myodbc-${driver_type_short}")
   if(TARGET ${driver_tgt})
 
     math(EXPR DRIVERS_COUNT "${idx}+1")
