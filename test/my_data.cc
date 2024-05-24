@@ -1192,9 +1192,10 @@ DECLARE_TEST(t_wl16171_vector)
 
 
   // Check 3: SQLGetTypeInfo()
-  auto check_type_info = [&](SQLHSTMT hstmt)
+  auto check_type_info = [](SQLHSTMT hstmt)
   {
     std::vector<SQLSMALLINT> type_opt = { SQL_VARBINARY, SQL_ALL_TYPES };
+    SQLCHAR char_buf[64];
     for (auto opt : type_opt)
     {
       bool vector_detected = false;
@@ -1220,6 +1221,8 @@ DECLARE_TEST(t_wl16171_vector)
         vector_detected = true;
       }
       is(vector_detected);
+      odbc::stmt_close(hstmt);
+
     }
   };
 
