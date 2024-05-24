@@ -85,11 +85,12 @@ typedef char * DYNAMIC_ELEMENT;
 #endif
 
 // Handle the removal of `def` and `def_length`
-// from MYSQL_FIELD struct in MySQL 8.3.0
-// Note: These fields were added back in 8.4.0 (to keep ABI compatibilyu)
-// and then removed in 9.0.0 (which is not ABI compatible with 8.x)
+// from MYSQL_FIELD struct in MySQL 8.3.0 and 9.0.0
+// Note: These fields were added back in 8.4.0 (to keep ABI compatibility)
+// and then removed in 9.0.0 and added back in 9.1.0
+// (see WL#16221 and WL#16383)
 
-#if LIBMYSQL_VERSION_ID >= 90000 || LIBMYSQL_VERSION_ID == 80300
+#if LIBMYSQL_VERSION_ID == 90000 || LIBMYSQL_VERSION_ID == 80300
 #define MYSQL_FIELD_DEF
 #define MYSQL_FIELD_DEF_LENGTH
 #else
