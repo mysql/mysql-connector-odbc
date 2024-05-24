@@ -853,7 +853,11 @@ columns_i_s(SQLHSTMT hstmt, SQLCHAR *catalog, unsigned long catalog_len,
     "  WHEN 'bit' THEN CAST((NUMERIC_PRECISION + 7) / 8 AS UNSIGNED)"
     "  WHEN 'json' THEN 1073741823"
     "  ELSE NUMERIC_PRECISION"
-    "  END, CHARACTER_MAXIMUM_LENGTH) as "
+    "  END,"
+    "  CASE DATA_TYPE"
+    "  WHEN 'vector' THEN CAST((CHARACTER_MAXIMUM_LENGTH / 4) AS UNSIGNED)"
+    "  ELSE CHARACTER_MAXIMUM_LENGTH"
+    "  END) as "
     "COLUMN_SIZE");
   ocat.add_column("CASE DATA_TYPE"
     "  WHEN 'json' THEN 4294967295"

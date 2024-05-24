@@ -326,8 +326,15 @@ ELSE(WIN32)
 
 ENDIF(WIN32)
 
-#-----------------------------------------------------
+#--------- check support for vector type in mysql --------
+TRY_COMPILE(COMPILE_RESULT ${CMAKE_BINARY_DIR} ${CMAKE_SOURCE_DIR}/cmake/type_vector.c
+CMAKE_FLAGS "-DINCLUDE_DIRECTORIES='${MYSQL_INCLUDE_DIR}'")
+MESSAGE(STATUS "Checking if MySQL client lib supports vector type - ${COMPILE_RESULT}")
 
+IF(COMPILE_RESULT)
+    ADD_DEFINITIONS(-DHAVE_TYPE_VECTOR)
+ENDIF(COMPILE_RESULT)
+#-----------------------------------------------------
 CONFIGURE_FILE(${CMAKE_SOURCE_DIR}/cmake/sqlcolattrib1.c.cmake ${CMAKE_BINARY_DIR}/cmake/sqlcolattrib1.c @ONLY)
 CONFIGURE_FILE(${CMAKE_SOURCE_DIR}/cmake/sqlcolattrib2.c.cmake ${CMAKE_BINARY_DIR}/cmake/sqlcolattrib2.c @ONLY)
 

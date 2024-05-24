@@ -1006,6 +1006,269 @@ DECLARE_TEST(t_bug26474471)
   ENDCATCH;
 }
 
+DECLARE_TEST(t_wl16171_vector)
+{
+  // Keep the original data
+  std::vector<float> float_buf_orig = {
+    1.2345, 2.3456E+10, 3.4567, -93.23, 0, -2, 5433.34, 3.1415,
+    2.7183, 2.3456E-10, 123.987, 232, 0.000001, 3.33333333333E+0,
+    10.0000009, 9.9999998
+  };
+
+  is_num(16, float_buf_orig.size());
+
+  SQLHSTMT hstmt2 = nullptr;
+  SQLCHAR char_buf[64];
+
+  try
+  {
+    // Detect vector support by creating a table with VECTOR column.
+    odbc::table tab_check(hstmt, "support_vector", "c1 VECTOR(16)");
+  }
+  catch(const odbc::Exception& e)
+  {
+    skip("Skipping because VECTOR support is not detected");
+  }
+
+  odbc::table tab(hstmt, "test_vector", "vector_col VECTOR(16) comment 'some comment'");
+
+  // Check 1: Insert VECTOR value into the table.
+  auto check_insert_data = [&tab](SQLHSTMT hstmt, std::vector<float> &float_buf)
+  {
+    odbc::stmt_close(hstmt);
+    odbc::stmt_reset(hstmt);
+
+    odbc::stmt_prepare(hstmt, "INSERT INTO " + tab.table_name + " VALUES (?)");
+    size_t NN = float_buf.size();
+    SQLLEN len = NN * sizeof(float);
+    ok_stmt(hstmt, SQLBindParameter(hstmt, 1, SQL_PARAM_INPUT, SQL_C_BINARY,
+                                    SQL_BINARY, len, 0,
+                                    float_buf.data(), len,
+                                    &len));
+    odbc::stmt_execute(hstmt);
+  };
+
+    // Check 2: Read VECTOR value as raw bytes.
+  auto check_select_data = [](SQLHSTMT hstmt, std::vector<float> &float_buf)
+  {
+  // For testing purposes we will not need more than 16 elements.
+    float res_buf[16];
+    size_t NN = float_buf.size();
+    SQLLEN len = NN * sizeof(float);
+
+    memset(res_buf, 0, sizeof(res_buf));
+
+    odbc::stmt_close(hstmt);
+    odbc::stmt_reset(hstmt);
+
+    // Depending on NO_SSPS it will run as a query or PS
+    odbc::stmt_prepare(hstmt, "SELECT * from test_vector WHERE 100=?");
+    SQLINTEGER par = 100;
+    ok_stmt(hstmt, SQLBindParameter(hstmt, 1, SQL_PARAM_INPUT, SQL_C_LONG,
+                                    SQL_INTEGER, 0, 0,
+                                    &par, 0, nullptr));
+
+    odbc::stmt_execute(hstmt);
+
+    ok_stmt(hstmt, SQLBindCol(hstmt, 1, SQL_C_BINARY, res_buf, NN * sizeof(float), &len));
+    ok_stmt(hstmt, SQLFetch(hstmt));
+    std::cout << "Float buf size: " << NN << "\n";
+    for (int i = 0; i < NN; ++i)
+    {
+      std::cout << "[" << float_buf[i] << "," << res_buf[i] << "]\n";
+      is(float_buf[i] == res_buf[i]);
+    }
+  };
+  auto check_metadata = [&char_buf](SQLHSTMT hstmt, size_t col_cnt)
+  {
+    SQLCHAR col_name[32];
+    SQLSMALLINT name_len = 0, data_type = 0, dec_digits = 0, nullable = 0;
+    SQLULEN col_size = 0;
+
+    // Check SQLDescribeCol()
+    ok_stmt(hstmt, SQLDescribeCol(hstmt, 1, col_name, sizeof(col_name),
+        &name_len, &data_type, &col_size, &dec_digits, &nullable));
+
+    is_num(10, name_len);
+    is_str("vector_col", col_name, 10);
+    is_num(0, dec_digits);
+    is_num(1, nullable);
+    is_num(SQL_VARBINARY, data_type);
+    is_num(col_cnt, col_size);
+
+    // Check SQLColAttribute()
+    SQLLEN num_attr = 0;
+    SQLSMALLINT attr_len = 0;
+
+    auto get_attr = [&char_buf, &num_attr, &hstmt](auto idx) {
+      num_attr = 0;
+      char_buf[0] = 0;
+      ok_stmt(hstmt, SQLColAttribute(
+        hstmt, 1, idx, char_buf, sizeof(char_buf), nullptr, &num_attr
+      ));
+    };
+
+    get_attr(SQL_DESC_TYPE);
+    is_num(SQL_VARBINARY, num_attr);
+
+    get_attr(SQL_DESC_CONCISE_TYPE);
+    is_num(SQL_VARBINARY, num_attr);
+
+    get_attr(SQL_DESC_TYPE_NAME);
+    is_str("vector", char_buf, SQL_NTS);
+
+    get_attr(SQL_DESC_LENGTH);
+    is_num(col_cnt, num_attr);
+
+    get_attr(SQL_DESC_OCTET_LENGTH);
+    is_num(col_cnt * sizeof(float), num_attr);
+
+    get_attr(SQL_DESC_DISPLAY_SIZE);
+    is_num((col_cnt * 15) + 1, num_attr);
+
+    get_attr(SQL_DESC_LITERAL_PREFIX);
+    is(char_buf[0] == '\0');
+    is_num(0, attr_len);
+
+    get_attr(SQL_DESC_LITERAL_SUFFIX);
+    is(char_buf[0] == '\0');
+    is_num(0, attr_len);
+
+    is_no_data(SQLFetch(hstmt));
+    odbc::stmt_close(hstmt);
+  };
+
+  // Check SQLColumns()
+  auto check_table_columns = [](SQLHSTMT hstmt, size_t col_cnt)
+  {
+    SQLCHAR char_buf[64];
+    ok_stmt(hstmt, SQLColumns(hstmt, nullptr, 0, nullptr, 0,
+      (SQLCHAR*)"test_vector", SQL_NTS,
+      (SQLCHAR*)"vector_col", SQL_NTS));
+    ok_stmt(hstmt, SQLFetch(hstmt));
+
+    // TABLE_CAT
+    is_str(mydb, my_fetch_str(hstmt, char_buf, 1), SQL_NTS);
+    // TABLE_NAME
+    is_str("test_vector", my_fetch_str(hstmt, char_buf, 3), SQL_NTS);
+    // COLUMN_NAME
+    is_str("vector_col", my_fetch_str(hstmt, char_buf, 4), SQL_NTS);
+    // DATA_TYPE
+    is_num(SQL_VARBINARY, my_fetch_int(hstmt, 5));
+    // TYPE_NAME
+    // NOTE: For SQLColumns() the type name is without parentheses:
+    // https://learn.microsoft.com/en-us/sql/odbc/reference/syntax/sqlcolumns-function?view=sql-server-ver16
+    is_str("vector", my_fetch_str(hstmt, char_buf, 6), SQL_NTS);
+    // COLUMN_SIZE
+    is_num(col_cnt, my_fetch_int(hstmt, 7));
+    // BUFFER_LENGTH
+    is_num(col_cnt * sizeof(float), my_fetch_int(hstmt, 8));
+    // DECIMAL_DIGITS
+    is_num(0, my_fetch_int(hstmt, 9));
+    // NUM_PREC_RADIX
+    is_num(0, my_fetch_int(hstmt, 10));
+    // NULLABLE
+    is_num(SQL_NULLABLE, my_fetch_int(hstmt, 11));
+    // COMMENT
+    is_str("some comment", my_fetch_str(hstmt, char_buf, 12), SQL_NTS);
+    // DEFAULT VALUE
+    // Note: if NULL is a default value the function must report the word
+    //       NULL not enclosed in quotation marks.
+    is_str("NULL", my_fetch_str(hstmt, char_buf, 13), SQL_NTS);
+    // SQL_DATA_TYPE
+    is_num(SQL_VARBINARY, my_fetch_int(hstmt, 14));
+    // SQL_DATETIME_SUB
+    is_num(0, my_fetch_int(hstmt, 15));
+    // CHAR_OCTET_LENGTH
+    is_num(col_cnt * sizeof(float), my_fetch_int(hstmt, 16));
+    // ORDINAL_POSITION
+    is_num(1, my_fetch_int(hstmt, 17));
+    // IS_NULLABLE
+    is_str("YES", my_fetch_str(hstmt, char_buf, 18), SQL_NTS);
+
+    is_no_data(SQLFetch(hstmt));
+    odbc::stmt_close(hstmt);
+  };
+
+
+  // Check 3: SQLGetTypeInfo()
+  auto check_type_info = [&](SQLHSTMT hstmt)
+  {
+    std::vector<SQLSMALLINT> type_opt = { SQL_VARBINARY, SQL_ALL_TYPES };
+    for (auto opt : type_opt)
+    {
+      bool vector_detected = false;
+      ok_stmt(hstmt, SQLGetTypeInfo(hstmt, opt));
+      while(SQL_SUCCESS == SQLFetch(hstmt))
+      {
+        std::string type_name = my_fetch_str(hstmt, char_buf, 1);
+        if (type_name != "vector()")
+          continue;
+
+        // DATA_TYPE
+        is_num(SQL_VARBINARY, my_fetch_int(hstmt, 2));
+        // COLUMN_SIZE
+        is_num(16382, my_fetch_int(hstmt, 3));
+        // LOCAL_TYPE_NAME
+        is_str("vector", my_fetch_str(hstmt, char_buf, 13), SQL_NTS);
+        // LITERAL_PREFIX
+        // Note: for NULL values my_fetch_str() returns "(Null)" string
+        is_str("(Null)", my_fetch_str(hstmt, char_buf, 4), SQL_NTS);
+        // LITERAL_SUFIX
+        is_str("(Null)", my_fetch_str(hstmt, char_buf, 5), SQL_NTS);
+
+        vector_detected = true;
+      }
+      is(vector_detected);
+    }
+  };
+
+  std::vector<const char*> opts = { "NO_SSPS=0", "NO_SSPS=1" };
+
+  try
+  {
+    for (auto opt : opts)
+    {
+      odbc::connection con(nullptr, nullptr, nullptr, nullptr, opt);
+      odbc::HSTMT hstmt1(con);
+
+      std::vector <float> float_buf = float_buf_orig;
+      check_insert_data(hstmt1, float_buf);
+      check_select_data(hstmt1, float_buf);
+      check_metadata(hstmt1, float_buf.size());
+      check_table_columns(hstmt1, float_buf.size());
+      check_type_info(hstmt1);
+
+      // Check 4: Working with vector sizes M <> N
+      // Check when data is longer than the column, add one more element.
+      float_buf.emplace_back(543.1231f);
+      try
+      {
+        check_insert_data(hstmt1, float_buf);
+        return FAIL;
+      }
+      catch(odbc::SimpleException &e)
+      {
+        std::cout << "Expected error\n";
+      }
+
+      // Check when data is shorter than the column
+      odbc::stmt_close(hstmt1);
+      odbc::stmt_reset(hstmt1);
+      odbc::sql(hstmt1, "TRUNCATE test_vector");
+
+      float_buf.resize(8);
+      check_insert_data(hstmt1, float_buf);
+      check_select_data(hstmt1, float_buf);
+      odbc::stmt_close(hstmt1);
+      odbc::stmt_reset(hstmt1);
+      odbc::sql(hstmt1, "TRUNCATE test_vector");
+    }
+  }
+  ENDCATCH;
+}
+
+
 /*
   Bug #21115726 - INCORRECT RESULT FETCHED FROM BIGINT COLUMN.
 */
@@ -1079,7 +1342,9 @@ DECLARE_TEST(t_bug21115726)
   ENDCATCH;
 }
 
+
 BEGIN_TESTS
+  ADD_TEST(t_wl16171_vector)
   ADD_TEST(t_bug21115726)
   ADD_TEST(t_bug26474471)
   ADD_TEST(t_bug35520983_sjis)

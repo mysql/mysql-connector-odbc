@@ -952,7 +952,6 @@ MYSQL_FIELD SQL_GET_TYPE_INFO_fields[] =
 };
 
 const uint SQL_GET_TYPE_INFO_FIELDS = (uint)array_elements(SQL_GET_TYPE_INFO_fields);
-#define MYSQL_DATA_TYPES 61
 
 char sql_searchable[6], sql_unsearchable[6], sql_nullable[6], sql_no_nulls[6],
 sql_bit[6], sql_tinyint[6], sql_smallint[6], sql_integer[6], sql_bigint[6],
@@ -962,7 +961,7 @@ sql_varbinary[6], sql_time[6], sql_date[6], sql_binary[6],
 sql_longvarbinary[6], sql_datetime[6], sql_wchar[6], sql_wvarchar[6],
 sql_wlongvarchar[6];
 
-char *SQL_GET_TYPE_INFO_values[MYSQL_DATA_TYPES][19] =
+char *SQL_GET_TYPE_INFO_values[][19] =
 {
   /* SQL_BIT= -7 */
   { "bit",sql_bit,"1","'","'",NULL,sql_nullable,"0",sql_searchable,NULL,"0",NULL,"bit",NULL,NULL,sql_bit,NULL,NULL,NULL },
@@ -988,6 +987,7 @@ char *SQL_GET_TYPE_INFO_values[MYSQL_DATA_TYPES][19] =
 
   /* SQL_VARBINARY= -3 */
   { "varbinary",sql_varbinary,"255","'","'","length",sql_nullable,"0",sql_searchable,NULL,"0",NULL,"varbinary",NULL,NULL,sql_varbinary,NULL,NULL,NULL },
+  { "vector()",sql_varbinary,"16382",NULL,NULL,"length",sql_nullable,"0",sql_searchable,NULL,"0",NULL,"vector",NULL,NULL,sql_varbinary,NULL,NULL,NULL },
 
   /* SQL_BINARY= -2 */
   { "binary",sql_binary,"255","'","'","length",sql_nullable,"0",sql_searchable,NULL,"0",NULL,"binary",NULL,NULL,sql_binary,NULL,NULL,NULL },
@@ -1077,6 +1077,7 @@ char *SQL_GET_TYPE_INFO_values[MYSQL_DATA_TYPES][19] =
   /* ENUM and SET are not included -- it confuses some applications. */
 };
 
+const uint MYSQL_DATA_TYPES = (uint)array_elements(SQL_GET_TYPE_INFO_values);
 
 /**
 Return information about data types supported by the server.

@@ -269,6 +269,11 @@ void fix_result_types(STMT *stmt)
       irrec->literal_suffix= (SQLCHAR *) "'";
       break;
 
+    case MYSQL_TYPE_VECTOR:
+      irrec->literal_prefix = (SQLCHAR *) "";
+      irrec->literal_suffix = (SQLCHAR *) "";
+      break;
+
     default:
       irrec->literal_prefix= (SQLCHAR *) "";
       irrec->literal_suffix= (SQLCHAR *) "";
@@ -843,6 +848,7 @@ std::map<std::string, int> sql_data_types_map = {
   { "time", SQL_TIME },
   { "binary", SQL_BINARY },
   { "varbinary", SQL_VARBINARY },
+  { "vector", SQL_VARBINARY },
   { "varchar", SQL_VARCHAR },
   { "tinyblob", SQL_LONGVARBINARY },
   { "tinytext", SQL_LONGVARCHAR },
@@ -1140,6 +1146,11 @@ SQLSMALLINT get_sql_data_type(STMT *stmt, MYSQL_FIELD *field, char *buff)
     if (buff)
       (void)myodbc_stpmov(buff, "json");
     return stmt->dbc->unicode ? SQL_WLONGVARCHAR : SQL_LONGVARCHAR;
+
+  case MYSQL_TYPE_VECTOR:
+    if (buff)
+      (void)myodbc_stpmov(buff, "vector");
+    return SQL_VARBINARY;
   }
 
   if (buff)
@@ -1322,6 +1333,8 @@ SQLULEN get_column_size(STMT *stmt, MYSQL_FIELD *field)
     return length / get_charset_maxlen(field->charsetnr);
   case MYSQL_TYPE_JSON:
     return UINT32_MAX / 4; // Because JSON is always UTF8MB4
+  case MYSQL_TYPE_VECTOR:
+    return length / 4; // Length should be the number of elements in VECTOR
   }
 
   return SQL_NO_TOTAL;
@@ -1475,6 +1488,8 @@ SQLLEN get_transfer_octet_length(STMT *stmt, MYSQL_FIELD *field)
       if (capint32 && length > INT_MAX32)
         length= INT_MAX32;
       return length;
+  case MYSQL_TYPE_VECTOR:
+    return length;
     }
   }
 
@@ -1578,7 +1593,8 @@ SQLLEN get_display_size(STMT *stmt __attribute__((unused)),MYSQL_FIELD *field)
     }
   case MYSQL_TYPE_JSON:
     return UINT_MAX32 / 4; // 4 is the character size in UTF8MB4
-
+  case MYSQL_TYPE_VECTOR:
+    return 15 * (field->length / 4) + 1;
   }
 
   return SQL_NO_TOTAL;
@@ -1774,6 +1790,7 @@ int unireg_to_c_datatype(MYSQL_FIELD *field)
         case MYSQL_TYPE_MEDIUM_BLOB:
         case MYSQL_TYPE_LONG_BLOB:
         case MYSQL_TYPE_JSON:
+        case MYSQL_TYPE_VECTOR:
             return SQL_C_BINARY;
         case MYSQL_TYPE_LONGLONG: /* Must be returned as char */
         default:
@@ -3103,8 +3120,13 @@ char* proc_get_param_dbtype(char *proc, int len, char *ptype)
   return proc;
 }
 
-SQLTypeMap SQL_TYPE_MAP_values[TYPE_MAP_SIZE]=
+SQLTypeMap SQL_TYPE_MAP_values[]=
 {
+  /* SQL_CHAR= 1 */
+  {(SQLCHAR*)"char", 4, SQL_CHAR, MYSQL_TYPE_STRING, 0, 0},
+  {(SQLCHAR*)"enum", 4, SQL_CHAR, MYSQL_TYPE_STRING, 0, 0},
+  {(SQLCHAR*)"set", 3, SQL_CHAR, MYSQL_TYPE_STRING, 0, 0},
+
   /* SQL_BIT= -7 */
   {(SQLCHAR*)"bit", 3, SQL_BIT, MYSQL_TYPE_BIT, 1, 1},
   {(SQLCHAR*)"bool", 4, SQL_BIT, MYSQL_TYPE_BIT, 1, 1},
@@ -3124,6 +3146,7 @@ SQLTypeMap SQL_TYPE_MAP_values[TYPE_MAP_SIZE]=
 
   /* SQL_VARBINARY= -3 */
   {(SQLCHAR*)"varbinary", 9, SQL_VARBINARY, MYSQL_TYPE_VAR_STRING, 0, 1},
+  {(SQLCHAR*)"vector", 9, SQL_VARBINARY, MYSQL_TYPE_VECTOR, 16382 * 4, 1},
 
   /* SQL_BINARY= -2 */
   {(SQLCHAR*)"binary", 6, SQL_BINARY, MYSQL_TYPE_STRING, 0, 1},
@@ -3134,11 +3157,6 @@ SQLTypeMap SQL_TYPE_MAP_values[TYPE_MAP_SIZE]=
   {(SQLCHAR*)"mediumtext", 10, SQL_LONGVARCHAR, MYSQL_TYPE_MEDIUM_BLOB, 16777215, 0},
   {(SQLCHAR*)"longtext", 8, SQL_LONGVARCHAR, MYSQL_TYPE_LONG_BLOB, 4294967295UL, 0},
   {(SQLCHAR*)"tinytext", 8, SQL_LONGVARCHAR, MYSQL_TYPE_TINY_BLOB, 255, 0},
-
-  /* SQL_CHAR= 1 */
-  {(SQLCHAR*)"char", 4, SQL_CHAR, MYSQL_TYPE_STRING, 0, 0},
-  {(SQLCHAR*)"enum", 4, SQL_CHAR, MYSQL_TYPE_STRING, 0, 0},
-  {(SQLCHAR*)"set", 3, SQL_CHAR, MYSQL_TYPE_STRING, 0, 0},
 
   /* SQL_NUMERIC= 2 */
   {(SQLCHAR*)"numeric", 7, SQL_NUMERIC, MYSQL_TYPE_DECIMAL, 0, 1},
@@ -3182,12 +3200,11 @@ SQLTypeMap SQL_TYPE_MAP_values[TYPE_MAP_SIZE]=
 
 enum enum_field_types map_sql2mysql_type(SQLSMALLINT sql_type)
 {
-  int i;
-  for (i= 0; i < TYPE_MAP_SIZE; ++i)
+  for (auto &elem : SQL_TYPE_MAP_values)
   {
-    if (SQL_TYPE_MAP_values[i].sql_type == sql_type)
+    if (elem.sql_type == sql_type)
     {
-      return (enum_field_types)SQL_TYPE_MAP_values[i].mysql_type;
+      return (enum_field_types)elem.mysql_type;
     }
   }
 
@@ -3204,16 +3221,17 @@ enum enum_field_types map_sql2mysql_type(SQLSMALLINT sql_type)
 */
 int proc_get_param_sql_type_index(const char *ptype, int len)
 {
-  int i;
-  for (i= 0; i < TYPE_MAP_SIZE; ++i)
+  int i = 0;
+  for (auto &elem : SQL_TYPE_MAP_values)
   {
-    if (len >= SQL_TYPE_MAP_values[i].name_length &&
-        (!myodbc_casecmp(ptype, (const char*)SQL_TYPE_MAP_values[i].type_name,
-         SQL_TYPE_MAP_values[i].name_length)))
+    if (len >= elem.name_length &&
+        (!myodbc_casecmp(ptype, (const char*)elem.type_name,
+         elem.name_length)))
       return i;
+    ++i;
   }
 
-  return 16; /* "char" */
+  return 0; /* "char" */
 }
 
 

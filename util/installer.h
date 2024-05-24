@@ -398,8 +398,6 @@ typedef struct{
   BOOL binary;
 }SQLTypeMap;
 
-#define TYPE_MAP_SIZE 32
-
 int ds_set_strnattr(SQLWCHAR **attr, const SQLWCHAR *val, size_t charcount);
 char *ds_get_utf8attr(SQLWCHAR *attrw, SQLCHAR **attr8);
 

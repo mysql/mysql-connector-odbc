@@ -238,6 +238,10 @@ extern std::mutex global_fido_mutex;
 
 #define DONT_USE_LOCALE_CHECK(STMT) if (!STMT->dbc->ds.opt_NO_LOCALE)
 
+#ifndef HAVE_TYPE_VECTOR
+#define MYSQL_TYPE_VECTOR 242
+#endif
+
 #if defined _WIN32
 
   #define DECLARE_LOCALE_HANDLE int loc;
