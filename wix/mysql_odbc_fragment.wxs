@@ -45,7 +45,7 @@
       <StandardDirectory Id="ProgramFilesFolder">
       <?endif?>
         <Directory Id="MySQL" Name="MySQL">
-          <Directory Id="Connector_ODBC" Name="Connector ODBC $(var.odbc_ver_short)">
+          <Directory Id="Connector_ODBC" Name="MySQL Connector ODBC $(var.odbc_ver_short)">
             <Directory Id="INSTALLDIR" Name=".">
 
           <?if $(var.odbc_64bit) = 1 ?>
