@@ -200,15 +200,11 @@ BOOL INSTAPI ConfigDSNW(HWND hWnd, WORD nRequest, LPCWSTR pszDriver,
     }
   case ODBC_CONFIG_DSN:
 
-#ifdef _WIN32
     /*
-      for windows, if hWnd is NULL, we try to add the dsn
+      If hWnd is NULL, we try to add the dsn
       with what information was given
     */
     if (!hWnd || ShowOdbcParamsDialog(&ds, hWnd, FALSE) == 1)
-#else
-    if (ShowOdbcParamsDialog(&ds, hWnd, FALSE) == 1)
-#endif
     {
       /* save datasource */
       if (ds.add())

@@ -1099,10 +1099,15 @@ SQLRETURN SQL_API MySQLConnect(SQLHDBC   hdbc,
   }
 
   ds.opt_DSN.set_remove_brackets(szDSN, cbDSN);
-  ds.opt_UID.set_remove_brackets(szUID, cbUID);
-  ds.opt_PWD.set_remove_brackets(szAuth, cbAuth);
-
   ds.lookup();
+
+  // Setting of UID and PWD passed via parameters should
+  // override options in DSN.
+  if (szUID)
+    ds.opt_UID.set_remove_brackets(szUID, cbUID);
+
+  if (szAuth)
+    ds.opt_PWD.set_remove_brackets(szAuth, cbAuth);
 
   rc= dbc->connect(&ds);
 

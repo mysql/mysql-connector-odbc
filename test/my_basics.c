@@ -1661,7 +1661,246 @@ DECLARE_TEST(t_bug34786939_out_trunc)
   return OK;
 }
 
+
+DECLARE_TEST(t_bug36605973_sqlconnect_params)
+{
+  ok_sql(hstmt, "DROP USER IF EXISTS `user_36605973_pwd`@`%`");
+  ok_sql(hstmt, "DROP USER IF EXISTS `user_36605973_emp`@`%`");
+  ok_sql(hstmt, "DROP USER IF EXISTS `user_36605973_nop`@`%`");
+
+  ok_sql(hstmt, "CREATE USER `user_36605973_pwd`@`%` IDENTIFIED BY 'pass_correct'");
+  ok_sql(hstmt, "CREATE USER `user_36605973_emp`@`%` IDENTIFIED BY ''");
+  ok_sql(hstmt, "CREATE USER `user_36605973_nop`@`%`");
+
+  // Set timeouts to prevent disconnects on slower test machines.
+  ok_sql(hstmt, "SET @@wait_timeout=1800");
+  ok_sql(hstmt, "SET @@interactive_timeout=1800");
+
+  typedef struct DSN_DATA
+  {
+    SQLCHAR* uid;
+    SQLCHAR* pwd;
+    SQLRETURN res[4];
+  } DSN_DATA;
+
+  SQLCHAR* dsn_name = "dsn_36605973";
+
+  SQLCHAR *pass_list[] = {
+    "pass_correct",
+    "pass_wrong",
+    "",
+    NULL
+  };
+
+  DSN_DATA dsn_list[] = {
+    // 0. User with password. DSN has correct password
+    {"user_36605973_pwd", "pass_correct",
+      {
+        SQL_SUCCESS, // Correct
+        SQL_ERROR,   // Wrong
+        SQL_ERROR,   // Empty
+        SQL_SUCCESS  // No PWD
+      }
+    },
+
+    // 1. User with password. DSN has wrong password
+    {"user_36605973_pwd", "pass_wrong",
+      {
+        SQL_SUCCESS, // Correct
+        SQL_ERROR,   // Wrong
+        SQL_ERROR,   // Empty
+        SQL_ERROR    // No PWD
+      }
+    },
+
+    // 2. User with password. DSN has empty password
+    {"user_36605973_pwd", "",
+      {
+        SQL_SUCCESS, // Correct
+        SQL_ERROR,   // Wrong
+        SQL_ERROR,   // Empty
+        SQL_ERROR    // No PWD
+      }
+    },
+
+    // 3. User with password. DSN has no password
+    {"user_36605973_pwd", NULL,
+      {
+        SQL_SUCCESS, // Correct
+        SQL_ERROR,   // Wrong
+        SQL_ERROR,   // Empty
+        SQL_ERROR    // No PWD
+      }
+    },
+
+    // 4. DSN has wrong password (User created with empty password)
+    {"user_36605973_emp", "pass_wrong",
+      {
+        SQL_ERROR,   // Correct (still wrong for empty pwd user)
+        SQL_ERROR,   // Wrong
+        SQL_SUCCESS, // Empty
+        SQL_ERROR    // No PWD
+      }
+    },
+
+    // 5. DSN has empty password (User created with empty password)
+    {"user_36605973_emp", "",
+      {
+        SQL_ERROR,   // Correct (still wrong for empty pwd user)
+        SQL_ERROR,   // Wrong
+        SQL_SUCCESS, // Empty
+        SQL_SUCCESS  // No PWD
+      }
+    },
+
+    // 6. DSN has no password (User created with empty password)
+    {"user_36605973_emp", NULL,
+      {
+        SQL_ERROR,   // Correct (still wrong for empty pwd user)
+        SQL_ERROR,   // Wrong
+        SQL_SUCCESS, // Empty
+        SQL_SUCCESS  // No PWD
+      }
+    },
+
+    // 7. DSN has wrong password (User created with no password)
+    {"user_36605973_nop", "pass_wrong",
+      {
+        SQL_ERROR,   // Correct (still wrong for no pwd user)
+        SQL_ERROR,   // Wrong
+        SQL_SUCCESS, // Empty
+        SQL_ERROR    // No PWD
+      }
+    },
+
+    // 8. DSN has empty password (User created with no password)
+    {"user_36605973_nop", "",
+      {
+        SQL_ERROR,   // Correct (still wrong for no pwd user)
+        SQL_ERROR,   // Wrong
+        SQL_SUCCESS, // Empty
+        SQL_SUCCESS  // No PWD
+      }
+    },
+
+    // 9. DSN has no password (User created with no password)
+    {"user_36605973_nop", NULL,
+      {
+        SQL_ERROR,   // Correct (still wrong for no pwd user)
+        SQL_ERROR,   // Wrong
+        SQL_SUCCESS, // Empty
+        SQL_SUCCESS  // No PWD
+      }
+    }
+  };
+
+  size_t list_size = sizeof(dsn_list) / sizeof(DSN_DATA);
+
+  for (size_t i = 0; i < list_size; ++i)
+  {
+    // Loop for different user indexes (uidx).
+    // 0 - user for DSN and param is the same
+    // 1 - user for DSN is wrong, user in param is correct
+    // 2 - user for DSN is correct, user in param is wrong
+    // 3 - user for DSN is not specified, user in param is correct
+    // 4 - user for DSN is correct, user in param is not given (NULL)
+    // 5 - user for DSN is wrong, user in param is not given (NULL)
+    for (size_t uidx = 0; uidx < 6; ++uidx)
+    {
+      SQLCHAR *u_dsn = NULL;
+      SQLCHAR *u_par = NULL;
+
+      SQLRemoveDSNFromIni(dsn_name);
+
+      ok_install(SQLWriteDSNToIni(dsn_name, mydrv_nobrackets));
+
+      ok_install(SQLWritePrivateProfileString(dsn_name, "SERVER", myserver, odbcini));
+
+
+      if (mysock)
+        ok_install(SQLWritePrivateProfileString(dsn_name, "SOCKET", mysock, odbcini));
+
+      if (myport)
+      {
+        char s_port[16];
+        snprintf(s_port, sizeof(s_port), "%d", myport);
+        ok_install(SQLWritePrivateProfileString(dsn_name, "PORT", s_port, odbcini));
+      }
+
+      switch (uidx)
+      {
+        case 0:
+          u_dsn = dsn_list[i].uid;
+          u_par = dsn_list[i].uid;
+          break;
+        case 1:
+          u_dsn = "user_wrong";
+          u_par = dsn_list[i].uid;
+          break;
+        case 2:
+          u_dsn = dsn_list[i].uid;
+          u_par = "user_wrong";
+          break;
+        case 3:
+          u_dsn = NULL;
+          u_par = dsn_list[i].uid;
+          break;
+        case 4:
+          u_dsn = dsn_list[i].uid;
+          u_par = NULL;
+          break;
+        case 5:
+          u_dsn = "user_wrong";
+          u_par = NULL;
+          break;
+      }
+
+      if (u_dsn)
+        ok_install(SQLWritePrivateProfileString(dsn_name, "UID", u_dsn, odbcini));
+
+      if (dsn_list[i].pwd)
+        ok_install(SQLWritePrivateProfileString(dsn_name, "PWD", dsn_list[i].pwd, odbcini));
+
+      for (size_t r = 0; r < 4; ++r)
+      {
+        SQLHDBC hdbc1 = NULL;
+        ok_env(henv, SQLAllocConnect(henv, &hdbc1));
+
+        SQLRETURN res = SQLConnect(hdbc1,
+          dsn_name, SQL_NTS,
+          u_par, SQL_NTS,
+          pass_list[r], SQL_NTS);
+
+        switch (uidx)
+        {
+          case 0:
+          case 1:
+          case 3:
+          case 4:
+            is_num(dsn_list[i].res[r], res);
+            break;
+
+          case 2:
+          case 5:
+            is_num(SQL_ERROR, res);
+            break;
+        }
+
+        SQLDisconnect(hdbc1);
+        SQLFreeConnect(hdbc1);
+      }
+    } // for uidx
+  }
+
+  ok_sql(hstmt, "DROP USER IF EXISTS `user_36605973_pwd`@`%`");
+  ok_sql(hstmt, "DROP USER IF EXISTS `user_36605973_emp`@`%`");
+  ok_sql(hstmt, "DROP USER IF EXISTS `user_36605973_nop`@`%`");
+
+  return OK;
+}
+
 BEGIN_TESTS
+  ADD_TEST(t_bug36605973_sqlconnect_params)
   ADD_TEST(t_driverconnect_outstring)
   ADD_TEST(t_bug34786939_out_trunc)
   ADD_TEST(t_ssl_crl)

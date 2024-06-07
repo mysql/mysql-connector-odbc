@@ -126,7 +126,14 @@ SQLWCHAR *sqlchar_as_sqlwchar(myodbc::CHARSET_INFO *charset_info, SQLCHAR *str,
   if (!str || *len == 0)
   {
     *len= 0;
-    return NULL;
+
+    if (!str)
+      return NULL;
+
+    // An empty string should also be duplicated
+    SQLWCHAR *empty = (SQLWCHAR*)myodbc_malloc(sizeof(SQLWCHAR), MYF(0));
+    *empty = (SQLWCHAR)0;
+    return empty;
   }
 
   if (!is_utf8_charset(charset_info->number))

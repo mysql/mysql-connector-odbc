@@ -141,6 +141,7 @@ const char * wstr4output(const wchar_t *wstr)
 #endif
 
 SQLCHAR *mydriver= (SQLCHAR *)"{MySQL ODBC " MYODBC_STRSERIES " Driver}";
+SQLCHAR mydrv_nobrackets[255] = {'\0'}; /* mydriver value will be copied here */
 SQLCHAR *mydsn= (SQLCHAR *)"test";
 SQLCHAR *myuid= (SQLCHAR *)"root";
 SQLCHAR *mypwd= (SQLCHAR *)"";
@@ -152,6 +153,7 @@ SQLCHAR *myserver= (SQLCHAR *)"localhost";
 SQLCHAR *mydb= (SQLCHAR *)"test";
 SQLCHAR *myauth= NULL;
 SQLCHAR *myplugindir= NULL;
+SQLCHAR *odbcini = (SQLCHAR *)"ODBC.INI";
 
 SQLCHAR *test_db= (SQLCHAR *)"client_odbc_test";
 /* Suffix is useful if a testsuite is run more than once */
@@ -301,6 +303,13 @@ int main(int argc, char **argv) \
     mydsn=  (SQLCHAR *)getenv("TEST_DSN"); \
   if (getenv("TEST_DRIVER")) \
     mydriver=  (SQLCHAR *)getenv("TEST_DRIVER"); \
+  size_t drvlen = strlen((const char*)mydriver); \
+  if (mydriver[0] == '{') {\
+    memcpy(mydrv_nobrackets, mydriver + 1, sizeof(SQLCHAR)*(drvlen-2)); \
+    mydrv_nobrackets[drvlen-2] = '\0'; \
+  } else { \
+    memcpy(mydrv_nobrackets, mydriver, sizeof(SQLCHAR)*drvlen); \
+  } \
   if (getenv("TEST_UID")) \
     myuid=  (SQLCHAR *)getenv("TEST_UID"); \
   if (getenv("TEST_PASSWORD")) \
