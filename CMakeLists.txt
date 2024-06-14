@@ -729,6 +729,13 @@ if(WIN32)
 endif()
 
 # additional client-side plugins (if any)
+#
+# FIXME: The standard build of the client library uses mysql_native_password
+# plugin to implement native password authentication. We should bundle that
+# plugin if it is present. But currently we build connector with a modified
+# client library that has the plugin built-in and does not ship it as a separate
+# module. Therefore we can't specify it here because the plugins check would
+# complain about missing plugin.
 
 set(PLUGINS)
 
@@ -746,6 +753,33 @@ set(IGNORED_PLUGINS
   # note: we have our own telemetry code, not using the client library plugin
   telemetry_client
   authentication_fido_client  # note: replaced by webauthn plugin
+  # server-side plugins, starting with authentication ones
+  auth$ auth_socket
+  authentication_ldap_simple$ authentication_pam$ authentication_windows$
+  component_
+  libtest_
+  keyring_
+  semisync_
+  adt_null
+  audit_log
+  conflicting_variables
+  connection_control
+  data_masking
+  firewall
+  locking_service
+  mypluglib
+  mysql_clone
+  mysql_no_login
+  thread_pool
+  validate_password
+  version_token
+  ha_
+  qa_
+  .*replication
+  .*rewrite
+  .*example
+  .*test
+  .*mecab
 )
 
 set(IGNORED_LIBS
@@ -900,11 +934,7 @@ macro(bundle_plugins ignored)
 
     get_filename_component(lib_name ${lib} NAME_WE)
 
-    if(NOT lib_name MATCHES "_client")
-      continue()
-    endif()
-
-    #message("== looking at client-side plugin: ${lib_name}")
+    #message("== looking at plugin: ${lib_name}")
 
     # Match plugin name against names in PLUGINS list and in case of match
     # remove that name from the list
@@ -1011,8 +1041,10 @@ if(BUNDLE_DEPENDENCIES)
   # add authentication plugins to the list of plugins
 
   foreach(auth ${AUTH_PLUGINS})
-    set(plugin "authentication_${auth}")
+    set(plugin "authentication_${auth}_client")
     list(APPEND PLUGINS ${plugin})
+    # Note: ignore server-side plugin
+    list(APPEND IGNORED_PLUGINS "authentication_${auth}$")
     set(DEPS_${plugin} ${AUTH_DEPS_${auth}})
     list(APPEND IGNORED_LIBS ${DEPS_${plugin}})
   endforeach()
