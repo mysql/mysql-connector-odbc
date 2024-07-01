@@ -730,14 +730,12 @@ endif()
 
 # additional client-side plugins (if any)
 #
-# FIXME: The standard build of the client library uses mysql_native_password
-# plugin to implement native password authentication. We should bundle that
-# plugin if it is present. But currently we build connector with a modified
-# client library that has the plugin built-in and does not ship it as a separate
-# module. Therefore we can't specify it here because the plugins check would
-# complain about missing plugin.
+# Note: The native password authentication plugin is not listed in AUTH_PLUGIN
+# list because its name does not follow the common auth_XXX_client pattern
+#
 
-set(PLUGINS)
+set(PLUGINS mysql_native_password)
+
 
 # additional bundled dependencies of the client library
 
@@ -1049,6 +1047,8 @@ if(BUNDLE_DEPENDENCIES)
     list(APPEND IGNORED_LIBS ${DEPS_${plugin}})
   endforeach()
 
+  list(APPEND PLUGINS ${OPTIONAL_PLUGINS})
+
   # Bundle the plugins and their dependencies.
 
   unset(ingored)
@@ -1057,7 +1057,18 @@ if(BUNDLE_DEPENDENCIES)
   if(MAINTAINER_MODE)
 
     foreach(plugin ${PLUGINS})
-      message(SEND_ERROR "known client-side plugin not found and not bundled: ${plugin}")
+
+      # Note: In some RE builds we use a modified build of the client library
+      # which does not ship the native password authentication plugin but has
+      # it built-in. Therefore we don't complain if the plugin was not found
+      # assuming that in this case it is built-in and needs not to be bundled.
+
+      if(NOT plugin STREQUAL "mysql_native_password")
+        message(SEND_ERROR
+          "known client-side plugin not found and not bundled: ${plugin}"
+        )
+      endif()
+
     endforeach()
 
     foreach(plugin ${IGNORED_PLUGINS})
