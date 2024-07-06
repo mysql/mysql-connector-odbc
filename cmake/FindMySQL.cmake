@@ -534,6 +534,10 @@ elseif(MYSQL_CONFIG_EXECUTABLE)
                         "\"${MYSQL_CONFIG_EXECUTABLE}\"")
   endif()
 
+  # If there are multiple INCLUDE_DIR, 
+  # even a single INCLUDE_DIR will work
+  list(GET MYSQL_INCLUDE_DIR 0 MYSQL_INCLUDE_DIR)
+
   if(NOT EXISTS "${MYSQL_INCLUDE_DIR}/mysql.h")
     message(FATAL_ERROR "Could not find \"mysql.h\" in \"${MYSQL_INCLUDE_DIR}\" "
                         "found from running \"${MYSQL_CONFIG_EXECUTABLE}\"")
