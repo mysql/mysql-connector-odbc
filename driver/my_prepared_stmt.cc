@@ -1010,11 +1010,6 @@ SQLRETURN STMT::bind_query_attrs(bool use_ssps)
                      "The number of parameter markers is larger "
                      "than he number of parameters provided", 0);
   }
-  else if (!dbc->has_query_attrs)
-  {
-    return set_error(MYERR_01000,
-                     "The server does not support query attributes", 0);
-  }
 
   uint num = param_count;
 
@@ -1059,8 +1054,7 @@ SQLRETURN STMT::bind_query_attrs(bool use_ssps)
     // For older servers that don't support named params
     // we just don't count them and specify the number of unnamed params.
     unsigned int p_number =
-      dbc->mysql->server_capabilities & CLIENT_QUERY_ATTRIBUTES
-        ? query_attr_names.size() : param_count;
+      dbc->has_query_attrs ? query_attr_names.size() : param_count;
 
     if (p_number) {
       bind_failed =
