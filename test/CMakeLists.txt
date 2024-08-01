@@ -76,7 +76,7 @@ FOREACH(FN my_basics.c my_blob.c my_bulk.c my_catalog1.c my_catalog2.c
           COMPILE_FLAGS "${MYSQLODBCCONN_COMPILE_FLAGS_ENV} ${MYSQL_CXXFLAGS}")
   ENDIF(MYSQL_CXX_LINKAGE)
 
-  INSTALL(TARGETS ${T} DESTINATION test COMPONENT tests)
+  install_test(${T})
   SET_TARGET_PROPERTIES(${T} PROPERTIES
       LINK_FLAGS "${MYSQLODBCCONN_LINK_FLAGS_ENV} ${MYSQL_LINK_FLAGS}")
 
@@ -145,7 +145,7 @@ IF(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
               COMPILE_FLAGS "${MYSQLODBCCONN_COMPILE_FLAGS_ENV} ${MYSQL_CXXFLAGS}")
       ENDIF(MYSQL_CXX_LINKAGE)
 
-      INSTALL(TARGETS ${T} DESTINATION test COMPONENT tests)
+      install_test({T})
       SET_TARGET_PROPERTIES(${T} PROPERTIES
           LINK_FLAGS "${MYSQLODBCCONN_LINK_FLAGS_ENV} ${MYSQL_LINK_FLAGS}")
 
@@ -222,15 +222,8 @@ add_custom_target(generate_test_config_files
 set_target_properties(generate_test_config_files PROPERTIES FOLDER Misc)
 
 
-INSTALL(FILES
+install_test_files(
 	${CMAKE_CURRENT_BINARY_DIR}/CTestTestfile.cmake
 	${CMAKE_CURRENT_BINARY_DIR}/odbc.ini
 	${CMAKE_CURRENT_BINARY_DIR}/odbcinst.ini
-        DESTINATION test COMPONENT tests)
-
-INSTALL(DIRECTORY
-       ${PROJECT_BINARY_DIR}/test/Debug/
-       DESTINATION test
-       CONFIGURATIONS Debug
-       FILES_MATCHING PATTERN *.pdb
 )

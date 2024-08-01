@@ -23,12 +23,13 @@
 
 ##########################################################################
 
+CMAKE_MINIMUM_REQUIRED(VERSION 3.5 FATAL_ERROR)
+
+
 PROJECT(MySQL_Connector_ODBC)
 
-CMAKE_MINIMUM_REQUIRED(VERSION 3.2 FATAL_ERROR)
-
 if(COMMAND cmake_policy)
-  cmake_policy(VERSION 3.0)
+  cmake_policy(VERSION 3.5)
   cmake_policy(SET CMP0054 NEW)
   cmake_policy(SET CMP0003 NEW)
   cmake_policy(SET CMP0022 NEW)
@@ -36,25 +37,7 @@ if(COMMAND cmake_policy)
 endif(COMMAND cmake_policy)
 
 
-#------- compatibility with older cmake versions ------
-
-#message("CMAKE_VERSION: ${CMAKE_VERSION}")
-
-if(CMAKE_VERSION VERSION_LESS "3.0")
-
-SET(BUILDTYPE_DOCSTRING
- "Choose the type of build, options are: None(CMAKE_CXX_FLAGS or
- CMAKE_C_FLAGS used) Debug Release RelWithDebInfo MinSizeRel")
-
-macro(add_compile_options)
-  add_definitions(${ARGV})
-endmacro()
-
-else()
-
-  set_property(GLOBAL PROPERTY USE_FOLDERS ON)
-
-endif()
+set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 #-----------------------------------------------------
 
@@ -497,12 +480,17 @@ ENDIF(WIN32)
 SET(EXECUTABLE_OUTPUT_PATH "${CMAKE_BINARY_DIR}/bin")
 SET(LIBRARY_OUTPUT_PATH "${CMAKE_BINARY_DIR}/lib")
 
-SET(LIB_SUBDIR "lib")
-IF(RPM_BUILD AND CMAKE_SYSTEM_PROCESSOR MATCHES "(x86_64|ppc64|ppc64p7|s390x|sparc64|aarch64)")
-  SET(LIB_SUBDIR "lib64")
-ENDIF()
+include(cmake/install_layout.cmake)
 
-MESSAGE(STATUS "Installation library subdir: ${LIB_SUBDIR}")
+# Note: Legacy
+if(RPM_BUILD)
+  if(CMAKE_SYSTEM_PROCESSOR MATCHES "(x86_64|ppc64|ppc64p7|s390x|sparc64|aarch64)")
+    set(INSTALL_LIBDIR "lib64" CACHE STRING "RPM install layout" FORCE)
+  else()
+    set(INSTALL_LIBDIR "lib" CACHE STRING "RPM install layout" FORCE)
+  endif()
+endif()
+
 
 INCLUDE(${CMAKE_SOURCE_DIR}/cmake/ssl_setup.cmake)
 setup_ssl_libs()
@@ -593,15 +581,15 @@ cmake/sql.*\\\\.c$
 )
 
 #------------ Installation ---------------------------
-INCLUDE(cmake/info_bin.cmake)
+include(cmake/info_bin.cmake)
 
-INSTALL(FILES LICENSE.txt   DESTINATION .)
+INSTALL(FILES LICENSE.txt   DESTINATION ${INSTALL_DOCDIR})
 
 if(EXISTS "${CMAKE_SOURCE_DIR}/README.txt")
-  INSTALL(FILES README.txt    DESTINATION .)
+  INSTALL(FILES README.txt    DESTINATION ${INSTALL_DOCDIR})
 else()
-  INSTALL(FILES README.md    DESTINATION .)
-  INSTALL(FILES CONTRIBUTING.md    DESTINATION .)
+  INSTALL(FILES README.md    DESTINATION ${INSTALL_DOCDIR})
+  INSTALL(FILES CONTRIBUTING.md    DESTINATION ${INSTALL_DOCDIR})
 endif()
 
 IF(WIN32)
@@ -614,55 +602,41 @@ IF(WIN32)
 
 # TODO: line-ending conversions unix->dos
 
-  INSTALL(FILES ChangeLog     DESTINATION . RENAME ChangeLog.txt)
+  INSTALL(FILES ChangeLog     DESTINATION ${INSTALL_DOCDIR} RENAME ChangeLog.txt)
+  # FIXME: should install to BINDIR?
   INSTALL(FILES Install.bat   DESTINATION .)
   INSTALL(FILES Uninstall.bat DESTINATION .)
 
-  # Install all .pdb files to enable debugging. Note that what build
-  # type and what sub directory the binaries ends up in, like
-  # "Release" and "Debug", is not determined until we run "devenv" or
-  # similar. So when running "cmake" we don't know the location. We
-  # can't test for the location here, a IF(EXISTS ...) is run at
-  # "cmake" invocation time, not when we are to install. So we do a
-  # bit of a hack here until finding a better solution.
-
-  # FIXME: Have an option to install PDBs also for Release builds?
+  # Install additional .pdb files to enable debugging.
   #
-  # FIXME: Better control over PDBs that we install/ship -- for example
-  # install only PDBs for specific targets using install(FILE ...) and
-  # generator expression $<TARGET_PDB_FILE:tgt>
-
-  INSTALL(DIRECTORY
-    ${PROJECT_BINARY_DIR}/bin/RelWithDebInfo/
-    DESTINATION bin
-    CONFIGURATIONS RelWithDebInfo
-    FILES_MATCHING PATTERN myodbc-installer.pdb
-  )
-
-  INSTALL(DIRECTORY
-    ${PROJECT_BINARY_DIR}/bin/Debug/
-    DESTINATION bin/Debug
-    CONFIGURATIONS Debug
-    FILES_MATCHING PATTERN myodbc-installer.pdb
-  )
+  # The PDB files for DLLs and executables are installed together with these
+  # targets. But for static library targets used for building the driver
+  # (such as mysql_sys.lib) the $<TARGET_PDB_FILE:...> expression does not
+  # work even though the PDB file is generated during build process. So we
+  # simply install all PDB files that can be found in the library output
+  # location.
+  #
+  # FIXME: Have an option to install PDBs also for Release builds?
 
   INSTALL(DIRECTORY
     ${PROJECT_BINARY_DIR}/lib/RelWithDebInfo/
-    DESTINATION lib
+    DESTINATION ${INSTALL_LIBDIR}
     CONFIGURATIONS RelWithDebInfo
+    COMPONENT OdbcDll
     FILES_MATCHING PATTERN *.pdb
   )
 
   INSTALL(DIRECTORY
     ${PROJECT_BINARY_DIR}/lib/Debug/
-    DESTINATION lib/Debug
+    DESTINATION ${INSTALL_LIBDIR_DEBUG}
     CONFIGURATIONS Debug
+    COMPONENT OdbcDll
     FILES_MATCHING PATTERN *.pdb
   )
 
 ELSE(WIN32)
 
-  INSTALL(FILES ChangeLog    DESTINATION .)
+  INSTALL(FILES ChangeLog    DESTINATION ${INSTALL_DOCDIR})
 
 ENDIF(WIN32)
 
@@ -826,17 +800,17 @@ function(bundle_lib lib)
   if(WIN32)
     install(FILES ${lib}
       CONFIGURATIONS Release RelWithDebInfo
-      DESTINATION "${LIB_SUBDIR}"
+      DESTINATION "${INSTALL_LIBDIR}"
       COMPONENT OdbcDll
     )
   elseif(APPLE)
     install(FILES ${lib}
-      DESTINATION "${LIB_SUBDIR}"
+      DESTINATION "${INSTALL_LIBDIR}"
       COMPONENT OdbcDll
     )
   else()
     install(FILES ${lib}
-      DESTINATION "${LIB_SUBDIR}/private"
+      DESTINATION "${INSTALL_LIBDIR}/private"
       COMPONENT OdbcDll
     )
   endif()
@@ -963,7 +937,7 @@ macro(bundle_plugins ignored)
     message("Bundling client plugin: ${lib}")
 
     install(FILES "${lib}"
-      DESTINATION "${LIB_SUBDIR}/plugin"
+      DESTINATION "${INSTALL_LIBDIR}/plugin"
       COMPONENT ODBCDll
     )
 
@@ -1022,7 +996,7 @@ macro(bundle_plugins ignored)
     message("Bundling SASL modules")
     set(bundled_sasl_modules true)
     install(DIRECTORY "${MYSQL_LIB_DIR}/private/sasl2"
-      DESTINATION "${LIB_SUBDIR}/private"
+      DESTINATION "${INSTALL_LIBDIR}/private"
       COMPONENT OdbcDll #FIXME
     )
 

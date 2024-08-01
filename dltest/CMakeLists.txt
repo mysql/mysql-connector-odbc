@@ -47,4 +47,4 @@ IF(NOT WIN32)
 
 ENDIF(NOT WIN32)
 
-INSTALL(TARGETS dltest DESTINATION test COMPONENT tests)
+install_test(dltest)

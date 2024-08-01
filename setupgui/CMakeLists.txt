@@ -213,22 +213,16 @@ endif(use_gtk)
 # Install specs
 set_property(TARGET myodbc-setup APPEND PROPERTY INSTALL_RPATH "$ORIGIN")
 
+install_lib(OdbcDll myodbc-setup)
+
 if(use_gtk)
-  install(TARGETS myodbc-setup DESTINATION ${LIB_SUBDIR})
 
   if(TARGET ${GTK3_target})
-    install(TARGETS  ${GTK3_target} DESTINATION ${LIB_SUBDIR})
+    install_lib(OdbcDll ${GTK3_target})
   endif()
 
   if(TARGET ${GTK2_target})
-    install(TARGETS  ${GTK2_target} DESTINATION ${LIB_SUBDIR})
+    install_lib(OdbcDll  ${GTK2_target})
   endif()
-else()
-  install(TARGETS myodbc-setup
-    CONFIGURATIONS Release RelWithDebInfo
-    DESTINATION ${LIB_SUBDIR})
 
-  install(TARGETS myodbc-setup
-    CONFIGURATIONS Debug
-    DESTINATION "${LIB_SUBDIR}/Debug")
 endif()

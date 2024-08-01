@@ -98,14 +98,4 @@ IF(MYSQL_CXX_LINKAGE)
         COMPILE_FLAGS "${MYSQLODBCCONN_COMPILE_FLAGS_ENV} ${MYSQL_CXXFLAGS}")
 ENDIF(MYSQL_CXX_LINKAGE)
 
-IF (WIN32)
-  INSTALL(TARGETS myodbc-installer
-    CONFIGURATIONS Debug
-    DESTINATION bin/Debug)
-
-  INSTALL(TARGETS myodbc-installer
-    CONFIGURATIONS Release RelWithDebInfo
-    DESTINATION bin)
-ELSE()
-  INSTALL(TARGETS myodbc-installer DESTINATION bin)
-ENDIF()
+install_bin(OdbcUtil myodbc-installer)
