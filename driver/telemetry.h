@@ -127,9 +127,12 @@ namespace telemetry
       static void span_start(Obj*, const char *name = nullptr) {}
       static void span_end(Obj*) {}
       static void set_error(Obj*, std::string) {}
+      static bool disabled(Obj*) { return true; }
 
 #else
       using Base = Telemetry_base<Obj>;
+
+      bool disabled(Obj* obj) const { return Base::disabled(obj); }
 
       void span_start(Obj *obj, const char *name = nullptr)
       {

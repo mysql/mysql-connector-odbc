@@ -1003,7 +1003,14 @@ bool STMT::query_attr_exists(const char *name)
 
 SQLRETURN STMT::bind_query_attrs(bool use_ssps)
 {
+  // Count of how many records we have in param descriptor.
+  // NOTE: it does not contain telemetry data
   uint rcount = (uint)apd->rcount();
+
+  // When telemetry is active we need to account for an extra QAttr
+  uint telemetry_cnt = (telemetry.disabled(this) ? 0 : 1);
+  rcount += telemetry_cnt;
+
   if (rcount < param_count)
   {
     return set_error(MYERR_07001,
@@ -1011,18 +1018,21 @@ SQLRETURN STMT::bind_query_attrs(bool use_ssps)
                      "than he number of parameters provided", 0);
   }
 
-  uint num = param_count;
-
   // If anything is added to query_attr_names it means the parameter was added as well.
   // All other attributes go after it.
   uint param_idx = query_attr_names.size();
+  allocate_param_bind(rcount);
+  // Adjust names to have the same size as the new size.
+  // NOTE: param_bind vector can have a larger size because we want to
+  //       avoid copying of MYSQL_BIND data and don't down-size it.
+  query_attr_names.resize(rcount);
 
-  allocate_param_bind(rcount + 1);
-
-  while(num < rcount)
+  while(param_idx < rcount)
   {
-    DESCREC *aprec = desc_get_rec(apd, num, false);
-    DESCREC *iprec = desc_get_rec(ipd, num, false);
+    // If telemetry is present it will not be in descriptors.
+    // Therefore desc index has to be decrfemented.
+    DESCREC *aprec = desc_get_rec(apd, param_idx - telemetry_cnt, false);
+    DESCREC *iprec = desc_get_rec(ipd, param_idx - telemetry_cnt, false);
 
     /*
       IPREC and APREC should both be not NULL if query attributes
@@ -1032,8 +1042,7 @@ SQLRETURN STMT::bind_query_attrs(bool use_ssps)
       return SQL_SUCCESS; // Nothing to do
 
     MYSQL_BIND *bind = &param_bind[param_idx];
-
-    query_attr_names.emplace_back(iprec->par.val());
+    query_attr_names[param_idx] = iprec->par.val();
 
     // This will just fill the bind structure and do the param data conversion
     if(insert_param(this, bind, apd, aprec, iprec, 0) == SQL_ERROR)
@@ -1042,7 +1051,6 @@ SQLRETURN STMT::bind_query_attrs(bool use_ssps)
                        "The number of attributes is larger than the "
                        "number of attribute values provided", 0);
     }
-    ++num;
     ++param_idx;
   }
 

@@ -326,22 +326,26 @@ void STMT::allocate_param_bind(uint elements)
 {
   if (param_bind.size() < elements)
   {
-    query_attr_names.resize(elements);
-    param_bind.reserve(elements);
-    while(elements > param_bind.size())
-      param_bind.emplace_back(MYSQL_BIND{});
+    param_bind.resize(elements, MYSQL_BIND{});
+
+    // MYSQL_BIND internal variables are used as
+    // storage for length and null output buffers.
+    // (See get_param_bind() function).
+    //
+    // After vector resize the pointers to is_null and length
+    // became invalid due to reallocation and therefore
+    // have to be re-initialized.
+    for (auto &b : param_bind) {
+      b.is_null = &b.is_null_value;
+      b.length =  &b.length_value;
+    }
   }
 }
 
 
-int adjust_param_bind_array(STMT *stmt)
+void adjust_param_bind_array(STMT *stmt)
 {
   stmt->allocate_param_bind(stmt->param_count);
-  /* Need to init newly allocated area with 0s */
-  //  memset(stmt->param_bind->buffer + sizeof(MYSQL_BIND)*prev_max_elements, 0,
-  //    sizeof(MYSQL_BIND) * (stmt->param_bind->max_element - prev_max_elements));
-
-  return 0;
 }
 
 

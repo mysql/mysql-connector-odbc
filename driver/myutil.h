@@ -361,7 +361,7 @@ int get_session_variable(STMT *stmt, const char *var, char *result,
                          size_t buf_len);
 
 /* handle.c*/
-int           adjust_param_bind_array (STMT *stmt);
+void          adjust_param_bind_array (STMT *stmt);
 /* Actions taken when connection is put to the pool. Used in connection freeing as well */
 int           reset_connection        (DBC *dbc);
 /* Actions taken when connection is taken from the pool */

@@ -1333,7 +1333,9 @@ SQLRETURN my_SQLExecute( STMT *pStmt )
     pStmt->query_attr_names.resize(pStmt->param_count);
     // For parameter binds the telemetry info is written into
     // an existing element of the params set. Need to make sure it exists.
-    pStmt->allocate_param_bind(pStmt->param_count + 1);
+    pStmt->allocate_param_bind(pStmt->param_count +
+      (pStmt->telemetry.disabled(pStmt) ? 0 : 1)
+    );
 
     pStmt->telemetry.span_start(pStmt, "SQL execute");
   }

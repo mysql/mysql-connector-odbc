@@ -415,10 +415,69 @@ DECLARE_TEST(t_bug35790175_ado_call)
   ENDCATCH;
 }
 
+/*
+  Bug #36841317
+  Issues with bound parameters
+*/
+DECLARE_TEST(t_bug36841317)
+{
+  try
+  {
+    odbc::table tab(hstmt, "bug36841317",
+      "c1 int, c2 int, c3 int, c4 varchar(32)");
+    tab.insert("(100,200,300,'foo')");
+
+    odbc::stmt_prepare(hstmt, "SELECT * FROM " + tab.table_name +
+      " WHERE c1=? AND c1=? AND c1=? AND c1=? AND c1=? AND c1=?"
+      " AND   c1=? AND c1=? AND c1=? AND c1=? AND c1=? AND c1=?"
+      " AND   c1=? AND c1=? AND c1=? AND c1=? AND c1=? AND c1=?");
+
+    int c1_param = 100;
+    int c1_data = 0, c2_data = 0, c3_data = 0;
+    SQLLEN rows_fetched = 0;
+    SQLLEN lengths[4] = { 0, 0, 0, 0 };
+    odbc::xbuf buff(100);
+
+    // Query has 18 parameters, bind 20
+    for (int i = 1; i < 21; ++i)
+    {
+      ok_stmt(hstmt, SQLBindParameter(hstmt, i, SQL_PARAM_INPUT, SQL_C_LONG,
+	      SQL_INTEGER, 0, 0, &c1_param, 0, NULL));
+    }
+
+    ok_stmt(hstmt, SQLBindCol(hstmt, 1, SQL_C_LONG, &c1_data, sizeof(c1_data), &lengths[0]));
+    ok_stmt(hstmt, SQLBindCol(hstmt, 2, SQL_C_LONG, &c2_data, sizeof(c2_data), &lengths[1]));
+    ok_stmt(hstmt, SQLBindCol(hstmt, 3, SQL_C_LONG, &c3_data, sizeof(c3_data), &lengths[2]));
+    ok_stmt(hstmt, SQLBindCol(hstmt, 4, SQL_C_CHAR, buff, 10, &lengths[3]));
+
+    for (int i = 0; i < 3; ++i)
+    {
+      odbc::stmt_execute(hstmt);
+      std::cout << "Executed statement. Iteration " << i << std::endl;
+      // Reset result buffers for each iteration
+      c1_data = c2_data = c3_data = 0;
+      lengths[3] = 0; // We are interested to check CHAR out length only
+
+      ok_stmt(hstmt, SQLFetch(hstmt));
+      std::cout << "Fetched data. Iteration " << i << std::endl;
+      is_num(100, c1_data);
+      is_num(200, c2_data);
+      is_num(300, c3_data);
+      is_num(3, lengths[3]); // Make sure the out length is correct
+      is_str("foo", buff, lengths[3]);
+      is_no_data(SQLFetch(hstmt));
+      odbc::stmt_close(hstmt);
+    }
+  }
+  ENDCATCH;
+}
+
+
 
 BEGIN_TESTS
   // TODO: enable test when the problem is fixed
   // ADD_TEST(t_stmt_thread)
+  ADD_TEST(t_bug36841317)
   ADD_TEST(t_bug35790175_ado_call)
   ADD_TEST(t_bug30578291_inout_param)
   ADD_TEST(t_bug30578291_in_param)
