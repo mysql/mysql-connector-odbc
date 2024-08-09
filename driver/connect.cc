@@ -275,6 +275,19 @@ class dbc_guard
   ~dbc_guard() { if (!m_success) m_dbc->close(); }
 };
 
+
+MYSQL *new_mysql()
+{
+  static struct init
+  {
+    init(){ mysql_library_init(0, nullptr, nullptr); }
+  }
+  do_init;
+
+  return mysql_init(nullptr);
+}
+
+
 /**
   Try to establish a connection to a MySQL server based on the data source
   configuration.
@@ -315,7 +328,10 @@ SQLRETURN DBC::connect(DataSource *dsrc)
 
 #endif
 
-  mysql = mysql_init(nullptr);
+  mysql = new_mysql();
+
+  if (!mysql)
+    return set_error("HY001", "Memory allocation error", MYERR_S1001);
 
   flags = get_client_flags(dsrc);
 

@@ -1902,7 +1902,16 @@ SQLRETURN SQL_API SQLCancel(SQLHSTMT hstmt)
     interfere with the existing one. Therefore, locking is not needed in
     the following block.
   */
-  second= mysql_init(second);
+  second = new_mysql();
+
+  if (!second)
+  {
+    /*
+      TODO: Check that ODBC spec indeed require no SQLSTATE.
+      We do not set the SQLSTATE here, per the ODBC spec.
+    */
+    return SQL_ERROR;
+  }
 
   /** @todo need to preserve and use ssl params */
 
