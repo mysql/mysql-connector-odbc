@@ -281,11 +281,9 @@ static my_bool check_if_usable_unique_key_exists(STMT *stmt)
   @purpose : positions the data cursor to appropriate row
 */
 
-void set_current_cursor_data(STMT *stmt, SQLUINTEGER irow)
+bool set_current_cursor_data(STMT *stmt, SQLUINTEGER irow)
 {
   long       nrow, row_pos;
-  MYSQL_RES  *result= stmt->result;
-
 
   /*
     If irow exists, then position the current row to point
@@ -298,12 +296,17 @@ void set_current_cursor_data(STMT *stmt, SQLUINTEGER irow)
   {
     if (ssps_used(stmt))
     {
-       data_seek(stmt, row_pos);
-       IGNORE_THROW(stmt->fetch_row());
+      data_seek(stmt, row_pos);
+      MYSQL_ROW r = nullptr;
+      IGNORE_THROW(r = stmt->fetch_row());
+      if (!r)
+        return false;
     }
     else
     {
       MYSQL_ROWS *dcursor;
+      MYSQL_RES  *result= stmt->result;
+
       dcursor= result->data->data;
 
       if (dcursor)
@@ -312,6 +315,8 @@ void set_current_cursor_data(STMT *stmt, SQLUINTEGER irow)
         {
           dcursor= dcursor->next;
         }
+      } else {
+        return false;
       }
 
       result->data_cursor= dcursor;
@@ -319,6 +324,7 @@ void set_current_cursor_data(STMT *stmt, SQLUINTEGER irow)
 
     stmt->cursor_row= row_pos;
   }
+  return true;
 }
 
 
@@ -659,8 +665,13 @@ static SQLRETURN build_where_clause_std( STMT * pStmt,
                                      SQLUSMALLINT     irow )
 {
     /* set our cursor to irow - we call assuming irow is valid */
-    set_current_cursor_data( pStmt, irow );
-
+    if (!set_current_cursor_data( pStmt, irow ))
+    {
+      // In this case we don't have data to do update/delete
+      // because the resultset is empty.
+      pStmt->set_error(MYERR_01S03);
+      return SQL_NO_DATA;
+    }
     /* simply append WHERE to our statement */
     str.append(" WHERE ");
 
