@@ -472,11 +472,62 @@ DECLARE_TEST(t_bug36841317)
   ENDCATCH;
 }
 
+/*
+  Bug#26474373 - SQLSETPOS(...SQL_UPDATE...) FAILS WHEN SQL
+  CONTAINS ? PARAMETER
+*/
+DECLARE_TEST(t_bug26474373_setpos)
+{
+  try {
+    for (odbc::xstring opt : {"NO_SSPS=0", "NO_SSPS=1"}) {
+      odbc::connection con(nullptr, nullptr, nullptr, nullptr, opt);
+      SQLHSTMT hstmt = con.hstmt;
 
+      odbc::table tab(hstmt, "bug26474373",
+        "id INTEGER NOT NULL PRIMARY KEY,"
+	      "name CHAR(80) NOT NULL,"
+	      "myval INTEGER NOT NULL");
+
+      tab.insert("(1, 'This is a test', 100)");
+
+      odbc::xstring param = "This is a test";
+
+      SQLLEN len = param.length();
+      ok_stmt(hstmt, SQLBindParameter(hstmt,
+			  1, SQL_PARAM_INPUT, SQL_C_CHAR,
+			  SQL_CHAR, param.length(), 0,
+			  (SQLCHAR*)param, param.length(), &len));
+
+      ok_stmt(hstmt, SQLExecDirect(hstmt,
+        (SQLCHAR*)"SELECT * FROM bug26474373 WHERE name=?",
+        SQL_NTS));
+
+	    long n_id = 0;
+	    SQLLEN len_id = 0;
+	    ok_stmt(hstmt, SQLBindCol(hstmt, 1, SQL_C_SLONG, &n_id, 0, &len_id));
+
+	    SQLCHAR sz_name[81];
+	    SQLLEN len_name = 0;
+	    ok_stmt(hstmt, SQLBindCol(hstmt, 2, SQL_C_WCHAR, sz_name,
+        sizeof(sz_name), &len_name));
+
+	    long n_val = 0;
+	    SQLLEN len_val = 0;
+	    ok_stmt(hstmt, SQLBindCol(hstmt, 3, SQL_C_SLONG, &n_val, 0, &len_val));
+
+      ok_stmt(hstmt, SQLFetch(hstmt));
+      n_val = 200;
+      ok_stmt(hstmt, SQLSetPos(hstmt, 1, SQL_UPDATE, SQL_LOCK_NO_CHANGE));
+      odbc::stmt_close(hstmt);
+    }
+  }
+  ENDCATCH;
+}
 
 BEGIN_TESTS
   // TODO: enable test when the problem is fixed
   // ADD_TEST(t_stmt_thread)
+  ADD_TEST(t_bug26474373_setpos)
   ADD_TEST(t_bug36841317)
   ADD_TEST(t_bug35790175_ado_call)
   ADD_TEST(t_bug30578291_inout_param)
