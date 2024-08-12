@@ -911,6 +911,61 @@ static char *ui_xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" \
                             "<property name=\"bottom_attach\">4</property>\n" \
                           "</packing>\n" \
                         "</child>\n" \
+
+                        "<child>\n" \
+                          "<object class=\"GtkHBox\" id=\"hbox_OPENID_TOKEN\">\n" \
+                            "<property name=\"visible\">True</property>\n" \
+                            "<property name=\"can_focus\">False</property>\n" \
+                            "<child>\n" \
+                              "<object class=\"GtkEntry\" id=\"OPENID_TOKEN_FILE\">\n" \
+                                "<property name=\"visible\">True</property>\n" \
+                                "<property name=\"can_focus\">True</property>\n" \
+                              "</object>\n" \
+                              "<packing>\n" \
+                                "<property name=\"expand\">True</property>\n" \
+                                "<property name=\"fill\">True</property>\n" \
+                                "<property name=\"position\">0</property>\n" \
+                              "</packing>\n" \
+                            "</child>\n" \
+                            "<child>\n" \
+                              "<object class=\"GtkButton\" id=\"OPENID_TOKEN_FILE_button\">\n" \
+                                "<property name=\"label\" translatable=\"yes\">...</property>\n" \
+                                "<property name=\"visible\">True</property>\n" \
+                                "<property name=\"can_focus\">True</property>\n" \
+                                "<property name=\"receives_default\">True</property>\n" \
+                              "</object>\n" \
+                              "<packing>\n" \
+                                "<property name=\"expand\">False</property>\n" \
+                                "<property name=\"fill\">True</property>\n" \
+                                "<property name=\"position\">1</property>\n" \
+                              "</packing>\n" \
+                            "</child>\n" \
+                          "</object>\n" \
+                          "<packing>\n" \
+                            "<property name=\"left_attach\">1</property>\n" \
+                            "<property name=\"right_attach\">2</property>\n" \
+                            "<property name=\"top_attach\">4</property>\n" \
+                            "<property name=\"bottom_attach\">5</property>\n" \
+                          "</packing>\n" \
+                        "</child>\n" \
+                        "<child>\n" \
+                          "<object class=\"GtkLabel\" id=\"labelOpenIDTokenFile\">\n" \
+                            "<property name=\"visible\">True</property>\n" \
+                            "<property name=\"can_focus\">False</property>\n" \
+                            "<property name=\"label\" translatable=\"yes\">OpenID Token File:</property>\n" \
+                            "<property name=\"justify\">right</property>\n" \
+                            "<property name=\"width_chars\">10</property>\n" \
+                            "<property name=\"max_width_chars\">10</property>\n" \
+                            "<property name=\"xalign\">1</property>\n" \
+                          "</object>\n" \
+                          "<packing>\n" \
+                            "<property name=\"top_attach\">4</property>\n" \
+                            "<property name=\"bottom_attach\">5</property>\n" \
+                            "<property name=\"x_options\">GTK_EXPAND | GTK_SHRINK | GTK_FILL</property>\n" \
+                            "<property name=\"y_options\"/>\n" \
+                          "</packing>\n" \
+                        "</child>\n" \
+
                       "</object>\n" \
                       "<packing>\n" \
                         "<property name=\"expand\">False</property>\n" \

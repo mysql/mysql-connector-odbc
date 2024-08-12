@@ -233,6 +233,8 @@ static SQLWCHAR W_SSL_CRLPATH[] =
 { 'S', 'S', 'L', '-', 'C', 'R', 'L', 'P', 'A', 'T', 'H', 0};
 static SQLWCHAR W_OPENTELEMETRY[] =
 { 'O', 'P', 'E', 'N', 'T', 'E', 'L', 'E', 'M', 'E', 'T', 'R', 'Y', 0};
+static SQLWCHAR W_OPENID_TOKEN_FILE[] =
+{ 'O', 'P', 'E', 'N', 'I', 'D', '-', 'T', 'O', 'K', 'E', 'N', '-', 'F', 'I', 'L', 'E', 0};
 
 /* DS_PARAM */
 /* externally used strings */

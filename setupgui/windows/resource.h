@@ -148,6 +148,8 @@
 #define IDC_EDIT_SSL_CRLPATH            10075
 #define IDC_EDIT_AUTHENTICATION_KERBEROS_MODE 10076
 #define IDC_EDIT_OCI_CONFIG_PROFILE     10077
+#define IDC_EDIT_OPENID_TOKEN_FILE      10078
+#define IDC_CHOOSER_OPENID_TOKEN_FILE   10079
 #define IDC_BUTTON_TEST                 11014
 #define IDC_BUTTON_HELP                 11015
 #define IDC_STATIC                      -1

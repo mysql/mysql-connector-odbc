@@ -648,6 +648,8 @@ void FormMain_OnCommand(HWND hwnd, int id, HWND hwndCtl, UINT codeNotify)
       choosePath(hwnd, IDC_EDIT_LOAD_DATA_LOCAL_DIR); break;
     case IDC_CHOOSER_OCI_CONFIG_FILE:
       chooseFile(hwnd, IDC_EDIT_OCI_CONFIG_FILE); break;
+    case IDC_CHOOSER_OPENID_TOKEN_FILE:
+      chooseFile(hwnd, IDC_EDIT_OPENID_TOKEN_FILE); break;
     case IDC_RADIO_tcp:
     case IDC_RADIO_NAMED_PIPE:
       SwitchTcpOrPipe(hwnd, !!Button_GetCheck(GetDlgItem(hwnd, IDC_RADIO_NAMED_PIPE)));

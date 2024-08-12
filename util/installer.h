@@ -289,7 +289,7 @@ class Driver {
                   X(OCI_CONFIG_FILE) X(OCI_CONFIG_PROFILE)                 \
                       X(AUTHENTICATION_KERBEROS_MODE) X(TLS_VERSIONS)      \
                            X(SSL_CRL) X(SSL_CRLPATH) X(SSLVERIFY)          \
-                              X(OPENTELEMETRY)
+                              X(OPENTELEMETRY) X(OPENID_TOKEN_FILE)
 
 #define INT_OPTIONS_LIST(X)                                         \
   X(PORT)                                                           \

@@ -227,3 +227,25 @@ install_test_files(
 	${CMAKE_CURRENT_BINARY_DIR}/odbc.ini
 	${CMAKE_CURRENT_BINARY_DIR}/odbcinst.ini
 )
+
+# Install tokens for OpenID authentication
+foreach (token
+  openid_token_correct.txt
+  openid_token_empty.txt
+  openid_token_expired.txt
+  openid_token_invalid.txt
+  openid_token_issuer2.txt
+  openid_token_key2.txt
+  openid_token_user2.txt
+)
+  # Copy tokens to build dir
+  file(COPY tokens/${token} DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+
+  # Install tokens
+  install(
+    FILES tokens/${token}
+    DESTINATION test
+    COMPONENT tests
+  )
+
+endforeach()

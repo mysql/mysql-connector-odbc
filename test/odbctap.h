@@ -326,6 +326,8 @@ int main(int argc, char **argv) \
     myauth=  (SQLCHAR *)getenv("TEST_DEFAULTAUTH"); \
   if (getenv("TEST_PLUGINDIR")) \
     myplugindir=  (SQLCHAR *)getenv("TEST_PLUGINDIR"); \
+  else if (getenv("PLUGIN_DIR")) \
+    myplugindir=  (SQLCHAR *)getenv("PLUGIN_DIR"); \
   if (getenv("TEST_DNS_SRV")) \
     mydns_srv= (SQLCHAR *)getenv("TEST_DNS_SRV"); \
 \
@@ -1312,7 +1314,7 @@ SQLCHAR *make_conn_str(const SQLCHAR *dsn, const SQLCHAR *uid,
     }
     if (myplugindir && myplugindir[0])
     {
-      strncat((char *)connIn, ";PLUGINDIR=", sizeof(connIn));
+      strncat((char *)connIn, ";PLUGIN_DIR=", sizeof(connIn));
       strncat((char *)connIn, (char *)myplugindir, sizeof(connIn) - 1);
     }
   }

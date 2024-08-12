@@ -533,6 +533,7 @@ int list_datasource_details(DataSource *ds)
   OPTION_CUSTOM_OUTPUT(OCI_CONFIG_FILE, "OCI Config File");
   OPTION_CUSTOM_OUTPUT(OCI_CONFIG_PROFILE, "OCI Config Profile");
   OPTION_CUSTOM_OUTPUT(AUTHENTICATION_KERBEROS_MODE, "Kerberos Authentication Mode");
+  OPTION_CUSTOM_OUTPUT(OPENID_TOKEN_FILE, "OpenID Token File");
 
   bool bool_mode = false;
 

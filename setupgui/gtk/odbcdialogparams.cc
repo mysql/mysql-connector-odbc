@@ -750,6 +750,11 @@ int ShowOdbcParamsDialog(DataSource* params, HWND ParentWnd, BOOL isPrompt)
   g_signal_connect ((gpointer) dummy, "clicked",
                     G_CALLBACK (on_file_button_clicked), entry);
 
+  dummy= GTK_WIDGET (gtk_builder_get_object (builder, "OPENID_TOKEN_FILE_button"));
+  entry= GTK_ENTRY (gtk_builder_get_object (builder, "OPENID_TOKEN_FILE"));
+  g_signal_connect ((gpointer) dummy, "clicked",
+                    G_CALLBACK (on_file_button_clicked), entry);
+
   gtk_builder_connect_signals(builder, NULL);
 
   gtk_widget_hide(hide_details);

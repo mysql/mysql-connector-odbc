@@ -577,7 +577,7 @@ struct connection
     if (m_socket.size()) connstr.append(";SOCKET=" + m_socket);
     if (m_port) connstr.append(";PORT=" + std::to_string(m_port));
     if (m_auth.size()) connstr.append(";DEFAULTAUTH=" + m_auth);
-    if (m_plugindir.size()) connstr.append(";PLUGINDIR=" + m_plugindir);
+    if (m_plugindir.size()) connstr.append(";PLUGIN_DIR=" + m_plugindir);
     if (m_options.size()) connstr.append(";" + m_options);
 
     return connstr;

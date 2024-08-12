@@ -64,6 +64,7 @@ fido_callback_func global_fido_callback = nullptr;
 std::mutex global_fido_mutex;
 
 bool oci_plugin_is_loaded = false;
+bool openid_plugin_is_loaded = false;
 
 /**
   Get the connection flags based on the driver options.
@@ -516,6 +517,38 @@ SQLRETURN DBC::connect(DataSource *dsrc)
         "Only GSSAPI is supported.", 0);
     }
 #endif
+  }
+
+  bool openid_token_file_set = dsrc->opt_OPENID_TOKEN_FILE;
+  if(openid_token_file_set || openid_plugin_is_loaded)
+  {
+    /* load client authentication plugin if required */
+    struct st_mysql_client_plugin *plugin =
+        mysql_client_find_plugin(mysql,
+                                 "authentication_openid_connect_client",
+                                 MYSQL_CLIENT_AUTHENTICATION_PLUGIN);
+
+    if(!plugin)
+    {
+      return set_error("HY000", "Couldn't load plugin authentication_openid_connect_client", 0);
+    }
+
+    openid_plugin_is_loaded = true;
+
+    // Set option value or reset by giving nullptr to prevent
+    // re-using the value set by another connect (plugin does not
+    // reset its options automatically).
+    const void *val_to_set = openid_token_file_set ?
+      (const char*)dsrc->opt_OPENID_TOKEN_FILE :
+      nullptr;
+
+    if (mysql_plugin_options(plugin, "id-token-file", val_to_set) &&
+        val_to_set)
+    {
+      // Error should only be returned if setting non-null option value.
+      return set_error("HY000",
+          "Failed to set config file for authentication_openid_connect_client plugin", 0);
+    }
   }
 
 #endif
