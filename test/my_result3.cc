@@ -157,8 +157,60 @@ DECLARE_TEST(t_bug18641963_bulk) {
   ENDCATCH;
 }
 
+DECLARE_TEST(t_bug36945554_large_query) {
+  odbc::table tab(hstmt, "bug36945554", "id int, mycolumn varchar(32)");
+  // Data in the table does not matter, number of rows can be anything.
+  tab.insert("(1, 'String 1'),(2, 'String 2'),(3, 'String 3')");
+
+  odbc::xstring long_query =
+    "select id,mycolumn,'";
+
+  odbc::xstring long_val;
+  long_val.reserve(10000);
+
+  for (int i = 0; i < 500; ++i)
+    long_val.append("0123456789");
+
+  long_query.append(long_val + "' from bug36945554 ORDER BY id");
+
+  try{
+    for (odbc::xstring opt_ssps : { "NO_SSPS=1;", "NO_SSPS=0;" })
+    {
+      for (odbc::xstring opt_prefetch : { "PREFETCH=2;", "" })
+      {
+        odbc::xstring opt = opt_ssps + opt_prefetch;
+
+        odbc::connection con(nullptr, nullptr, nullptr, nullptr, opt);
+
+        SQLHSTMT hstmt1 = con.hstmt;
+        odbc::sql(hstmt1, long_query);
+
+        int row_num = 0;
+        odbc::xbuf buf(10000);
+
+        while(SQL_SUCCESS == SQLFetch(hstmt1)) {
+          ++row_num;
+          is_num(row_num, my_fetch_int(hstmt1, 1));
+
+          odbc::xstring mycol = "String " + std::to_string(row_num);
+          odbc::my_fetch_str(hstmt1, buf, 2);
+          is_str(mycol.c_str(), (const char*)buf, mycol.length());
+
+          odbc::my_fetch_str(hstmt1, buf, 3);
+          is_str(long_val.c_str(), (const char*)buf, long_val.length());
+        }
+
+        // NOTE: With any value for PREFETCH the number of rows stays the same.
+        is_num(3, row_num);
+      }
+    }
+  }
+  ENDCATCH;
+}
+
 
 BEGIN_TESTS
+  ADD_TEST(t_bug36945554_large_query)
   ADD_TEST(t_bug18641963_bulk)
   ADD_TEST(t_bug16590994_bit_searchable)
 END_TESTS

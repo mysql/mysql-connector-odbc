@@ -664,7 +664,16 @@ struct MY_LIMIT_SCROLLER
                          total_rows(0), query_len(0)
    {}
 
-   void extend_buf(size_t new_size) { buf.extend_buffer(new_size); }
+   void extend_buf(size_t new_size) {
+     // Calculate the current offset
+     size_t offset = offset_pos - query;
+     buf.extend_buffer(new_size);
+
+     // Point to the new buffer and calculate the new offset position
+     query = buf.buf;
+     offset_pos = query + offset;
+   }
+
    void reset() { next_offset = 0; offset_pos = query; }
 };
 
