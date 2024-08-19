@@ -1193,7 +1193,7 @@ SQLRETURN insert_param(STMT *stmt, MYSQL_BIND *bind, DESC* apd,
         SQLLEN transformed_len = 0;
         stmt->add_to_buffer(" 0x", 3);
         /* Make sure we have room for a fully-escaped string. */
-        if (!stmt->extend_buffer(length * 2))
+        if (!stmt->extend_buffer(length * 2 + 1))
         {
           goto memerror;
         }
@@ -1206,7 +1206,7 @@ SQLRETURN insert_param(STMT *stmt, MYSQL_BIND *bind, DESC* apd,
       {
         stmt->add_to_buffer("'", 1);
         /* Make sure we have room for a fully-escaped string. */
-        if (!(stmt->extend_buffer(length * 2)))
+        if (!(stmt->extend_buffer(length * 2 + 1)))
         {
           goto memerror;
         }
