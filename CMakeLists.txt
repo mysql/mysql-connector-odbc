@@ -962,7 +962,6 @@ macro(bundle_plugins ignored)
     message("Bundling client plugin: ${lib}")
 
     install(FILES "${lib}"
-      CONFIGURATIONS Release RelWithDebInfo
       DESTINATION "${LIB_SUBDIR}/plugin"
       COMPONENT ODBCDll
     )
@@ -1022,7 +1021,6 @@ macro(bundle_plugins ignored)
     message("Bundling SASL modules")
     set(bundled_sasl_modules true)
     install(DIRECTORY "${MYSQL_LIB_DIR}/private/sasl2"
-      CONFIGURATIONS Release RelWithDebInfo
       DESTINATION "${LIB_SUBDIR}/private"
       COMPONENT OdbcDll #FIXME
     )
