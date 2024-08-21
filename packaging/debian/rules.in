@@ -27,50 +27,44 @@
 # along with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 
-upstream_version := $(shell dpkg-parsechangelog | sed -n -e'/^Version: / { s/Version: //; s/-[^-]\+$$//; p }')
-base_version = $(shell echo $(upstream_version) | sed -e's/r[0-9]\+$$//')
 
-DEB_HOST_MULTIARCH ?= $(shell dpkg-architecture -qDEB_HOST_MULTIARCH)
+# FIXME: should LIB_DIR be the (lagacy?) "/usr/lib/odbc/" or
+# the more correct "/usr/lib/mysql-connector-odbc"?
+
+LIB_DIR = /usr/lib/$(DEB_HOST_MULTIARCH)/odbc
 
 %:
-	#dh $@ --with autoreconf
 	dh  $@
 
 override_dh_auto_configure:
-	#ln -sf /usr/share/misc/config.sub .
-	#ln -sf /usr/share/misc/config.guess .
-	#dh_auto_configure -- --with-unixODBC=/usr \
-	#dh_auto_configure -- --disable-debug --enable-static
-        #--disable-gui --disable-test ?
-	cmake -G 'Unix Makefiles' \
-	    -DCMAKE_INSTALL_PREFIX=/usr \
-	    -DINSTALL_LIBDIR=lib/$(DEB_HOST_MULTIARCH) \
-	    -DCMAKE_VERBOSE_MAKEFILE:BOOL=TRUE \
-	    -DFINDMYSQL_DEBUG:BOOL=TRUE \
-	    -DMYSQLCLIENT_STATIC_LINKING:BOOL=TRUE  \
-	    -DMYSQL_CXX_LINKAGE=1 \
-	    -DEXTRA_MYSQL_DEP='z' \
-	    -DWITH_UNIXODBC=1 \
-	    @ODBC_OPTS@
-	    .
-	DEB_BUILD_HARDENING=1 make VERBOSE=1
+
+	mkdir -p debian/build
+	cmake -Bdebian/build -S. -G 'Unix Makefiles' \
+		-DCMAKE_BUILD_TYPE=RelWithDebInfo \
+		-DINSTALL_LIBDIR=.$(LIB_DIR) \
+		-DCMAKE_VERBOSE_MAKEFILE:BOOL=TRUE \
+		-DFINDMYSQL_DEBUG:BOOL=TRUE \
+		-DMYSQLCLIENT_STATIC_LINKING:BOOL=TRUE  \
+		-DMYSQL_CXX_LINKAGE=1 \
+		-DEXTRA_MYSQL_DEP='z' \
+		-DWITH_UNIXODBC=1
+	touch $@
+
+override_dh_auto_build:
+
+	#	TODO: DEB_BUILD_HARDENING=1?
+	cmake --build debian/build --verbose
+	touch $@
+
 
 # Do nothing; the test suite requires a sql server, so we can't run it
 # as part of the build.
 override_dh_auto_test:
 
+
 TMP_INSTDIR = $(CURDIR)/debian/tmp
 
-# FIXME the "libdir=.." below is not working, we have no support in
-# the CMake setup to specify a subdirectory of "lib"
-# FIXME and should it be the (lagacy?) "/usr/lib/odbc/" or the more correct
-# "/usr/lib/mysql-connector-odbc"?
-#PRIVATE_BINDIR = /usr/lib/$(DEB_HOST_MULTIARCH)/mysql-connector-odbc
-PRIVATE_BINDIR = /usr/lib/$(DEB_HOST_MULTIARCH)/odbc
-TMP_PRIVATE_BINDIR = $(TMP_INSTDIR)$(PRIVATE_BINDIR)
 
 override_dh_auto_install:
-	dh_auto_install -- libdir=$(PRIVATE_BINDIR) DESTDIR=$(TMP_INSTDIR)
-	mkdir -p $(TMP_INSTDIR)/usr/lib/$(DEB_HOST_MULTIARCH)/odbc
-	mv $(TMP_INSTDIR)/usr/lib/libmyodbc* $(TMP_INSTDIR)/usr/lib/$(DEB_HOST_MULTIARCH)/odbc/
-	chmod a+x $(TMP_INSTDIR)/usr/lib/$(DEB_HOST_MULTIARCH)/odbc/*.so
+	mkdir -p $(TMP_INSTDIR)$(LIB_DIR)
+	cmake --install debian/build --prefix $(TMP_INSTDIR)

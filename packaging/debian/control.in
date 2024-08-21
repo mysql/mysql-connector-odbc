@@ -3,7 +3,8 @@ Section: libs
 Priority: optional
 Maintainer: Oracle MySQL Product Engineering Team <mysql-build@oss.oracle.com>
 Standards-Version: 3.9.2
-Build-Depends: cmake (>= 2.8.5),
+Build-Depends: dpkg-dev,
+               cmake (>= 2.8.5),
                debhelper (>= 8.9.4),
                libgdk-pixbuf2.0-dev (>= 2.26),
                libglib2.0-dev (>= 2.30)
@@ -15,11 +16,8 @@ Package: mysql-connector-odbc@PRODUCT_SUFFIX@
 Section: libs
 Architecture: any
 Multi-Arch: same
-Depends: dpkg-dev,
-         mysql-@DEB_SERVERPRODUCT@-client-plugins,
-         ${misc:Depends},
-         ${shlibs:Depends}
-Requires: unixodbc >=2.3
+Depends: unixodbc (>= 2.3), ${misc:Depends}, ${shlibs:Depends}
+Suggests: libkrb5-3, libsasl2-2, libgssapi-krb5-2, libfido2-1, libssl3
 Conflicts: mysql-connector-odbc@NOT_PRODUCT_SUFFIX@
 Description: MySQL ODBC driver
  This package allows you to connect to MySQL database servers using
@@ -32,8 +30,7 @@ Section: libs
 Architecture: any
 Multi-Arch: same
 Depends: mysql-connector-odbc@PRODUCT_SUFFIX@ (= ${binary:Version}),
-         ${misc:Depends},
-         ${shlibs:Depends}
+         ${misc:Depends}
 Conflicts: mysql-connector-odbc@NOT_PRODUCT_SUFFIX@-test
 Description: MySQL ODBC driver test files
  This package installs a tool "dltest" and some executables to
@@ -43,8 +40,7 @@ Package: mysql-connector-odbc@PRODUCT_SUFFIX@-setup
 Section: libs
 Architecture: any
 Multi-Arch: same
-Depends: dpkg-dev,
-         libgtk2.0-0 (>= 2.20.1) | libgtk-3-0 (>= 3.0.0),
+Depends: libgtk2.0-0 (>= 2.20.1) | libgtk-3-0 (>= 3.0.0),
          mysql-connector-odbc@PRODUCT_SUFFIX@ (= ${binary:Version}),
          ${misc:Depends},
          ${shlibs:Depends}

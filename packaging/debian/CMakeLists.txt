@@ -26,11 +26,11 @@
 # along with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 
-# This is a small CMake project to copy this directory to the top of
-# the source, and at the same time do some modifications to these
-# files
+# This is a small CMake project to debianize the sources using templates
+# in this folder. The project should be built in-place
+# (at packaging/debian/ in the source tree)
 
-cmake_minimum_required(VERSION 2.8.12)
+cmake_minimum_required(VERSION 3.5)
 project(MySQL_Connector_ODBC_Deb_Init NONE)
 
 if(NOT CMAKE_SYSTEM_NAME STREQUAL "Linux")
@@ -78,7 +78,7 @@ endif()
 # default being a community build. This does not impact the feature
 # set that will be compiled in; it's merely provided as a hint to
 # custom packaging steps.
-option(COMMUNITY_BUILD "Set to true if this is a community build" ON) 
+option(COMMUNITY_BUILD "Set to true if this is a community build" ON)
 
 if(NOT COMMUNITY_BUILD)
   set(PRODUCT_SUFFIX "-commercial")
@@ -136,9 +136,7 @@ set(ID_RELEASE "${lsb_id}${lsb_release}")
 message(STATUS "OS distribution : ${ID_RELEASE}")
 message(STATUS "OS code name    : ${CODENAME}")
 
-# ----------------------------------------------------------------------
-# Copy this directory and 
-# ----------------------------------------------------------------------
+# Debianize the source tree.
 
 set(DEST_DIR ${CMAKE_SOURCE_DIR}/../../debian)
 

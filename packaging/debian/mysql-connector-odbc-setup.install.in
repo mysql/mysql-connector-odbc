@@ -1,6 +1,6 @@
 usr/lib/*/odbc/libmyodbc@CONNECTOR_MAJOR@S.so
 usr/lib/*/odbc/libmyodbc@CONNECTOR_MAJOR@S-gtk*.so
-usr/LICENSE.txt        usr/share/doc/mysql-connector-odbc@PRODUCT_SUFFIX@-setup
-usr/README.txt         usr/share/doc/mysql-connector-odbc@PRODUCT_SUFFIX@-setup
-usr/INFO_BIN           usr/share/doc/mysql-connector-odbc@PRODUCT_SUFFIX@-setup
-usr/INFO_SRC           usr/share/doc/mysql-connector-odbc@PRODUCT_SUFFIX@-setup
+LICENSE.txt        usr/share/doc/mysql-connector-odbc-setup
+README.txt         usr/share/doc/mysql-connector-odbc-setup
+INFO_BIN           usr/share/doc/mysql-connector-odbc-setup
+INFO_SRC           usr/share/doc/mysql-connector-odbc-setup
