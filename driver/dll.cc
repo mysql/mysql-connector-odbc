@@ -112,6 +112,11 @@ void myodbc_init(void)
     utf16_charset_info = myodbc::get_charset_by_csname("utf16le", MYF(MY_CS_PRIMARY),
                                              MYF(0));
 #endif
+
+#ifdef DEFAULT_PLUGIN_DIR
+    default_plugin_location.assign(DEFAULT_PLUGIN_DIR);
+#endif
+
   }
 }
 

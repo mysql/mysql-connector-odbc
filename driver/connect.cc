@@ -370,22 +370,21 @@ SQLRETURN DBC::connect(DataSource *dsrc)
   Pluggable authentication was introduced in mysql 5.5.7
 */
 #if MYSQL_VERSION_ID >= 50507
+
   if (dsrc->opt_PLUGIN_DIR)
   {
     mysql_options(mysql, MYSQL_PLUGIN_DIR,
                   (const char*)dsrc->opt_PLUGIN_DIR);
   }
-
-#ifdef WIN32
-  else
+  else if(!default_plugin_location.empty())
   {
     /*
-      If plugin directory is not set we can use the dll location
-      for a better chance of finding plugins.
+      Note: The default location is either configured by DEFAULT_PLUGIN_DIR
+      build option (e.g., when building for RPM/DEB packages) or, in case
+      of Windows, set relative to the DLL location.
     */
     mysql_options(mysql, MYSQL_PLUGIN_DIR, default_plugin_location.c_str());
   }
-#endif
 
   if (dsrc->opt_DEFAULT_AUTH)
   {

@@ -1,6 +1,12 @@
 usr/lib/*/odbc/libmyodbc@CONNECTOR_MAJOR@a.so
 usr/lib/*/odbc/libmyodbc@CONNECTOR_MAJOR@w.so
 bin/myodbc-installer
+
+# Plugins
+usr/lib/*/mysql/libmyodbc@CONNECTOR_MAJOR@/plugin/*
+
+# Build info & legal
+
 ChangeLog            usr/share/doc/mysql-connector-odbc
 LICENSE.txt          usr/share/doc/mysql-connector-odbc
 README.txt           usr/share/doc/mysql-connector-odbc

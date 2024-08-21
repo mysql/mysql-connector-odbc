@@ -1269,8 +1269,8 @@ extern HINSTANCE NEAR s_hModule;  /* DLL handle. */
 
 #ifdef WIN32
 extern std::string current_dll_location;
-extern std::string default_plugin_location;
 #endif
+extern std::string default_plugin_location;
 
 /*
   Resource defines for "SQLDriverConnect" dialog box

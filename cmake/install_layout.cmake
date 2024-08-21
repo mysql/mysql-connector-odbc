@@ -41,13 +41,14 @@
 
 set(DEFAULT_INSTALL_BINDIR     "bin")
 set(DEFAULT_INSTALL_LIBDIR     "lib")
+set(DEFAULT_INSTALL_PLUGINDIR   "lib/plugin")
 set(DEFAULT_INSTALL_DOCDIR     ".")
 set(DEFAULT_INSTALL_TESTDIR    "test")
 
 
 # Define cache entries which describe install layout.
 
-foreach(var BIN LIB DOC TEST)
+foreach(var BIN LIB PLUGIN DOC TEST)
 
   set(
     INSTALL_${var}DIR  ${DEFAULT_INSTALL_${var}DIR}
@@ -56,9 +57,18 @@ foreach(var BIN LIB DOC TEST)
   mark_as_advanced(INSTALL_${var}DIR)
   message("Install layout ${var}: ${INSTALL_${var}DIR}")
 
-  if(var STREQUAL "DOC")
+  if(var MATCHES "DOC|PLUGIN")
     continue()
   endif()
+
+  # Define _DEBUG cache entries. They differ from plain ones only on Windows
+  # where the same project can be built either in debug or in release mode.
+  # On other platforms the debug/release mode is choosen at the project
+  # configuration time and regardless of the choice the artifacts are placed
+  # in the same location.
+  #
+  # Note that the same DEFAULT_INSTALL_${var}DIR variable is re-used to set
+  # the default debug paths.
 
   if(WIN32)
     set(DEFAULT_INSTALL_${var}DIR "${INSTALL_${var}DIR}/debug")

@@ -51,6 +51,9 @@
 
 # Use rpmbuild -ba --define 'shared_mysqlclient 1' ... to build shared
 %{!?shared_mysqlclient: %global static_mysqlclient 1}
+# Don't bundle plugins when linking clientlib dynamically
+%{!?shared_mysqlclient: %global bundle_plugins 1}
+
 
 
 ##############################################################################
@@ -69,6 +72,7 @@ URL:		http://www.mysql.com/
 Group:		Applications/Databases
 Vendor:		%{mysql_vendor}
 Packager:	%{mysql_vendor} Product Engineering Team <mysql-build@oss.oracle.com>
+Suggests: krb5-libs, cyrus-sasl-lib, libfido2
 BuildRequires:	cmake
 %{?shared_mysqlclient:BuildRequires: mysql-community-devel}
 BuildRequires:	unixODBC-devel
@@ -148,7 +152,7 @@ The test suite for MySQL ODBC.
 
 %global plugin_dir %{_libdir}/mysql/%{lib_base_name}/plugin
 
-%global cmake_config %{cmake_cmd} -DWITH_UNIXODBC=1 %{install_layout} %{?static_mysqlclient:-DMYSQLCLIENT_STATIC_LINKING=1} %{!?odbc_gui:-DDISABLE_GUI=1} %{?cmake_opt_extra}
+%global cmake_config %{cmake_cmd} -DBUNDLE_DEPENDENCIES=1 -DWITH_UNIXODBC=1 -DDEFAULT_PLUGIN_DIR="%{plugin_dir}" %{install_layout} %{?static_mysqlclient:-DMYSQLCLIENT_STATIC_LINKING=1} %{!?odbc_gui:-DDISABLE_GUI=1} %{?cmake_opt_extra}
 
 SRC=`pwd`
 cd ..
@@ -185,6 +189,13 @@ cd ..
 %{cmake_cmd} --install release --prefix %{buildroot}
 cd %{buildroot}
 rm -vf  ./{ChangeLog,README*,LICENSE*.*,INFO_SRC,INFO_BIN}
+
+%if 0%{?bundle_plugins}
+mkdir -p .%{plugin_dir}
+mv -v .%{_libdir}/plugin/* .%{plugin_dir}
+%endif
+
+rm -rf .%{_libdir}/{plugin,private}
 
 
 # ----------------------------------------------------------------------
@@ -240,6 +251,9 @@ fi
 %{_bindir}/myodbc-installer
 %{_libdir}/%{lib_base_name}w.so
 %{_libdir}/%{lib_base_name}a.so
+%if 0%{?bundle_plugins}
+%{plugin_dir}
+%endif
 %doc %{license_files}
 %doc ChangeLog INFO_SRC INFO_BIN
 

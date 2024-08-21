@@ -28,6 +28,11 @@
 
 ##########################################################################
 
+if(DEFINED DEFAULT_PLUGIN_DIR)
+  add_compile_definitions(DEFAULT_PLUGIN_DIR="${DEFAULT_PLUGIN_DIR}")
+endif()
+
+
 # At least in CMake 2.8.12.2 the file "Dawin.cmake" defines
 # CMAKE_C_CREATE_SHARED_LIBRARY without honoring
 # CMAKE_SHARED_LINKER_FLAGS. I also failed to modify

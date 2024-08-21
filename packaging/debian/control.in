@@ -7,7 +7,7 @@ Build-Depends: dpkg-dev,
                cmake (>= 2.8.5),
                debhelper (>= 8.9.4),
                libgdk-pixbuf2.0-dev (>= 2.26),
-               libglib2.0-dev (>= 2.30)
+               libglib2.0-dev (>= 2.30), chrpath
 Homepage: http://dev.mysql.com/downloads/connector/odbc/
 Vcs-Bzr: nosmart+http://bzr.debian.org/bzr/users/vorlon/myodbc/trunk/
 Vcs-Browser: http://anonscm.debian.org/loggerhead/users/vorlon/myodbc/trunk/
