@@ -523,14 +523,6 @@ ENDIF()
 #
 ##############################################################################
 
-# Some stuff for building RPMs, that is not using CPack
-# RPMs doesn't allow "-" in version, so we use like "x.x.0_alpha"
-STRING(REPLACE "-" "_" CONNECTOR_NODASH_VERSION "${CONNECTOR_VERSION}")
-IF(UNIX)
-  EXECUTE_PROCESS(COMMAND "date" "+%Y" OUTPUT_VARIABLE CURRENT_YEAR OUTPUT_STRIP_TRAILING_WHITESPACE)
-ENDIF()
-CONFIGURE_FILE(${CMAKE_SOURCE_DIR}/scripts/myodbc3.spec.sh ${CMAKE_SOURCE_DIR}/myodbc3.spec @ONLY)
-
 # The rest is mainly about CPack
 SET(CPACK_PACKAGE_VERSION_MAJOR ${CONNECTOR_MAJOR})
 SET(CPACK_PACKAGE_VERSION_MINOR ${CONNECTOR_MINOR})
@@ -603,7 +595,6 @@ IF(WIN32)
 # TODO: line-ending conversions unix->dos
 
   INSTALL(FILES ChangeLog     DESTINATION ${INSTALL_DOCDIR} RENAME ChangeLog.txt)
-  # FIXME: should install to BINDIR?
   INSTALL(FILES Install.bat   DESTINATION .)
   INSTALL(FILES Uninstall.bat DESTINATION .)
 
