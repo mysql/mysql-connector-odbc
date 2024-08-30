@@ -170,17 +170,17 @@ endforeach()
 # Bail out if both MYSQL_DIR/MYSQL_CONFIG_EXECUTABLE and MYSQL_INCLUDE/LIB_DIR
 # were given
 
-if(MYSQL_DIR AND (MYSQL_INCLUDE_DIR OR MYSQL_LIB_DIR OR MYSQL_PLUGIN_DIR))
+if(MYSQL_DIR AND (MYSQL_INCLUDE_DIR OR MYSQL_LIB_DIR))
   message(FATAL_ERROR
-    "Both MYSQL_DIR and MYSQL_INCLUDE_DIR/MYSQL_LIB_DIR/MYSQL_PLUGIN_DIR were specified,"
+    "Both MYSQL_DIR and MYSQL_INCLUDE_DIR/MYSQL_LIB_DIR were specified,"
     " use either one or the other way of pointing at MySQL location."
   )
 endif()
 
 
-if (MYSQL_CONFIG_EXECUTABLE AND (MYSQL_INCLUDE_DIR OR MYSQL_LIB_DIR OR MYSQL_PLUGIN_DIR))
+if (MYSQL_CONFIG_EXECUTABLE AND (MYSQL_INCLUDE_DIR OR MYSQL_LIB_DIR))
   message(FATAL_ERROR
-    "Both MYSQL_CONFIG_EXECUTABLE and MYSQL_INCLUDE_DIR/MYSQL_LIB_DIR/MYSQL_PLUGIN_DIR were specified,"
+    "Both MYSQL_CONFIG_EXECUTABLE and MYSQL_INCLUDE_DIR/MYSQL_LIB_DIR were specified,"
     " mixing settings detected with mysql_config and manually set by variables"
     " is not supported and would confuse our build logic."
   )
@@ -616,7 +616,7 @@ elseif(MYSQL_DIR AND
     if(EXISTS "${MYSQL_LIB_DIR}/plugin")
       set(MYSQL_PLUGIN_DIR "${MYSQL_LIB_DIR}/plugin")
     else()
-      #If directory does not exist it must be a debug dir layout
+      # FIXME: If directory does not exist it must be a debug dir layout
       if(EXISTS "${MYSQL_LIB_DIR}/../plugin/")
         set(MYSQL_PLUGIN_DIR "${MYSQL_LIB_DIR}/../plugin")
       endif()
@@ -632,7 +632,13 @@ elseif(MYSQL_CONFIG_EXECUTABLE)
   # This code assumes there is just one "-L...." and that
   # no space between "-L" and the path
   _mysql_config(MYSQL_LIB_DIR "(^| )-L" "--libs")
-  _mysql_conf(MYSQL_PLUGIN_DIR  "--variable=plugindir")
+
+  # Note: Allow overriding plugin dir reported by mysql_config because
+  # that can be wrong sometimes
+
+  if(NOT MYSQL_PLUGIN_DIR)
+    _mysql_conf(MYSQL_PLUGIN_DIR  "--variable=plugindir")
+  endif()
 
   IF(CMAKE_SYSTEM_NAME MATCHES "SunOS")
     # This is needed to make Solaris binaries using the default runtime lib path
