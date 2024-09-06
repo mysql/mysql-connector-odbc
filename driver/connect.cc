@@ -40,6 +40,7 @@
 #include <vector>
 #include <sstream>
 #include <random>
+#include <unordered_map>
 
 #ifndef _WIN32
 #include <netinet/in.h>
@@ -53,18 +54,192 @@
 # define CLIENT_NO_SCHEMA      16
 #endif
 
+static std::mutex pool_mtx;
+
+class plugin_pool;
+
+// Error class to handle plugin-related errors.
+
+struct plugin_error
+{
+  enum error_type { PLUGIN, OPTION, OTHER } type;
+  std::string message;
+};
+
+
+// Struct that incapsulates the authentication plugin
+// used by the pool.
+
+struct auth_plugin
+{
+  struct st_mysql_client_plugin* plugin;
+
+  // The MySQL Client plugin is loaded by the constructor
+  auth_plugin(MYSQL *mysql, const char *plugin_name,
+    int plugin_type = MYSQL_CLIENT_AUTHENTICATION_PLUGIN)
+  {
+    plugin = mysql_client_find_plugin(mysql, plugin_name, plugin_type);
+    if (!plugin)
+    {
+      throw plugin_error{plugin_error::PLUGIN, mysql_error(mysql)};
+    }
+  }
+
+  void set_option(const char *opt_name, const void *opt_val)
+  {
+    if (mysql_plugin_options(plugin, opt_name, opt_val) && opt_val)
+    {
+      throw plugin_error{plugin_error::OPTION};
+    }
+  }
+
+};
+
+
+// Option setter struct. It takes care of synchronization and mutexes.
+// It protects the pool calls. The pool cannot be used directly.
+// All operations such as adding options, clearing etc must be done
+// via the setter calls.
+
+class plugin_option_setter
+{
+  std::unique_lock<std::mutex> setter_lock{pool_mtx, std::defer_lock};
+  plugin_pool *pool;
+  MYSQL *m_mysql;
+
+  void lock()
+  {
+    if (!setter_lock.owns_lock())
+      setter_lock.lock();
+  }
+
+  void unlock()
+  {
+    if (setter_lock.owns_lock())
+      setter_lock.unlock();
+  }
+
+  public:
+
+  plugin_option_setter(plugin_pool *p, MYSQL *mysql) :
+    pool(p), m_mysql(mysql)
+  {
+    assert(pool);
+  }
+
+  void clear_pool();
+
+  void set_plugin_option(std::string plugin_name, std::string opt_name,
+    const void *opt_val);
+
+  ~plugin_option_setter()
+  {
+    unlock();
+  }
+};
+
+
+// The pool class, which holds the plugins shared between threads and
+// connections. It must not be used directly. All pool operations are
+// done via the plugin_option_setter methods calls.
+
+class plugin_pool
+{
+  private:
+
+  std::unordered_map <std::string, auth_plugin> plugins;
+  MYSQL *mysql = nullptr;
+
+  auth_plugin *add_plugin(std::string name)
+  {
+    if (plugins.count(name) > 0)
+      throw plugin_error{plugin_error::OTHER,
+                         "Plugin is already in the pool"};
+
+    auto elem = plugins.emplace(name, auth_plugin(mysql, name.c_str()));
+    if (elem.second == false)
+      throw plugin_error{plugin_error::OTHER,
+                         "Plugin could not be added to the pool"};
+
+    return &elem.first->second;
+  }
+
+  auth_plugin *get_plugin(std::string name)
+  {
+    if (plugins.count(name) == 0)
+      return nullptr;
+
+    auto &plugin = plugins.at(name);
+    return &plugin;
+  }
+
+  void clear()
+  {
+    plugins.clear();
+  }
+
+  public:
+
+  plugin_option_setter get_plugin_option_setter(MYSQL *m) {
+    mysql = m;
+    return plugin_option_setter(this, mysql);
+  }
+
+  friend plugin_option_setter;
+};
+
+
+void plugin_option_setter::set_plugin_option(
+  std::string plugin_name, std::string opt_name,
+  const void *opt_val
+)
+{
+  auth_plugin *plugin = pool->get_plugin(plugin_name);
+
+  if (plugin == nullptr)
+  {
+    if (opt_val == nullptr) {
+      // Do nothing. Plugin is not loaded and option is not set.
+      return;
+    }
+    else
+    {
+      // Plugin is not loaded, but the option has to be set.
+      // Needs to be locked before adding a new plugin to the pool.
+      lock();
+
+      plugin = pool->add_plugin(plugin_name);
+    }
+  }
+
+  // Plugin is loaded at this stage. Lock before setting any
+  // option.
+  lock();
+
+  plugin->set_option(opt_name.c_str(), opt_val);
+}
+
+void plugin_option_setter::clear_pool()
+{
+  lock();
+  pool->clear();
+  unlock();
+}
+
+plugin_pool global_pool;
+
+void clear_plugin_pool() {
+  auto setter = global_pool.get_plugin_option_setter(nullptr);
+  setter.clear_pool();
+}
+
 typedef BOOL (*PromptFunc)(SQLHWND, SQLWCHAR *, SQLUSMALLINT,
                            SQLWCHAR *, SQLSMALLINT, SQLSMALLINT *,
                            SQLSMALLINT);
 
 const char *my_os_charset_to_mysql_charset(const char *csname);
-
-bool fido_callback_is_set = false;
 fido_callback_func global_fido_callback = nullptr;
 std::mutex global_fido_mutex;
-
-bool oci_plugin_is_loaded = false;
-bool openid_plugin_is_loaded = false;
 
 /**
   Get the connection flags based on the driver options.
@@ -393,163 +568,112 @@ SQLRETURN DBC::connect(DataSource *dsrc)
                   (const char*)dsrc->opt_DEFAULT_AUTH);
   }
 
-  /*
-   * If fido callback is used the lock must remain till the end of
-   * the connection process.
-   */
-  std::unique_lock<std::mutex> fido_lock(global_fido_mutex);
-  /*
-  * Set callback even if the value is NULL, but only to reset the previously
-  * installed callback.
-  */
-  fido_callback_func fido_func = fido_callback;
-
-  if(!fido_func && global_fido_callback)
-    fido_func = global_fido_callback;
-
-  if (fido_func || fido_callback_is_set)
-  {
-    std::string plugin_name = "authentication_webauthn_client";
-    struct st_mysql_client_plugin* plugin =
-      mysql_client_find_plugin(mysql,
-        plugin_name.c_str(),
-        MYSQL_CLIENT_AUTHENTICATION_PLUGIN);
-
-    if (plugin)
-    {
-      std::string opt_name = "plugin_authentication_webauthn_client_messages_callback";
-
-      if (mysql_plugin_options(plugin, opt_name.c_str(),
-            (const void*)fido_func))
-      {
-        // If plugin is loaded, but the callback option fails to set
-        // the error is reported.
-        return set_error("HY000",
-          "Failed to set a WebAuthn authentication callback function", 0);
-      }
-    }
-    else
-    {
-      return set_error("HY000", "Failed to set a WebAuthn authentciation "
-                                "callback beacause the WebAuthn authentication "
-                                "plugin could not be loaded", 0);
-    }
-
-    fido_callback_is_set = fido_func;
-  }
-  else
-  {
-    // No need to keep the lock if callback is not used.
-    fido_lock.unlock();
+// For some plugins the error message is specified if plugin
+// could not be loaded, for some plugins the message is obtained
+// from MYSQL* structure. If MSGPLUG param is nullptr
+// the error message will be used from the exception.
+#define CATCH_PLUGIN_ERROR(MSGPLUG, MSGOPT) catch(plugin_error &err) \
+  { \
+    const char *msgplug = MSGPLUG; \
+    switch (err.type) \
+    { \
+      case plugin_error::PLUGIN: \
+        return set_error("HY000", msgplug ? msgplug : err.message.c_str(), 0); \
+      break;\
+      case plugin_error::OPTION: \
+        return set_error("HY000", MSGOPT, 0); \
+      break;\
+      default: \
+        return set_error("HY000", err.message.c_str(), 0); \
+    } \
   }
 
-  bool oci_config_file_set = dsrc->opt_OCI_CONFIG_FILE;
-  bool oci_config_profile_set = dsrc->opt_OCI_CONFIG_PROFILE;
+  auto setter = global_pool.get_plugin_option_setter(mysql);
 
-  if(oci_config_file_set || oci_config_profile_set || oci_plugin_is_loaded)
+  try
   {
-    /* load client authentication plugin if required */
-    struct st_mysql_client_plugin *plugin =
-        mysql_client_find_plugin(mysql,
-                                 "authentication_oci_client",
-                                 MYSQL_CLIENT_AUTHENTICATION_PLUGIN);
+    fido_callback_func fido_func = fido_callback;
 
-    if(!plugin)
-    {
-      return set_error("HY000", "Couldn't load plugin authentication_oci_client", 0);
-    }
+    if(!fido_func && global_fido_callback)
+      fido_func = global_fido_callback;
 
-    oci_plugin_is_loaded = true;
-
-    // Set option value or reset by giving nullptr to prevent
-    // re-using the value set by another connect (plugin does not
-    // reset its options automatically).
-    const void *val_to_set = oci_config_file_set ?
-      (const char*)dsrc->opt_OCI_CONFIG_FILE :
-      nullptr;
-
-    if (mysql_plugin_options(plugin, "oci-config-file", val_to_set) &&
-        val_to_set)
-    {
-      // Error should only be returned if setting non-null option value.
-      return set_error("HY000",
-          "Failed to set config file for authentication_oci_client plugin", 0);
-    }
-
-    val_to_set = oci_config_profile_set ?
-      (const char*)dsrc->opt_OCI_CONFIG_PROFILE :
-      nullptr;
-
-    if (mysql_plugin_options(plugin, "authentication-oci-client-config-profile",
-      val_to_set) && val_to_set)
-    {
-      return set_error("HY000",
-          "Failed to set config profile for authentication_oci_client plugin", 0);
-    }
+    setter.set_plugin_option(
+      "authentication_webauthn_client",
+      "plugin_authentication_webauthn_client_messages_callback",
+      (const void*)fido_func
+    );
   }
+  CATCH_PLUGIN_ERROR(
+    "Failed to set a WebAuthn authentciation "
+      "callback beacause the WebAuthn authentication "
+      "plugin could not be loaded",
+    "Failed to set a WebAuthn authentication callback function"
+  )
 
-  if (dsrc->opt_AUTHENTICATION_KERBEROS_MODE)
+  try
   {
+    setter.set_plugin_option(
+      "authentication_oci_client",
+      "oci-config-file",
+      (const char*)dsrc->opt_OCI_CONFIG_FILE
+    );
+  }
+  CATCH_PLUGIN_ERROR(
+    "Couldn't load plugin authentication_oci_client",
+    "Failed to set config file for authentication_oci_client plugin"
+  )
+
+  try
+  {
+    setter.set_plugin_option(
+      "authentication_oci_client",
+      "authentication-oci-client-config-profile",
+      (const char*)dsrc->opt_OCI_CONFIG_PROFILE
+    );
+  }
+  CATCH_PLUGIN_ERROR(
+    "Couldn't load plugin authentication_oci_client",
+    "Failed to set config profile for authentication_oci_client plugin"
+  )
+
 #ifdef WIN32
-    /* load client authentication plugin if required */
-    struct st_mysql_client_plugin* plugin =
-      mysql_client_find_plugin(mysql,
-        "authentication_kerberos_client",
-        MYSQL_CLIENT_AUTHENTICATION_PLUGIN);
-
-    if (!plugin)
-    {
-      return set_error("HY000", mysql_error(mysql), 0);
-    }
-
-    if (mysql_plugin_options(plugin, "plugin_authentication_kerberos_client_mode",
-      (const char*)dsrc->opt_AUTHENTICATION_KERBEROS_MODE))
-    {
-      return set_error("HY000",
-        "Failed to set mode for authentication_kerberos_client plugin", 0);
-    }
-#else
-    if (myodbc_strcasecmp("GSSAPI",
-      (const char *)dsrc->opt_AUTHENTICATION_KERBEROS_MODE))
-    {
-      return set_error("HY000",
-        "Invalid value for authentication-kerberos-mode. "
-        "Only GSSAPI is supported.", 0);
-    }
-#endif
-  }
-
-  bool openid_token_file_set = dsrc->opt_OPENID_TOKEN_FILE;
-  if(openid_token_file_set || openid_plugin_is_loaded)
+  try
   {
-    /* load client authentication plugin if required */
-    struct st_mysql_client_plugin *plugin =
-        mysql_client_find_plugin(mysql,
-                                 "authentication_openid_connect_client",
-                                 MYSQL_CLIENT_AUTHENTICATION_PLUGIN);
-
-    if(!plugin)
-    {
-      return set_error("HY000", "Couldn't load plugin authentication_openid_connect_client", 0);
-    }
-
-    openid_plugin_is_loaded = true;
-
-    // Set option value or reset by giving nullptr to prevent
-    // re-using the value set by another connect (plugin does not
-    // reset its options automatically).
-    const void *val_to_set = openid_token_file_set ?
-      (const char*)dsrc->opt_OPENID_TOKEN_FILE :
-      nullptr;
-
-    if (mysql_plugin_options(plugin, "id-token-file", val_to_set) &&
-        val_to_set)
-    {
-      // Error should only be returned if setting non-null option value.
-      return set_error("HY000",
-          "Failed to set config file for authentication_openid_connect_client plugin", 0);
-    }
+    setter.set_plugin_option(
+      "authentication_kerberos_client",
+      "plugin_authentication_kerberos_client_mode",
+      (const char*)dsrc->opt_AUTHENTICATION_KERBEROS_MODE
+    );
   }
+  // For kerberos the loading plugin error should be obtained from
+  // mysql_error(mysql) call. Therefore the first parameter is nullptr.
+  CATCH_PLUGIN_ERROR(
+    nullptr,
+    "Failed to set mode for authentication_kerberos_client plugin"
+  )
+#else
+  if ((bool)dsrc->opt_AUTHENTICATION_KERBEROS_MODE &&
+    myodbc_strcasecmp("GSSAPI",
+    (const char *)dsrc->opt_AUTHENTICATION_KERBEROS_MODE))
+  {
+    return set_error("HY000",
+      "Invalid value for authentication-kerberos-mode. "
+      "Only GSSAPI is supported.", 0);
+  }
+#endif
+
+  try
+  {
+    setter.set_plugin_option(
+      "authentication_openid_connect_client",
+      "id-token-file",
+      (const char*)dsrc->opt_OPENID_TOKEN_FILE
+    );
+  }
+  CATCH_PLUGIN_ERROR(
+    "Couldn't load plugin authentication_openid_connect_client",
+    "Failed to set config file for authentication_openid_connect_client plugin"
+  )
 
 #endif
 

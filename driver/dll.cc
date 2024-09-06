@@ -120,6 +120,7 @@ void myodbc_init(void)
   }
 }
 
+extern void clear_plugin_pool();
 
 /*
   @type    : myodbc3 internal
@@ -146,7 +147,12 @@ void myodbc_end()
     */
     my_thread_end_wait_time= 0;
 #endif
-
+    /*
+      When driver is unloaded the plugin pool must be cleared.
+      This is because libmysqlclient is unloaded with the driver.
+      If the driver is loaded again the plugin addresses will be different.
+    */
+    clear_plugin_pool();
     mysql_library_end();
   }
 }

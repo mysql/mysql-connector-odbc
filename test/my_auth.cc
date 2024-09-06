@@ -895,6 +895,17 @@ DECLARE_TEST(t_fido_callback_test)
     thread.join();
   }
 
+  // Reset the global callback. Otherwise it will pop up in other tests.
+  SQLHDBC hdbc3 = NULL;
+  ok_env(henv, SQLAllocConnect(henv, &hdbc3));
+  ok_con(hdbc3, SQLSetConnectAttr(hdbc3, CB_FIDO_GLOBAL,
+    nullptr, SQL_IS_POINTER));
+
+  SQLDriverConnect(hdbc3, NULL, (SQLCHAR*)str_connstr.c_str(),
+    SQL_NTS, NULL, 0, NULL, SQL_DRIVER_NOPROMPT);
+  SQLDisconnect(hdbc3);
+  SQLFreeHandle(SQL_HANDLE_DBC, hdbc3);
+
   return OK;
 }
 
@@ -1050,6 +1061,7 @@ DECLARE_TEST(t_openid_test)
 }
 
 BEGIN_TESTS
+  ADD_TEST(t_openid_test)
 #ifndef WIN32
   ADD_TEST(t_kerberos_mode)
 #endif
@@ -1061,7 +1073,6 @@ BEGIN_TESTS
 #if MFA_ENABLED
   ADD_TEST(t_mfa_auth)
 #endif
-  ADD_TEST(t_openid_test)
   END_TESTS
 
 RUN_TESTS
