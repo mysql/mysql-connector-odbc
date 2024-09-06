@@ -73,7 +73,7 @@ Group:		Applications/Databases
 Vendor:		%{mysql_vendor}
 Packager:	%{mysql_vendor} Product Engineering Team <mysql-build@oss.oracle.com>
 Suggests: krb5-libs, cyrus-sasl-lib, libfido2
-BuildRequires:	cmake
+BuildRequires:	%{cmake_cmd} >= 3.15.0
 %{?shared_mysqlclient:BuildRequires: mysql-community-devel}
 BuildRequires:	unixODBC-devel
 BuildRequires:  gtk2-devel

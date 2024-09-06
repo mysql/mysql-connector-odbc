@@ -30,7 +30,10 @@
 # in this folder. The project should be built in-place
 # (at packaging/debian/ in the source tree)
 
-cmake_minimum_required(VERSION 3.5)
+# Note: Version 3.15 is required becausae RPM build instruction depend on cmake
+# recognizing the --install command.
+
+cmake_minimum_required(VERSION 3.15)
 project(MySQL_Connector_ODBC_Deb_Init NONE)
 
 if(NOT CMAKE_SYSTEM_NAME STREQUAL "Linux")

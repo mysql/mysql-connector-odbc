@@ -4,7 +4,7 @@ Priority: optional
 Maintainer: Oracle MySQL Product Engineering Team <mysql-build@oss.oracle.com>
 Standards-Version: 3.9.2
 Build-Depends: dpkg-dev,
-               cmake (>= 2.8.5),
+               cmake (>= 3.15.0),
                debhelper (>= 8.9.4),
                libgdk-pixbuf2.0-dev (>= 2.26),
                libglib2.0-dev (>= 2.30), chrpath

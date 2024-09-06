@@ -1,4 +1,7 @@
-cmake_minimum_required(VERSION 3.5)
+# Note: Version 3.15 is required becausae RPM build instruction depend on cmake
+# recognizing the --install command.
+
+cmake_minimum_required(VERSION 3.15)
 
 project(MySQL_ODBC_Packages)
 include(../version.cmake)
