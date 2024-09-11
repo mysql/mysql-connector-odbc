@@ -82,6 +82,13 @@ override_dh_auto_install:
 	rm -rf $(TMP_INSTDIR)$(LIB_DIR)/private
 
 
+# Note: setting --sourcedir to make sure that dh_install always looks for
+# files specified by .install specs in the stagging area, not in the
+# top-level source dir.
+
+override_dh_install:
+	dh_install --verbose --sourcedir debian/tmp
+
 # Note: Exclude plugins from calculating package dependencies
 
 override_dh_shlibdeps:
