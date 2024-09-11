@@ -54,7 +54,13 @@
 # Don't bundle plugins when linking clientlib dynamically
 %{!?shared_mysqlclient: %global bundle_plugins 1}
 
+# Note: ${rpmversion} macro is introduced in version 4.19 -- if building with
+# earlier versions use version computed by cmake.
 
+# TODO: use %rpmversion if available, note that it is in the format X.Y.Z.Y
+# and the current logic requires numeric format XYYZZ.
+
+%global rpm_ver_num @RPM_VER_NUM@
 
 ##############################################################################
 #
@@ -72,7 +78,10 @@ URL:		http://www.mysql.com/
 Group:		Applications/Databases
 Vendor:		%{mysql_vendor}
 Packager:	%{mysql_vendor} Product Engineering Team <mysql-build@oss.oracle.com>
+# Note: Field `Suggests` is recognized by RPM 4.13 and later
+%if %{rpm_ver_num} >= 41300
 Suggests: krb5-libs, cyrus-sasl-lib, libfido2
+%endif
 BuildRequires:	%{cmake_cmd} >= 3.15.0
 %{?shared_mysqlclient:BuildRequires: mysql-community-devel}
 BuildRequires:	unixODBC-devel
