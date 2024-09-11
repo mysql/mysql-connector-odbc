@@ -1,6 +1,6 @@
 usr/lib/*/odbc/libmyodbc@CONNECTOR_MAJOR@a.so
 usr/lib/*/odbc/libmyodbc@CONNECTOR_MAJOR@w.so
-bin/myodbc-installer
+usr/bin/myodbc-installer
 
 # Plugins
 usr/lib/*/mysql/libmyodbc@CONNECTOR_MAJOR@/plugin/*
