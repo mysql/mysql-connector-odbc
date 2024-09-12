@@ -106,23 +106,34 @@ function(install_lib COMP TARGET)
   )
 
   if(WIN32)
+
+    install(
+      FILES "$<TARGET_PDB_FILE:${TARGET}>"
+      CONFIGURATIONS RelWithDebInfo
+      DESTINATION "${INSTALL_LIBDIR}"
+      COMPONENT ${COMP}
+    )
     install(
       FILES "$<TARGET_PDB_FILE:${TARGET}>"
       CONFIGURATIONS Debug
       DESTINATION "${INSTALL_LIBDIR_DEBUG}"
       COMPONENT ${COMP}
     )
+
   else()
+
     install(
       TARGETS ${TARGET}
       DESTINATION "${INSTALL_LIBDIR}"
-      COMPONENT ${COMP})
+      COMPONENT ${COMP}
+    )
+
   endif()
 
 endfunction()
 
 
-function(install_bin GROUP TARGET)
+function(install_bin COMP TARGET)
 
   install(
     TARGETS ${TARGET}
@@ -139,17 +150,28 @@ function(install_bin GROUP TARGET)
   )
 
   if(WIN32)
+
+    install(
+      FILES "$<TARGET_PDB_FILE:${TARGET}>"
+      CONFIGURATIONS RelWithDebInfo
+      DESTINATION "${INSTALL_BINDIR}"
+      COMPONENT ${COMP}
+    )
     install(
       FILES "$<TARGET_PDB_FILE:${TARGET}>"
       CONFIGURATIONS Debug
       DESTINATION "${INSTALL_BINDIR_DEBUG}"
       COMPONENT ${COMP}
     )
+
   else()
+
     install(
       TARGETS ${TARGET}
       DESTINATION "${INSTALL_BINDIR}"
-      COMPONENT ${COMP})
+      COMPONENT ${COMP}
+    )
+
   endif()
 
 endfunction()
@@ -172,18 +194,28 @@ function(install_test TARGET)
   )
 
   if(WIN32)
+
+    install(
+      FILES "$<TARGET_PDB_FILE:${TARGET}>"
+      CONFIGURATIONS RelWithDebInfo
+      DESTINATION "${INSTALL_TESTDIR}"
+      COMPONENT tests
+    )
     install(
       FILES "$<TARGET_PDB_FILE:${TARGET}>"
       CONFIGURATIONS Debug
       DESTINATION "${INSTALL_TESTDIR_DEBUG}"
       COMPONENT tests
     )
+
   else()
+
     install(
       TARGETS ${TARGET}
       DESTINATION "${INSTALL_TESTDIR}"
       COMPONENT tests
     )
+
   endif()
 
 endfunction()
