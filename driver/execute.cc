@@ -944,7 +944,8 @@ SQLRETURN insert_param(STMT *stmt, MYSQL_BIND *bind, DESC* apd,
             */
           if (!stmt->dbc->ds.opt_NO_DATE_OVERFLOW && TIME_FIELDS_NONZERO(ts))
           {
-            return stmt->set_error("22008", "Date overflow", 0);
+            result = stmt->set_error("22008", "Date overflow", 0);
+            goto out;
           }
         }
         /* else _binary introducer for binary data */
@@ -1017,14 +1018,16 @@ SQLRETURN insert_param(STMT *stmt, MYSQL_BIND *bind, DESC* apd,
 
           if (time->hour > 23)
           {
-            return stmt->set_error("22008", "Not a valid time value supplied", 0);
+            result = stmt->set_error("22008", "Not a valid time value supplied", 0);
+            goto out;
           }
           if (time->fraction)
           {
             /* fractional seconds truncated, need to set correct sqlstate 22008
             http://msdn.microsoft.com/en-us/library/ms709385%28v=vs.85%29.aspx */
 
-            return stmt->set_error("22008", "Fractional truncation", 0);
+            result = stmt->set_error("22008", "Fractional truncation", 0);
+            goto out;
           }
 
           if (bind != NULL)
@@ -1056,7 +1059,8 @@ SQLRETURN insert_param(STMT *stmt, MYSQL_BIND *bind, DESC* apd,
           if (fraction)
           {
             /* truncation need SQL_ERROR and sqlstate 22008*/
-            return stmt->set_error("22008", "Fractional truncation", 0);
+            result = stmt->set_error("22008", "Fractional truncation", 0);
+            goto out;
           }
 
           time= str_to_time_as_long(data,length);
@@ -1064,7 +1068,8 @@ SQLRETURN insert_param(STMT *stmt, MYSQL_BIND *bind, DESC* apd,
 
           if (hours > 23)
           {
-            return stmt->set_error("22008", "Not a valid time value supplied", 0);
+            result = stmt->set_error("22008", "Not a valid time value supplied", 0);
+            goto out;
           }
 
           if (bind != NULL)
