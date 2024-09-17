@@ -242,10 +242,6 @@ foreach (token
   file(COPY tokens/${token} DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
   # Install tokens
-  install(
-    FILES tokens/${token}
-    DESTINATION test
-    COMPONENT tests
-  )
+  install_test_files(tokens/${token})
 
 endforeach()

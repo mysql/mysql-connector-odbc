@@ -1,5 +1,6 @@
 test/CTestTestfile.cmake    usr/lib/mysql-connector-odbc/test
 test/my_*                   usr/lib/mysql-connector-odbc/test
+test/openid_token_*         usr/lib/mysql-connector-odbc/test
 test/odbc.ini               usr/lib/mysql-connector-odbc/test
 test/odbcinst.ini           usr/lib/mysql-connector-odbc/test
 LICENSE.txt                 usr/share/doc/mysql-connector-odbc-test
