@@ -37,10 +37,10 @@ int main(int argc, char *argv[])
 	if (argc ==1)
 		exit (1);
 
-	if (!(fp = fopen("myodbc_version.xml",  "w")))
+	if (!(fp = fopen("myodbc_version.wxs",  "w")))
 		exit (2);
 
-	fprintf(fp, "<Include>\n");
+	fprintf(fp, "<Include xmlns=\"http://wixtoolset.org/schemas/v4/wxs\">\n");
 
 	sscanf(SETUP_VERSION, "%d.%d.%d", &v1, &v2, &v3);
 

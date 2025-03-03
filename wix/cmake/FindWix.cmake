@@ -30,25 +30,27 @@
 
 
 #-------------- FIND WIX_DIR ------------------
-IF(DEFINED $ENV{WIX_DIR})
-  SET(WIX_DIR "$ENV{WIX_DIR}")
-ENDIF(DEFINED $ENV{WIX_DIR})
 
-# Wix installer creates WIX environment variable
-FIND_PATH(WIX_DIR candle.exe
-	$ENV{WIX_DIR}/bin
-	$ENV{WIX}/bin
-	"$ENV{ProgramFiles}/wix/bin"
-	"$ENV{ProgramFiles}/Windows Installer */bin")
+# First check if WIX_DIR was given in the command line
+IF(NOT DEFINED WIX_DIR)
+  # If WIX_DIR is not given in command line check env
+  IF(DEFINED $ENV{WIX_DIR})
+    SET(WIX_DIR "$ENV{WIX_DIR}")
+  ELSE()
+    SET(WIX_DIR "$ENV{USERPROFILE}\\.dotnet\\tools")
+  ENDIF(DEFINED $ENV{WIX_DIR})
+ENDIF(NOT DEFINED WIX_DIR)
 
-#----------------- FIND MYSQL_LIB_DIR -------------------
-IF (WIX_DIR)
-	MESSAGE(STATUS "Wix found in ${WIX_DIR}")
-ELSE (WIX_DIR)
-	IF ($ENV{WIX_DIR})
-		MESSAGE(FATAL_ERROR "Cannot find Wix in $ENV{WIX_DIR}")
-	ELSE ($ENV{WIX_DIR})
-		MESSAGE(FATAL_ERROR "Cannot find Wix. Please set environment variable WIX_DIR which points to the wix installation directory")
-	ENDIF ($ENV{WIX_DIR})
-ENDIF (WIX_DIR)
+FIND_PROGRAM(WIX_EXECUTABLE wix ${WIX_DIR})
+
+#----------------- FIND WIX EXECUTABLE -------------------
+IF (EXISTS "${WIX_EXECUTABLE}")
+  MESSAGE(STATUS "Wix found in ${WIX_DIR}")
+ELSE (EXISTS "${WIX_EXECUTABLE}")
+  IF ($ENV{WIX_DIR})
+    MESSAGE(FATAL_ERROR "Cannot find Wix in $ENV{WIX_DIR}")
+  ELSE ($ENV{WIX_DIR})
+    MESSAGE(FATAL_ERROR "Cannot find Wix in ${WIX_DIR}. Please set environment variable WIX_DIR which points to the wix installation directory")
+  ENDIF ($ENV{WIX_DIR})
+ENDIF (EXISTS "${WIX_EXECUTABLE}")
 
