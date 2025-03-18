@@ -1,6 +1,6 @@
 Licensing Information User Manual
 
-MySQL Connector/ODBC 8.0.40 Community
+MySQL Connector/ODBC 8.0.42 Community
      __________________________________________________________________
 
 Introduction
@@ -8,18 +8,18 @@ Introduction
    This License Information User Manual contains Oracle's product license
    and other licensing information, including licensing information for
    third-party software which may be included in this distribution of
-   MySQL Connector/ODBC 8.0.40 Community.
+   MySQL Connector/ODBC 8.0.42 Community.
 
-   Last updated: September 2024
+   Last updated: March 2025
 
 Licensing Information
 
-   This release of MySQL Connector/ODBC 8.0.40 Community is brought to you
+   This release of MySQL Connector/ODBC 8.0.42 Community is brought to you
    by the MySQL team at Oracle. This software is released under version 2
    of the GNU General Public License (GPLv2), as set forth below, with the
    following additional permissions:
 
-   This distribution of MySQL Connector/ODBC 8.0.40 Community is designed
+   This distribution of MySQL Connector/ODBC 8.0.42 Community is designed
    to work with certain software (including but not limited to OpenSSL)
    that is licensed under separate terms, as designated in a particular
    file or component or in the license documentation. Without limiting
@@ -34,7 +34,7 @@ Licensing Information
    a copy of which is reproduced below and can also be found along with
    its FAQ at http://oss.oracle.com/licenses/universal-foss-exception.
 
-   Copyright (c) 2005, 2024, Oracle and/or its affiliates.
+   Copyright (c) 2005, 2025, Oracle and/or its affiliates.
 
 Election of GPLv2
 
@@ -570,6 +570,15 @@ documentation and/or software.
 
 Google Protocol Buffers
 
+You may be receiving a copy of abseil-cpp as part of this product in object code
+ form.
+The terms of the Oracle license do NOT apply to abseil-cpp.
+abseil-cpp is licensed under the Apache 2.0 license, separate from the Oracle pr
+oduct.
+If you do not wish to install this library, you may remove it, but the Oracle pr
+ogram
+might not operate properly or at all without it.
+
 Copyright 2008 Google Inc.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -637,7 +646,14 @@ in the 'Standard Licenses' section.
 
 Kerberos5
 
-Kerberos5
+You may be receiving a copy of the kerberos documentation as part of this
+product. The terms of the Oracle license do NOT apply to Kerberos documentation.
+
+Kerberos documentation is licensed under the CC-BY-SA 3.0 license, separate from
+
+the Oracle product.
+If you do not wish to install this library, you may remove it, but
+the Oracle program might not operate properly or at all without it.
 
 Copyright (C) 1985-2019 by the Massachusetts Institute of Technology.
 
