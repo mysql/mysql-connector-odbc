@@ -206,7 +206,7 @@ int APIENTRY LibMain(HANDLE inst, DWORD ul_reason_being_called,
     break;
   case DLL_THREAD_DETACH:
 #ifdef THREAD
-    my_thread_end();
+    mysql_thread_end();
 #endif
     break;
 

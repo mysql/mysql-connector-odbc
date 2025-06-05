@@ -54,42 +54,62 @@ enum myodbcProcColumns {mypcPROCEDURE_CAT= 0, mypcPROCEDURE_SCHEM,  mypcPROCEDUR
                   /*15*/mypcSQL_DATETIME_SUB, mypcCHAR_OCTET_LENGTH,mypcORDINAL_POSITION,
                   /*18*/mypcIS_NULLABLE };
 
-/* SQLColumns */
+typedef std::vector<MYSQL_BIND> vec_bind;
 
-static char SC_type[10],SC_typename[20],SC_precision[10],SC_length[10],SC_scale[10],
-SC_nullable[10], SC_coldef[10], SC_sqltype[10],SC_octlen[10],
-SC_isnull[10];
+/*
+ * Helper class to be used with Catalog functions in order to obtain
+ * data from Information_Schema.
+*/
+struct ODBC_CATALOG {
+  STMT *stmt;
+  tempBuf temp;
+  std::string query;
+  std::string from;
+  std::string join;
+  std::string where;
+  std::string order_by;
+  size_t col_count;
+  std::vector<std::string> columns;
+  MYSQL_ROW current_row = nullptr;
+  unsigned long *current_lengths = nullptr;
+  MYSQL_RES *mysql_res = nullptr;
 
-static char *SQLCOLUMNS_values[]= {
-    (char*)"",(char*)"",NullS,NullS,SC_type,SC_typename,
-    SC_precision,
-    SC_length,SC_scale,(char*)"10",SC_nullable,(char*)"MySQL column",
-    SC_coldef,SC_sqltype,NullS,SC_octlen,NullS,SC_isnull
+  SQLCHAR *m_catalog;
+  unsigned long m_catalog_len;
+  SQLCHAR *m_schema;
+  unsigned long m_schema_len;
+  SQLCHAR *m_table;
+  unsigned long m_table_len;
+  SQLCHAR *m_column;
+  unsigned long m_column_len;
+
+  ODBC_CATALOG(STMT *s, size_t ccnt, std::string from_i_s,
+    SQLCHAR *catalog, unsigned long catalog_len,
+    SQLCHAR *schema, unsigned long schema_len,
+    SQLCHAR *table, unsigned long table_len,
+    SQLCHAR *column, unsigned long column_len);
+
+  ODBC_CATALOG(STMT *s, size_t ccnt, std::string from_i_s,
+    SQLCHAR *catalog, unsigned long catalog_len,
+    SQLCHAR *schema, unsigned long schema_len,
+    SQLCHAR *table, unsigned long table_len);
+
+  ~ODBC_CATALOG();
+
+  void add_param(const char *qstr, SQLCHAR *data, unsigned long &len);
+  void add_column(std::string);
+
+  // The string need to specify the join type such as LEFT JOIN ...
+  void set_join(std::string s) { join = s; }
+  void set_where(std::string s) { where = s; }
+  void set_order_by(std::string s) { order_by = s; }
+  void execute();
+  size_t num_rows();
+  MYSQL_ROW fetch_row();
+  bool is_null_value(int column);
+  unsigned long *get_lengths();
+  void data_seek(unsigned int rownum);
 };
-
-static MYSQL_FIELD SQLCOLUMNS_fields[]=
-{
-  MYODBC_FIELD_NAME("TABLE_CAT", 0),
-  MYODBC_FIELD_NAME("TABLE_SCHEM", 0),
-  MYODBC_FIELD_NAME("TABLE_NAME", NOT_NULL_FLAG),
-  MYODBC_FIELD_NAME("COLUMN_NAME", NOT_NULL_FLAG),
-  MYODBC_FIELD_SHORT("DATA_TYPE", NOT_NULL_FLAG),
-  MYODBC_FIELD_STRING("TYPE_NAME", 20, NOT_NULL_FLAG),
-  MYODBC_FIELD_LONG("COLUMN_SIZE", 0),
-  MYODBC_FIELD_LONG("BUFFER_LENGTH", 0),
-  MYODBC_FIELD_SHORT("DECIMAL_DIGITS", 0),
-  MYODBC_FIELD_SHORT("NUM_PREC_RADIX", 0),
-  MYODBC_FIELD_SHORT("NULLABLE", NOT_NULL_FLAG),
-  MYODBC_FIELD_NAME("REMARKS", 0),
-  MYODBC_FIELD_NAME("COLUMN_DEF", 0),
-  MYODBC_FIELD_SHORT("SQL_DATA_TYPE", NOT_NULL_FLAG),
-  MYODBC_FIELD_SHORT("SQL_DATETIME_SUB", 0),
-  MYODBC_FIELD_LONG("CHAR_OCTET_LENGTH", 0),
-  MYODBC_FIELD_LONG("ORDINAL_POSITION", NOT_NULL_FLAG),
-  MYODBC_FIELD_STRING("IS_NULLABLE", 3, 0),
-};
-
-const uint SQLCOLUMNS_FIELDS= (uint)array_elements(SQLCOLUMNS_values);
 
 /* Some common(for i_s/no_i_s) helper functions */
 const char *my_next_token(const char *prev_token,

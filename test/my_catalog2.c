@@ -264,13 +264,13 @@ DECLARE_TEST(t_bug53235)
     col_size= my_fetch_int(hstmt1, 7);
     buf_len= my_fetch_int(hstmt1, 8);
     is_num(col_size, 10);
-    is_num(buf_len, 12);
+    is_num(buf_len, 15);
 
     ok_stmt(hstmt1, SQLFetch(hstmt1));
     col_size= my_fetch_int(hstmt1, 7);
     buf_len= my_fetch_int(hstmt1, 8);
     is_num(col_size, 8);
-    is_num(buf_len, 9);
+    is_num(buf_len, 13);
 
     ok_stmt(hstmt1, SQLFetch(hstmt1));
     col_size= my_fetch_int(hstmt1, 7);
