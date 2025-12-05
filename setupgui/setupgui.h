@@ -147,10 +147,12 @@ void setControlEnabled(unsigned int framenum, int idc, my_bool state);
 #define GET_STRING(name) \
   {                                                                \
     SQLWCHAR *res = getStrFieldData(hwnd, IDC_EDIT_##name);        \
-    if (res && *res)                                               \
+    if (res && *res) {                                             \
       params->opt_##name = res;                                    \
+      free(res);                                                   \
+    }                                                              \
     else                                                           \
-      params->opt_##name.set_default(nullptr);                    \
+      params->opt_##name.set_default(nullptr);                     \
   }
 
 #define GET_STRING_TAB(framenum, name) \
@@ -253,6 +255,7 @@ void setUnsignedFieldData(gchar *widget_name, unsigned int param);
     SQLWCHAR *res = getStrFieldData((gchar*)#name);                 \
     if (res && *res)                                               \
       params->opt_##name = res;                                    \
+      free(res);                                                   \
     else                                                           \
       params->opt_##name.set_default(nullptr);                     \
   }

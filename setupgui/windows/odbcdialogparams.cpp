@@ -187,8 +187,9 @@ SQLWCHAR * getStrFieldData(HWND hwnd, int idc)
   int len = Edit_GetTextLength(GetDlgItem(hwnd,idc));
   if (len > 0)
   {
-    Edit_GetText(GetDlgItem(hwnd, idc), out_buf, len + 1);
-    return out_buf;
+    SQLWCHAR* buff = new SQLWCHAR[len + 1];
+    Edit_GetText(GetDlgItem(hwnd, idc), buff, len + 1);
+    return buff;
   }
   return nullptr;
 }

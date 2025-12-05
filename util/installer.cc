@@ -637,7 +637,7 @@ int Driver::to_kvpair_null(SQLWCHAR *attrs, size_t attrslen)
  */
 void optionStr::set_remove_brackets(const SQLWCHAR *val_char,
                                     SQLINTEGER len) {
-  SQLWCHAR out[1024] = { 0 };
+  SQLWSTRING out;
 
   if (!val_char) {
     set_null();
@@ -651,26 +651,23 @@ void optionStr::set_remove_brackets(const SQLWCHAR *val_char,
   if (charcount)
   {
     const SQLWCHAR *val = val_str.c_str();
-    SQLWCHAR *pos = out;
     while (charcount)
     {
-      *pos = *val;
+      out += *val;
       if (charcount > 1 && ((*val == '}' && *(val + 1) == '}')))
       {
         ++val;
         --charcount;
       }
 
-      ++pos;
       ++val;
       --charcount;
     }
-    *pos = 0; // Terminate the string
   }
 
   m_wstr = out;
   // Re-use existing buffer, just as another type
-  SQLCHAR *c_out = reinterpret_cast<SQLCHAR *>(out);
+  SQLCHAR *c_out = reinterpret_cast<SQLCHAR *>(const_cast<wchar_t *>(out.c_str()));
   len = (SQLINTEGER)val_str.length();
   char *result = (char *)sqlwchar_as_utf8_ext(m_wstr.c_str(), &len,
     c_out, sizeof(out), nullptr);
