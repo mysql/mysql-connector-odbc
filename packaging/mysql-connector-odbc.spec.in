@@ -44,7 +44,7 @@
 %global product_suffix	-commercial
 %else
 %global license_type	GPLv2
-%global license_files	LICENSE.txt README.txt
+%global license_files	LICENSE.txt README.txt CONTRIBUTING.md
 %endif
 
 %global cmake_cmd  cmake%{?el6:3}%{?el7:3}
