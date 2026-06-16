@@ -60,6 +60,9 @@
               <File Id="readme" Name="README.txt" DiskId="1" Source="doc\README.txt" />
               <File Id="changelog" Name="ChangeLog.txt" DiskId="1" Source="doc\ChangeLog.txt" />
               <File Id="license" Name="LICENSE.txt" DiskId="1" Source="doc\LICENSE.txt" />
+              <?if $(var.license) = "community" ?>
+                <File Id="contributing" Name="CONTRIBUTING.md" DiskId="1" Source="doc\CONTRIBUTING.md" />
+              <?endif?>
               <File Id="info_bin" Name="INFO_BIN" DiskId="1" Source="doc\INFO_BIN" />
               <File Id="info_src" Name="INFO_SRC" DiskId="1" Source="doc\INFO_SRC" />
             </Component>
@@ -92,6 +95,9 @@
               <File Id="readme" Name="README.txt" DiskId="1" Source="doc\README.txt" />
               <File Id="changelog" Name="ChangeLog.txt" DiskId="1" Source="doc\ChangeLog.txt" />
               <File Id="license" Name="LICENSE.txt" DiskId="1" Source="doc\LICENSE.txt" />
+              <?if $(var.license) = "community" ?>
+                <File Id="contributing" Name="CONTRIBUTING.md" DiskId="1" Source="doc\CONTRIBUTING.md" />
+              <?endif?>
               <File Id="info_bin" Name="INFO_BIN" DiskId="1" Source="doc\INFO_BIN" />
               <File Id="info_src" Name="INFO_SRC" DiskId="1" Source="doc\INFO_SRC" />
             </Component>

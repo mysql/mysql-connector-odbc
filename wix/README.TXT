@@ -32,6 +32,7 @@ NOTE: X in the file names below represents a MAJOR version of the
 
   doc/README.txt
   doc/LICENSE.txt
+  doc/CONTRIBUTING.md (community/GPL packages only)
   x86/myodbcXa.lib
   x86/myodbcXa.dll
   x86/myodbcXw.lib
