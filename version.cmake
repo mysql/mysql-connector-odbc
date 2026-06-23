@@ -26,8 +26,8 @@
 # along with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 
-SET(CONNECTOR_MAJOR "10")
-SET(CONNECTOR_MINOR "0")
+SET(CONNECTOR_MAJOR "26")
+SET(CONNECTOR_MINOR "7")
 SET(CONNECTOR_PATCH "0")
 
 SET(CONNECTOR_MAJOR_PREV "9")
