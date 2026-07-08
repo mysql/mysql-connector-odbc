@@ -200,7 +200,7 @@ rm -rf %{buildroot}
 cd ..
 %{cmake_cmd} --install release --prefix %{buildroot}
 cd %{buildroot}
-rm -vf  ./{ChangeLog,README*,LICENSE*.*,INFO_SRC,INFO_BIN}
+rm -vf  ./{ChangeLog,README*,LICENSE*.*,CONTRIBUTING.md,INFO_SRC,INFO_BIN}
 
 %if 0%{?bundle_plugins}
 mkdir -p .%{plugin_dir}
