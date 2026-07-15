@@ -1,5 +1,5 @@
 ﻿<!-- *****************************************************************************************
- Copyright (c) 2007, 2025, Oracle and/or its affiliates.
+ Copyright (c) 2007, 2026, Oracle and/or its affiliates.
 
  This program is free software; you can redistribute it and/or modify
  it under the terms of the GNU General Public License, version 2.0, as
@@ -51,10 +51,10 @@
           <?if $(var.odbc_64bit) = 1 ?>
 
             <Component Id="driver" Guid="C1960400-BFC6-4E6E-AF30-4C19EF5A3F07" SharedDllRefCount="yes" Bitness="always64">
-              <File Id="myodbc$(var.odbc_ver_major)a.dll" Name="myodbc$(var.odbc_ver_major)a.dll" Checksum="yes" KeyPath="yes" DiskId="1" Source="x64\myodbc$(var.odbc_ver_major)a.dll">
+              <File Id="myodbc$(var.odbc_ver_major)a.dll" Name="myodbca.dll" Checksum="yes" KeyPath="yes" DiskId="1" Source="x64\myodbc$(var.odbc_ver_major)a.dll">
                 <ODBCDriver Id="MySQL_ODBC_$(var.odbc_ver_short)a_Driver" Name="MySQL ODBC $(var.odbc_ver_short) ANSI Driver" SetupFile="myodbc$(var.odbc_ver_major)S.dll" />
               </File>
-              <File Id="myodbc$(var.odbc_ver_major)w.dll" Name="myodbc$(var.odbc_ver_major)w.dll" Checksum="yes" DiskId="1" Source="x64\myodbc$(var.odbc_ver_major)w.dll">
+              <File Id="myodbc$(var.odbc_ver_major)w.dll" Name="myodbcw.dll" Checksum="yes" DiskId="1" Source="x64\myodbc$(var.odbc_ver_major)w.dll">
                 <ODBCDriver Id="MySQL_ODBC_$(var.odbc_ver_short)w_Driver" Name="MySQL ODBC $(var.odbc_ver_short) Unicode Driver" SetupFile="myodbc$(var.odbc_ver_major)S.dll" />
               </File>
               <File Id="readme" Name="README.txt" DiskId="1" Source="doc\README.txt" />
@@ -67,7 +67,7 @@
               <File Id="info_src" Name="INFO_SRC" DiskId="1" Source="doc\INFO_SRC" />
             </Component>
             <Component Id="setup" Guid="3A92E95A-AF9C-4A4F-A36D-E0052405C278" SharedDllRefCount="yes" Bitness="always64">
-              <File Id="myodbc$(var.odbc_ver_major)S.dll" Name="myodbc$(var.odbc_ver_major)S.dll" KeyPath="yes" DiskId="1" Source="x64\myodbc$(var.odbc_ver_major)S.dll" />
+              <File Id="myodbc$(var.odbc_ver_major)S.dll" Name="myodbcS.dll" KeyPath="yes" DiskId="1" Source="x64\myodbc$(var.odbc_ver_major)S.dll" />
             </Component>
             <Component Id="installer" Guid="EB5E7FB3-F6DD-4424-A54A-DD07213E67ED" SharedDllRefCount="yes" Bitness="always64">
               <File Id="installer" Name="myodbc-installer.exe" KeyPath="yes" DiskId="1" Source="x64\myodbc-installer.exe" />
@@ -86,10 +86,10 @@
             </Component>
           <?else?>
             <Component Id="driver" Guid="83B6877B-3220-4C5F-A1B5-84787E9798DD" SharedDllRefCount="yes">
-              <File Id="myodbc$(var.odbc_ver_major)a.dll" Name="myodbc$(var.odbc_ver_major)a.dll" Checksum="yes" KeyPath="yes" DiskId="1" Source="x86\myodbc$(var.odbc_ver_major)a.dll">
+              <File Id="myodbc$(var.odbc_ver_major)a.dll" Name="myodbca.dll" Checksum="yes" KeyPath="yes" DiskId="1" Source="x86\myodbc$(var.odbc_ver_major)a.dll">
                 <ODBCDriver Id="MySQL_ODBC_$(var.odbc_ver_short)a_Driver" Name="MySQL ODBC $(var.odbc_ver_short) ANSI Driver" SetupFile="myodbc$(var.odbc_ver_major)S.dll" />
               </File>
-              <File Id="myodbc$(var.odbc_ver_major)w.dll" Name="myodbc$(var.odbc_ver_major)w.dll" Checksum="yes" DiskId="1" Source="x86\myodbc$(var.odbc_ver_major)w.dll">
+              <File Id="myodbc$(var.odbc_ver_major)w.dll" Name="myodbcw.dll" Checksum="yes" DiskId="1" Source="x86\myodbc$(var.odbc_ver_major)w.dll">
                 <ODBCDriver Id="MySQL_ODBC_$(var.odbc_ver_short)w_Driver" Name="MySQL ODBC $(var.odbc_ver_short) Unicode Driver" SetupFile="myodbc$(var.odbc_ver_major)S.dll" />
               </File>
               <File Id="readme" Name="README.txt" DiskId="1" Source="doc\README.txt" />
@@ -102,7 +102,7 @@
               <File Id="info_src" Name="INFO_SRC" DiskId="1" Source="doc\INFO_SRC" />
             </Component>
             <Component Id="setup" Guid="428232BA-9D94-4DB5-87CD-C939D1347664" SharedDllRefCount="yes">
-              <File Id="myodbc$(var.odbc_ver_major)S.dll" Name="myodbc$(var.odbc_ver_major)S.dll" KeyPath="yes" DiskId="1" Source="x86\myodbc$(var.odbc_ver_major)S.dll" />
+              <File Id="myodbc$(var.odbc_ver_major)S.dll" Name="myodbcS.dll" KeyPath="yes" DiskId="1" Source="x86\myodbc$(var.odbc_ver_major)S.dll" />
             </Component>
             <Component Id="installer" Guid="75754F93-A6F5-4575-A6AA-C64CA053386F" SharedDllRefCount="yes">
               <File Id="installer" Name="myodbc-installer.exe" KeyPath="yes" DiskId="1" Source="x86\myodbc-installer.exe" />
