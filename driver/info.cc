@@ -1018,8 +1018,8 @@ const char *SQL_GET_TYPE_INFO_values[][19] =
   { "json",sql_wlongvarchar,"1073741823","'","'",NULL,sql_nullable,"1","1",NULL,"0",NULL,"json",NULL,NULL,sql_wlongvarchar,NULL,NULL,NULL},
 
   /* SQL_CHAR= 1 */
-  { "char",sql_char, "255","'","'","length",sql_nullable,"0",sql_searchable,NULL,"0",NULL,"char",NULL,NULL,sql_char,"0",NULL,NULL },
-  { "char",sql_wchar,"255","'","'","length",sql_nullable,"0",sql_searchable,NULL,"0",NULL,"char",NULL,NULL,sql_wchar,"0",NULL,NULL },
+  { "char",sql_char, "255","'","'","length",sql_nullable,"0",sql_searchable,NULL,"0",NULL,"char",NULL,NULL,sql_char,NULL,NULL,NULL },
+  { "char",sql_wchar,"255","'","'","length",sql_nullable,"0",sql_searchable,NULL,"0",NULL,"char",NULL,NULL,sql_wchar,NULL,NULL,NULL },
 
   /* SQL_NUMERIC= 2 */
   { "numeric",sql_numeric,"19","'","'","precision,scale",sql_nullable,"0",sql_searchable,"0","0","0","numeric","0","19",sql_numeric,NULL,"10",NULL },
