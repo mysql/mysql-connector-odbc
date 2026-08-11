@@ -1,4 +1,4 @@
-// Copyright (c) 2007, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2007, 2026, Oracle and/or its affiliates.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License, version 2.0, as
@@ -36,6 +36,7 @@
 #include <windows.h>
 #include <windowsx.h>
 #include <commctrl.h>
+#include <iterator>
 #include <stdio.h>
 #include "resource.h"
 #include "TabCtrl.h"
@@ -461,7 +462,7 @@ void chooseFile( HWND parent, int hostCtlId )
 
   wchar_t			szFile[MAX_PATH];    // buffer for file name
 
-  Edit_GetText( hostControl, szFile, sizeof(szFile) );
+  Edit_GetText(hostControl, szFile, std::size(szFile));
   // Initialize OPENFILENAME
   ZeroMemory(&dialog, sizeof(dialog));
 
@@ -469,7 +470,7 @@ void chooseFile( HWND parent, int hostCtlId )
   dialog.lpstrFile			= szFile;
 
   dialog.lpstrTitle			= L"Select File";
-  dialog.nMaxFile				= sizeof(szFile);
+  dialog.nMaxFile			= std::size(szFile);
   dialog.lpstrFileTitle		= NULL;
   dialog.nMaxFileTitle		= 0;
   dialog.lpstrInitialDir		= NULL;
@@ -492,7 +493,7 @@ void choosePath( HWND parent, int hostCtlId )
   BROWSEINFOW		dialog;
   wchar_t			path[MAX_PATH];    // buffer for file name
 
-  Edit_GetText( hostControl, path, sizeof(path) );
+  Edit_GetText(hostControl, path, std::size(path));
 
   ZeroMemory(&dialog,sizeof(dialog));
 
