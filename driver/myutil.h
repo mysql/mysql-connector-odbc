@@ -1,4 +1,4 @@
-// Copyright (c) 2001, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2001, 2026, Oracle and/or its affiliates.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License, version 2.0, as
@@ -328,8 +328,10 @@ enum enum_field_types map_sql2mysql_type(SQLSMALLINT sql_type);
 /* proc_* functions - used to parse prcedures headers in SQLProcedureColumns */
 char *      proc_param_tokenize   (char *str, int *params_num);
 char *      proc_get_param_type   (char *proc, int len, SQLSMALLINT *ptype);
-char *    proc_get_param_name   (char *proc, int len, char *cname);
-char *      proc_get_param_dbtype (char *proc, int len, char *ptype);
+char *    proc_get_param_name   (char *proc, int len, char *cname,
+                                 size_t cname_size);
+char *      proc_get_param_dbtype (char *proc, int len, char *ptype,
+                                   size_t ptype_size);
 SQLUINTEGER proc_get_param_size   (SQLCHAR *ptype, int len, int sql_type_index,
                                   SQLSMALLINT *dec);
 SQLLEN      proc_get_param_octet_len  (STMT *stmt, int sql_type_index,

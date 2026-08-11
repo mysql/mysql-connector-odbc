@@ -1,4 +1,4 @@
-// Copyright (c) 2007, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2007, 2026, Oracle and/or its affiliates.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License, version 2.0, as
@@ -31,11 +31,12 @@
   @brief Utility functions
 */
 
-#include "driver.h"
-#include "errmsg.h"
 #include <ctype.h>
+#include <algorithm>
 #include <iostream>
 #include <map>
+#include "driver.h"
+#include "errmsg.h"
 
 #define DATETIME_DIGITS 14
 
@@ -3102,70 +3103,86 @@ char *proc_get_param_type(char *proc, int len, SQLSMALLINT *ptype)
   return proc;
 }
 
-
 /**
   Detects the parameter name
 
   @param[in]  proc        procedure parameter string
   @param[in]  len         param string length
   @param[out] cname       pointer where to write the param name
+  @param[in]  cname_size  size of the param name buffer
 
   Returns position in the param string after parameter name
 */
-char* proc_get_param_name(char *proc, int len, char *cname)
-{
-  char quote_symbol= '\0';
+char *proc_get_param_name(char *proc, int len, char *cname, size_t cname_size) {
+  char quote_symbol = '\0';
+  size_t remaining_buffer_size = cname_size;
 
-  while (isspace(*proc) && (len--))
+  while (len > 0 && isspace(*proc)) {
     ++proc;
+    --len;
+  }
 
   /* can be '"' if ANSI_QUOTE is enabled */
-  if (*proc == '`' || *proc == '"')
-  {
-    quote_symbol= *proc;
+  if (*proc == '`' || *proc == '"') {
+    quote_symbol = *proc;
     ++proc;
   }
 
-  while ((len--) && (quote_symbol != '\0' ? *proc != quote_symbol : !isspace(*proc)))
-    *(cname++)= *(proc++);
+  while ((len--) &&
+         (quote_symbol != '\0' ? *proc != quote_symbol : !isspace(*proc))) {
+    if (remaining_buffer_size > 1) {
+      *(cname++) = *proc;
+      --remaining_buffer_size;
+    }
+    ++proc;
+  }
+
+  if (remaining_buffer_size > 0) *cname = '\0';
 
   return quote_symbol ? proc + 1 : proc;
 }
-
 
 /**
   Detects the parameter data type
 
   @param[in]  proc        procedure parameter string
   @param[in]  len         param string length
-  @param[out] cname       pointer where to write the param type name
+  @param[out] ptype       pointer where to write the param type name
+  @param[in]  ptype_size  size of the param type buffer
 
   Returns position in the param string after parameter type name
 */
-char* proc_get_param_dbtype(char *proc, int len, char *ptype)
-{
-  char *trim_str, *start_pos= ptype;
+char *proc_get_param_dbtype(char *proc, int len, char *ptype,
+                            size_t ptype_size) {
+  char *trim_str, *start_pos = ptype;
+  size_t source_size, copy_size;
 
-  while (isspace(*proc) && (len--))
+  while (len > 0 && isspace(*proc)) {
     ++proc;
+    --len;
+  }
 
-  while (*proc && (len--) )
-    *(ptype++)= *(proc++);
+  source_size = (size_t)len;
+
+  if (ptype_size == 0) return proc + source_size;
+
+  copy_size = (std::min)(ptype_size - 1, source_size);
+
+  memcpy(ptype, proc, copy_size);
+  ptype += copy_size;
+  proc += source_size;
+
+  *ptype = '\0';
 
   /* remove the character set definition */
-  if ((trim_str= strstr( myodbc_strlwr(start_pos, (size_t)-1),
-                        " charset ")))
-  {
-    ptype= trim_str;
-    (*ptype)= 0;
+  if ((trim_str = strstr(myodbc_strlwr(start_pos, (size_t)-1), " charset "))) {
+    ptype = trim_str;
+    (*ptype) = 0;
   }
 
   /* trim spaces from the end */
-  ptype-=1;
-  while (isspace(*(ptype)))
-  {
-    *ptype= 0;
-    --ptype;
+  while (ptype > start_pos && isspace(*(ptype - 1))) {
+    *(--ptype) = 0;
   }
 
   return proc;
@@ -3390,7 +3407,6 @@ SQLUINTEGER proc_parse_enum_set(SQLCHAR *ptype, int len, BOOL is_enum)
   return is_enum ? max_len : total_len + elem_num - 1;
 }
 
-
 /**
   Returns parameter size and decimal digits
 
@@ -3410,8 +3426,37 @@ SQLUINTEGER proc_get_param_size(SQLCHAR *ptype, int len, int sql_type_index, SQL
   /* no decimal digits by default */
   *dec= SQL_NO_TOTAL;
 
-  switch (SQL_TYPE_MAP_values[sql_type_index].mysql_type)
-  {
+  if (!start_pos || !end_pos || end_pos < start_pos) {
+    switch (SQL_TYPE_MAP_values[sql_type_index].mysql_type) {
+      case MYSQL_TYPE_DECIMAL:
+        param_size = 10;
+        break;
+
+      case MYSQL_TYPE_YEAR:
+        param_size = 4;
+        *dec = 0;
+        break;
+
+      case MYSQL_TYPE_STRING:
+        if (SQL_TYPE_MAP_values[sql_type_index].sql_type == SQL_BINARY)
+          param_size = 1;
+        break;
+
+      case MYSQL_TYPE_BIT:
+      case MYSQL_TYPE_DATETIME:
+      case MYSQL_TYPE_TINY:
+      case MYSQL_TYPE_SHORT:
+      case MYSQL_TYPE_INT24:
+      case MYSQL_TYPE_LONG:
+      case MYSQL_TYPE_LONGLONG:
+        *dec = 0;
+        break;
+    }
+
+    return param_size;
+  }
+
+  switch (SQL_TYPE_MAP_values[sql_type_index].mysql_type) {
     /* these type sizes need to be parsed */
     case MYSQL_TYPE_DECIMAL:
       param_size = proc_parse_sizes(start_pos, (int)(end_pos - start_pos), dec);
@@ -3459,7 +3504,6 @@ SQLUINTEGER proc_get_param_size(SQLCHAR *ptype, int len, int sql_type_index, SQL
     case MYSQL_TYPE_LONGLONG:
       *dec= 0;
       break;
-
   }
 
   return param_size;
@@ -4229,4 +4273,3 @@ const char get_identifier_quote(STMT *stmt)
   }
   return empty;
 }
-

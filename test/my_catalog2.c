@@ -1,4 +1,4 @@
-// Copyright (c) 2003, 2025, Oracle and/or its affiliates.
+// Copyright (c) 2003, 2026, Oracle and/or its affiliates.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License, version 2.0, as
@@ -1394,6 +1394,60 @@ DECLARE_TEST(t_bug32504915)
 }
 
 /*
+  SQLProcedureColumns handles a long stored procedure parameter type
+*/
+DECLARE_TEST(t_bug39844634) {
+  char create_query[4096] = "CREATE PROCEDURE bug39844634(IN p ENUM(";
+  char param_name[MAX_ROW_DATA_LEN + 1];
+
+  for (int i = 0; i < 128; ++i) {
+    char value[32];
+
+    if (i > 0) strcat(create_query, ",");
+    snprintf(value, sizeof(value), "'enum_value_%03d'", i);
+    strcat(create_query, value);
+  }
+  strcat(create_query, ")) BEGIN END");
+
+  ok_sql(hstmt, "DROP PROCEDURE IF EXISTS bug39844634");
+  ok_stmt(hstmt, SQLExecDirect(hstmt, SC_NTS(create_query)));
+  ok_stmt(hstmt, SQLProcedureColumns(hstmt, NULL, 0, NULL, 0,
+                                     SC_NTS("bug39844634"), SC_NTS("%")));
+  ok_stmt(hstmt, SQLFetch(hstmt));
+  is_str(my_fetch_str(hstmt, param_name, 4), "p", 2);
+  is_num(my_fetch_int(hstmt, 6), SQL_CHAR);
+  is_num(my_fetch_uint(hstmt, 8), 14);
+  is_num(my_fetch_int(hstmt, 9), 14);
+  is_num(SQLFetch(hstmt), SQL_NO_DATA);
+  ok_sql(hstmt, "DROP PROCEDURE IF EXISTS bug39844634");
+
+  return OK;
+}
+
+/*
+  SQLProcedureColumns returns NUM_PREC_RADIX for unparameterized integers
+*/
+DECLARE_TEST(t_bug39844634_num_prec_radix) {
+  ok_sql(hstmt, "DROP PROCEDURE IF EXISTS bug39844634_num_prec_radix");
+  ok_sql(hstmt,
+         "CREATE PROCEDURE bug39844634_num_prec_radix"
+         "(IN p TINYINT, IN y YEAR) BEGIN END");
+  ok_stmt(hstmt, SQLProcedureColumns(hstmt, NULL, 0, NULL, 0,
+                                     SC_NTS("bug39844634_num_prec_radix"),
+                                     SC_NTS("%")));
+  ok_stmt(hstmt, SQLFetch(hstmt));
+  is_num(my_fetch_int(hstmt, 11), 10);
+  ok_stmt(hstmt, SQLFetch(hstmt));
+  is_num(my_fetch_int(hstmt, 6), SQL_SMALLINT);
+  is_num(my_fetch_uint(hstmt, 8), 4);
+  is_num(my_fetch_int(hstmt, 11), 10);
+  is_num(SQLFetch(hstmt), SQL_NO_DATA);
+  ok_sql(hstmt, "DROP PROCEDURE IF EXISTS bug39844634_num_prec_radix");
+
+  return OK;
+}
+
+/*
   SQLColumns() reports wrong type name with column length
 */
 DECLARE_TEST(t_bug33599093)
@@ -1435,8 +1489,6 @@ DECLARE_TEST(t_bug33599093)
   ok_sql(hstmt, "DROP TABLE IF EXISTS tab33599093");
   return OK;
 }
-
-
 /*
   Bug #33788407 -  Unable to add mysql views to ms access.
   (Cannot define Field more than once)
@@ -1471,6 +1523,8 @@ DECLARE_TEST(t_bug33788407)
 BEGIN_TESTS
   ADD_TEST(t_bug33788407)
   ADD_TEST(t_bug32504915)
+  ADD_TEST(t_bug39844634)
+  ADD_TEST(t_bug39844634_num_prec_radix)
   ADD_TEST(t_sqlprocedurecolumns)
   ADD_TEST(t_bug57182)
   ADD_TEST(t_bug_14005343)

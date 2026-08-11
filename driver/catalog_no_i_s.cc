@@ -1,4 +1,4 @@
-// Copyright (c) 2000, 2025, Oracle and/or its affiliates.
+// Copyright (c) 2000, 2026, Oracle and/or its affiliates.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License, version 2.0, as
@@ -638,34 +638,41 @@ procedure_columns_no_i_s(SQLHSTMT hstmt,
       throw ODBCEXCEPTION(EXCEPTION_TYPE::EMPTY_SET);
     }
 
-    while (token != NULL)
-    {
-      SQLSMALLINT  ptype= 0;
+    while (token != NULL) {
+      SQLSMALLINT ptype = 0;
       int sql_type_index;
-      unsigned int flags= 0;
-      SQLCHAR param_name[NAME_LEN]= "\0";
-      SQLCHAR param_dbtype[1024]= "\0";
-      SQLCHAR param_size_buf[21]= "\0";
-      SQLCHAR param_buffer_len[21]= "\0";
+      unsigned int flags = 0;
+      SQLCHAR param_name[NAME_LEN + 1] = "\0";
+      std::vector<SQLCHAR> param_dbtype(strlen(token) + 1, '\0');
+      SQLCHAR param_size_buf[21] = "\0";
+      SQLCHAR param_buffer_len[21] = "\0";
 
       SQLTypeMap *type_map;
       SQLSMALLINT dec;
-      SQLULEN param_size= 0;
+      SQLULEN param_size = 0;
 
-      token= proc_get_param_type(token, (int)strlen(token), &ptype);
-      token= proc_get_param_name(token, (int)strlen(token), (char*)param_name);
-      token= proc_get_param_dbtype(token, (int)strlen(token), (char*)param_dbtype);
+      token = proc_get_param_type(token, (int)strlen(token), &ptype);
+      token = proc_get_param_name(token, (int)strlen(token), (char *)param_name,
+                                  sizeof(param_name));
+      token = proc_get_param_dbtype(token, (int)strlen(token),
+                                    (char *)param_dbtype.data(),
+                                    param_dbtype.size());
 
       /* param_dbtype is lowercased in the proc_get_param_dbtype */
-      if (strstr((const char*)param_dbtype, "unsigned"))
+      if (strstr((const char *)param_dbtype.data(), "unsigned"))
         flags |= UNSIGNED_FLAG;
 
-      sql_type_index= proc_get_param_sql_type_index((const char*)param_dbtype, (int)strlen((const char*)param_dbtype));
-      type_map= proc_get_param_map_by_index(sql_type_index);
+      sql_type_index = proc_get_param_sql_type_index(
+          (const char *)param_dbtype.data(),
+          (int)strlen((const char *)param_dbtype.data()));
+      type_map = proc_get_param_map_by_index(sql_type_index);
 
-      param_size= proc_get_param_size(param_dbtype, (int)strlen((const char*)param_dbtype), sql_type_index, &dec);
+      param_size = proc_get_param_size(
+          param_dbtype.data(), (int)strlen((const char *)param_dbtype.data()),
+          sql_type_index, &dec);
 
-      proc_get_param_octet_len(stmt, sql_type_index, param_size, dec, flags, (char*)param_buffer_len);
+      proc_get_param_octet_len(stmt, sql_type_index, param_size, dec, flags,
+                               (char *)param_buffer_len);
 
       /* PROCEDURE_CAT and PROCEDURE_SCHEMA */
       CAT_SCHEMA_SET(data[mypcPROCEDURE_CAT], data[mypcPROCEDURE_SCHEM], row[2]);
