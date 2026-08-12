@@ -520,10 +520,17 @@ void free_connection_stmts(DBC *dbc);
                                                           var2rec= lrc;\
                                                  } while(0)
 
-#define GET_NAME_LEN(S, N, L) L = (L == SQL_NTS ? (N ? (SQLSMALLINT)strlen((char *)N) : 0) : L); \
-  if (L > NAME_LEN) \
-    return S->set_error("HY090", \
-           "One or more parameters exceed the maximum allowed name length", 0);
+#define GET_NAME_LEN(S, N, L)                                                  \
+  do {                                                                         \
+    if ((L) == SQL_NTS) {                                                      \
+      size_t name_len = (N) ? strlen((char *)(N)) : 0;                         \
+      (L) = (SQLSMALLINT)(name_len > NAME_LEN ? NAME_LEN + 1 : name_len);      \
+    }                                                                          \
+    if ((L) < 0 || (L) > NAME_LEN)                                             \
+      return (S)->set_error(                                                   \
+          "HY090",                                                             \
+          "One or more parameters exceed the maximum allowed name length", 0); \
+  } while (0)
 
 #define CHECK_HANDLE(h) if (h == NULL) return SQL_INVALID_HANDLE
 

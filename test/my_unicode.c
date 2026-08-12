@@ -1,4 +1,4 @@
-// Copyright (c) 2007, 2025, Oracle and/or its affiliates.
+// Copyright (c) 2007, 2026, Oracle and/or its affiliates.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License, version 2.0, as
@@ -811,6 +811,60 @@ DECLARE_TEST(sqltables)
   return OK;
 }
 
+static int catalog_name_length_overflow_ansi(SQLHSTMT hstmt, size_t name_len) {
+  SQLCHAR *name = (SQLCHAR *)malloc(name_len + 1);
+
+  is(name != NULL);
+
+  memset(name, 'a', name_len);
+  name[name_len] = '\0';
+
+  expect_stmt(hstmt, SQLTables(hstmt, NULL, 0, NULL, 0, name, SQL_NTS, NULL, 0),
+              SQL_ERROR);
+
+  is_num(check_sqlstate(hstmt, "HY090"), OK);
+
+  free(name);
+
+  return OK;
+}
+
+DECLARE_TEST(catalog_name_length_overflow_32768_ansi) {
+  return catalog_name_length_overflow_ansi(hstmt, 32768);
+}
+
+DECLARE_TEST(catalog_name_length_overflow_65536_ansi) {
+  return catalog_name_length_overflow_ansi(hstmt, 65536);
+}
+
+static int catalog_name_length_overflow_unicode(SQLHSTMT hstmt,
+                                                size_t name_len) {
+  SQLWCHAR *name = (SQLWCHAR *)malloc((name_len + 1) * sizeof(SQLWCHAR));
+  size_t i;
+
+  is(name != NULL);
+
+  for (i = 0; i < name_len; ++i) name[i] = 'a';
+  name[name_len] = 0;
+
+  expect_stmt(hstmt,
+              SQLTablesW(hstmt, NULL, 0, NULL, 0, name, SQL_NTS, NULL, 0),
+              SQL_ERROR);
+
+  is_num(check_sqlstate(hstmt, "HY090"), OK);
+
+  free(name);
+
+  return OK;
+}
+
+DECLARE_TEST(catalog_name_length_overflow_32768_unicode) {
+  return catalog_name_length_overflow_unicode(hstmt, 32768);
+}
+
+DECLARE_TEST(catalog_name_length_overflow_65536_unicode) {
+  return catalog_name_length_overflow_unicode(hstmt, 65536);
+}
 
 DECLARE_TEST(sqlspecialcolumns)
 {
@@ -1513,6 +1567,10 @@ BEGIN_TESTS
   // ADD_TEST(sqlgetdiagfield) TODO: Fix
   ADD_TEST_UNICODE(sqlcolumns)
   ADD_TEST_UNICODE(sqltables)
+  ADD_TEST_ANSI(catalog_name_length_overflow_32768_ansi)
+  ADD_TEST_ANSI(catalog_name_length_overflow_65536_ansi)
+  ADD_TEST_UNICODE(catalog_name_length_overflow_32768_unicode)
+  ADD_TEST_UNICODE(catalog_name_length_overflow_65536_unicode)
   ADD_TEST_UNICODE(sqlspecialcolumns)
   ADD_TEST(sqlforeignkeys)
   ADD_TEST_UNICODE(sqlprimarykeys)
@@ -1526,5 +1584,3 @@ END_TESTS
 
 
 RUN_TESTS
-
-
