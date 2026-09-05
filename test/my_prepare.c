@@ -91,6 +91,62 @@ DECLARE_TEST(t_prep_basic)
 }
 
 
+/*
+  TINYINT UNSIGNED values >= 128 must be fetched without sign extension
+  through server-side prepared statements.
+*/
+DECLARE_TEST(t_prep_tinyint_unsigned)
+{
+  char value[32];
+  SQLLEN length;
+
+  ok_sql(hstmt, "DROP TABLE IF EXISTS t_prep_tinyint_unsigned");
+
+  ok_sql(hstmt,
+         "CREATE TABLE t_prep_tinyint_unsigned "
+         "(value_u TINYINT UNSIGNED)");
+
+  ok_sql(hstmt,
+         "INSERT INTO t_prep_tinyint_unsigned VALUES "
+         "(0),(127),(128),(200),(255)");
+
+  ok_stmt(hstmt,
+          SQLPrepare(hstmt,
+                     SC_NTS("SELECT value_u "
+                            "FROM t_prep_tinyint_unsigned "
+                            "ORDER BY value_u")));
+
+  ok_stmt(hstmt, SQLExecute(hstmt));
+
+  ok_stmt(hstmt,
+          SQLBindCol(hstmt, 1, SQL_C_CHAR,
+                     value, sizeof(value), &length));
+
+  ok_stmt(hstmt, SQLFetch(hstmt));
+  is_str(value, "0", 2);
+
+  ok_stmt(hstmt, SQLFetch(hstmt));
+  is_str(value, "127", 4);
+
+  ok_stmt(hstmt, SQLFetch(hstmt));
+  is_str(value, "128", 4);
+
+  ok_stmt(hstmt, SQLFetch(hstmt));
+  is_str(value, "200", 4);
+
+  ok_stmt(hstmt, SQLFetch(hstmt));
+  is_str(value, "255", 4);
+
+  expect_stmt(hstmt, SQLFetch(hstmt), SQL_NO_DATA);
+
+  ok_stmt(hstmt, SQLFreeStmt(hstmt, SQL_CLOSE));
+
+  ok_sql(hstmt, "DROP TABLE IF EXISTS t_prep_tinyint_unsigned");
+
+  return OK;
+}
+
+
 /* to test buffer length */
 DECLARE_TEST(t_prep_buffer_length)
 {
@@ -1275,8 +1331,10 @@ DECLARE_TEST(t_bug31667091)
   return OK;
 }
 
+
 BEGIN_TESTS
   ADD_TEST(t_prep_basic)
+  ADD_TEST(t_prep_tinyint_unsigned)
   ADD_TEST(t_prep_buffer_length)
   ADD_TEST(t_prep_truncate)
   ADD_TEST(t_prep_scroll)

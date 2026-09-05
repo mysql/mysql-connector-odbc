@@ -1463,7 +1463,7 @@ T ssps_get_int64(STMT *stmt, ulong column_number, char *value, ulong length)
         case 1:
           if (is_it_unsigned)
           {
-            ret = !is_it_null? ((char *)col_rbind->buffer)[0]:0;
+            ret = !is_it_null? ((unsigned char *)col_rbind->buffer)[0]:0;
           }
           else
           {
