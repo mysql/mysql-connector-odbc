@@ -1357,6 +1357,10 @@ SQLRETURN SQL_API MySQLDriverConnect(SQLHDBC hdbc, SQLHWND hwnd,
                                      SQLSMALLINT *pcbConnStrOut,
                                      SQLUSMALLINT fDriverCompletion)
 {
+  // The output string can be requested without its length.
+  SQLSMALLINT dummy_out_len = 0;
+  if (!pcbConnStrOut) pcbConnStrOut = &dummy_out_len;
+
   SQLRETURN rc= SQL_SUCCESS;
   DBC *dbc= (DBC *)hdbc;
   DataSource ds;
@@ -1586,14 +1590,12 @@ SQLRETURN SQL_API MySQLDriverConnect(SQLHDBC hdbc, SQLHWND hwnd,
       We don't need prompt_outstr after the new DataSource is created.
       Copy its contents into szConnStrOut if possible
     */
-    if (szConnStrOut)
-    {
-      *pcbConnStrOut= (SQLSMALLINT)myodbc_min(cbConnStrOutMax, *pcbConnStrOut);
-      memcpy(szConnStrOut, prompt_outstr, (size_t)*pcbConnStrOut*sizeof(SQLWCHAR));
-      /* term needed if possibly truncated */
-      szConnStrOut[*pcbConnStrOut - 1] = 0;
+    if (szConnStrOut && cbConnStrOutMax > 0) {
+      const SQLSMALLINT copy_len =
+          (SQLSMALLINT)myodbc_min(cbConnStrOutMax - 1, *pcbConnStrOut);
+      memcpy(szConnStrOut, prompt_outstr, (size_t)copy_len * sizeof(SQLWCHAR));
+      szConnStrOut[copy_len] = 0;
     }
-
   }
 
   rc = dbc->connect(&ds);
@@ -1652,11 +1654,11 @@ connected:
   }
 
   /* return SQL_SUCCESS_WITH_INFO if truncated output string */
-  if (pcbConnStrOut && cbConnStrOutMax &&
-      cbConnStrOutMax - sizeof(SQLWCHAR) <= *pcbConnStrOut * sizeof(SQLWCHAR))
-  {
+  if (cbConnStrOutMax > 0 &&
+      (bPrompt ? *pcbConnStrOut >= cbConnStrOutMax
+               : conn_str_out.length() >= (size_t)cbConnStrOutMax)) {
     dbc->set_error("01004", "String data, right truncated.", 0);
-    rc= SQL_SUCCESS_WITH_INFO;
+    rc = SQL_SUCCESS_WITH_INFO;
   }
 
 error:

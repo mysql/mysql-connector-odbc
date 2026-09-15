@@ -314,6 +314,127 @@ DECLARE_TEST(sqldriverconnect)
   return OK;
 }
 
+DECLARE_TEST(sqldriverconnect_out_boundaries) {
+  SQLHDBC hdbc1;
+  SQLWCHAR *conn_in = WC(make_conn_str(NULL, NULL, NULL, NULL, NULL, 0));
+  SQLWCHAR full_out[4096];
+  SQLWCHAR storage[4098];
+  SQLWCHAR *conn_out = storage + 1;
+  SQLSMALLINT full_out_len = 0;
+  const SQLWCHAR marker = 0x1234;
+
+  ok_env(henv, SQLAllocConnect(henv, &hdbc1));
+
+  /* The Driver Manager can rewrite the connection string. */
+  expect_dbc(hdbc1,
+             SQLDriverConnectW(hdbc1, NULL, conn_in, SQL_NTS, full_out,
+                               sizeof(full_out) / sizeof(full_out[0]),
+                               &full_out_len, SQL_DRIVER_NOPROMPT),
+             SQL_SUCCESS);
+  ok_con(hdbc1, SQLDisconnect(hdbc1));
+  is(full_out_len > 0 && full_out_len < sizeof(full_out) / sizeof(full_out[0]));
+  is_num(full_out[full_out_len], 0);
+  SQLSMALLINT capacities[] = {0, 1, full_out_len, full_out_len + 1};
+
+  for (size_t i = 0; i < sizeof(capacities) / sizeof(capacities[0]); ++i) {
+    for (int report_length = 0; report_length <= 1; ++report_length) {
+      const SQLSMALLINT capacity = capacities[i];
+      const SQLRETURN expected = capacity > 0 && capacity <= full_out_len
+                                     ? SQL_SUCCESS_WITH_INFO
+                                     : SQL_SUCCESS;
+      SQLSMALLINT out_len = -1;
+
+      for (size_t j = 0; j < sizeof(storage) / sizeof(storage[0]); ++j)
+        storage[j] = marker;
+
+      /* NOPROMPT exercises the common truncation diagnostic without a GUI. */
+      expect_dbc(hdbc1,
+                 SQLDriverConnectW(hdbc1, NULL, conn_in, SQL_NTS, conn_out,
+                                   capacity, report_length ? &out_len : NULL,
+                                   SQL_DRIVER_NOPROMPT),
+                 expected);
+
+#ifndef USE_IODBC
+      /* iODBC may cap the reported length to the output buffer size. */
+      if (report_length) is_num(out_len, full_out_len);
+#endif
+      is_num(storage[0], marker);
+      is_num(conn_out[capacity], marker);
+      if (capacity > 0) {
+        const SQLSMALLINT copied = capacity - 1;
+        is_num(memcmp(conn_out, full_out, copied * sizeof(SQLWCHAR)), 0);
+        is_num(conn_out[copied], 0);
+      }
+      if (expected == SQL_SUCCESS_WITH_INFO)
+        is_num(check_sqlstate_ex(hdbc1, SQL_HANDLE_DBC, "01004"), OK);
+
+      ok_con(hdbc1, SQLDisconnect(hdbc1));
+    }
+  }
+
+  SQLSMALLINT out_len = -1;
+  expect_dbc(hdbc1,
+             SQLDriverConnectW(hdbc1, NULL, conn_in, SQL_NTS, NULL, 0, &out_len,
+                               SQL_DRIVER_NOPROMPT),
+             SQL_SUCCESS);
+#ifndef USE_IODBC
+  is_num(out_len, full_out_len);
+#endif
+  ok_con(hdbc1, SQLDisconnect(hdbc1));
+  ok_con(hdbc1, SQLFreeConnect(hdbc1));
+  return OK;
+}
+
+DECLARE_TEST(sqldriverconnect_out_long_string) {
+  SQLHDBC hdbc1;
+  char conn_str[40000];
+  const char padding[] = ";DESCRIPTION=padding";
+  SQLWCHAR storage[1026];
+  SQLWCHAR *conn_out = storage + 1;
+  const SQLSMALLINT capacity = 1024;
+  const SQLWCHAR marker = 0x1234;
+
+  strcpy(conn_str, make_conn_str(NULL, NULL, NULL, NULL, NULL, 0));
+  size_t conn_in_len = strlen(conn_str);
+
+  /* Exceed SQLSMALLINT's range using short, valid attribute values. */
+  while (conn_in_len <= 32767) {
+    memcpy(conn_str + conn_in_len, padding, sizeof(padding));
+    conn_in_len += sizeof(padding) - 1;
+  }
+  SQLWCHAR *conn_in = WC(conn_str);
+
+  ok_env(henv, SQLAllocConnect(henv, &hdbc1));
+  for (int report_length = 0; report_length <= 1; ++report_length) {
+    SQLSMALLINT out_len = -1;
+    for (size_t i = 0; i < sizeof(storage) / sizeof(storage[0]); ++i)
+      storage[i] = marker;
+
+    SQLRETURN connect_rc =
+        SQLDriverConnectW(hdbc1, NULL, conn_in, SQL_NTS, conn_out, capacity,
+                          report_length ? &out_len : NULL, SQL_DRIVER_NOPROMPT);
+#ifdef _WIN32
+    /* Windows DM can reject SQL_NTS strings exceeding SQLSMALLINT's range. */
+    if (connect_rc == SQL_ERROR && using_dm(hdbc) &&
+        check_sqlstate_ex(hdbc1, SQL_HANDLE_DBC, "HY090") == OK) {
+      ok_con(hdbc1, SQLFreeConnect(hdbc1));
+      skip(
+          "Windows Driver Manager rejects connection strings over 32767 "
+          "characters");
+    }
+#endif
+    expect_dbc(hdbc1, connect_rc, SQL_SUCCESS_WITH_INFO);
+    is_num(check_sqlstate_ex(hdbc1, SQL_HANDLE_DBC, "01004"), OK);
+    is_num(storage[0], marker);
+    is_num(conn_out[capacity], marker);
+    is_num(memcmp(conn_out, conn_in, (capacity - 1) * sizeof(SQLWCHAR)), 0);
+    is_num(conn_out[capacity - 1], 0);
+
+    ok_con(hdbc1, SQLDisconnect(hdbc1));
+  }
+  ok_con(hdbc1, SQLFreeConnect(hdbc1));
+  return OK;
+}
 
 DECLARE_TEST(sqlnativesql)
 {
@@ -1555,6 +1676,8 @@ BEGIN_TESTS
   ADD_TEST(sqlprepare_ansi)
   ADD_TEST(sqlchar)
   ADD_TEST_UNICODE(sqldriverconnect)
+  ADD_TEST_UNICODE(sqldriverconnect_out_boundaries)
+  ADD_TEST_UNICODE(sqldriverconnect_out_long_string)
   // ADD_TEST(sqlnativesql) TODO: Fix
   ADD_TEST_UNICODE(sqlcolattribute)
   ADD_TEST_UNICODE(sqldescribecol)
