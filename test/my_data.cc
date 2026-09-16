@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2025, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2026, Oracle and/or its affiliates.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License, version 2.0, as
@@ -26,6 +26,7 @@
 // along with this program; if not, write to the Free Software Foundation, Inc.,
 // 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 
+#include <algorithm>
 #include <string>
 #include <vector>
 #include <chrono>
@@ -1674,8 +1675,224 @@ DECLARE_TEST(t_bug37071646_time_format)
   ENDCATCH;
 }
 
+DECLARE_TEST(t_float_text_invalid_length) {
+  try {
+    for (const char *option : {"NO_SSPS=1", "NO_SSPS=0"}) {
+      odbc::connection con(nullptr, nullptr, nullptr, nullptr, option);
+      SQLHSTMT stmt = con.hstmt;
+      odbc::stmt_prepare(stmt, "SELECT ?");
+      for (SQLSMALLINT sql_type : {SQL_FLOAT, SQL_REAL, SQL_DOUBLE}) {
+        for (SQLSMALLINT c_type : {SQL_C_CHAR, SQL_C_BINARY}) {
+          for (SQLLEN invalid_length : {-10, -99}) {
+            char value[] = "1";
+            SQLLEN length = sizeof(value) - 1;
+            ok_stmt(stmt,
+                    SQLBindParameter(stmt, 1, SQL_PARAM_INPUT, c_type, sql_type,
+                                     0, 0, value, sizeof(value), &length));
+            // Change the length after binding so it is checked at execution.
+            // Neither value is a special ODBC length indicator.
+            length = invalid_length;
+            expect_stmt(stmt, SQLExecute(stmt), SQL_ERROR);
+            is_num(check_sqlstate_ex(stmt, SQL_HANDLE_STMT, "HY090"), OK);
+            odbc::stmt_close(stmt);
+          }
+        }
+      }
+    }
+  }
+  ENDCATCH;
+}
+
+/* Text bound to floating-point SQL types must remain parameter data. */
+DECLARE_TEST(t_float_text_parameters) {
+  try {
+    const auto hex_dump = [](const void *data, size_t size) {
+      const auto *bytes = static_cast<const unsigned char *>(data);
+      std::ostringstream out;
+      out << std::hex << std::setfill('0');
+      for (size_t i = 0; i < (std::min)(size, size_t{64}); ++i) {
+        if (i) out << ' ';
+        out << std::setw(2) << static_cast<unsigned int>(bytes[i]);
+      }
+      if (size > 64) out << " ... (first 64 bytes)";
+      return out.str();
+    };
+    for (const char *option :
+         {"NO_SSPS=1;NO_LOCALE=0", "NO_SSPS=0;NO_LOCALE=0"}) {
+      odbc::connection con(nullptr, nullptr, nullptr, nullptr, option);
+      SQLHSTMT stmt = con.hstmt;
+      bool iodbc_wide_nul_limitation = false;
+#if defined(USE_IODBC) && !defined(NO_DRIVERMANAGER)
+      SQLCHAR dm_version[32] = {};
+      iodbc_wide_nul_limitation =
+          SQL_SUCCEEDED(SQLGetInfo(con.hdbc, SQL_DM_VER, dm_version,
+                                   sizeof(dm_version), nullptr)) &&
+          strncmp(reinterpret_cast<const char *>(dm_version), "03.52.15", 8) ==
+              0;
+      if (iodbc_wide_nul_limitation)
+        printMessage(
+            "%s: skipping SQL_C_WCHAR embedded NUL: iODBC 3.52.15 "
+            "does not preserve it; SQL_C_CHAR/SQL_C_BINARY remain tested",
+            option);
+#endif
+      for (const char *mode : {"", "NO_BACKSLASH_ESCAPES"}) {
+        odbc::sql(stmt, std::string("SET SESSION sql_mode='") + mode + "'");
+        odbc::stmt_prepare(stmt, "SELECT ?, 7");
+        for (SQLSMALLINT sql_type : {SQL_FLOAT, SQL_REAL, SQL_DOUBLE}) {
+          for (SQLSMALLINT c_type : {SQL_C_CHAR, SQL_C_BINARY, SQL_C_WCHAR}) {
+            SQLSMALLINT driver_c_type = c_type;
+#if !defined(NO_DRIVERMANAGER) && (defined(_WIN32) || defined(USE_IODBC))
+            // Windows and iODBC map wide parameters to ANSI for ANSI drivers.
+            if (c_type == SQL_C_WCHAR && unicode_driver == 0)
+              driver_c_type = SQL_C_CHAR;
+#endif
+            const std::string values[] = {
+                "1+1",   "1 /* parameter */",      "1'\\\n",
+                "-12.5", "4.2345678902345678e+20", "1,234.5",
+                "",      std::string("1\0+1", 4),  std::string(512, '1')};
+            for (const std::string &value : values) {
+              // iODBC 3.52.15 uses NUL-terminated copies for wide parameters.
+              if (iodbc_wide_nul_limitation && c_type == SQL_C_WCHAR &&
+                  value.find('\0') != std::string::npos)
+                continue;
+              // Exercise explicit lengths, SQL_NTS and streamed data.
+              for (int length_mode : {0, 1, 2}) {
+                if (c_type != SQL_C_CHAR && length_mode != 0) continue;
+                std::vector<char> bytes(value.begin(), value.end());
+                if (bytes.empty() || length_mode == 1) bytes.push_back(0);
+                std::vector<SQLWCHAR> wide(value.begin(), value.end());
+                wide.push_back(0);
+                SQLPOINTER data = c_type == SQL_C_WCHAR
+                                      ? static_cast<SQLPOINTER>(wide.data())
+                                      : static_cast<SQLPOINTER>(bytes.data());
+                SQLLEN size = value.size() *
+                              (c_type == SQL_C_WCHAR ? sizeof(SQLWCHAR) : 1);
+                SQLLEN length = length_mode == 1 ? SQL_NTS : size;
+                if (length_mode == 2) length = SQL_LEN_DATA_AT_EXEC(size);
+                const size_t buffer_bytes = c_type == SQL_C_WCHAR
+                                                ? wide.size() * sizeof(SQLWCHAR)
+                                                : bytes.size();
+                const SQLLEN length_before_bind = length;
+                const std::string input_before_bind =
+                    hex_dump(data, buffer_bytes);
+                // Include the terminator in the buffer size, not the data
+                // length.
+                ok_stmt(stmt,
+                        SQLBindParameter(
+                            stmt, 1, SQL_PARAM_INPUT, c_type, sql_type, 0, 0,
+                            data, static_cast<SQLLEN>(buffer_bytes), &length));
+                const SQLLEN length_after_bind = length;
+                if (length_mode == 2) {
+                  expect_stmt(stmt, SQLExecute(stmt), SQL_NEED_DATA);
+                  SQLPOINTER token;
+                  expect_stmt(stmt, SQLParamData(stmt, &token), SQL_NEED_DATA);
+                  is(token == data);
+                  ok_stmt(stmt, SQLPutData(stmt, data, size / 2));
+                  ok_stmt(stmt,
+                          SQLPutData(stmt, static_cast<char *>(data) + size / 2,
+                                     size - size / 2));
+                  ok_stmt(stmt, SQLParamData(stmt, &token));
+                } else {
+                  ok_stmt(stmt, SQLExecute(stmt));
+                }
+                const SQLLEN length_after_execute = length;
+                const std::string input_after_execute =
+                    hex_dump(data, buffer_bytes);
+                ok_stmt(stmt, SQLFetch(stmt));
+                std::string expected =
+                    length_mode == 1 ? std::string(value.c_str()) : value;
+                if (driver_c_type != SQL_C_WCHAR) {
+                  // Keep the existing locale normalization and empty -> 0.
+                  expected.erase(
+                      std::remove(expected.begin(), expected.end(), ','),
+                      expected.end());
+                  if (expected.empty()) expected = "0";
+                }
+                std::vector<char> result(expected.size() + 1);
+                SQLLEN result_length;
+                ok_stmt(stmt, SQLGetData(stmt, 1, SQL_C_CHAR, result.data(),
+                                         result.size(), &result_length));
+                if (result_length != static_cast<SQLLEN>(expected.size()) ||
+                    memcmp(result.data(), expected.data(), expected.size()) !=
+                        0) {
+                  printMessage(
+                      "Float parameter mismatch: %s, sql_mode='%s', "
+                      "sql_type=%d, "
+                      "c_type=%d, assumed_driver_c_type=%d, value_bytes=%zu, "
+                      "length_mode=%d",
+                      option, mode, sql_type, c_type, driver_c_type,
+                      value.size(), length_mode);
+                  printMessage(
+                      "sizeof(SQLWCHAR)=%zu, unicode_driver=%d, "
+                      "BufferLength=%zu, data_bytes=%lld",
+                      sizeof(SQLWCHAR), unicode_driver, buffer_bytes,
+                      static_cast<long long>(size));
+                  printMessage(
+                      "Indicator: before_bind=%lld, after_bind=%lld, "
+                      "after_execute=%lld; result_length=%lld, "
+                      "expected_length=%zu",
+                      static_cast<long long>(length_before_bind),
+                      static_cast<long long>(length_after_bind),
+                      static_cast<long long>(length_after_execute),
+                      static_cast<long long>(result_length), expected.size());
+                  printMessage("Input buffer before bind (hex): [%s]",
+                               input_before_bind.c_str());
+                  printMessage("Input buffer after execute (hex): [%s]",
+                               input_after_execute.c_str());
+                  printMessage(
+                      "Expected data (hex): [%s]",
+                      hex_dump(expected.data(), expected.size()).c_str());
+                  printMessage("Result buffer, %zu bytes (hex): [%s]",
+                               result.size(),
+                               hex_dump(result.data(), result.size()).c_str());
+                  const SQLUSMALLINT info_types[] = {
+                      SQL_DRIVER_NAME, SQL_DRIVER_VER, SQL_DM_VER};
+                  const char *info_names[] = {"SQL_DRIVER_NAME",
+                                              "SQL_DRIVER_VER", "SQL_DM_VER"};
+                  for (size_t i = 0; i < 3; ++i) {
+                    SQLCHAR info[256] = {};
+                    SQLRETURN rc = SQLGetInfo(con.hdbc, info_types[i], info,
+                                              sizeof(info), nullptr);
+                    printMessage("%s: rc=%d, value='%s'", info_names[i], rc,
+                                 SQL_SUCCEEDED(rc)
+                                     ? reinterpret_cast<const char *>(info)
+                                     : "unavailable");
+                  }
+                }
+                is_num(result_length, expected.size());
+                is(memcmp(result.data(), expected.data(), expected.size()) ==
+                   0);
+                is_num(my_fetch_int(stmt, 2), 7);
+                expect_stmt(stmt, SQLFetch(stmt), SQL_NO_DATA);
+                odbc::stmt_close(stmt);
+              }
+            }
+          }
+        }
+      }
+      // Normalized numeric text must still work in a numeric expression.
+      odbc::stmt_prepare(stmt, "SELECT ? + 0");
+      for (SQLSMALLINT sql_type : {SQL_FLOAT, SQL_REAL, SQL_DOUBLE}) {
+        char value[] = "1,234.5";
+        ok_stmt(stmt,
+                SQLBindParameter(stmt, 1, SQL_PARAM_INPUT, SQL_C_CHAR, sql_type,
+                                 0, 0, value, sizeof(value), nullptr));
+        ok_stmt(stmt, SQLExecute(stmt));
+        ok_stmt(stmt, SQLFetch(stmt));
+        double result;
+        ok_stmt(stmt, SQLGetData(stmt, 1, SQL_C_DOUBLE, &result, sizeof(result),
+                                 nullptr));
+        is(result == 1234.5);
+        odbc::stmt_close(stmt);
+      }
+    }
+  }
+  ENDCATCH;
+}
 
 BEGIN_TESTS
+  ADD_TEST(t_float_text_invalid_length)
+  ADD_TEST(t_float_text_parameters)
   ADD_TEST(t_bug37071646_time_format)
   ADD_TEST(t_bug18641803_bind_col)
   ADD_TEST(t_bug37298936_pad_spaces)

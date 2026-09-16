@@ -1,4 +1,4 @@
-// Copyright (c) 2000, 2024, Oracle and/or its affiliates.
+// Copyright (c) 2000, 2026, Oracle and/or its affiliates.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License, version 2.0, as
@@ -785,6 +785,7 @@ SQLRETURN insert_param(STMT *stmt, MYSQL_BIND *bind, DESC* apd,
 {
     long length;
     char buff[128], *data= NULL;
+    std::string numeric_value;
     BOOL convert= FALSE, free_data= FALSE;
     DBC *dbc= stmt->dbc;
     SQLLEN *octet_length_ptr= NULL;
@@ -1127,50 +1128,57 @@ SQLRETURN insert_param(STMT *stmt, MYSQL_BIND *bind, DESC* apd,
       case SQL_FLOAT:
       case SQL_REAL:
       case SQL_DOUBLE:
+        // Wide-character values have already been converted to UTF-8, but
+        // still need to use the string binding/escaping path below.
+        if (aprec->concise_type == SQL_C_WCHAR) break;
+
         /* If we have string -> float ; Fix locale characters for number */
-        if (convert)
-        {
-          char *to= buff, *from= data;
-          char *end= from+length;
+        if (convert) {
+          if (length < 0) {
+            return stmt->set_error(MYERR_S1090, nullptr, 0);
+          }
+          const char *from = data;
+          const char *end = data + length;
           const char *local_thousands_sep = thousands_sep.c_str();
           const char *local_decimal_point = decimal_point.c_str();
           size_t local_thousands_sep_length = thousands_sep.length();
           size_t local_decimal_point_length = decimal_point.length();
 
-          if (!stmt->dbc->ds.opt_NO_LOCALE)
-          {
+          if (!stmt->dbc->ds.opt_NO_LOCALE) {
             /* force use of . as decimal point */
-            local_thousands_sep= ",";
-            local_thousands_sep_length= 1;
-            local_decimal_point= ".";
-            local_decimal_point_length= 1;
+            local_thousands_sep = ",";
+            local_thousands_sep_length = 1;
+            local_decimal_point = ".";
+            local_decimal_point_length = 1;
           }
 
-          while ( *from && from < end )
-          {
-            if ( from[0] == local_thousands_sep[0] && myodbc::is_prefix(from,local_thousands_sep) )
-            {
-              from+= local_thousands_sep_length;
-            }
-            else if ( from[0] == local_decimal_point[0] && myodbc::is_prefix(from,local_decimal_point) )
-            {
-              from+= local_decimal_point_length;
-              *to++='.';
-            }
-            else
-            {
-              *to++= *from++;
+          numeric_value.reserve(length);
+          while (from < end) {
+            const size_t remaining = end - from;
+            if (local_thousands_sep_length != 0 &&
+                remaining >= local_thousands_sep_length &&
+                memcmp(from, local_thousands_sep, local_thousands_sep_length) ==
+                    0) {
+              from += local_thousands_sep_length;
+            } else if (local_decimal_point_length != 0 &&
+                       remaining >= local_decimal_point_length &&
+                       memcmp(from, local_decimal_point,
+                              local_decimal_point_length) == 0) {
+              from += local_decimal_point_length;
+              numeric_value.push_back('.');
+            } else {
+              numeric_value.push_back(*from++);
             }
           }
-          if ( to == buff )
-          {
-            *to++='0';    /* Fix for empty strings */
+          if (numeric_value.empty()) {
+            numeric_value.push_back('0'); /* Fix for empty strings */
           }
-          data= buff;
-          length= (uint) (to-buff);
+          assert(!free_data);
+          data = &numeric_value[0];
+          length = (long)numeric_value.length();
 
-          convert= 0;
-
+          // Locale normalization does not make text safe to insert as SQL.
+          // Keep convert set so the value is bound or quoted and escaped.
         }
         /* Fall through */
       default:
