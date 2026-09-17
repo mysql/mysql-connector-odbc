@@ -1419,6 +1419,7 @@ DECLARE_TEST(t_bug39844634) {
   is_num(my_fetch_uint(hstmt, 8), 14);
   is_num(my_fetch_int(hstmt, 9), 14);
   is_num(SQLFetch(hstmt), SQL_NO_DATA);
+  ok_stmt(hstmt, SQLFreeStmt(hstmt, SQL_CLOSE));
   ok_sql(hstmt, "DROP PROCEDURE IF EXISTS bug39844634");
 
   return OK;
@@ -1442,6 +1443,7 @@ DECLARE_TEST(t_bug39844634_num_prec_radix) {
   is_num(my_fetch_uint(hstmt, 8), 4);
   is_num(my_fetch_int(hstmt, 11), 10);
   is_num(SQLFetch(hstmt), SQL_NO_DATA);
+  ok_stmt(hstmt, SQLFreeStmt(hstmt, SQL_CLOSE));
   ok_sql(hstmt, "DROP PROCEDURE IF EXISTS bug39844634_num_prec_radix");
 
   return OK;
